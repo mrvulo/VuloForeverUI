@@ -1,0 +1,24 @@
+Vulo Fantasy class sheets (vulofantasy1.tga, vulofantasy2.tga)
+==============================================================
+
+The class glyphs used in these sheets are from game-icons.net and are
+licensed under Creative Commons Attribution 3.0 (CC BY 3.0).
+https://creativecommons.org/licenses/by/3.0/
+
+Icons made by Lorc (https://lorcblog.blogspot.com) and Delapouite
+(https://delapouite.com). Available on https://game-icons.net
+
+The glyphs were recoloured and composited onto class-coloured tiles for
+VuloClassicUI.
+
+vuloepic.tga is original artwork created by the addon author (Vulo) and
+is not from game-icons.net.
+
+Glyphs used
+-----------
+Vulo Fantasy 1: crossed-swords, fireball, plain-dagger, paw, dragon-head,
+  bow-arrow, lightning-trio, prayer, imp-laugh, winged-shield, grim-reaper,
+  fist, devil-mask.
+Vulo Fantasy 2: crossed-swords, wizard-staff, daggers, oak-leaf,
+  dragon-spiral, high-shot, lightning-arc, holy-symbol, evil-minion,
+  thor-hammer, skull-signet, high-kick, horned-helm.

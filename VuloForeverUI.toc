@@ -1,0 +1,48 @@
+## Interface: 16001
+## Title: |cff9b6cffVuloForeverUI|r
+## Notes: Modular UI suite for World of Warcraft: Forever
+## Author: Vulo
+## Version: 0.1.0
+## SavedVariables: VuloForeverUIDB
+## SavedVariablesPerCharacter: VuloForeverUICharDB
+## IconTexture: Interface\AddOns\VuloForeverUI\Media\Icons\vui4
+## Category: VuloUI
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibSharedMedia-3.0\LibSharedMedia-3.0.lua
+Libs\LibDeflate\LibDeflate.lua
+Libs\LibEditModeOverride\LibEditModeOverride.xml
+
+Core\Namespace.lua
+Core\Locale.lua
+Core\Utils.lua
+Core\Slash.lua
+Core\Secret.lua
+Core\Database.lua
+Core\Modules.lua
+Core\Container.lua
+Core\Events.lua
+Core\Schedule.lua
+Core\Profiler.lua
+Core\MediaRegistry.lua
+Core\Mover.lua
+Core\PopupMenu.lua
+
+UI\Tooltip.lua
+UI\Widgets.lua
+UI\StringDialog.lua
+UI\Setup.lua
+Core\ColorPicker.lua
+UI\MainFrame.lua
+UI\Sidebar.lua
+UI\Dashboard.lua
+UI\OptionsBuilder.lua
+UI\EditMode.lua
+
+Modules\GlobalSettings.lua
+Modules\Profiles.lua
+Modules\Minimap.lua
+
+Core\Init.lua

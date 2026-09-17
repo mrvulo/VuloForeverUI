@@ -1,0 +1,11 @@
+{
+  "name": "vuloforeverui-tools",
+  "private": true,
+  "description": "Pre-release checks for VuloForeverUI (syntax, locals cap, locale coverage, naming rules)",
+  "scripts": {
+    "check": "node check.js"
+  },
+  "dependencies": {
+    "luaparse": "^0.3.1"
+  }
+}
