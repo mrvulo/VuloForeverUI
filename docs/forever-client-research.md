@@ -1,11 +1,11 @@
 # WoW: Forever client research (2026-09-17)
 
-Source: static analysis of the Forever UI source (Gethe/wow-ui-source, branch `forever`, 1.60.1.69893) compared with `live` (12.1.0.69814) and `classic_era` (1.15.9), plus public info. Nothing here has been tested in the client yet.
+Source: static analysis of the Forever UI source (Gethe/wow-ui-source, branch `forever`, 1.60.1.69893) compared with `live` (12.1.0.69814) and `classic_era` (1.15.9), plus public info. Items marked **confirmed** were checked in the beta client on 2026-09-18 (build 1.60.1.69913); everything else is still static analysis.
 
 ## Facts
 - Beta: 2026-09-17 to 2026-10-21, level cap 30. Release: 2026-11-04.
-- Local install: `C:\Program Files (x86)\World of Warcraft\_classic_beta_`, product `wow_classic_beta`, build 1.60.1.69893.
-- TOC: `## Interface: 16001`.
+- Local install: `C:\Program Files (x86)\World of Warcraft\_classic_beta_`, product `wow_classic_beta`, build 1.60.1.69893 (the doc's source snapshot); the client ran 1.60.1.69913 on 2026-09-18.
+- TOC: `## Interface: 16001`. **Confirmed:** a plain `.toc` with this line loads; `GetBuildInfo()` reports `1.60.1`, build `69913`, interface `16001`.
 - Internal game type is **camelot**, part of the **Mainline family**. In Blizzard TOCs, `[Family]` resolves to `Mainline/` and `[Game]` to `Camelot/`. Classic FrameXML and the classic deprecation shims do **not** load.
 - **Secret values and addon restrictions are fully active**, the same as retail 12.x:
   - The combat log can't be read (`CombatLogGetCurrentEventInfo` is nil).
@@ -50,7 +50,8 @@ Source: static analysis of the Forever UI source (Gethe/wow-ui-source, branch `f
   | `IsAddOnLoaded` | `C_AddOns` |
 
 - **Forever only:** `C_SwingTimer` + `PLAYER_SWING`, `C_PetInfo.GetPetHappiness`/`GetPetLoyalty`, `C_SkillInfo`, `C_PaperDollInfo.AmmoNeeded`, `UnitDefenseSkill`, `C_GameRules.IsHardcoreActive`, `table.*`/`string.*`/`math.*` extensions.
-- **Detection (unverified):** `local toc = select(4, GetBuildInfo()); isForever = toc >= 16000 and toc < 20000 and C_SwingTimer ~= nil`. Check `/dump WOW_PROJECT_ID` in game.
+- **Detection (confirmed):** `local toc = select(4, GetBuildInfo()); isForever = toc >= 16000 and toc < 20000 and C_SwingTimer ~= nil` evaluates to true in the client.
+- **Confirmed:** `WOW_PROJECT_ID == 1` (`WOW_PROJECT_MAINLINE`) and `C_GameRules.GetActiveGameMode() == 1`. Neither distinguishes Forever from retail, which is why detection goes through the interface range plus the `C_SwingTimer` probe.
 
 ## Port assessment of VuloClassicUI 1.62.0
 - On Forever, the current flavor detection would wrongly set `ns.isEra = true`.
@@ -67,8 +68,10 @@ Source: static analysis of the Forever UI source (Gethe/wow-ui-source, branch `f
 - **Recommendation:** clean rebuild that reuses Core and UI, not a fork.
 
 ## To verify in the beta
-1. Values of `/dump WOW_PROJECT_ID`, `GetBuildInfo()`, `C_GameRules.GetActiveGameMode()`.
-2. Whether a plain `.toc` with `## Interface: 16001` loads, and whether a `_Mainline.toc` suffix is accepted.
-3. Whether LibEditModeOverride works with camelot Edit Mode.
-4. Which power types stay readable (player mana, rage, energy).
-5. `issecretvalue(UnitHealth("player"))` in and out of combat.
+1. ~~Values of `/dump WOW_PROJECT_ID`, `GetBuildInfo()`, `C_GameRules.GetActiveGameMode()`.~~ Done 2026-09-18, see Facts.
+2. ~~Whether a plain `.toc` with `## Interface: 16001` loads~~ (it does), and whether a `_Mainline.toc` suffix is accepted.
+3. Whether LibEditModeOverride works with camelot Edit Mode. Our own Edit Mode HUD (`/vedit`) opens without errors (2026-09-18); the library itself is loaded but no module calls it yet, so this stays open until one does.
+4. Which power types stay readable (player mana, rage, energy). Partly answered: `UnitPower("player")` is **secret in combat** and `canaccessvalue` says no; `UnitPowerMax("player")` stays readable. Per-power-type differences not checked yet.
+5. ~~`issecretvalue(UnitHealth("player"))` in and out of combat.~~ Both (2026-09-18): `UnitHealth`, `UnitHealthPercent` and `UnitPower` of the **player** are secret and not accessible **even out of combat**; `UnitHealthMax`/`UnitPowerMax` of the player and `UnitThreatSituation(player, target)` stay readable in combat. Spell cooldowns are readable out of combat and secret in combat.
+6. **New, confirmed 2026-09-18:** `C_UnitAuras.GetAuraDataByIndex("player", 1, "HELPFUL")` in combat does not return a secret, it **throws**: `Auras cannot be accessed when secret while tainted by 'VuloForeverUI'`. Aura code must gate on `C_Secrets.ShouldAurasBeSecret()` (`ns.AurasRestricted()`) before calling; a display-only path is not enough. Cooldown and threat APIs do NOT throw: cooldowns come back secret, threat stays readable.
+7. **Predicate namespace:** the system is documented as `SecretUtil` but the Lua table is **`C_Secrets`** (`SecretPredicateAPIDocumentation.lua`, `Namespace = "C_Secrets"`; Blizzard's aura container calls `C_Secrets.GetSpellAuraSecrecy`). `_G.SecretUtil` is nil. There is no `ShouldUnitHealthBeSecret` -- health is always secret -- only `ShouldUnitHealthMaxBeSecret`. Whether the predicates return true in combat is still to confirm with the fixed report.

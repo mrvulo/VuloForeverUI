@@ -20,9 +20,10 @@ ns.PREFIX  = "|cff9b6cffVuloForeverUI|r"
 -- family, so the retail API and Edit Mode are what we get. C_SwingTimer is the
 -- capability probe: it exists in Forever and in no retail build.
 --
--- WOW_PROJECT_ID is deliberately NOT used. Blizzard defines no constant for
--- camelot, so the value the client reports is unverified -- and a check against
--- WOW_PROJECT_CLASSIC would be wrong for exactly the reason above.
+-- WOW_PROJECT_ID is deliberately NOT used. The client reports 1 (MAINLINE, as
+-- does C_GameRules.GetActiveGameMode; checked 2026-09-18), so it cannot tell
+-- Forever from retail -- and a check against WOW_PROJECT_CLASSIC would be wrong
+-- for exactly the reason above.
 local _iface = tonumber((select(4, GetBuildInfo()))) or 0
 
 ns.IFACE     = _iface

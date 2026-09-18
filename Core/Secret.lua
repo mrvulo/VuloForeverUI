@@ -16,15 +16,25 @@
 -- first (ns.IsSecret / ns.CanRead) and have a path for "no".
 --
 -- WHAT IS SECRET, in short (see docs/forever-client-research.md for the list):
---   always          UnitHealth
+--   always          UnitHealth, UnitHealthPercent, UnitPower -- the player's
+--                   own included, OUT of combat too, and canaccessvalue() says
+--                   no as well (seen 2026-09-18). There is no
+--                   ShouldUnitHealthBeSecret predicate for the same reason.
+--   in combat       cooldowns; aura data; GetRaidTargetIndex
+--   readable        UnitHealthMax and UnitPowerMax of the player, threat
+--                   situation vs. the target -- in combat too (2026-09-18)
 --   not our units   UnitHealthMax, UnitPowerMax, UnitCastingInfo, UnitGUID,
 --                   UnitName, UnitClass
---   in combat       aura data, cooldowns, threat, GetRaidTargetIndex
 --   never readable  the combat log -- there is no addon-side event info at all
+--
+-- AURAS ARE DIFFERENT: when they are restricted, C_UnitAuras.GetAuraDataByIndex
+-- does not hand back a secret, it THROWS ("Auras cannot be accessed when secret
+-- while tainted by ..."). Every aura call must therefore be gated with
+-- ns.AurasRestricted() first; a secret-safe display path alone is not enough.
 --
 -- Everything is verified against the 1.60.1 API documentation; nothing here
 -- guesses at a function name. The one thing that cannot be read from the source
--- is what is readable AT RUNTIME, which is what /vfui secrets is for.
+-- is what is readable AT RUNTIME, which is what /vfsecrets is for.
 local _, ns = ...
 
 -- The two primitives the client gives us. Both are plain globals in 12.x.
@@ -72,26 +82,63 @@ function ns:SetPowerFill(bar, unit, powerType)
     bar:SetValue(UnitPower(unit, powerType))
 end
 
--- SecretUtil answers "would this be secret right now" WITHOUT handing us a
+-- C_Secrets answers "would this be secret right now" WITHOUT handing us a
 -- secret to test, which is the cheap way to decide whether a feature can run at
--- all. Wrapped because the namespace is new and every call site would otherwise
--- need the same nil check.
-local SU = _G.SecretUtil
+-- all. The documentation calls the system "SecretUtil"; the Lua namespace is
+-- C_Secrets (SecretPredicateAPIDocumentation.lua, and that is what Blizzard's
+-- own aura code calls). An earlier draft asked _G.SecretUtil, which is nil, so
+-- every predicate said "not restricted" while the aura API was throwing.
+-- Wrapped because every call site would otherwise need the same nil check.
+local CS = _G.C_Secrets
+
+local function pred(name, ...)
+    local f = CS and CS[name]
+    if not f then return false end
+    return f(...) or false
+end
+
+-- False only on a build without secret restrictions at all -- there is no such
+-- Forever build, but this is the honest answer to "can I skip the gates".
+function ns.HasSecretRestrictions()
+    return CS and CS.HasSecretRestrictions and CS.HasSecretRestrictions() or false
+end
 
 function ns.AurasRestricted()
-    return (SU and SU.ShouldAurasBeSecret and SU.ShouldAurasBeSecret()) or false
+    return pred("ShouldAurasBeSecret")
+end
+
+-- Per-index version, for loops that stop at the first secret aura instead of
+-- refusing the whole list.
+function ns.UnitAuraIndexRestricted(unit, index, filter)
+    return pred("ShouldUnitAuraIndexBeSecret", unit, index, filter)
 end
 
 function ns.CooldownsRestricted()
-    return (SU and SU.ShouldCooldownsBeSecret and SU.ShouldCooldownsBeSecret()) or false
+    return pred("ShouldCooldownsBeSecret")
+end
+
+function ns.SpellCooldownRestricted(spell)
+    return pred("ShouldSpellCooldownBeSecret", spell)
 end
 
 function ns.UnitPowerRestricted(unit, powerType)
-    return (SU and SU.ShouldUnitPowerBeSecret and SU.ShouldUnitPowerBeSecret(unit, powerType)) or false
+    return pred("ShouldUnitPowerBeSecret", unit, powerType)
+end
+
+function ns.UnitHealthMaxRestricted(unit)
+    return pred("ShouldUnitHealthMaxBeSecret", unit)
+end
+
+function ns.UnitIdentityRestricted(unit)
+    return pred("ShouldUnitIdentityBeSecret", unit)
+end
+
+function ns.UnitCastingRestricted(unit)
+    return pred("ShouldUnitSpellCastingBeSecret", unit)
 end
 
 function ns.ThreatRestricted(unit)
-    return (SU and SU.ShouldUnitThreatValuesBeSecret and SU.ShouldUnitThreatValuesBeSecret(unit)) or false
+    return pred("ShouldUnitThreatValuesBeSecret", unit)
 end
 
 -- Cooldowns: hand the Cooldown widget the duration OBJECT instead of start and
@@ -131,22 +178,49 @@ ns.Slash.SECRETS = function()
     ns:Print("%sForever secret-value report%s — combat: %s", A, R,
         InCombatLockdown() and "yes" or "no")
 
-    ns:Print("  UnitHealth(player)      %s", state(UnitHealth("player")))
-    ns:Print("  UnitHealthMax(player)   %s", state(UnitHealthMax("player")))
-    ns:Print("  UnitHealth(target)      %s", UnitExists("target") and state(UnitHealth("target")) or "no target")
-    ns:Print("  UnitPower(player)       %s", state(UnitPower("player")))
-    ns:Print("  UnitPowerMax(player)    %s", state(UnitPowerMax("player")))
+    -- Every probe runs in its own pcall: the aura API THROWS when restricted
+    -- (seen 2026-09-18), and one throw must not eat the rest of the report.
+    local function probe(label, fn)
+        local ok, res = pcall(fn)
+        if ok then
+            ns:Print("  %-24s%s", label, res)
+        else
+            ns:Print("  %-24s%sthrows:%s %s", label, ns.C.neg, R, tostring(res))
+        end
+    end
 
-    local aura = C_UnitAuras.GetAuraDataByIndex("player", 1, "HELPFUL")
-    ns:Print("  first player buff       %s",
-        aura and state(aura.expirationTime) or "none active")
-
-    ns:Print("  threat(player,target)   %s",
-        UnitExists("target") and state(UnitThreatSituation("player", "target") or 0) or "no target")
+    local hasTarget = UnitExists("target")
+    probe("UnitHealth(player)",     function() return state(UnitHealth("player")) end)
+    probe("UnitHealthPercent(pl.)", function() return state(UnitHealthPercent("player", true)) end)
+    probe("UnitHealthMax(player)",  function() return state(UnitHealthMax("player")) end)
+    probe("UnitHealth(target)",     function() return hasTarget and state(UnitHealth("target")) or "no target" end)
+    probe("UnitPower(player)",      function() return state(UnitPower("player")) end)
+    probe("UnitPowerMax(player)",   function() return state(UnitPowerMax("player")) end)
 
     -- Restriction predicates: what the client says BEFORE we touch a value.
-    ns:Print("%sRestrictions%s — auras: %s, cooldowns: %s", A, R,
-        tostring(ns.AurasRestricted()), tostring(ns.CooldownsRestricted()))
+    -- Printed ahead of the aura probe on purpose -- if the probe throws, this
+    -- line tells whether the predicate would have warned us.
+    ns:Print("%sRestrictions%s (C_Secrets %s) — auras: %s, cooldowns: %s, power: %s, threat: %s", A, R,
+        CS and "present" or (ns.C.neg .. "MISSING" .. R),
+        tostring(ns.AurasRestricted()), tostring(ns.CooldownsRestricted()),
+        tostring(ns.UnitPowerRestricted("player")), tostring(ns.ThreatRestricted("player")))
+
+    probe("first player buff", function()
+        local aura = C_UnitAuras.GetAuraDataByIndex("player", 1, "HELPFUL")
+        return aura and state(aura.expirationTime) or "none active"
+    end)
+    probe("player buff count", function()
+        return state(C_UnitAuras.GetUnitAuraCount and C_UnitAuras.GetUnitAuraCount("player", "HELPFUL") or 0)
+    end)
+    probe("threat(player,target)", function()
+        return hasTarget and state(UnitThreatSituation("player", "target") or 0) or "no target"
+    end)
+    probe("spell cooldown (1st)", function()
+        local slot = 1
+        local action = GetActionInfo and select(2, GetActionInfo(slot))
+        local info = action and C_Spell.GetSpellCooldown(action)
+        return info and state(info.startTime) or "no spell on action slot 1"
+    end)
 
     -- The combat log is the hard stop, and the reason five VuloClassicUI
     -- modules cannot come across as they are.
