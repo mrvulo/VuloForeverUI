@@ -343,8 +343,16 @@ end
 -- actually moved back gets re-anchored.
 ------------------------------------------------------------------------------
 
+-- GetPoint on a region Blizzard anchored from its secure environment (the
+-- status text strings) answers with SECRET values on this client (seen
+-- 2026-09-18: "attempt to compare local 'cp' (a secret string value)").
+-- An anchor we cannot read counts as "different", so the region is simply
+-- re-anchored -- a widget call, which is allowed.
 local function samePoint(region, i, point, rel, relPoint, x, y)
     local cp, cr, crp, cx, cy = region:GetPoint(i)
+    if not (ns.CanRead(cp) and ns.CanRead(crp) and ns.CanRead(cx) and ns.CanRead(cy)) then
+        return false
+    end
     return cp == point and cr == rel and crp == relPoint
         and math.abs((cx or 0) - x) < 0.01 and math.abs((cy or 0) - y) < 0.01
 end
@@ -353,7 +361,8 @@ end
 -- something differs from the wanted state.
 local function place(region, w, h, p1, r1, rp1, x1, y1, p2, r2, rp2, x2, y2)
     local want = p2 and 2 or 1
-    local same = region:GetNumPoints() == want
+    local n = region:GetNumPoints()
+    local same = ns.CanRead(n) and n == want
         and samePoint(region, 1, p1, r1, rp1, x1, y1)
         and (not p2 or samePoint(region, 2, p2, r2, rp2, x2, y2))
     if not same then
@@ -363,7 +372,8 @@ local function place(region, w, h, p1, r1, rp1, x1, y1, p2, r2, rp2, x2, y2)
     end
     if w then
         local cw, ch = region:GetSize()
-        if math.abs((cw or 0) - w) > 0.01 or math.abs((ch or 0) - h) > 0.01 then
+        if not (ns.CanRead(cw) and ns.CanRead(ch))
+            or math.abs((cw or 0) - w) > 0.01 or math.abs((ch or 0) - h) > 0.01 then
             region:SetSize(w, h)
         end
     end
