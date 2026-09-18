@@ -179,6 +179,7 @@ end
 -- Runs on ADDON_LOADED, once SavedVariables exist.
 function ns:InitDB()
     local freshInstall  = (VuloForeverUIDB == nil)
+    local charWasNil    = (VuloForeverUICharDB == nil)
     VuloForeverUIDB     = VuloForeverUIDB     or {}
     VuloForeverUICharDB = VuloForeverUICharDB or {}
 
@@ -198,7 +199,18 @@ function ns:InitDB()
     VuloForeverUIDB.classAssignments  = VuloForeverUIDB.classAssignments  or {}
 
     VuloForeverUIDB.global = ns:ApplyDefaults(VuloForeverUIDB.global, ns.defaults.global)
-    if freshInstall then VuloForeverUIDB.global.setupDone = false end
+    if freshInstall then
+        VuloForeverUIDB.global.setupDone = false
+        -- Said out loud, and kept: a database that arrives empty although the
+        -- player had settings is the one failure that looks like nothing at
+        -- all. The log survives in the file, so the next report can show how
+        -- often it happened and whether the character file was gone too.
+        local log = VuloForeverUIDB.global.freshLog or {}
+        log[#log + 1] = date("%Y-%m-%d %H:%M:%S") .. (charWasNil and " char=nil" or " char=kept")
+        while #log > 8 do table.remove(log, 1) end
+        VuloForeverUIDB.global.freshLog = log
+        note(L["No saved settings were found at this login, so the addon started from defaults."])
+    end
 
     -- The logout scrub parks its count here; saying it out loud is the whole
     -- point — a player whose settings kept resetting needs to see the cause.
