@@ -17,6 +17,7 @@ Libs\LibEditModeOverride\LibEditModeOverride.xml
 
 Core\Namespace.lua
 Core\Locale.lua
+Locales\deDE.lua
 Core\Utils.lua
 Core\Slash.lua
 Core\Secret.lua
