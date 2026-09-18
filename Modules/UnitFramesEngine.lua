@@ -370,19 +370,121 @@ function UF.SetEventsEnabled(f, on)
     end
 end
 
--- TEMP (removed in Task 4): create the frames from chat for the engine probe
-ns:RegisterSlash({ key = "UFPROBE", commands = { "/vfufprobe" },
-    desc = "Temporary: create raw unit frames for the engine probe." })
-ns.Slash.UFPROBE = function()
-    local mods = ns.db and ns.db.profile and ns.db.profile.modules
-    if not mods then ns:Print("db not ready"); return end
-    mods.unitframes = mods.unitframes or {}
-    local db = mods.unitframes
-    db.player = db.player or { x = -260, y = -180, scale = 1 }
-    db.target = db.target or { x =  260, y = -180, scale = 1 }
-    local p = UF.CreateUnitFrame("player", db.player, "PLAYER")
-    local t = UF.CreateUnitFrame("target", db.target, "TARGET")
-    UF.SetSkin(p, "classic", { unit = "player", playerElite = true })
-    UF.SetSkin(t, "classic", { unit = "target" })
-    ns:Print("probe frames up: %s %s", p:GetName(), t:GetName())
+-- ------------------------------------------------ silencing Blizzard's --
+
+-- Blizzard's frames are not hidden with Hide(): Edit Mode and their own
+-- update paths would show them again. They are SILENCED -- events off -- and
+-- their visible content parked. Two recipes, because the pet frame is a
+-- child of PlayerFrame (Mainline/PetFrame.xml, parent="PlayerFrame") and we
+-- do not own it: PlayerFrame keeps its parent and only its content
+-- containers go, TargetFrame moves whole to a hidden parent (its children
+-- -- spell bar, target-of-target -- are ours to lose in the first version).
+local hiddenParent = CreateFrame("Frame")
+hiddenParent:Hide()
+
+local silenced = {}
+local pending  = {}
+
+local function unregisterTree(frame, skip)
+    if not frame or frame == skip then return end
+    if frame.UnregisterAllEvents then frame:UnregisterAllEvents() end
+    local kids = { frame:GetChildren() }
+    for i = 1, #kids do unregisterTree(kids[i], skip) end
+end
+
+local function keepHidden(region)
+    if region._vfuiKeepHidden then return end
+    region._vfuiKeepHidden = true
+    hooksecurefunc(region, "Show", function(self)
+        if silenced[self] then C_Timer.After(0, function() self:Hide() end) end
+    end)
+end
+
+local function silencePlayer()
+    local pf = _G.PlayerFrame
+    if not pf or silenced.player then return end
+    unregisterTree(pf, _G.PetFrame)
+    pf:EnableMouse(false)
+    for _, key in ipairs({ "PlayerFrameContainer", "PlayerFrameContent" }) do
+        local c = pf[key]
+        if c then
+            silenced[c] = true
+            c:Hide()
+            keepHidden(c)
+        end
+    end
+    silenced.player = true
+end
+
+local function silenceTarget()
+    local tf = _G.TargetFrame
+    if not tf or silenced.target then return end
+    unregisterTree(tf, nil)
+    tf:Hide()
+    tf:SetParent(hiddenParent)
+    if not tf._vfuiParentHook then
+        tf._vfuiParentHook = true
+        hooksecurefunc(tf, "SetParent", function(self, parent)
+            if parent ~= hiddenParent and silenced.target and not ns:InCombat() then
+                C_Timer.After(0, function() self:SetParent(hiddenParent) end)
+            end
+        end)
+    end
+    silenced.target = true
+end
+
+local SILENCER = { player = silencePlayer, target = silenceTarget }
+
+function UF.SilenceBlizzard(unit)
+    local fn = SILENCER[unit]
+    if fn then fn() end
+end
+
+local function flushPending()
+    for unit in pairs(pending) do
+        pending[unit] = nil
+        UF.SilenceBlizzard(unit)
+    end
+end
+
+function UF.SilenceBlizzardDeferred(unit)
+    if ns:InCombat() then
+        pending[unit] = true
+        ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", flushPending)
+    else
+        UF.SilenceBlizzard(unit)
+    end
+end
+
+function UF.IsBlizzardSilenced(unit)
+    return silenced[unit] == true
+end
+
+-- -------------------------------------------------------- activation --
+
+local LABELS = {
+    player = "|cffffffffPLAYER FRAME|r",
+    target = "|cffffffffTARGET FRAME|r",
+}
+
+function UF.ActivateOwnFrames(mod)
+    if mod.db.style ~= "modern" then return end
+    for _, unit in ipairs({ "player", "target" }) do
+        local f = UF.CreateUnitFrame(unit, mod.db[unit], LABELS[unit])
+        UF.SetSkin(f, "modern", { unit = unit, portrait = mod.db.portrait })
+        RegisterUnitWatch(f)
+        UF.SetEventsEnabled(f, true)
+        UF.SilenceBlizzard(unit)
+    end
+end
+
+function UF.DeactivateOwnFrames()
+    for _, unit in ipairs({ "player", "target" }) do
+        local f = UF.Frames[unit]
+        if f then
+            UF.SetEventsEnabled(f, false)
+            UnregisterUnitWatch(f)
+            f:Hide()
+        end
+    end
 end
