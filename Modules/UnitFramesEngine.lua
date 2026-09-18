@@ -385,9 +385,14 @@ hiddenParent:Hide()
 local silenced = {}
 local pending  = {}
 
+-- pcall around every UnregisterAllEvents: frames that Blizzard loads into the
+-- secure environment (the target frame's aura container, TargetFrame.xml:338)
+-- refuse event changes from tainted code with "forbidden aspect
+-- 'EventRegistrations'" (seen 2026-09-18). They stay registered but hidden
+-- with their parent, which is all the silencing needs from them.
 local function unregisterTree(frame, skip)
     if not frame or frame == skip then return end
-    if frame.UnregisterAllEvents then frame:UnregisterAllEvents() end
+    if frame.UnregisterAllEvents then pcall(frame.UnregisterAllEvents, frame) end
     local kids = { frame:GetChildren() }
     for i = 1, #kids do unregisterTree(kids[i], skip) end
 end
