@@ -43,6 +43,7 @@ UI\EditMode.lua
 
 Modules\GlobalSettings.lua
 Modules\Profiles.lua
+Modules\BarSetups.lua
 Modules\Minimap.lua
 
 Core\Init.lua
