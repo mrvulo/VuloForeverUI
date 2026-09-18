@@ -1,4 +1,4 @@
--- VuloForeverUI / Modules / UnitFrames
+-- VuloForeverUI / Modules / UnitFrames / UnitFrames
 --
 -- Unit frames in three styles. Standard keeps Blizzard's frames and lays
 -- extras on them (UnitFramesExtras). Classic keeps Blizzard's frames too and

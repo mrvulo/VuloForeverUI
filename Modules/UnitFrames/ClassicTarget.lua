@@ -1,4 +1,4 @@
--- VuloForeverUI / Modules / UnitFramesClassicTarget
+-- VuloForeverUI / Modules / UnitFrames / ClassicTarget
 --
 -- Target, focus and their target-of-target frames in the Classic style: a
 -- port of the second reference's target skin. Numbers and region paths are

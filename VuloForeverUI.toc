@@ -46,14 +46,14 @@ Modules\GlobalSettings.lua
 Modules\Profiles.lua
 Modules\BarSetups.lua
 Modules\Minimap.lua
-Modules\UnitFramesSkins.lua
-Modules\UnitFramesEngine.lua
-Modules\UnitFramesExtras.lua
-Modules\UnitFramesClassic.lua
-Modules\UnitFramesClassicPlayer.lua
-Modules\UnitFramesClassicTarget.lua
-Modules\UnitFramesClassicCastBar.lua
-Modules\UnitFramesClassicPet.lua
-Modules\UnitFrames.lua
+Modules\UnitFrames\Skins.lua
+Modules\UnitFrames\Engine.lua
+Modules\UnitFrames\Extras.lua
+Modules\UnitFrames\Classic.lua
+Modules\UnitFrames\ClassicPlayer.lua
+Modules\UnitFrames\ClassicTarget.lua
+Modules\UnitFrames\ClassicCastBar.lua
+Modules\UnitFrames\ClassicPet.lua
+Modules\UnitFrames\UnitFrames.lua
 
 Core\Init.lua

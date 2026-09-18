@@ -1,4 +1,4 @@
--- VuloForeverUI / Modules / UnitFramesClassicCastBar
+-- VuloForeverUI / Modules / UnitFrames / ClassicCastBar
 --
 -- The target and focus cast bar in the Classic style: a port of the second
 -- reference's cast bar skin (its boss bars are not part of this round).

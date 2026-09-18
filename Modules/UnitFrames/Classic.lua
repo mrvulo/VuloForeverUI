@@ -1,4 +1,4 @@
--- VuloForeverUI / Modules / UnitFramesClassic
+-- VuloForeverUI / Modules / UnitFrames / Classic
 --
 -- The Classic style, shared part. The style is a port of the second
 -- reference's unit-frame skin: Blizzard's PlayerFrame, TargetFrame, FocusFrame

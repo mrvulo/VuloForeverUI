@@ -40,7 +40,9 @@ the full retail 12.x in-combat addon restrictions, with Classic-style art and a 
 Core/      framework: namespace, db/profiles, module + slash registry, events,
            scheduler, mover, media, secret-value layer
 UI/        settings window, widgets, options builder, own Edit Mode HUD
-Modules/   feature modules (GlobalSettings, Profiles, Minimap so far)
+Modules/   feature modules: single files (GlobalSettings, Profiles, BarSetups,
+           Minimap); a module of several files gets its own folder
+           (Modules/UnitFrames/)
 Media/     fonts, textures, icons
 Libs/      LibStub, CallbackHandler, LibSharedMedia, LibDataBroker, LibDeflate,
            LibEditModeOverride

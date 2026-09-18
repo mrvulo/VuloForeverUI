@@ -1,4 +1,4 @@
--- VuloForeverUI / Modules / UnitFramesClassicPet
+-- VuloForeverUI / Modules / UnitFrames / ClassicPet
 --
 -- The pet frame in the Classic style: a port of the second reference's pet
 -- skin. It is all one-time work -- PetFrameMixin:Update

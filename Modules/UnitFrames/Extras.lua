@@ -1,4 +1,4 @@
--- VuloForeverUI / Modules / UnitFramesExtras
+-- VuloForeverUI / Modules / UnitFrames / Extras
 --
 -- The Standard style: Blizzard's PlayerFrame and TargetFrame stay, we lay
 -- three things on top -- class colour on the health bar, a threat readout on

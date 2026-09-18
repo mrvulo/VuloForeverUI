@@ -1,4 +1,4 @@
--- VuloForeverUI / Modules / UnitFramesSkins
+-- VuloForeverUI / Modules / UnitFrames / Skins
 --
 -- The two looks an own unit frame can wear, as DATA. The engine creates every
 -- child once; a skin only says where each one sits, how big it is and which

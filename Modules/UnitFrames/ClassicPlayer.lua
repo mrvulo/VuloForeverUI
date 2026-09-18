@@ -1,4 +1,4 @@
--- VuloForeverUI / Modules / UnitFramesClassicPlayer
+-- VuloForeverUI / Modules / UnitFrames / ClassicPlayer
 --
 -- The player frame of the Classic style, vehicle art included: a port of the
 -- second reference's player skin. Numbers and region paths are the
