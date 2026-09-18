@@ -1663,3 +1663,45 @@ function Classic.IsActive() return active end
 ## Task 7 (was 6): Review, docs, memory — unchanged, plus
 
 Attack items for the review of `UnitFramesClassic.lua`: every `SetPoint`/`SetSize`/`SetParent`/`Hide` on a Blizzard region — is the region a protected frame (`IsProtected()`), and is the call gated on out-of-combat? Any Lua field write into a Blizzard table? Any hooked global that does not exist on Forever?
+
+---
+
+# Amendment B (2026-09-18) — Task 6b: Modern look, from the reference's defaults
+
+Runs after Task 5 (Extras), before Task 6a or in parallel with it (different files: this task touches only `Modules/UnitFramesSkins.lua`, `Modules/UnitFramesEngine.lua` painters, `Modules/UnitFrames.lua` defaults).
+
+Numbers below are the reference's DEFAULT look on retail (scouted 2026-09-18, version 9.1.8), adjusted to the user's own setup (no portrait). Routine lane (`codex-implementer`).
+
+**Changes to `UF.Skins.modern` (`Modules/UnitFramesSkins.lua`):**
+
+| Key | Value |
+|---|---|
+| `width`, `height` | 181 × 52 (health 46 + power 6, zero gap) |
+| `flat` | true; `ns.UI:StyleBackdrop(frame, { bg = { r = 0.067, g = 0.067, b = 0.067, a = 1 }, border = { r = 0, g = 0, b = 0, a = 1 } })` — 1-px solid black border around the whole block, near-black ground; **no shadow, no accent line** (call `CreateShadow` no longer; hide `AccentLine`) |
+| `barTexture` | `function() return "Interface\\Buttons\\WHITE8X8" end` (flat solid; the profile's LibSharedMedia texture is offered as an option later, not now) |
+| `health` | `{ "TOPLEFT", "TOPLEFT", 1, -1, 179, 45 }` — fill alpha 0.9 via `frame.Health:GetStatusBarTexture():SetAlpha(0.9)`; bar bg `bar.bg` colour `0.067, 0.067, 0.067, 1` |
+| `power` | `{ "TOPLEFT", "BOTTOMLEFT", 0, 0, 179, 6, onBar = "health" }` flush under the health bar; bar bg `17/255, 17/255, 17/255, 1` |
+| `portrait` | `{ "TOPRIGHT", "TOPLEFT", 0, 0, 52, 52 }` for the player (attached LEFT, flush, square, 2D), mirrored to the right for the target; **default `portrait = false`** in the module db (the user runs it off); `PortraitBG` ground `0.1, 0.1, 0.1, 1`, no accent colour |
+| `name` | `{ "LEFT", "LEFT", 5, 0, 110, 12, justify = "LEFT", onBar = "health" }` |
+| `level` | nil (hidden) — the reference shows no level on player/target by default |
+| `healthText` | `{ "RIGHT", "RIGHT", -5, 0, 90, 12, justify = "RIGHT", onBar = "health" }` — ONE string, format `"%s | %s%%"` (see painter change) |
+| `healthPct` | nil (folded into `healthText`) |
+| `powerText` | nil (off by default) |
+| `threatText` | `{ "BOTTOM", "TOP", 0, 3, 120, 12 }` (unchanged) |
+| `classIcon` | nil (off by default in the reference; keep the region hidden) |
+| `tag` | nil |
+| `font` / `fontNumbers` | `{ nil, 12, "" }` — Expressway (= `ns.UI.FONT_PATH`) 12 pt, **no outline**, drop shadow `SetShadowColor(0,0,0,1)`, `SetShadowOffset(1,-1)` (apply in `applyFont` when the flags string is empty) |
+
+**Painter change (`Modules/UnitFramesEngine.lua`, `paintHealth`):** when `f.skin.flat` and `f.skin.healthPct == nil`, write the combined string:
+```lua
+f.HealthText:SetFormattedText("%s | %d%%",
+    AbbreviateNumbers(UnitHealth(unit)),
+    UnitHealthPercent(unit, true, CurveConstants.ScaleTo100))
+```
+Both arguments stay secret and untouched. Dead/ghost/offline keep their single word. Health colour: class colour for players, reaction colour (`FACTION_BAR_COLORS[UnitReaction(unit, "player")]`, guarded with `ns.CanRead`) for NPCs, the curve only when neither is readable.
+
+**Player combat indicator (small, readable data):** a 22×22 texture centred on the player health bar, shown while `UnitAffectingCombat("player")` (readable boolean), texture `Interface\\CharacterFrame\\UI-StateIcon` texcoords `0.5, 1, 0, 0.5` (Blizzard's crossed swords). Driven by `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED` on the player frame's `globalEvents`. A combat **timer** text (`[mm:ss]` since `PLAYER_REGEN_DISABLED`, `GetTime()` arithmetic on our own timestamps only) left of the swords is a later option, not in this task.
+
+**Module defaults (`Modules/UnitFrames.lua`):** `portrait = false`; `player = { x = -317, y = -193, scale = 1 }`, `target = { x = 317, y = -201, scale = 1 }`.
+
+**Probe:** style Modern → 181×52 near-black blocks with a 1-px black border, class-coloured health at 90 % alpha, 6-px power sliver, name left, `1.2k | 100%` right, no portrait; crossed swords appear on the player frame in combat and vanish after. `/vfsecrets` mid-fight prints.
