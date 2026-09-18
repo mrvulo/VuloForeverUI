@@ -64,13 +64,17 @@ end
 
 -- Health and power as a bar fill, secret-safe.
 --
--- The bar is scaled 0..100 and fed the PERCENT, because UnitHealthPercent
--- hands us the percentage directly: dividing a secret current by a secret max
--- ourselves is exactly the arithmetic that throws. The percent is still a
+-- The bar is scaled 0..1 and fed the FRACTION, because UnitHealthPercent
+-- hands us the fraction directly: dividing a secret current by a secret max
+-- ourselves is exactly the arithmetic that throws. The fraction is still a
 -- secret, and SetMinMaxValues/SetValue accept one.
+--
+-- 0..1, not 0..100: the raw return is a fraction (Blizzard's own
+-- CurveConstants.ScaleTo100 exists to turn it into a percent). A bar scaled
+-- to 100 showed a 62 % player as empty (seen 2026-09-18).
 function ns:SetHealthFill(bar, unit, usePredicted)
     if not bar or not unit then return end
-    bar:SetMinMaxValues(0, 100)
+    bar:SetMinMaxValues(0, 1)
     bar:SetValue(UnitHealthPercent(unit, usePredicted ~= false))
 end
 
