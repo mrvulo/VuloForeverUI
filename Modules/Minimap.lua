@@ -7,8 +7,8 @@ local mod = ns:RegisterModule("minimap", {
     group       = "Core",
     description = "Shows a button on the minimap to quickly open VuloForeverUI. Shift+drag moves the button.",
     defaults = {
-        angle  = 215,       -- degrees on the minimap (0 = top, 90 = right, 180 = bottom, 270 = left)
-        radius = 80,        -- distance from the minimap center
+        angle  = 215,       -- degrees on the minimap (0 = right, 90 = top, 180 = left, 270 = bottom)
+        -- radius: distance from the minimap center; unset = sit on the rim (see edgeRadius)
         hide   = false,     -- hide completely
     },
 })
@@ -90,10 +90,16 @@ local function createButton()
     return button
 end
 
+-- the rim follows the minimap's actual size, so the button stays on the edge
+-- whatever size the client or another setting gives the minimap
+local function edgeRadius()
+    return math.floor((Minimap:GetWidth() or 140) / 2 + 10 + 0.5)
+end
+
 local function updatePosition()
     if not button then return end
     local angle  = math.rad(mod.db.angle or 215)
-    local radius = mod.db.radius or 80
+    local radius = mod.db.radius or edgeRadius()
     local x = radius * math.cos(angle)
     local y = radius * math.sin(angle)
     button:ClearAllPoints()
@@ -169,8 +175,8 @@ function mod:GetOptions()
         },
         {
             type = "slider", label = L["Distance from center"],
-            min = 50, max = 120, step = 1,
-            get = function() return mod.db.radius end,
+            min = 50, max = 160, step = 1,
+            get = function() return mod.db.radius or edgeRadius() end,
             set = function(_, v) mod.db.radius = v; updatePosition() end,
         },
         {

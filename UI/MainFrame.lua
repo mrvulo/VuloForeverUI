@@ -148,10 +148,10 @@ function UI:CreateMainFrame()
         0.045, 0.045, 0.06, 1,
         0.085, 0.085, 0.11, 1)
 
-    -- the icon supplies the leading "V", the text starts at "uloClassicUI"
+    -- the icon supplies the leading "V", the text starts at "uloForeverUI"
     local title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     UI.Font(title, 15)
-    title:SetText((ns.C and ns.C.accent or "|cff9b6cff") .. "uloClassicUI|r")
+    title:SetText((ns.C and ns.C.accent or "|cff9b6cff") .. "uloForeverUI|r")
     local _, titleFontSize = title:GetFont()
     local iconSize = (titleFontSize or 14) + 4
 
