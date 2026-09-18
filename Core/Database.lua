@@ -200,6 +200,7 @@ function ns:InitDB()
 
     VuloForeverUIDB.global = ns:ApplyDefaults(VuloForeverUIDB.global, ns.defaults.global)
     if freshInstall then
+        ns._freshDatabase = true
         VuloForeverUIDB.global.setupDone = false
         -- Said out loud, and kept: a database that arrives empty although the
         -- player had settings is the one failure that looks like nothing at

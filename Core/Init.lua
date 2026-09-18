@@ -4,6 +4,28 @@
 local _, ns = ...
 local L = ns.L
 
+-- TEMP load probe (2026-09-18): the saved database arrives nil at ADDON_LOADED
+-- on this client although the file on disk is valid. Records what the two
+-- saved globals look like at every step of the load, and says so at login when
+-- the database came up fresh. Remove once the cause is known.
+local svProbe = { "lastfile:" .. type(_G.VuloForeverUIDB) .. "/" .. type(_G.VuloForeverUICharDB) }
+ns._svProbe = svProbe
+do
+    local probe = CreateFrame("Frame")
+    for _, ev in ipairs({ "ADDON_LOADED", "VARIABLES_LOADED", "SAVED_VARIABLES_TOO_LARGE",
+                          "PLAYER_LOGIN", "PLAYER_ENTERING_WORLD" }) do
+        pcall(probe.RegisterEvent, probe, ev)
+    end
+    local seen = 0
+    probe:SetScript("OnEvent", function(_, event, arg1)
+        seen = seen + 1
+        if seen > 40 then return end
+        if event == "ADDON_LOADED" and arg1 ~= ns.NAME then return end
+        svProbe[#svProbe + 1] = event .. ":" .. tostring(arg1) .. ":"
+            .. type(_G.VuloForeverUIDB) .. "/" .. type(_G.VuloForeverUICharDB)
+    end)
+end
+
 local initFrame = CreateFrame("Frame")
 initFrame:RegisterEvent("ADDON_LOADED")
 initFrame:RegisterEvent("PLAYER_LOGIN")
@@ -35,6 +57,9 @@ initFrame:SetScript("OnEvent", function(_, event, addonName)
             ns:Print(unpack(n))
         end
         ns.migrationNotes = nil
+        if ns._freshDatabase then
+            ns:Print("load probe: %s", table.concat(svProbe, "  "))
+        end
         -- Fresh account: the first-time setup (UI/Setup.lua) opens once.
         if ns.MaybeShowSetup then ns:MaybeShowSetup() end
     end
