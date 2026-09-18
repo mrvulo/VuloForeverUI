@@ -18,17 +18,32 @@
 --     :486 ManaBar, :515-:530 $parentDebuff1..4), :556 TargetFrame,
 --     :579 FocusFrame
 --   Mainline/TargetFrame.lua  :280 CheckLevel, :366 CheckBattlePet,
---     :380 CheckClassification, :527 AnchorAuraContainer, :724 totFrame
+--     :380 CheckClassification, :724 totFrame; :527 AnchorAuraContainer is
+--     deliberately NOT hooked (see the aura anchor below)
 --   Mainline/UnitFrame.lua    :1005 UnitFrame_UpdateThreatIndicator
 --
 -- Two things Blizzard does on EVERY target change, in combat too, that the
 -- reference answers with SetSize / SetPoint and we, under the combat gate,
 -- cannot (Mainline/TargetFrame.lua:393-:426, both SetAtlas calls pass
 -- UseAtlasSize):
---   * FrameTexture is resized to the retail atlas. Ours carries TWO anchors
---     (the reference's TOPLEFT 20,-4 plus the BOTTOMRIGHT that makes it
---     232 x 100), and two anchors outrank an explicit size -- the resize has
---     no effect, only the texture file is swapped back, which is paint.
+--   * FrameTexture is resized to the retail atlas and gets the retail file
+--     back. The art is therefore a texture of OURS on the container (same
+--     layer, same 232 x 100 at TOPLEFT 20,-4, laid out once); a new
+--     classification only swaps its file, which is paint.
+--   * Blizzard's FrameTexture stays, at alpha 0, as the AURA ANCHOR. The
+--     aura container cannot be moved from here: its template sits in
+--     <ScopedModifier useForbiddenObjectTable="true"> and carries
+--     <ForbiddenAspect aspect="UntrustedLayoutScriptExecution"/>
+--     (Shared/TargetFrameAuraContainer.xml:3, :34) -- layout calls from addon
+--     code are what that refuses, and the reference's SetPoint on it would be
+--     combat-deferred here on top (seen 2026-09-18: debuffs ~30 px too low,
+--     i.e. exactly Blizzard's own anchor). Blizzard's secure code anchors
+--     the container itself, in combat too: TOPLEFT to FrameTexture's
+--     BOTTOMLEFT + (5, 9) (Mainline/TargetFrame.lua:5-6, :550). The reference
+--     wants BOTTOMLEFT of a 232 x 100 art at 20,-4 plus (5, 32), which is
+--     (25, -72); so FrameTexture's BOTTOMLEFT is put at (20, -81) and
+--     Blizzard's + (5, 9) lands there by itself. Two anchors hold that shape
+--     against the UseAtlasSize resize -- they outrank an explicit size.
 --   * the threat Flash is resized the same way, and its Classic geometry
 --     differs by classification, so one fixed anchor pair cannot hold it.
 --     Blizzard's Flash goes to alpha 0 and three textures of ours (normal,
@@ -67,7 +82,9 @@ local function parts(frame)
     if not (container and main and ctx and hc and hc.HealthBar and main.ManaBar) then return nil end
     return {
         frame = frame, container = container, main = main, ctx = ctx,
-        hc = hc, hb = hc.HealthBar, mb = main.ManaBar, art = container.FrameTexture,
+        hc = hc, hb = hc.HealthBar, mb = main.ManaBar,
+        art = Classic.State(frame).art,            -- ours, nil before setup
+        auraAnchor = container.FrameTexture,       -- Blizzard's, alpha 0
     }
 end
 
@@ -123,8 +140,10 @@ local function checkClassification(frame)
     local minus = class == "minus"
 
     Classic.Guard("target.classification", function()
-        p.art:SetTexture(ART .. look[1])
-        p.art:SetTexCoord(ART_COORDS[1], ART_COORDS[2], ART_COORDS[3], ART_COORDS[4])
+        if p.art then
+            p.art:SetTexture(ART .. look[1])
+            p.art:SetTexCoord(ART_COORDS[1], ART_COORDS[2], ART_COORDS[3], ART_COORDS[4])
+        end
         p.main.ReputationColor:SetAlpha(minus and 0 or 1)
         overlay.ManaBar:SetAlpha(minus and 0 or 1)
         s.flashKind = look[2]
@@ -180,22 +199,10 @@ end
 
 local function checkBattlePet(frame)
     local p = parts(frame)
-    if not p or not p.ctx.PetBattleIcon then return end
+    if not p or not p.art or not p.ctx.PetBattleIcon then return end
     Classic.Layout("target.battlepet.layout." .. frame.unit, function()
         p.ctx.PetBattleIcon:ClearAllPoints()
         p.ctx.PetBattleIcon:SetPoint("CENTER", p.art, "RIGHT", -44, 10)
-    end)
-end
-
--- The container is read from its parentKey (TargetFrame.lua:493 returns the
--- same field) rather than through Blizzard's method.
-local function anchorAuras(frame)
-    local p = parts(frame)
-    local auras = p and p.ctx.Auras
-    if not auras then return end
-    Classic.Layout("target.auras.layout." .. frame.unit, function()
-        auras:ClearAllPoints()
-        auras:SetPoint("TOPLEFT", p.art, "BOTTOMLEFT", 5, 32)
     end)
 end
 
@@ -294,6 +301,11 @@ local function setup(frame, unit)
     overlay:SetAlpha(1)
 
     local s = Classic.State(frame)
+    -- every Enable: Blizzard's art out, ours in (Disable turns this round)
+    Classic.Guard("target.art.alpha", function()
+        p.auraAnchor:SetAlpha(0)
+        if s.art then s.art:SetAlpha(1) end
+    end)
     if s.isSetUp then return end
     s.isSetUp = true
 
@@ -319,14 +331,29 @@ local function setup(frame, unit)
         createFlash(frame)
     end)
 
+    -- Our art, on the layer Blizzard's FrameTexture has (TargetFrame.xml:77:
+    -- BACKGROUND 2, one above the portrait).
+    Classic.Guard("target.setup.art", function()
+        if not s.art then
+            local art = container:CreateTexture(nil, "BACKGROUND", nil, 2)
+            art:SetSize(232, 100)
+            art:SetPoint("TOPLEFT", 20, -4)
+            art:SetTexture(ART)
+            art:SetTexCoord(ART_COORDS[1], ART_COORDS[2], ART_COORDS[3], ART_COORDS[4])
+            Classic.Unsnap(art)     -- as Blizzard's FrameTexture (TargetFrame.xml:78)
+            s.art = art
+        end
+        p.art = s.art
+    end)
+
     Classic.Layout("target.setup.layout." .. unit, function()
         ctx:SetFrameStrata("MEDIUM")
         container:SetFrameStrata("MEDIUM")
 
-        p.art:SetSize(232, 100)
-        p.art:ClearAllPoints()
-        p.art:SetPoint("TOPLEFT", 20, -4)
-        p.art:SetPoint("BOTTOMRIGHT", container, "TOPLEFT", 252, -104)
+        -- the aura anchor, see the header: BOTTOMLEFT at (20, -81)
+        p.auraAnchor:ClearAllPoints()
+        p.auraAnchor:SetPoint("TOPLEFT", 20, -4)
+        p.auraAnchor:SetPoint("BOTTOMRIGHT", container, "TOPLEFT", 252, -81)
 
         container.Portrait:SetSize(64, 64)
         container.Portrait:ClearAllPoints()
@@ -411,7 +438,6 @@ Classic.RegisterPart({
                 hookMethod(frame, "CheckBattlePet", checkBattlePet)
                 hookMethod(frame, "CheckClassification", checkClassification)
                 hookMethod(frame, "CheckLevel", checkLevel)
-                hookMethod(frame, "AnchorAuraContainer", anchorAuras)
             end
         end
         if type(_G.UnitFrame_UpdateThreatIndicator) == "function" then
@@ -434,7 +460,6 @@ Classic.RegisterPart({
                     checkClassification(frame)
                     checkLevel(frame)
                     checkBattlePet(frame)
-                    anchorAuras(frame)
                     Classic.Guard("target.feed", Classic.UpdateFrame, overlays[frame])
                 end
             end
@@ -446,6 +471,9 @@ Classic.RegisterPart({
     disable = function()
         for frame, overlay in pairs(overlays) do
             overlay:SetAlpha(0)
+            local art, p = Classic.State(frame).art, parts(frame)
+            if art then art:SetAlpha(0) end
+            if p then p.auraAnchor:SetAlpha(1) end
             Classic.Guard("target.flash", syncFlash, frame)
         end
     end,

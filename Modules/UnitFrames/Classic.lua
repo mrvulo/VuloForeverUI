@@ -164,6 +164,20 @@ end
 -- fallbacks are left out.
 ------------------------------------------------------------------------------
 
+-- Blizzard's frame art is NOT snapped to the pixel grid (PlayerFrame.xml:48,
+-- TargetFrame.xml:78: snapToPixelGrid="false" texelSnappingBias="0.0"), and
+-- Blizzard un-snaps its own bar fills to match (Mainline/PlayerFrame.lua:28-30,
+-- TargetFrame.lua:77-79). A texture of ours that keeps the default snapping
+-- lands up to a pixel beside the art, depending on where the frame happens to
+-- sit on screen -- one frame fits, the other does not (seen 2026-09-18 on
+-- the player). Everything of ours that has to line up with the art goes
+-- through here.
+function Classic.Unsnap(tex)
+    if not tex or not tex.SetSnapToPixelGrid then return end
+    tex:SetSnapToPixelGrid(false)
+    tex:SetTexelSnappingBias(0)
+end
+
 local function paintHealthColor(f)
     local r, g, b = 0, 1, 0
     if mod and mod.db and mod.db.classicClassColor then
@@ -223,6 +237,7 @@ function Classic.UpdatePower(f)
         info = (powerType and PowerBarColor[powerType]) or PowerBarColor.MANA
         bar:SetStatusBarColor(info.r, info.g, info.b, 1)
     end
+    Classic.Unsnap(bar:GetStatusBarTexture())   -- the fill was just set again
 end
 
 function Classic.UpdateFrame(f)
@@ -266,6 +281,10 @@ function Classic.NewOverlay(parent, unit, events, unitEvents, units)
     f.ManaBar:SetSize(119, 12)
     f.ManaBar:SetStatusBarTexture(BAR)
     f.ManaBar:SetStatusBarColor(0, 0, 1)
+
+    Classic.Unsnap(f.Background)
+    Classic.Unsnap(f.HealthBar:GetStatusBarTexture())
+    Classic.Unsnap(f.ManaBar:GetStatusBarTexture())
 
     for _, e in ipairs(events or {}) do f:RegisterEvent(e) end
     for _, e in ipairs(unitEvents or {}) do f:RegisterUnitEvent(e, unpack(units)) end

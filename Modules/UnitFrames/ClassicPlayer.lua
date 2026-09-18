@@ -104,14 +104,21 @@ local function playerArt()
     Classic.Guard("player.feed", Classic.UpdateFrame, overlay)
 
     Classic.Layout("player.art.layout", function()
+        -- The second anchor pins 232 x 100 whatever anyone does to the size.
+        -- Nothing in Forever resizes these two today -- unlike the target's,
+        -- PlayerFrame_ToPlayerArt sets the atlas WITHOUT UseAtlasSize
+        -- (Mainline/PlayerFrame.lua:673) -- so this is insurance: the art can
+        -- never drift off the overlay, which has the same TOPLEFT.
         local ft = p.container.FrameTexture
         ft:SetSize(232, 100)
         ft:ClearAllPoints()
         ft:SetPoint("TOPLEFT", -19, -4)
+        ft:SetPoint("BOTTOMRIGHT", p.container, "TOPLEFT", 213, -104)
         local apt = p.container.AlternatePowerFrameTexture
         apt:SetSize(232, 100)
         apt:ClearAllPoints()
         apt:SetPoint("TOPLEFT", -19, -4)
+        apt:SetPoint("BOTTOMRIGHT", p.container, "TOPLEFT", 213, -104)
 
         p.flash:SetParent(p.frame)
         p.flash:SetSize(242, 93)
