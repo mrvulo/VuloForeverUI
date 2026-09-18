@@ -60,8 +60,11 @@ initFrame:SetScript("OnEvent", function(_, event, addonName)
         if ns._freshDatabase then
             ns:Print("load probe: %s", table.concat(svProbe, "  "))
         end
-        -- Fresh account: the first-time setup (UI/Setup.lua) opens once.
-        if ns.MaybeShowSetup then ns:MaybeShowSetup() end
+        -- The first-time setup (UI/Setup.lua) no longer opens by itself: it
+        -- relies on "this database is new", and a client that fails to load
+        -- saved variables (seen client-wide on the beta, 2026-09-18) makes every
+        -- login look new -- an endless loop for the player. /vfui setup and the
+        -- button under Global Settings still open it.
     end
 end)
 
