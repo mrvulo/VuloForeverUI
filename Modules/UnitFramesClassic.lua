@@ -220,71 +220,95 @@ end
 -- Layout: every SetPoint / SetSize / ClearAllPoints, out of combat only.
 -- Anchors relative to the Blizzard root frame, as the Classic XML had them;
 -- `sign` flips the x offsets for the target, `side` the anchor edge.
+--
+-- Idempotent on purpose: the hooks fire on every target change (and Edit
+-- Mode's enter targets the player, which runs both of them), so a region
+-- that already sits where we want it is left alone -- no ClearAllPoints /
+-- SetPoint churn on a protected frame for nothing. Only what Blizzard
+-- actually moved back gets re-anchored.
 ------------------------------------------------------------------------------
 
-local function layout(p)
+local function samePoint(region, i, point, rel, relPoint, x, y)
+    local cp, cr, crp, cx, cy = region:GetPoint(i)
+    return cp == point and cr == rel and crp == relPoint
+        and math.abs((cx or 0) - x) < 0.01 and math.abs((cy or 0) - y) < 0.01
+end
+
+-- One or two anchors plus an optional size; touches the region only when
+-- something differs from the wanted state.
+local function place(region, w, h, p1, r1, rp1, x1, y1, p2, r2, rp2, x2, y2)
+    local want = p2 and 2 or 1
+    local same = region:GetNumPoints() == want
+        and samePoint(region, 1, p1, r1, rp1, x1, y1)
+        and (not p2 or samePoint(region, 2, p2, r2, rp2, x2, y2))
+    if not same then
+        region:ClearAllPoints()
+        region:SetPoint(p1, r1, rp1, x1, y1)
+        if p2 then region:SetPoint(p2, r2, rp2, x2, y2) end
+    end
+    if w then
+        local cw, ch = region:GetSize()
+        if math.abs((cw or 0) - w) > 0.01 or math.abs((ch or 0) - h) > 0.01 then
+            region:SetSize(w, h)
+        end
+    end
+end
+
+-- `barsOnly`: what Blizzard's CheckClassification puts back on every target
+-- change (health container anchor and size). Portrait, mask, name and level
+-- are placed once at Enable and after the player art switches.
+local function layout(p, barsOnly)
     local key, f, sign, side = p.unit, p.frame, p.sign, p.side
     local topSide, bottomSide = "TOP" .. side, "BOTTOM" .. side
 
     guard(key .. ".art", function()
         local s, a = skinFor(p), p.art
-        s.art:ClearAllPoints()
-        s.art:SetSize(a.w, a.h)
-        s.art:SetPoint("CENTER", f, "CENTER", a.x, a.y)
-        s.backdrop:ClearAllPoints()
-        s.backdrop:SetSize(119, 41)
-        s.backdrop:SetPoint(topSide, f, topSide, sign * 89.5, -26)
-    end)
-    guard(key .. ".portrait", function()
-        if not p.portrait then return end
-        p.portrait:ClearAllPoints()
-        p.portrait:SetSize(64, 64)
-        p.portrait:SetPoint(topSide, f, topSide, sign * 24, -16)
-        if p.mask then
-            -- Square, grown 4 px each side; the art's ring hides the corners.
-            p.mask:ClearAllPoints()
-            p.mask:SetPoint("TOPLEFT", p.portrait, "TOPLEFT", -4, 4)
-            p.mask:SetPoint("BOTTOMRIGHT", p.portrait, "BOTTOMRIGHT", 4, -4)
-        end
+        place(s.art, a.w, a.h, "CENTER", f, "CENTER", a.x, a.y)
+        place(s.backdrop, 119, 41, topSide, f, topSide, sign * 89.5, -26)
     end)
     guard(key .. ".health", function()
         local hc = p.healthContainer
         if not hc then return end
-        hc:ClearAllPoints()
-        hc:SetSize(119, 12)
-        hc:SetPoint(topSide, f, topSide, sign * 90, -45)
+        place(hc, 119, 12, topSide, f, topSide, sign * 90, -45)
         if p.health then
-            -- Blizzard anchors the bar TOPLEFT only and sets its height by
-            -- hand in the art switches; two anchors make it follow the
-            -- container no matter what height is set on it afterwards.
-            p.health:ClearAllPoints()
-            p.health:SetPoint("TOPLEFT", hc, "TOPLEFT", 0, 0)
-            p.health:SetPoint("BOTTOMRIGHT", hc, "BOTTOMRIGHT", 0, 0)
+            -- Single anchor plus an explicit size, as Blizzard has it; the
+            -- player art switches set the height by hand and the hook on
+            -- them puts 12 back.
+            place(p.health, 119, 12, "TOPLEFT", hc, "TOPLEFT", 0, 0)
         end
     end)
     guard(key .. ".mana", function()
         if not p.mana then return end
-        p.mana:ClearAllPoints()
-        p.mana:SetSize(119, 12)
-        p.mana:SetPoint(topSide, f, topSide, sign * 90, -56)
+        place(p.mana, 119, 12, topSide, f, topSide, sign * 90, -56)
+    end)
+    if barsOnly then return end
+
+    guard(key .. ".portrait", function()
+        if not p.portrait then return end
+        place(p.portrait, 64, 64, topSide, f, topSide, sign * 24, -16)
+        if p.mask then
+            -- Square, grown 4 px each side; the art's ring hides the corners.
+            place(p.mask, nil, nil,
+                "TOPLEFT", p.portrait, "TOPLEFT", -4, 4,
+                "BOTTOMRIGHT", p.portrait, "BOTTOMRIGHT", 4, -4)
+        end
     end)
     guard(key .. ".name", function()
         if not p.name then return end
-        p.name:ClearAllPoints()
-        p.name:SetSize(100, 12)
-        p.name:SetPoint("CENTER", f, "CENTER", sign * 34, 15)
+        place(p.name, 100, 12, "CENTER", f, "CENTER", sign * 34, 15)
     end)
     guard(key .. ".level", function()
         if not p.level then return end
-        p.level:ClearAllPoints()
-        p.level:SetPoint("CENTER", f, bottomSide, sign * 35.25, 30)
+        place(p.level, nil, nil, "CENTER", f, bottomSide, sign * 35.25, 30)
     end)
 end
 
 ------------------------------------------------------------------------------
 -- Relayout = paint now, layout now or after combat. One PLAYER_REGEN_ENABLED
 -- waiter for both frames; the registry refuses a second registration of the
--- same handler, so a hook firing ten times in a fight arms it once.
+-- same handler, so a hook firing ten times in a fight arms it once. A
+-- deferred layout is always the full one -- idempotent, so it costs nothing
+-- extra.
 ------------------------------------------------------------------------------
 
 local onRegen
@@ -302,17 +326,21 @@ local function relayoutPlayer()
     layout(p)
 end
 
-local function relayoutTarget()
+-- `scope`: nil = paint and full layout; "paint" = textures only (CheckFaction
+-- changes colours, never positions); "bars" = paint plus the bar layout
+-- CheckClassification undoes.
+local function relayoutTarget(scope)
     if not active then return end
     local p = targetParts()
     if not p then return end
     paint(p)
+    if scope == "paint" then return end
     if ns:InCombat() then
         pendingTarget = true
         ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", onRegen)
         return
     end
-    layout(p)
+    layout(p, scope == "bars")
 end
 
 onRegen = function()
@@ -361,14 +389,17 @@ local function installHooks()
         end)
     end
 
-    -- Every target change runs CheckFaction, and CheckClassification resets
-    -- the health container's anchor and the health bar's atlas.
+    -- Every target change runs both: CheckClassification puts the retail
+    -- atlas and anchor back on the health container (bars layout again),
+    -- CheckFaction only recolours the portrait and the name strip (textures
+    -- only, nothing to re-anchor).
     local tf = _G.TargetFrame
     if tf then
-        for _, method in ipairs({ "CheckClassification", "CheckFaction" }) do
-            if type(tf[method]) == "function" then
-                hooksecurefunc(tf, method, relayoutTarget)
-            end
+        if type(tf.CheckClassification) == "function" then
+            hooksecurefunc(tf, "CheckClassification", function() relayoutTarget("bars") end)
+        end
+        if type(tf.CheckFaction) == "function" then
+            hooksecurefunc(tf, "CheckFaction", function() relayoutTarget("paint") end)
         end
     end
 end
