@@ -74,6 +74,46 @@ local function artFile()
 end
 
 ------------------------------------------------------------------------------
+-- Blizzard's health bar is invisible but NOT idle: its secure code keeps
+-- positioning things against it -- the mask of every heal-prediction and
+-- absorb segment is anchored to ITS fill texture
+-- (Shared/StatusBarOverlaySegment.lua:75-76), and the status texts hang on
+-- its container. The reference leaves it where PlayerFrame_ToPlayerArt puts
+-- it (85,-41, 124 x 19; Mainline/PlayerFrame.lua:693-694, :705-706) while its
+-- own bar sits at 87,-45, 119 x 12, so a shield or an incoming heal lands up
+-- to 5 px beside the fill. Here Blizzard's bar gets OUR bar's rectangle, in
+-- frame coordinates; both bars are fed the same values, so every fill edge
+-- agrees. The text offsets below are the reference's positions re-expressed
+-- against that rectangle.
+------------------------------------------------------------------------------
+
+local function alignBlizzardHealth(p, x, y, width)
+    p.hc:SetSize(width, 12)
+    p.hc:SetPoint("TOPLEFT", x, y)
+    p.hb:SetSize(width, 12)
+end
+
+-- The red "just lost" bar. In Blizzard's tree it is a SIBLING of the health
+-- bar, declared before it, both on their parent's level (PlayerFrame.xml:165
+-- and :171, useParentLevel) -- so it draws UNDER the green fill and only the
+-- strip between new and old health shows. The reference makes it a CHILD of
+-- its overlay bar, which puts it on top: red from zero to the old health
+-- (seen 2026-09-18, the whole bar red in a fight). Here it is a sibling
+-- again: child of the overlay, on the overlay's level, one below our bar.
+local function placeLossBar(p)
+    local loss = p.hc.PlayerFrameHealthBarAnimatedLoss
+    if not loss then return end
+    loss:SetParent(overlay)
+    if loss.SetUsingParentLevel then
+        loss:SetUsingParentLevel(true)
+    else
+        loss:SetFrameLevel(overlay:GetFrameLevel())
+    end
+    loss:ClearAllPoints()
+    loss:SetAllPoints(overlay.HealthBar)
+end
+
+------------------------------------------------------------------------------
 -- Player art (reference: its PlayerFrame_ToPlayerArt hook)
 ------------------------------------------------------------------------------
 
@@ -137,9 +177,10 @@ local function playerArt()
         overlay.Background:SetSize(119, 41)
 
         local hb, hc, mb = p.hb, p.hc, p.mb
+        alignBlizzardHealth(p, 87, -45, 119)       -- overlay -19,-4 + bar 106,-41
         hb.TextString:SetPoint("CENTER", hc, "CENTER")
-        hb.LeftText:SetPoint("LEFT", hc, "LEFT", 6, 0)
-        hb.RightText:SetPoint("RIGHT", hc, "RIGHT", -4, 0)
+        hb.LeftText:SetPoint("LEFT", hc, "LEFT", 4, 0)       -- reference: x = 91
+        hb.RightText:SetPoint("RIGHT", hc, "RIGHT", -1, 0)   -- reference: x = 205
 
         for _, key in ipairs({ "MyHealPredictionBar", "OtherHealPredictionBar", "HealAbsorbBar", "TotalAbsorbBar" }) do
             local seg = hb[key]
@@ -157,12 +198,7 @@ local function playerArt()
         hb.OverHealAbsorbGlow:SetPoint("BOTTOMRIGHT", overlay.HealthBar, "BOTTOMLEFT", 7, 0)
         hb.OverHealAbsorbGlow:SetPoint("TOPRIGHT", overlay.HealthBar, "TOPLEFT", 7, 0)
 
-        local loss = hc.PlayerFrameHealthBarAnimatedLoss
-        if loss then
-            loss:SetParent(overlay.HealthBar)
-            loss:ClearAllPoints()
-            loss:SetAllPoints(overlay.HealthBar)
-        end
+        placeLossBar(p)
 
         mb.TextString:SetPoint("CENTER", mb, "CENTER", 0, 3)
         mb.LeftText:SetPoint("LEFT", mb, "LEFT", 6, 3)
@@ -236,9 +272,11 @@ local function vehicleArt()
         overlay.Background:SetSize(114, 41)
 
         local hb, hc, mb = p.hb, p.hc, p.mb
-        hb.TextString:SetPoint("CENTER", hc, "CENTER", -2, -1)
-        hb.LeftText:SetPoint("LEFT", hc, "LEFT", 0, -2)
-        hb.RightText:SetPoint("RIGHT", hc, "RIGHT", -9, -2)
+        alignBlizzardHealth(p, 100, -45, 100)      -- overlay -19,-4 + bar 119,-41
+        hb.TextString:SetPoint("CENTER", hc, "CENTER", -2, 0)   -- reference: 148,-51
+        hb.LeftText:SetPoint("LEFT", hc, "LEFT", -9, -1)        -- reference: x = 91
+        hb.RightText:SetPoint("RIGHT", hc, "RIGHT", 0, -1)      -- reference: x = 200
+        placeLossBar(p)
 
         mb.TextString:SetPoint("CENTER", mb, "CENTER", -2, 3)
         mb.LeftText:SetPoint("LEFT", mb, "LEFT", 0, 3)
@@ -571,6 +609,10 @@ local function setup()
     Classic.Guard("player.setup.bars", function()
         hc:SetAlpha(0)
         p.mba:SetAlpha(0)
+        -- and on the bars themselves, as on the target: no reliance on the
+        -- containers handing their alpha down
+        hb:SetAlpha(0)
+        mb:SetAlpha(0)
         if mask then
             for _, path in ipairs({
                 { "MyHealPredictionBar", "Fill" }, { "OtherHealPredictionBar", "Fill" },
@@ -593,6 +635,8 @@ local function setup()
         local loss = hc.PlayerFrameHealthBarAnimatedLoss
         if mask then loss:GetStatusBarTexture():RemoveMaskTexture(mask) end
         loss:SetStatusBarTexture(BAR)
+        local fill = loss:GetStatusBarTexture()
+        if fill then fill:SetDrawLayer("BACKGROUND") end   -- as its XML has it (:165)
     end)
     Classic.Guard("player.setup.feedback", function()
         local fb = mb.FeedbackFrame
@@ -622,11 +666,20 @@ local function setup()
         mb.LeftText:SetParent(container)
         mb.RightText:SetParent(container)
 
-        -- Art and portrait above our bars, icons above the art; the overlay
-        -- one below the art whatever level PlayerFrame itself sits on.
-        container:SetFrameLevel(4)
-        p.ctx:SetFrameLevel(5)
-        overlay:SetFrameLevel(3)
+        -- Art and portrait above our bars, icons above the art. Counted
+        -- from PlayerFrame's own level N (no frameLevel in its XML, :13, so
+        -- about 1; TargetFrameTemplate has 500): the overlay keeps the N+1 a
+        -- child is born with, its bars are N+2, the segments on them N+3.
+        -- The reference's absolute 4 / 5 assume N = 1 and even then put the
+        -- art level with the segments; an earlier version here pinned the
+        -- overlay to 3, which put our BARS on the art's level 4 -- and on
+        -- equal levels the draw layer decides, ARTWORK fills over BORDER art:
+        -- the bars covered the art's bevel instead of being trimmed by it
+        -- (seen 2026-09-18: player bars thicker than the target's).
+        local base = Classic.Readable(p.frame:GetFrameLevel()) or 1
+        overlay:SetFrameLevel(base + 1)
+        container:SetFrameLevel(base + 5)
+        p.ctx:SetFrameLevel(base + 6)
 
         container.PlayerPortrait:SetSize(64, 64)
         container.PlayerPortrait:SetPoint("TOPLEFT", 23, -16)
@@ -640,6 +693,59 @@ local function setup()
     end)
     Classic.Layout("player.setup.group", function() setupGroupIndicator(p.ctx.GroupIndicator) end)
     Classic.Layout("player.setup.altpower", setupAlternatePowerBar)
+end
+
+------------------------------------------------------------------------------
+-- Self-check, once per session after Enable's layout: the things that make
+-- the difference between "our bars in the art's slots" and "Blizzard's bars
+-- on Classic art". Getters only, each answer tested for readability before
+-- it is compared; one chat line naming what failed.
+------------------------------------------------------------------------------
+
+local checked = false
+
+local function selfCheck()
+    if checked or ns:InCombat() then return end
+    local p = parts()
+    if not p or not overlay then
+        checked = true
+        ns:Print("Classic style self-check: the player frame regions were not found, the player frame is unskinned.")
+        return
+    end
+    if not Classic.Readable(p.frame:IsVisible()) then return end   -- hidden frame: ask again next Enable
+    checked = true
+
+    local failed = {}
+    local function visibleAlpha(region, label)
+        local a = Classic.Readable(region:GetAlpha())
+        if a and a > 0.01 then failed[#failed + 1] = label .. " alpha " .. tostring(a) end
+    end
+    visibleAlpha(p.hc, "HealthBarsContainer")
+    visibleAlpha(p.mba, "ManaBarArea")
+
+    local artLevel = Classic.Readable(p.container:GetFrameLevel())
+    local bars = { { "overlay health bar", overlay.HealthBar }, { "overlay mana bar", overlay.ManaBar } }
+    for _, entry in ipairs(bars) do
+        local label, bar = entry[1], entry[2]
+        if Classic.Readable(bar:IsVisible()) == false then failed[#failed + 1] = label .. " not visible" end
+        local barLevel = Classic.Readable(bar:GetFrameLevel())
+        if barLevel and artLevel and barLevel >= artLevel then
+            failed[#failed + 1] = label .. " level " .. barLevel .. " not below the art level " .. artLevel
+        end
+    end
+
+    local loss = p.hc.PlayerFrameHealthBarAnimatedLoss
+    if loss then
+        local lossLevel = Classic.Readable(loss:GetFrameLevel())
+        local barLevel = Classic.Readable(overlay.HealthBar:GetFrameLevel())
+        if lossLevel and barLevel and lossLevel >= barLevel then
+            failed[#failed + 1] = "loss bar level " .. lossLevel .. " not below the health bar level " .. barLevel
+        end
+    end
+
+    if #failed > 0 then
+        ns:Print("Classic style self-check, player frame: %s", table.concat(failed, "; "))
+    end
 end
 
 ------------------------------------------------------------------------------
@@ -697,6 +803,7 @@ Classic.RegisterPart({
         updateRoles()
         updateStatus()
         if pulse then pulse:Show() end
+        Classic.Guard("player.selfcheck", selfCheck)
     end,
 
     -- Alpha, not Hide(): the overlay is a child of a protected frame, and
