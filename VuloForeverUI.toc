@@ -46,5 +46,6 @@ Modules\Profiles.lua
 Modules\BarSetups.lua
 Modules\Minimap.lua
 Modules\UnitFramesSkins.lua
+Modules\UnitFramesEngine.lua
 
 Core\Init.lua

@@ -10,9 +10,11 @@ local UF = ns.UF
 UF.Skins = {}
 
 local CLASSIC_ART = "Interface\\TargetingFrame\\UI-TargetingFrame"
--- Player art reads the sheet left-to-right; the target frame is the mirror.
-local COORDS_PLAYER = { 0.09375, 1.0, 0, 0.78125 }
-local COORDS_TARGET = { 1.0, 0.09375, 0, 0.78125 }
+-- The sheet draws the portrait ring on the RIGHT, which is the target frame's
+-- side; the player frame reads it mirrored (left > right) to put the ring on
+-- the left. Seen the wrong way round in the client on 2026-09-18.
+local COORDS_PLAYER = { 1.0, 0.09375, 0, 0.78125 }
+local COORDS_TARGET = { 0.09375, 1.0, 0, 0.78125 }
 
 -- Flip a TOPLEFT/TOPRIGHT/BOTTOMLEFT/BOTTOMRIGHT entry to the other side and
 -- negate x, so one table describes both the player and the target frame.
