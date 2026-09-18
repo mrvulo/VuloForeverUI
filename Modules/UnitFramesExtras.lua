@@ -40,12 +40,24 @@ local unitOfBar = {}
 -- Blizzard sets the health bar green inside UnitFrameHealthBar_Update
 -- (Mainline/UnitFrame.lua); we answer AFTER it with the class colour when
 -- the class is readable, and say nothing otherwise.
+--
+-- The retail bar art is a pre-coloured green atlas, so a vertex tint cannot
+-- turn it white or blue (seen 2026-09-18: a priest's bar stayed green). The
+-- bar gets the neutral Classic fill texture first, then the colour.
+local NEUTRAL_BAR = "Interface\TargetingFrame\UI-StatusBar"
+local neutralised = setmetatable({}, { __mode = "k" })   -- our note, not a field on Blizzard's bar
 local function recolor(statusbar, unit)
     if not active or not mod.db.classColor then return end
     unit = unit or unitOfBar[statusbar]
     if not unit then return end
     local r, g, b = UF.ClassColor(unit)
-    if r then statusbar:SetStatusBarColor(r, g, b) end
+    if r then
+        if not neutralised[statusbar] then
+            statusbar:SetStatusBarTexture(NEUTRAL_BAR)
+            neutralised[statusbar] = true
+        end
+        statusbar:SetStatusBarColor(r, g, b)
+    end
 end
 
 local threatFS, threatGlow, classIcons
@@ -56,9 +68,12 @@ local function ensureRegions()
     threatFS = tf:CreateFontString(nil, "OVERLAY")
     ns.UI.Font(threatFS, 11, "OUTLINE")
     threatFS:SetPoint("BOTTOM", tf, "TOP", 0, -2)
+    -- Behind the bars only: a glow the size of the whole frame reads as a red
+    -- slab on the retail art.
+    local bars = targetHealthBar() and targetHealthBar():GetParent() or tf
     threatGlow = tf:CreateTexture(nil, "BACKGROUND", nil, -3)
-    threatGlow:SetPoint("TOPLEFT", tf, "TOPLEFT", 8, -8)
-    threatGlow:SetPoint("BOTTOMRIGHT", tf, "BOTTOMRIGHT", -8, 8)
+    threatGlow:SetPoint("TOPLEFT", bars, "TOPLEFT", -3, 3)
+    threatGlow:SetPoint("BOTTOMRIGHT", bars, "BOTTOMRIGHT", 3, -14)
     threatGlow:Hide()
 
     classIcons = {}
@@ -67,7 +82,8 @@ local function ensureRegions()
             local icon = portrait:GetParent():CreateTexture(nil, "OVERLAY")
             icon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
             icon:SetSize(16, 16)
-            icon:SetPoint("BOTTOMLEFT", portrait, "BOTTOMLEFT", -2, -2)
+            -- top corner: the bottom one is where Blizzard's level circle sits
+            icon:SetPoint("TOPLEFT", portrait, "TOPLEFT", -2, 2)
             icon:Hide()
             classIcons[unit] = icon
         end
