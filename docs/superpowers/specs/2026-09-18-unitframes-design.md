@@ -220,3 +220,30 @@ Target-of-target, focus, pet, party; auras on own frames; cast bars on own
 frames (Blizzard's player cast bar stays as it is; the target cast bar is a
 child of TargetFrame and disappears with it in Classic/Modern — accepted for
 the first version, to be replaced by an own target cast bar later).
+
+## Amendment A (2026-09-18, approved): Classic is a reskin, not an own frame
+
+After Tasks 1-3 were built, a reference addon on this client proved that
+Blizzard's retail PlayerFrame/TargetFrame can be reskinned into the Classic
+look without reading a single unit value: the art goes on an overlay frame,
+Blizzard's own regions (portrait, bars, name, level) are moved to the Classic
+coordinates, and the retail chrome is hidden. Blizzard's untainted code keeps
+driving every bar, text, aura and the target cast bar -- in combat too.
+
+Decision:
+
+- **Standard** -- Blizzard's frames + extras (unchanged).
+- **Classic** -- Blizzard's frames + extras + the Classic reskin
+  (`Modules/UnitFramesClassic.lua`). Keeps target auras, target cast bar,
+  pet frame and Edit Mode. Position is Blizzard's (Edit Mode), not our mover.
+  Switching away from Classic asks for `/reload` (hooks cannot be undone).
+- **Modern** -- our own frame from the engine (unchanged; Tasks 1-3 stand).
+  No auras / no target cast bar in the first version, as before.
+
+Consequences for the sections above: SS2 (engine) and the silencing of
+Blizzard's frames apply to Modern only. SS3's Classic table stays as the
+coordinate source for the reskin (same numbers). SS4 (extras) becomes the
+shared base of Standard and Classic. The reskin rules: widget calls and
+`hooksecurefunc` only, no Lua field writes into Blizzard's frames, textures
+hidden with `Hide()` + `SetAlpha(0)`, protected frames faded with alpha only,
+layout work gated on out-of-combat with one `PLAYER_REGEN_ENABLED` waiter.

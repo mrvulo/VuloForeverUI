@@ -1454,3 +1454,212 @@ EOF
 - **§5 Combat, errors, testing:** every gated action listed sits behind `ns:InCombat()`; Task 6 is the review and the in-game pass. ✔
 - **Placeholders:** none; every step has code or an exact click/`/run` sequence.
 - **Type consistency:** `ns.UF.CreateUnitFrame(unit, db, label)`, `ns.UF.SetSkin(frame, skinName, opts)`, `ns.UF.ApplySkin(frame, skin, opts)`, `ns.UF.Paint(frame)`, `ns.UF.PaintThreat(fs, glow, unit, mobUnit)`, `ns.UF.ClassColor(unit)`, `ns.UF.SetEventsEnabled(frame, on)`, `ns.UF.SilenceBlizzard(unit)`, `ns.UF.ActivateOwnFrames(mod)`, `ns.UF.DeactivateOwnFrames()`, `ns.UF.Extras.Enable(mod)` / `Disable()` — used with the same names and arities in every task.
+
+---
+
+# Amendment A (2026-09-18, approved) — Classic becomes a reskin
+
+Supersedes Task 4's `applyStyle`/options and adds Task 6a. Tasks 1–3 stand
+(committed). Spec: "Amendment A" in `docs/superpowers/specs/2026-09-18-unitframes-design.md`.
+
+Style map after the amendment:
+
+| Style | Blizzard frames | Extras (Task 5) | Classic reskin (Task 6a) | Own frames (engine) |
+|---|---|---|---|---|
+| standard | shown | on | off | none |
+| classic  | shown, reskinned | on | on | none |
+| modern   | silenced | off | off | player + target |
+
+Leaving **classic** or **modern** for another style asks for `/reload`
+(reskin hooks and silenced frames cannot be undone).
+
+## Task 4 (amended): module + Modern-only activation
+
+Everything in the original Task 4 applies, with these replacements:
+
+1. In the engine's appended code, `UF.ActivateOwnFrames` handles only
+   `"modern"`:
+   ```lua
+   function UF.ActivateOwnFrames(mod)
+       if mod.db.style ~= "modern" then return end
+       for _, unit in ipairs({ "player", "target" }) do
+           local f = UF.CreateUnitFrame(unit, mod.db[unit], LABELS[unit])
+           UF.SetSkin(f, "modern", { unit = unit, portrait = mod.db.portrait })
+           RegisterUnitWatch(f)
+           UF.SetEventsEnabled(f, true)
+           UF.SilenceBlizzard(unit)
+       end
+   end
+   ```
+2. In `Modules/UnitFrames.lua`, replace `isOwnStyle` and `applyStyle` with:
+   ```lua
+   local function needsReloadFrom(oldStyle)
+       return oldStyle == "classic" or oldStyle == "modern"
+   end
+
+   local function applyStyle(oldStyle)
+       if ns:InCombat() then
+           if not pendingApply then
+               pendingApply = true
+               ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", function()
+                   pendingApply = false
+                   applyStyle(oldStyle)
+               end)
+           end
+           return
+       end
+       local style = mod.db.style
+       if style == "modern" then
+           if UF.Extras  then UF.Extras.Disable() end
+           if UF.Classic then UF.Classic.Disable() end
+           UF.ActivateOwnFrames(mod)
+       elseif style == "classic" then
+           UF.DeactivateOwnFrames()
+           if UF.Extras  then UF.Extras.Enable(mod) end
+           if UF.Classic then UF.Classic.Enable(mod) end
+       else
+           UF.DeactivateOwnFrames()
+           if UF.Classic then UF.Classic.Disable() end
+           if UF.Extras  then UF.Extras.Enable(mod) end
+       end
+       if oldStyle and oldStyle ~= style and needsReloadFrom(oldStyle) then
+           StaticPopup_Show("VFUI_UNITFRAMES_RELOAD")
+       end
+   end
+   ```
+   The dropdown's `set` passes the previous style: `local old = mod.db.style; mod.db.style = v; applyStyle(old)`. `OnEnable` calls `applyStyle()` with no argument. `OnDisable` deactivates own frames, disables Extras and Classic, and shows the reload popup when the style was classic or modern.
+3. Popup text `L["Blizzard's frames come back after a reload. Reload the UI now?"]` stays; it now also covers leaving Classic.
+4. Options: the **Classic** section keeps the `playerElite` toggle (its `set` calls `applyStyle()` — the reskin re-reads the flag on Enable). The **Size** sliders and the **Open Edit Mode** button appear for **modern only** (Classic is positioned by Blizzard's Edit Mode). Add under Classic a `desc`: `L["|cffaaaaaaClassic keeps Blizzard's frames underneath: target auras, the target cast bar and the pet frame stay, and Edit Mode moves them.|r"]` (German: `Classic behält Blizzards Rahmen darunter: Ziel-Auren, Ziel-Zauberleiste und Pet-Rahmen bleiben, Edit Mode verschiebt sie.`).
+5. Every `UF.Classic` reference is nil-guarded as shown, so Task 4 loads and works before Task 6a exists.
+6. Probe (amended): Standard → Modern (own frames, Blizzard silenced, pet visible) → back to Standard (reload popup) is the Task 4 probe. Classic is probed in Task 6a.
+
+## Task 5 (unchanged): Extras — shared by Standard and Classic
+
+No change to the code. Note for the implementer: `Extras.Enable` will also be called while the Classic reskin is active; it must not depend on Blizzard's retail anchors beyond the parent keys it already uses (health bar, portrait), which the reskin moves but keeps.
+
+## Task 6a (new): Classic reskin of Blizzard's frames
+
+**Lane:** high-complexity (`fable-implementer`) — this is surgery on
+protected frames' children; judgment about what may be touched matters.
+
+**Files:**
+- Create: `Modules/UnitFramesClassic.lua`
+- Modify: `VuloForeverUI.toc` — add `Modules\UnitFramesClassic.lua` after `Modules\UnitFramesExtras.lua`, before `Modules\UnitFrames.lua`.
+
+**Interfaces:**
+- Consumes: `ns:InCombat()`, `ns:RegisterEventOnce`, the parent keys from the client-facts table.
+- Produces: `ns.UF.Classic.Enable(mod)`, `ns.UF.Classic.Disable()`, `ns.UF.Classic.IsActive()`.
+
+**Rules (hard):**
+- Widget calls and `hooksecurefunc` only. **No Lua field writes into Blizzard's frames** (no `PlayerFrame.foo = …`); keep our own regions in a local weak-keyed side table `own[frame]`.
+- Textures we replace are hidden with `Hide()` **and** `SetAlpha(0)` (Blizzard's `Show()` cannot bring them back visibly). Frames that inherit protected templates are never hidden — alpha only.
+- Every `SetPoint` / `SetSize` on a Blizzard region runs out of combat only; in combat the work is flagged and one `PLAYER_REGEN_ENABLED` one-shot replays it (`ns:RegisterEventOnce`).
+- No unit value is read except `UnitClassification("target")` (readable) for the art file — the bars keep Blizzard's values and colours; the Extras layer already adds class colour.
+- Hooks are installed once and gated by `active`; `Disable()` hides our art and sets `active = false` — it does not try to move regions back (the module asks for a reload).
+
+**Layout (anchors relative to the Blizzard frame, as Blizzard's Classic XML had them):**
+
+| Region | Player | Target |
+|---|---|---|
+| art overlay (our texture, layer BORDER on a skin frame at `main:GetFrameLevel()+1`) | `UI-TargetingFrame`, texcoords `0.85546875, 0.1015625, 0.0625, 0.6640625`, size 193×77, `CENTER` of PlayerFrame, 0,0 | file by classification (below), texcoords `0.1015625, 1.0, 0.0078125, 0.78125`, size 230×99, `CENTER` of TargetFrame, 18.5, -4 |
+| backdrop (our black 50 % texture, BACKGROUND -8) | 119×41 `TOPLEFT 89.5, -26` | 119×41 `TOPRIGHT -89.5, -26` |
+| portrait (`PlayerFrameContainer.PlayerPortrait` / `TargetFrameContainer.Portrait`) | 64×64 `TOPLEFT 24, -16` | 64×64 `TOPRIGHT -24, -16` |
+| portrait mask (`PlayerPortraitMask` / `PortraitMask`) | retexture to `Interface\Buttons\WHITE8X8`, anchored to the portrait grown 4 px each side — the art's ring hides the corners | same |
+| health container (`…HealthBarsContainer`) | 119×12 `TOPLEFT 90, -45` | 119×12 `TOPRIGHT -90, -45` |
+| mana bar (`…ManaBarArea.ManaBar` / `…TargetFrameContentMain.ManaBar`) | 119×12 `TOPLEFT 90, -56` | 119×12 `TOPRIGHT -90, -56` |
+| name (`_G.PlayerName` / `…TargetFrameContentMain.Name`) | 100×12 `CENTER 34, 15` | 100×12 `CENTER -34, 15` |
+| level (`_G.PlayerLevelText` / `…TargetFrameContentMain.LevelText`) | `CENTER` of `BOTTOMLEFT` 35.25, 30 | `CENTER` of `BOTTOMRIGHT` -35.25, 30 |
+| hide (Hide + alpha 0) | `PlayerFrameContainer.FrameTexture`, `.AlternatePowerFrameTexture`, `.VehicleFrameTexture`, `PlayerFrameContentMain.LevelBackgroundCircle`, `.StatusTexture` (also `SetTexture(nil)`) | `TargetFrameContainer.FrameTexture`, `.BossPortraitFrameTexture`, `TargetFrameContentMain.LevelBackgroundCircle` |
+| bar textures | `HealthBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")`, same for `ManaBar` | same |
+| classification art (target) | — | `normal → UI-TargetingFrame`, `elite/worldboss → -Elite`, `rare → -Rare`, `rareelite → -Rare-Elite`; player wears `-Elite` when `mod.db.playerElite` |
+| raise | — | `TargetFrameContentContextual` to `skin:GetFrameLevel()+1` so Blizzard's auras and icons draw over our art |
+
+**Re-apply hooks (installed once):** `hooksecurefunc("PlayerFrame_ToPlayerArt", relayoutPlayer)`, `"PlayerFrame_ToVehicleArt"`, `"PlayerFrame_UpdateArt"`, `"PlayerFrame_UpdatePlayerNameTextAnchor"`, `"UnitFrameManaBar_UpdateType"` (re-set the bar texture), `hooksecurefunc(TargetFrame, "CheckClassification", relayoutTarget)`, `hooksecurefunc(TargetFrame, "CheckFaction", relayoutTarget)`. Each hook body: `if not active then return end; if ns:InCombat() then pendingX = true; arm() else relayoutX() end`. Verify every hooked global exists on this client first: fetch `Blizzard_UnitFrame/Mainline/PlayerFrame.lua` and `Mainline/UnitFrame.lua` from the `forever` branch of Gethe/wow-ui-source and grep the function names; drop a hook whose function does not exist and say so in the report.
+
+**Code skeleton (the implementer fills the relayout bodies from the table above):**
+
+```lua
+-- VuloForeverUI / Modules / UnitFramesClassic
+-- The Classic look as a RESKIN of Blizzard's frames: our art on an overlay,
+-- Blizzard's regions moved to the Classic coordinates, the retail chrome
+-- hidden. Blizzard's untainted code keeps driving bars, texts, auras and the
+-- target cast bar -- in combat too. Widget calls and hooksecurefunc only.
+local _, ns = ...
+ns.UF = ns.UF or {}
+local UF = ns.UF
+UF.Classic = {}
+local Classic = UF.Classic
+
+local ART = "Interface\\TargetingFrame\\UI-TargetingFrame"
+local ART_BY_CLASS = { elite = ART .. "-Elite", worldboss = ART .. "-Elite",
+                       rare = ART .. "-Rare", rareelite = ART .. "-Rare-Elite" }
+local BAR = "Interface\\TargetingFrame\\UI-StatusBar"
+
+local active, mod = false, nil
+local own = setmetatable({}, { __mode = "k" })   -- Blizzard frame -> our regions
+local pendingPlayer, pendingTarget = false, false
+
+local function hideTexture(t) if t then t:Hide(); t:SetAlpha(0) end end
+local function fadeFrame(f)  if f then f:SetAlpha(0) end end
+
+local function skinFor(frame, main)
+    local s = own[frame]
+    if s then return s end
+    s = CreateFrame("Frame", nil, frame)
+    s:SetAllPoints(frame)
+    s:SetFrameLevel((main or frame):GetFrameLevel() + 1)
+    s.art = s:CreateTexture(nil, "BORDER")
+    s.backdrop = s:CreateTexture(nil, "BACKGROUND", nil, -8)
+    s.backdrop:SetColorTexture(0, 0, 0, 0.5)
+    own[frame] = s
+    return s
+end
+
+local function neuterMask(mask, portrait)
+    if not mask then return end
+    mask:SetTexture("Interface\\Buttons\\WHITE8X8", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    mask:ClearAllPoints()
+    mask:SetPoint("TOPLEFT", portrait, "TOPLEFT", -4, 4)
+    mask:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", 4, -4)
+end
+
+local arm
+local function relayoutPlayer()
+    -- rows "Player" of the layout table; first line:
+    -- if ns:InCombat() then pendingPlayer = true; arm(); return end
+end
+local function relayoutTarget()
+    -- rows "Target" of the layout table; same combat gate with pendingTarget
+end
+arm = function()
+    ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", function()
+        if pendingPlayer then pendingPlayer = false; relayoutPlayer() end
+        if pendingTarget then pendingTarget = false; relayoutTarget() end
+    end)
+end
+
+local hooked = false
+local function installHooks()
+    if hooked then return end
+    hooked = true
+    -- the hook list above, each body gated on `active`
+end
+
+function Classic.Enable(m)
+    mod, active = m, true
+    installHooks()
+    relayoutPlayer()
+    relayoutTarget()
+end
+function Classic.Disable()
+    active = false
+    for _, s in pairs(own) do s:Hide() end
+end
+function Classic.IsActive() return active end
+```
+
+**Probe:** `/reload`, style **Classic**: both Blizzard frames wear the Classic art (player with the elite dragon when the toggle is on), portrait square-in-ring, bars 119 px in the art slots, name gold above, level in the ring corner; retail chrome gone; **Blizzard's auras still on the target frame, the target cast bar still shows on a casting mob, pet frame visible**. Target an elite: art swaps. Fight: bars and texts keep moving, no red error, `/vfsecrets` prints. Edit Mode (Blizzard's) still moves the frames. Switch to Standard: reload popup.
+
+## Task 7 (was 6): Review, docs, memory — unchanged, plus
+
+Attack items for the review of `UnitFramesClassic.lua`: every `SetPoint`/`SetSize`/`SetParent`/`Hide` on a Blizzard region — is the region a protected frame (`IsProtected()`), and is the call gated on out-of-combat? Any Lua field write into a Blizzard table? Any hooked global that does not exist on Forever?
