@@ -141,6 +141,14 @@ local function installHooks()
     end)
 end
 
+-- For the Classic reskin's name box: class colour for a player target,
+-- nil for anything else (Blizzard's reaction tint stays). The reskin itself
+-- asks no unit question but the classification.
+function Extras.ClassTint(unit)
+    if not UnitExists(unit) or not UnitIsPlayer(unit) then return nil end
+    return UF.ClassColor(unit)
+end
+
 -- For the Classic reskin: it paints the bar green after Blizzard's
 -- CheckClassification and asks here whether a class colour goes on top.
 function Extras.Recolor(statusbar, unit)

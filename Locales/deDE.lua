@@ -16,6 +16,8 @@ ns:RegisterLocale("deDE", {
     ["Threat display on the target frame"] = "Bedrohungsanzeige am Zielrahmen",
     ["Class icon on the portrait"] = "Klassensymbol auf dem Portrait",
     ["Elite dragon on the player frame"] = "Elite-Drache am Spielerrahmen",
+    ["Status text on the bars"] = "Statustext auf den Balken",
+    ["Sets Blizzard's status text to percent and value, always shown. Change it back under Blizzard's options."] = "Stellt Blizzards Statustext auf Prozent und Wert, immer sichtbar. Zurückstellen geht in Blizzards Optionen.",
     ["Show portrait"] = "Portrait anzeigen",
     ["Size"] = "Größe",
     ["Player frame scale"] = "Skalierung Spielerrahmen",
