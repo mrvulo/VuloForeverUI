@@ -15,8 +15,10 @@ local mod = ns:RegisterModule("unitframes", {
         enabled     = true,
         style       = "standard",
         classColor  = true,
-        threat      = true,
-        classIcon   = true,
+        -- Both off by default on Blizzard's frames: the retail frame shows
+        -- threat itself, and the class icon is a matter of taste.
+        threat      = false,
+        classIcon   = false,
         playerElite = true,
         portrait    = true,
         player      = { x = -260, y = -180, scale = 1 },
@@ -111,7 +113,7 @@ function mod:GetOptions()
               applyStyle(old)
               if ns.UI and ns.UI.BuildOptionsPage then ns.UI:BuildOptionsPage("unitframes") end
           end },
-        { type = "desc", text = L["|cffaaaaaaClassic and Modern are our own frames; move them with /vedit. Switching back to Standard asks for a reload.|r"] },
+        { type = "desc", text = L["|cffaaaaaaClassic reskins Blizzard's frames; Modern is our own frame, moved with /vedit. Leaving Classic or Modern asks for a reload.|r"] },
         { type = "spacer", height = 8 },
     }
 
