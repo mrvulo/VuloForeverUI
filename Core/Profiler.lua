@@ -70,7 +70,7 @@ function ns.Prof.Report()
         total = total + d.ms
     end
     if #sorted == 0 then
-        ns:Print(L["Nothing measured yet. Play for a bit, then read it again."])
+        ns:Print(L["Nothing measured yet: no module event handler or ticker has run since measuring started. With only the framework modules loaded that is expected."])
         return
     end
     table.sort(sorted, function(a, b) return a.d.ms > b.d.ms end)
@@ -92,7 +92,8 @@ function ns.Prof.Report()
 end
 
 ns:RegisterSlash({ key = "PROFILER", commands = { "/vfuiprof" },
-    desc = "List which addons cost the most frame time.",
+    desc = "Measure which of our modules cost the most time in their event handlers and tickers.",
+    note = "Only our own modules are billed; a module that registers no events shows nothing.",
 })
 ns.Slash.PROFILER = function(msg)
     local cmd = (msg or ""):lower():match("^%s*(%S*)")

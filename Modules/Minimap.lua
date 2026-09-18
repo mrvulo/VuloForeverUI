@@ -18,23 +18,29 @@ local button
 local function createButton()
     if button then return button end
 
+    -- Sizes are the Mainline set of the common minimap-button recipe (this is
+    -- a Mainline client): 31 button, 50 ring, 24 ground, 18 icon, all centred.
+    -- The Classic set (53 ring, offsets from TOPLEFT) sits visibly off-centre
+    -- here, which is what the button looked like before.
     button = CreateFrame("Button", "VuloForeverUIMinimapButton", Minimap)
     button:SetSize(31, 31)
     button:SetFrameStrata("MEDIUM")
+    button:SetFixedFrameStrata(true)
     button:SetFrameLevel(8)
+    button:SetFixedFrameLevel(true)
     button:RegisterForClicks("AnyUp")
     button:RegisterForDrag("LeftButton")
     button:SetMovable(true)
     button:EnableMouse(true)
 
     button.bg = button:CreateTexture(nil, "BACKGROUND")
-    button.bg:SetSize(20, 20)
-    button.bg:SetPoint("CENTER", 0, 1)
+    button.bg:SetSize(24, 24)
+    button.bg:SetPoint("CENTER", 0, 0)
     button.bg:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
 
     button.icon = button:CreateTexture(nil, "ARTWORK")
-    button.icon:SetSize(20, 20)
-    button.icon:SetPoint("CENTER", 0, 1)
+    button.icon:SetSize(18, 18)
+    button.icon:SetPoint("CENTER", 0, 0)
 
     -- We ship vui4.tga locally (VuloForeverUI/Media/Icons/vui4.tga).
     -- If someone has VuloMedia installed instead, that works too.
@@ -45,10 +51,19 @@ local function createButton()
         iconPath = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\vui4"
     end
     button.icon:SetTexture(iconPath)
-    button.icon:SetTexCoord(0, 1, 0, 1)
+
+    -- Press feedback: the icon rests 5% inset and fills out while the mouse
+    -- is down, so a click is visible without a second texture.
+    local function setPressed(pressed)
+        local d = pressed and 0 or 0.05
+        button.icon:SetTexCoord(d, 1 - d, d, 1 - d)
+    end
+    setPressed(false)
+    button:SetScript("OnMouseDown", function() setPressed(true) end)
+    button:SetScript("OnMouseUp",   function() setPressed(false) end)
 
     button.border = button:CreateTexture(nil, "OVERLAY")
-    button.border:SetSize(54, 54)
+    button.border:SetSize(50, 50)
     button.border:SetPoint("TOPLEFT", 0, 0)
     button.border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
 
@@ -90,18 +105,55 @@ local function createButton()
     return button
 end
 
--- the rim follows the minimap's actual size, so the button stays on the edge
--- whatever size the client or another setting gives the minimap
-local function edgeRadius()
-    return math.floor((Minimap:GetWidth() or 140) / 2 + 10 + 0.5)
+-- The rim follows the minimap's actual size, so the button stays on the edge
+-- whatever size the client or another setting gives the minimap. 5 px past
+-- the half width puts the ring half over the map edge, level with the other
+-- buttons that share this recipe.
+local RIM_OVERHANG = 5
+
+local function edgeRadius(extent)
+    return math.floor((extent or 140) / 2 + RIM_OVERHANG + 0.5)
 end
+
+-- GetMinimapShape is the convention minimap addons use to announce a square or
+-- corner-cut map. Per quadrant (1 = top-right, going counter-clockwise):
+-- true = round there (follow the circle), false = square there (push out to
+-- the corner, clamped to the box).
+local minimapShapes = {
+    ["ROUND"]                 = { true,  true,  true,  true  },
+    ["SQUARE"]                = { false, false, false, false },
+    ["CORNER-TOPLEFT"]        = { false, false, false, true  },
+    ["CORNER-TOPRIGHT"]       = { false, false, true,  false },
+    ["CORNER-BOTTOMLEFT"]     = { false, true,  false, false },
+    ["CORNER-BOTTOMRIGHT"]    = { true,  false, false, false },
+    ["SIDE-LEFT"]             = { false, true,  false, true  },
+    ["SIDE-RIGHT"]            = { true,  false, true,  false },
+    ["SIDE-TOP"]              = { false, false, true,  true  },
+    ["SIDE-BOTTOM"]           = { true,  true,  false, false },
+    ["TRICORNER-TOPLEFT"]     = { false, true,  true,  true  },
+    ["TRICORNER-TOPRIGHT"]    = { true,  false, true,  true  },
+    ["TRICORNER-BOTTOMLEFT"]  = { true,  true,  false, true  },
+    ["TRICORNER-BOTTOMRIGHT"] = { true,  true,  true,  false },
+}
 
 local function updatePosition()
     if not button then return end
-    local angle  = math.rad(mod.db.angle or 215)
-    local radius = mod.db.radius or edgeRadius()
-    local x = radius * math.cos(angle)
-    local y = radius * math.sin(angle)
+    local angle = math.rad(mod.db.angle or 215)
+    local x, y, q = math.cos(angle), math.sin(angle), 1
+    if x < 0 then q = q + 1 end
+    if y > 0 then q = q + 2 end
+    local shape = (_G.GetMinimapShape and _G.GetMinimapShape()) or "ROUND"
+    local quads = minimapShapes[shape] or minimapShapes.ROUND
+    local w = mod.db.radius or edgeRadius(Minimap:GetWidth())
+    local h = mod.db.radius or edgeRadius(Minimap:GetHeight())
+    if quads[q] then
+        x, y = x * w, y * h
+    else
+        local diagW = math.sqrt(2 * w ^ 2) - 10
+        local diagH = math.sqrt(2 * h ^ 2) - 10
+        x = math.max(-w, math.min(x * diagW, w))
+        y = math.max(-h, math.min(y * diagH, h))
+    end
     button:ClearAllPoints()
     button:SetPoint("CENTER", Minimap, "CENTER", x, y)
 end
@@ -176,7 +228,7 @@ function mod:GetOptions()
         {
             type = "slider", label = L["Distance from center"],
             min = 50, max = 160, step = 1,
-            get = function() return mod.db.radius or edgeRadius() end,
+            get = function() return mod.db.radius or edgeRadius(Minimap:GetWidth()) end,
             set = function(_, v) mod.db.radius = v; updatePosition() end,
         },
         {

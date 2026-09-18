@@ -137,8 +137,15 @@ function ns.UnitCastingRestricted(unit)
     return pred("ShouldUnitSpellCastingBeSecret", unit)
 end
 
-function ns.ThreatRestricted(unit)
-    return pred("ShouldUnitThreatValuesBeSecret", unit)
+-- Threat comes in two predicates with different signatures (checked in the
+-- client 2026-09-18): the numeric values need BOTH units, the state (the
+-- UnitThreatSituation tier) takes the mob as optional.
+function ns.ThreatValuesRestricted(unit, mobUnit)
+    return pred("ShouldUnitThreatValuesBeSecret", unit, mobUnit)
+end
+
+function ns.ThreatStateRestricted(unit, mobUnit)
+    return pred("ShouldUnitThreatStateBeSecret", unit, mobUnit)
 end
 
 -- Cooldowns: hand the Cooldown widget the duration OBJECT instead of start and
@@ -200,10 +207,15 @@ ns.Slash.SECRETS = function()
     -- Restriction predicates: what the client says BEFORE we touch a value.
     -- Printed ahead of the aura probe on purpose -- if the probe throws, this
     -- line tells whether the predicate would have warned us.
-    ns:Print("%sRestrictions%s (C_Secrets %s) — auras: %s, cooldowns: %s, power: %s, threat: %s", A, R,
-        CS and "present" or (ns.C.neg .. "MISSING" .. R),
-        tostring(ns.AurasRestricted()), tostring(ns.CooldownsRestricted()),
-        tostring(ns.UnitPowerRestricted("player")), tostring(ns.ThreatRestricted("player")))
+    probe("C_Secrets", function()
+        return CS and (ns.C.pos .. "present" .. R) or (ns.C.neg .. "MISSING" .. R)
+    end)
+    probe("restricted: auras",   function() return tostring(ns.AurasRestricted()) end)
+    probe("restricted: cooldowns", function() return tostring(ns.CooldownsRestricted()) end)
+    probe("restricted: power",   function() return tostring(ns.UnitPowerRestricted("player")) end)
+    probe("restricted: threat",  function()
+        return hasTarget and tostring(ns.ThreatStateRestricted("player", "target")) or "no target"
+    end)
 
     probe("first player buff", function()
         local aura = C_UnitAuras.GetAuraDataByIndex("player", 1, "HELPFUL")
