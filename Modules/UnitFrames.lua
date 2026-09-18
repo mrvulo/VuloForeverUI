@@ -20,6 +20,7 @@ local mod = ns:RegisterModule("unitframes", {
         threat      = false,
         classIcon   = false,
         playerElite = true,
+        classicClassColor = false,     -- Classic: Blizzard's green unless asked
         portrait    = true,
         player      = { x = -260, y = -180, scale = 1 },
         target      = { x =  260, y = -180, scale = 1 },
@@ -133,6 +134,9 @@ function mod:GetOptions()
         items[#items + 1] = { type = "toggle", label = L["Elite dragon on the player frame"],
             get = function() return mod.db.playerElite end,
             set = function(_, v) mod.db.playerElite = v; applyStyle() end }
+        items[#items + 1] = { type = "toggle", label = L["Class color on the health bar"],
+            get = function() return mod.db.classicClassColor end,
+            set = function(_, v) mod.db.classicClassColor = v; applyStyle() end }
         items[#items + 1] = { type = "desc", text = L["|cffaaaaaaClassic keeps Blizzard's frames underneath: target auras, the target cast bar and the pet frame stay, and Edit Mode moves them.|r"] }
     else
         items[#items + 1] = { type = "header", text = L["Modern"] }

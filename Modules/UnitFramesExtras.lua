@@ -48,6 +48,8 @@ local NEUTRAL_BAR = "Interface\\TargetingFrame\\UI-StatusBar"
 local neutralised = setmetatable({}, { __mode = "k" })   -- our note, not a field on Blizzard's bar
 local function recolor(statusbar, unit)
     if not active or not mod.db.classColor then return end
+    -- Classic keeps Blizzard's plain green unless its own toggle says so.
+    if mod.db.style == "classic" and not mod.db.classicClassColor then return end
     unit = unit or unitOfBar[statusbar]
     if not unit then return end
     local r, g, b = UF.ClassColor(unit)
@@ -137,6 +139,12 @@ local function installHooks()
     hooksecurefunc("UnitFrameHealthBar_OnValueChanged", function(statusbar)
         if unitOfBar[statusbar] then recolor(statusbar) end
     end)
+end
+
+-- For the Classic reskin: it paints the bar green after Blizzard's
+-- CheckClassification and asks here whether a class colour goes on top.
+function Extras.Recolor(statusbar, unit)
+    recolor(statusbar, unit)
 end
 
 function Extras.Enable(m)

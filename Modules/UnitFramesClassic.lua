@@ -43,6 +43,7 @@ local ART_BY_CLASS = {
     rareelite = ART .. "-Rare-Elite",
 }
 local BAR   = "Interface\\TargetingFrame\\UI-StatusBar"
+local NAMEBG = "Interface\\TargetingFrame\\UI-TargetingFrame-LevelBackground"
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 local WRAP  = "CLAMPTOBLACKADDITIVE"
 
@@ -69,7 +70,7 @@ local function playerParts()
     local contextual = content and content.PlayerFrameContentContextual
     local hc         = main and main.HealthBarsContainer
     return {
-        unit = "player", side = "LEFT", sign = 1, art = PLAYER_ART,
+        unit = "player", side = "LEFT", sign = 1, art = PLAYER_ART, backdropH = 41,
         frame = pf, container = container, main = main,
         portrait = container and container.PlayerPortrait,
         mask     = container and container.PlayerPortraitMask,
@@ -79,6 +80,13 @@ local function playerParts()
         name     = _G.PlayerName,
         level    = _G.PlayerLevelText,
         status   = main and main.StatusTexture,
+        healthMask = hc and hc.HealthBarMask,
+        -- Retail's red "just lost" trail and the temp-max-health bar draw
+        -- their own atlases over the bar; alpha only, they are frames.
+        fade = {
+            animatedLoss = hc and hc.PlayerFrameHealthBarAnimatedLoss,
+            tempMaxLoss  = hc and hc.PlayerFrameTempMaxHealthLoss,
+        },
         -- Keyed, not a list: a region missing on some build leaves a nil
         -- hole, and pairs walks past it where ipairs would stop.
         hide = {
@@ -104,7 +112,7 @@ local function targetParts()
         -- would put it, so it stays inside Edit Mode's selection box (inset
         -- 20 px from the frame edge); a drag on the ring found nothing
         -- (2026-09-18).
-        unit = "target", side = "RIGHT", sign = -1, art = TARGET_ART, dx = -18,
+        unit = "target", side = "RIGHT", sign = -1, art = TARGET_ART, dx = -18, backdropH = 25,
         frame = tf, container = container, main = main,
         portrait = container and container.Portrait,
         mask     = container and container.PortraitMask,
@@ -113,12 +121,16 @@ local function targetParts()
         mana     = main and main.ManaBar,
         name     = main and main.Name,
         level    = main and main.LevelText,
+        healthMask = hc and hc.HealthBarMask,
+        -- Blizzard's reaction-tinted strip becomes the Classic name box:
+        -- CheckFaction keeps colouring it, we give it the Classic art.
+        nameBox  = main and main.ReputationColor,
+        fade = { tempMaxLoss = hc and hc.TempMaxHealthLoss },
         hide = {
-            retailArt       = container and container.FrameTexture,
-            bossArt         = container and container.BossPortraitFrameTexture,
-            threatFlash     = container and container.Flash,
-            levelCircle     = main and main.LevelBackgroundCircle,
-            reputationColor = main and main.ReputationColor,
+            retailArt   = container and container.FrameTexture,
+            bossArt     = container and container.BossPortraitFrameTexture,
+            threatFlash = container and container.Flash,
+            levelCircle = main and main.LevelBackgroundCircle,
         },
     }
 end
@@ -183,6 +195,17 @@ local function setBarTexture(bar)
     if t and t.SetTexCoord then t:SetTexCoord(0, 1, 0, 1) end
 end
 
+-- Retail clips each fill with a rounded MaskTexture cut for the retail bar
+-- (attached in OnLoadBase). Detach it from the fill and turn it into a
+-- plain white square, so nothing of the Classic bar is clipped.
+local function unmaskTexture(bar, mask)
+    if not mask then return end
+    local t = bar and bar.GetStatusBarTexture and bar:GetStatusBarTexture()
+    if t and t.RemoveMaskTexture then pcall(t.RemoveMaskTexture, t, mask) end
+    mask:SetTexture(WHITE, WRAP, WRAP)
+    mask:Show()
+end
+
 ------------------------------------------------------------------------------
 -- Paint: textures, alpha, colours. Nothing positional, so it may run in
 -- combat -- a new target mid-fight gets its art and bar texture at once.
@@ -200,6 +223,7 @@ local function paint(p)
     end)
     guard(key .. ".chrome", function()
         for _, t in pairs(p.hide) do hideTexture(t) end
+        for _, fr in pairs(p.fade or {}) do fr:SetAlpha(0) end
         if p.status then
             p.status:SetTexture(nil)
             hideTexture(p.status)
@@ -207,9 +231,19 @@ local function paint(p)
     end)
     guard(key .. ".mask", function()
         if p.mask then p.mask:SetTexture(WHITE, WRAP, WRAP) end
+        if p.health then unmaskTexture(p.health, p.healthMask) end
+        if p.mana then unmaskTexture(p.mana, p.mana.ManaBarMask) end
     end)
     guard(key .. ".bars", function()
-        if p.health then setBarTexture(p.health) end
+        if p.health then
+            setBarTexture(p.health)
+            -- Both health bars carry lockColor (TargetFrameStatusBarMixin:OnLoad,
+            -- the player bar's XML OnLoad), so Blizzard never tints them and a
+            -- plain UI-StatusBar would stay tan. Classic green first; the Extras
+            -- layer puts a class colour on top only if its Classic toggle says so.
+            p.health:SetStatusBarColor(0, 1, 0)
+            if UF.Extras and UF.Extras.Recolor then UF.Extras.Recolor(p.health, p.unit) end
+        end
         if p.mana then
             setBarTexture(p.mana)
             tintMana(p.mana)
@@ -217,6 +251,12 @@ local function paint(p)
     end)
     guard(key .. ".name", function()
         if p.name then p.name:SetJustifyH("CENTER") end
+        if p.nameBox then
+            p.nameBox:SetTexture(NAMEBG)
+            p.nameBox:SetTexCoord(0, 1, 0, 1)
+            p.nameBox:SetAlpha(1)
+            p.nameBox:Show()
+        end
     end)
 end
 
@@ -269,7 +309,7 @@ local function layout(p, barsOnly)
     guard(key .. ".art", function()
         local s, a = skinFor(p), p.art
         place(s.art, a.w, a.h, "CENTER", f, "CENTER", a.x + dx, a.y)
-        place(s.backdrop, 119, 41, topSide, f, topSide, sign * 89.5 + dx, -26)
+        place(s.backdrop, 119, p.backdropH or 41, topSide, f, topSide, sign * 89.5 + dx, -26)
     end)
     guard(key .. ".health", function()
         local hc = p.healthContainer
@@ -280,11 +320,21 @@ local function layout(p, barsOnly)
             -- player art switches set the height by hand and the hook on
             -- them puts 12 back.
             place(p.health, 119, 12, "TOPLEFT", hc, "TOPLEFT", 0, 0)
+            if p.healthMask then
+                place(p.healthMask, nil, nil,
+                    "TOPLEFT", p.health, "TOPLEFT", -4, 4,
+                    "BOTTOMRIGHT", p.health, "BOTTOMRIGHT", 4, -4)
+            end
         end
     end)
     guard(key .. ".mana", function()
         if not p.mana then return end
         place(p.mana, 119, 12, topSide, f, topSide, sign * 90 + dx, -56)
+        if p.mana.ManaBarMask then
+            place(p.mana.ManaBarMask, nil, nil,
+                "TOPLEFT", p.mana, "TOPLEFT", -4, 4,
+                "BOTTOMRIGHT", p.mana, "BOTTOMRIGHT", 4, -4)
+        end
     end)
     if barsOnly then return end
 
@@ -299,8 +349,12 @@ local function layout(p, barsOnly)
         end
     end)
     guard(key .. ".name", function()
-        if not p.name then return end
-        place(p.name, 100, 12, "CENTER", f, "CENTER", sign * 34 + dx, 15)
+        if p.name then
+            place(p.name, 100, 12, "CENTER", f, "CENTER", sign * 34 + dx, 15)
+        end
+        if p.nameBox then
+            place(p.nameBox, 119, 19, topSide, f, topSide, sign * 90 + dx, -26)
+        end
     end)
     guard(key .. ".level", function()
         if not p.level then return end
