@@ -100,7 +100,11 @@ local function targetParts()
     local main      = content and content.TargetFrameContentMain
     local hc        = main and main.HealthBarsContainer
     return {
-        unit = "target", side = "RIGHT", sign = -1, art = TARGET_ART,
+        -- dx: the whole Classic layout sits 18 px further left than the art
+        -- would put it, so it stays inside Edit Mode's selection box (inset
+        -- 20 px from the frame edge); a drag on the ring found nothing
+        -- (2026-09-18).
+        unit = "target", side = "RIGHT", sign = -1, art = TARGET_ART, dx = -18,
         frame = tf, container = container, main = main,
         portrait = container and container.Portrait,
         mask     = container and container.PortraitMask,
@@ -259,17 +263,18 @@ end
 -- are placed once at Enable and after the player art switches.
 local function layout(p, barsOnly)
     local key, f, sign, side = p.unit, p.frame, p.sign, p.side
+    local dx = p.dx or 0
     local topSide, bottomSide = "TOP" .. side, "BOTTOM" .. side
 
     guard(key .. ".art", function()
         local s, a = skinFor(p), p.art
-        place(s.art, a.w, a.h, "CENTER", f, "CENTER", a.x, a.y)
-        place(s.backdrop, 119, 41, topSide, f, topSide, sign * 89.5, -26)
+        place(s.art, a.w, a.h, "CENTER", f, "CENTER", a.x + dx, a.y)
+        place(s.backdrop, 119, 41, topSide, f, topSide, sign * 89.5 + dx, -26)
     end)
     guard(key .. ".health", function()
         local hc = p.healthContainer
         if not hc then return end
-        place(hc, 119, 12, topSide, f, topSide, sign * 90, -45)
+        place(hc, 119, 12, topSide, f, topSide, sign * 90 + dx, -45)
         if p.health then
             -- Single anchor plus an explicit size, as Blizzard has it; the
             -- player art switches set the height by hand and the hook on
@@ -279,13 +284,13 @@ local function layout(p, barsOnly)
     end)
     guard(key .. ".mana", function()
         if not p.mana then return end
-        place(p.mana, 119, 12, topSide, f, topSide, sign * 90, -56)
+        place(p.mana, 119, 12, topSide, f, topSide, sign * 90 + dx, -56)
     end)
     if barsOnly then return end
 
     guard(key .. ".portrait", function()
         if not p.portrait then return end
-        place(p.portrait, 64, 64, topSide, f, topSide, sign * 24, -16)
+        place(p.portrait, 64, 64, topSide, f, topSide, sign * 24 + dx, -16)
         if p.mask then
             -- Square, grown 4 px each side; the art's ring hides the corners.
             place(p.mask, nil, nil,
@@ -295,11 +300,11 @@ local function layout(p, barsOnly)
     end)
     guard(key .. ".name", function()
         if not p.name then return end
-        place(p.name, 100, 12, "CENTER", f, "CENTER", sign * 34, 15)
+        place(p.name, 100, 12, "CENTER", f, "CENTER", sign * 34 + dx, 15)
     end)
     guard(key .. ".level", function()
         if not p.level then return end
-        place(p.level, nil, nil, "CENTER", f, bottomSide, sign * 35.25, 30)
+        place(p.level, nil, nil, "CENTER", f, bottomSide, sign * 35.25 + dx, 30)
     end)
 end
 
