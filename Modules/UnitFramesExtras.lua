@@ -44,7 +44,7 @@ local unitOfBar = {}
 -- The retail bar art is a pre-coloured green atlas, so a vertex tint cannot
 -- turn it white or blue (seen 2026-09-18: a priest's bar stayed green). The
 -- bar gets the neutral Classic fill texture first, then the colour.
-local NEUTRAL_BAR = "Interface\TargetingFrame\UI-StatusBar"
+local NEUTRAL_BAR = "Interface\\TargetingFrame\\UI-StatusBar"
 local neutralised = setmetatable({}, { __mode = "k" })   -- our note, not a field on Blizzard's bar
 local function recolor(statusbar, unit)
     if not active or not mod.db.classColor then return end

@@ -24,7 +24,7 @@ ns:RegisterLocale("deDE", {
     ["Blizzard's frames come back after a reload. Reload the UI now?"] = "Blizzards Rahmen kommen nach einem Reload zurück. UI jetzt neu laden?",
     ["Reload now"] = "Jetzt neu laden",
     ["Later"] = "Später",
-    ["|cffaaaaaaClassic and Modern are our own frames; move them with /vedit. Switching back to Standard asks for a reload.|r"] = "|cffaaaaaaClassic und Modern sind eigene Rahmen; verschieben mit /vedit. Zurück auf Standard fragt nach einem Reload.|r",
+    ["|cffaaaaaaClassic reskins Blizzard's frames; Modern is our own frame, moved with /vedit. Leaving Classic or Modern asks for a reload.|r"] = "|cffaaaaaaClassic gestaltet Blizzards Rahmen um; Modern ist ein eigener Rahmen, verschieben mit /vedit. Wer Classic oder Modern verlässt, wird nach einem Reload gefragt.|r",
     ["Classic"] = "Classic",
     ["|cffaaaaaaClassic keeps Blizzard's frames underneath: target auras, the target cast bar and the pet frame stay, and Edit Mode moves them.|r"] = "|cffaaaaaaClassic behält Blizzards Rahmen darunter: Ziel-Auren, Ziel-Zauberleiste und Pet-Rahmen bleiben, Edit Mode verschiebt sie.|r",
     ["Modern"] = "Modern",
