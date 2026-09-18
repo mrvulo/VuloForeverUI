@@ -48,8 +48,10 @@ local NEUTRAL_BAR = "Interface\\TargetingFrame\\UI-StatusBar"
 local neutralised = setmetatable({}, { __mode = "k" })   -- our note, not a field on Blizzard's bar
 local function recolor(statusbar, unit)
     if not active or not mod.db.classColor then return end
-    -- Classic keeps Blizzard's plain green unless its own toggle says so.
-    if mod.db.style == "classic" and not mod.db.classicClassColor then return end
+    -- Classic draws its own health bar on an overlay and keeps Blizzard's at
+    -- alpha 0; the class colour for that one is the Classic files' business
+    -- (see Extras.ClassTint below). Nothing to paint here.
+    if mod.db.style == "classic" then return end
     unit = unit or unitOfBar[statusbar]
     if not unit then return end
     local r, g, b = UF.ClassColor(unit)
@@ -141,18 +143,12 @@ local function installHooks()
     end)
 end
 
--- For the Classic reskin's name box: class colour for a player target,
--- nil for anything else (Blizzard's reaction tint stays). The reskin itself
--- asks no unit question but the classification.
+-- For the Classic style's overlay health bar: class colour for a player
+-- unit, nil for anything else (the bar stays green). The caller has checked
+-- that UnitIsPlayer's answer is readable.
 function Extras.ClassTint(unit)
     if not UnitExists(unit) or not UnitIsPlayer(unit) then return nil end
     return UF.ClassColor(unit)
-end
-
--- For the Classic reskin: it paints the bar green after Blizzard's
--- CheckClassification and asks here whether a class colour goes on top.
-function Extras.Recolor(statusbar, unit)
-    recolor(statusbar, unit)
 end
 
 function Extras.Enable(m)

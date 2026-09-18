@@ -1,8 +1,11 @@
 -- VuloForeverUI / Modules / UnitFrames
 --
--- Player and target frames in three styles. Standard keeps Blizzard's frames
--- and lays extras on them (UnitFramesExtras); Classic and Modern are our own
--- frames (UnitFramesEngine + UnitFramesSkins) and silence Blizzard's.
+-- Unit frames in three styles. Standard keeps Blizzard's frames and lays
+-- extras on them (UnitFramesExtras). Classic keeps Blizzard's frames too and
+-- reskins them -- player, target, focus, target-of-target, the target cast bar
+-- and the pet frame -- with overlay bars of our own on the original frame art
+-- (UnitFramesClassic*). Only Modern is our own frame (UnitFramesEngine +
+-- UnitFramesSkins) and silences Blizzard's player and target frames.
 local _, ns = ...
 local L = ns.L
 local UF = ns.UF

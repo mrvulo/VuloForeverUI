@@ -50,6 +50,10 @@ Modules\UnitFramesSkins.lua
 Modules\UnitFramesEngine.lua
 Modules\UnitFramesExtras.lua
 Modules\UnitFramesClassic.lua
+Modules\UnitFramesClassicPlayer.lua
+Modules\UnitFramesClassicTarget.lua
+Modules\UnitFramesClassicCastBar.lua
+Modules\UnitFramesClassicPet.lua
 Modules\UnitFrames.lua
 
 Core\Init.lua
