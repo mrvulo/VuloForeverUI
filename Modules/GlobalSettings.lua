@@ -43,15 +43,38 @@ local function getCVarNum(cvar)
     return tonumber(v) or 0
 end
 
+-- The client clamps the uiScale CVar at 0.64, so a smaller scale survives only
+-- as long as nobody reloads: the CVar comes back as 0.64 and UIParent with it.
+-- The chosen value is therefore remembered account-wide and put back onto
+-- UIParent at login and whenever the client rescales the UI.
+local function storedUIScale()
+    local g = ns.db and ns.db.global
+    return g and tonumber(g.uiScale) or nil
+end
+
+local function reapplyUIScale()
+    local scale = storedUIScale()
+    if not scale or not (UIParent and UIParent.SetScale) then return end
+    if math.abs(UIParent:GetScale() - scale) < 0.0005 then return end
+    if ns:InCombat() then
+        ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", reapplyUIScale)
+        return
+    end
+    pcall(UIParent.SetScale, UIParent, scale)
+end
+
 local function applyUIScale(scale)
     if not scale or scale <= 0 then return end
+    if ns.db and ns.db.global then ns.db.global.uiScale = scale end
     -- useUiScale must be "1" for uiScale to take effect
     setCVar("useUiScale", "1")
     setCVar("uiScale", scale)
-    if UIParent and UIParent.SetScale then
-        pcall(UIParent.SetScale, UIParent, scale)
-    end
+    reapplyUIScale()
 end
+
+ns:RegisterEvent("PLAYER_ENTERING_WORLD", reapplyUIScale)
+ns:RegisterEvent("UI_SCALE_CHANGED", reapplyUIScale)
+ns:RegisterEvent("DISPLAY_SIZE_CHANGED", reapplyUIScale)
 
 local function pixelPerfectScale()
     -- 768 / vertical physical resolution
@@ -588,7 +611,7 @@ local function generalOptions()
         { type = "slider", label = L["UI Scale"],
           min = 0.40, max = 1.15, step = 0.01,
           tooltip = L["Manual UI scaling. 0.65 is smaller, 1.0 is default."],
-          get = function() return getCVarNum("uiScale") end,
+          get = function() return storedUIScale() or getCVarNum("uiScale") end,
           set = function(_, v) applyUIScale(v) end },
 
         -- Directly under the client's own scale, because the two get confused
