@@ -47,8 +47,16 @@ Media/     fonts, textures, icons
 Libs/      LibStub, CallbackHandler, LibSharedMedia, LibDataBroker, LibDeflate,
            LibEditModeOverride
 tools/     node check.js — syntax, locals cap, locale coverage, house rules, TOC
+           node sv-seed.js — dev workaround for the beta's saved-variables bug
+Dev/       SavedSeed.lua: empty stub in git, generated copy of the saved files
+           on a dev machine (never commit the generated one)
 docs/      client research
 ```
+
+**Beta bug, 1.60.1:** the client writes SavedVariables and never reads them back, so
+settings are gone at every login. While testing in the client, keep
+`cd tools && node sv-seed.js --watch` running; a login line starting `dev seed:` says
+whether the seed was used or the client has started loading the files itself.
 
 ## Adding a module
 

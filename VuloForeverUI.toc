@@ -16,6 +16,7 @@ Libs\LibDeflate\LibDeflate.lua
 Libs\LibEditModeOverride\LibEditModeOverride.xml
 
 Core\Namespace.lua
+Dev\SavedSeed.lua
 Core\Locale.lua
 Locales\deDE.lua
 Core\Utils.lua

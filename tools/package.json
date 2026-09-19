@@ -3,7 +3,9 @@
   "private": true,
   "description": "Pre-release checks for VuloForeverUI (syntax, locals cap, locale coverage, naming rules)",
   "scripts": {
-    "check": "node check.js"
+    "check": "node check.js",
+    "seed": "node sv-seed.js",
+    "seed:watch": "node sv-seed.js --watch"
   },
   "dependencies": {
     "luaparse": "^0.3.1"
