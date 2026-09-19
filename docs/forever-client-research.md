@@ -120,7 +120,9 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
   `global.freshLog` in our saved file holds only the newest login on 2026-09-19 although
   the 2026-09-18 file had one too -- nothing accumulated, so the file was never loaded. This
   is the "empty database at login" problem; the load probe in `Core/Init.lua` cannot find
-  a cause on our side because there is none. Dev workaround (built 2026-09-19):
+  a cause on our side because there is none (probe removed 2026-09-19). Dev workaround
+  (built and **confirmed in the client 2026-09-19**, account and character file restored;
+  the watcher picked up the client's save and the next load used it):
   `node tools/sv-seed.js [--watch]` copies the saved files from WTF into
   `Dev/SavedSeed.lua`, which the TOC loads as addon code; `ns:InitDB` takes the seed only
   while `VuloForeverUIDB` arrives nil, and prints "dev seed: the client loaded the saved
