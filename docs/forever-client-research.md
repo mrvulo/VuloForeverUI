@@ -67,6 +67,147 @@ Source: static analysis of the Forever UI source (Gethe/wow-ui-source, branch `f
 - Roughly: Low ≈ 23k lines, Medium ≈ 31k, High ≈ 22k, Blocked/drop ≈ 19k.
 - **Recommendation:** clean rebuild that reuses Core and UI, not a fork.
 
+## Public findings from other developers (collected 2026-09-19)
+
+Sources: two public research repos measuring the same beta build
+([forever-addon-kit](https://github.com/Thunderz96/forever-addon-kit),
+[forever-addon-dev](https://github.com/imperial64/forever-addon-dev), `research/findings.md`),
+the Warcraft Wiki pages [Secret Values](https://warcraft.wiki.gg/wiki/Secret_Values) and
+[Patch 12.1.0/API changes](https://warcraft.wiki.gg/wiki/Patch_12.1.0/API_changes). The addon
+developer Discord (WoWUIDev) is login-only and was not read. Labels: **ours** = matches our
+own client data, **source** = checked in the `forever` UI source, **reported** = their
+measurement, not yet repeated here.
+
+### From the addon developer Discord (WoWUIDev, read 2026-09-19)
+Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr` /
+`forever-live`). This is where Blizzard's answers arrive first; re-read it after each build.
+- **SavedVariables not loading: Blizzard is tracking it.** It is *unpredictable*, not
+  constant -- some addons load in one session and not the next; a freshly created saved
+  file tends to load for that one session. `## LoadSavedVariablesFirst: 1` does not help.
+  Our dev seed already covers both outcomes (the client wins when it does load).
+- **Secure snippets / `loadstring_untainted`: confirmed by Blizzard as unintentional**, being
+  looked into. Do not design around it as permanent.
+- **`UnitPower("player", Enum.PowerType.ComboPoints)` secret: fix pending for the next
+  build** (word from Blizzard). Combo points are the only secondary class power Forever has
+  (no holy power, soul shards, runes, essence). Primary power being secret is not
+  mentioned in that answer -- re-run `/vfsecrets` on the next build.
+- **No realms; names are "Main Secondary".** `UnitName("player")` returns the full unique
+  name as ONE string, `UnitName("target")` returns TWO values (main, secondary), and
+  `GetPlayerInfoByGUID` only the main name. Blizzard has not settled the final shape.
+  The WTF folder spells it `Main-Secondary`. Anything keyed per character must not assume
+  `Name-Realm`; the moderators suggest the *ruleset* as a realm substitute.
+  `Modules/UnitFrames/Engine.lua` passes `UnitName(unit)` straight into `SetText`, so other
+  units show the main name only -- fine for now, revisit when the API settles.
+- **`UnitRace` (and similar) can freeze or crash the client**, even with no addons loaded.
+  We do not call it; keep it that way until fixed.
+- **The GCD spell is 29515 on Forever, not 61304**, and it is secret in combat (not on the
+  never-secret list yet). Use the duration object or the non-secret `isOnGCD` field of the
+  spell cooldown info.
+- **TOC:** `_Mainline.toc` also loads on Forever. Recommended is one TOC with per-line
+  conditions: `file.lua [AllowLoadGameType camelot][ExcludeLoadGameType standard, classic]`
+  (Forever only, may change), `## AllowLoadGameType: standard` (retail only). Our single
+  plain TOC is the recommended setup. This settles "To verify" item 2.
+- `WOW_PROJECT_ID` equal to retail is reported as a bug there too -- it may change, another
+  reason our detection does not use it.
+- Talents: no `GetNumTalents`/`GetActiveTalentGroup`/`GetNumTalentTabs`; the trees reuse
+  `C_Traits` TraitNodeGroups. The community is still working out the iteration pattern.
+- A dependency on an addon that does not exist on Forever (e.g. Housing) makes an addon
+  refuse to load **without any error**.
+
+### Beta bugs (Blizzard's, not ours)
+- **SavedVariables are written on logout and never read back.** Both repos proved it
+  independently (pre-seeded file, global stays nil from main chunk to logout). **ours:**
+  `global.freshLog` in our saved file holds only the newest login on 2026-09-19 although
+  the 2026-09-18 file had one too -- nothing accumulated, so the file was never loaded. This
+  is the "empty database at login" problem; the load probe in `Core/Init.lua` cannot find
+  a cause on our side because there is none. Dev workaround (built 2026-09-19):
+  `node tools/sv-seed.js [--watch]` copies the saved files from WTF into
+  `Dev/SavedSeed.lua`, which the TOC loads as addon code; `ns:InitDB` takes the seed only
+  while `VuloForeverUIDB` arrives nil, and prints "dev seed: the client loaded the saved
+  settings itself" at login once a beta build fixes the bug. Not shippable -- players
+  have no external script -- so the committed file is an empty stub.
+- **`loadstring_untainted` is missing**, so secure snippets cannot compile. **source:**
+  `Blizzard_RestrictedAddOnEnvironment/RestrictedExecution.lua:22` captures the global,
+  `:79` calls it. **reported:** every `WrapScript`, `_onstate-*`, `RunAttribute` and
+  `initialConfigFunction` throws "attempt to call a nil value". We use none of these today
+  (checked 2026-09-19); ActionBars and anything with state drivers will hit it. Guard with
+  `if loadstring_untainted then`.
+- **`C_CooldownViewer` categories are empty** for Forever specs (**reported**). A cooldown
+  module has to read the spellbook, not the viewer data.
+- **`C_AssistedCombat` is inert** (`IsAvailable()` false) (**reported**).
+
+### Restrictions
+- **`ReloadUI()` is reported as protected** for addon code. We call it in 11 places
+  (GlobalSettings, Profiles, Minimap menu, MainFrame, Setup, Init, UnitFrames popups).
+  **To verify** from a button click; if blocked, the fallback is a "type /reload" message.
+- **`UseAction` is forbidden in and out of combat**; `EditMacro` and
+  `SetOverrideBindingClick` are blocked in combat only (**reported**).
+  `SecureActionButton:SetAttribute` raised no error in combat, but "no error" is not
+  "took effect" -- do not build on it untested.
+- **`COMBAT_LOG_EVENT(_UNFILTERED)`: the subscription itself is refused**, always, and
+  **`RegisterEvent` still returns normally** -- a `pcall` reports success while the client
+  shows the blocked-action dialog. Never register it, not even behind a pcall.
+- **Registering an event the client does not know throws and aborts the file**
+  (**reported**). `ns:RegisterEvent` already wraps this in `pcall` (`Core/Events.lua:27`);
+  raw `frame:RegisterEvent` calls in modules need the same.
+- **After 100 Lua errors per session the client stops delivering errors to any handler.**
+  An error flood hides the real error -- fix floods first, `/reload` to reset.
+- **Gates in combat (reported, matches ours where we measured):** auras, cooldowns, action
+  cooldowns, unit stats, threat values -> secret. `ShouldUnitSpellCastBeSecret()` stays
+  **false** (cast bars of other units work), threat **state** stays readable, unit identity
+  and max health stay readable. `UnitPower("player")` is secret always.
+- `C_RestrictedActions.GetAddOnRestrictionState()` goes 0 -> 2 and
+  `IsAddOnRestrictionActive()` false -> true on entering combat: one queryable global switch
+  next to the per-category `C_Secrets` gates.
+- `C_ChatInfo.AreOutgoingAddonChatMessagesRestricted()` is **true even out of combat** --
+  no addon-message features (profile sharing over chat, version checks) for now.
+- **Three refusal shapes:** a throw (auras), a secret that survives `tostring()` and
+  detonates at the next index/compare (power, health), a plain nil (cast info, cooldown
+  start). `tostring(secret)` is a secret string: test with `issecretvalue` before **and**
+  after converting, and never let one reach SavedVariables -- it would break the flush.
+- `UNIT_AURA`'s added/removed payload lists arrive as secret tables in combat.
+
+### Tools the client gives us
+- **Forced-restriction CVars for testing without a fight:** `addonCombatRestrictionsForced`,
+  `addonMapRestrictionsForced`, `addonPvPMatchRestrictionsForced`,
+  `addonEncounterRestrictionsForced` (wiki; **to verify** they exist on 1.60.1).
+- **More secret helpers than we use:** `issecrettable`, `canaccesstable`,
+  `hasanysecretvalues`, `scrub`, `scrubsecretvalues`, `secretwrap`, `canaccesssecrets`,
+  `dropsecretaccess`; on widgets `HasSecretAspect`, `HasSecretValues`, `HasAnySecretAspect`,
+  `IsAnchoringSecret` (explains finding 10 below: anchoring secrecy is inherited from the
+  frame a region is anchored to).
+- **Allowed on secrets from tainted code:** storing, passing on, concatenation and
+  `string.format`/`string.concat`/`string.join` (wiki, 12.x) -- the result is secret again.
+  Forbidden: arithmetic, compare, boolean test, `#`, table key, indexing.
+- **Sanctioned display paths:** `C_CurveUtil.CreateColorCurve()` for colour-by-percent
+  (in use, `Modules/UnitFrames/Engine.lua`), `C_CurveUtil.CreateCurve()`,
+  `C_DurationUtil.CreateDuration()` + `StatusBar:SetTimerDuration()` for timer bars,
+  `C_Spell.GetSpellCooldownDuration(id)` / `C_UnitAuras.GetAuraDuration(unit, instanceID)`
+  -> duration object -> `Cooldown:SetCooldownFromDurationObject()` (in use,
+  `Core/Secret.lua`). Reported: a duration object must be set **before** combat for the
+  widget to tick.
+- **12.1 aura widgets:** `CreateFrame("AuraContainer")` with `AddAuraGroup`/`AddAuraSlot`/
+  `AddItemEnchantment`; the container creates its `AuraButton`s itself and they carry
+  forbidden aspects. On 12.1 this is the route to show auras in combat from addon code;
+  **to verify** that `CreateFrame("AuraContainer")` works on 1.60.1.
+  `SecureAuraHeaderTemplate` is removed. Also 12.1: `getglobal`/`setglobal` deprecated,
+  `MouseIsOver` -> `InputUtil.IsMouseOver`, `UnitClass`/`UnitSex`/`UnitGroupRolesAssigned`
+  secret when unit identity is secret.
+- `C_Secrets.GetSpellAuraSecrecy(id)` returns `Enum.SecrecyLevel`
+  (NeverSecret / AlwaysSecret / ContextuallySecret) -- whitelisted spells can be shown
+  with full data even in combat.
+- `C_EncodingUtil` (JSON, CBOR, base64, compress) exists -- a native alternative to
+  LibDeflate for profile export strings.
+- New swing API detail: `PLAYER_SWING(swingDuration, swingType)`,
+  `PLAYER_SWING_RANGE_UPDATE(swingType, isInRange, checksRange)`, `Enum.PlayerSwingType`
+  (MainHand 0, OffHand 1, Ranged 2), `C_SwingTimer.IsTargetWithinSwingRange(type)`.
+- Costs (**reported**): `C_Map.GetPlayerMapPosition` allocates ~1.8 KB per call -- poll on
+  an accumulator, never per frame. `OnUpdate` `elapsed` has 1 ms resolution; profile with
+  `debugprofilestop`. `gxBrightness`/`gxContrast`/`gxGamma` do not exist; the CVars are
+  `Brightness`, `Contrast`, `Gamma`. `maxFPS` keeps its value while `useMaxFPS` is 0.
+- Version trap: retail-style checks `select(4, GetBuildInfo()) >= 100000` are false here.
+  Ours uses the 16000-20000 range plus the `C_SwingTimer` probe, which is correct.
+
 ## To verify in the beta
 1. ~~Values of `/dump WOW_PROJECT_ID`, `GetBuildInfo()`, `C_GameRules.GetActiveGameMode()`.~~ Done 2026-09-18, see Facts.
 2. ~~Whether a plain `.toc` with `## Interface: 16001` loads~~ (it does), and whether a `_Mainline.toc` suffix is accepted.
