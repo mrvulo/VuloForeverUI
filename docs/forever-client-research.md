@@ -139,9 +139,13 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
 - **`C_AssistedCombat` is inert** (`IsAvailable()` false) (**reported**).
 
 ### Restrictions
-- **`ReloadUI()` is reported as protected** for addon code. We call it in 11 places
-  (GlobalSettings, Profiles, Minimap menu, MainFrame, Setup, Init, UnitFrames popups).
-  **To verify** from a button click; if blocked, the fallback is a "type /reload" message.
+- **`ReloadUI()` works from a button click (ours, confirmed 2026-09-19, build 69913):** no
+  error, no blocked-action dialog. The public reports of it being "protected" describe
+  calls made *without* user input (a timer or an event handler, for an unattended reload
+  loop) -- that case is untested here and we have no such call: all 11 of ours
+  (GlobalSettings, Profiles, Minimap menu, MainFrame, Setup, Init, UnitFrames popups) run
+  from a click, a popup button or a slash command. Keep it that way; never call
+  `ReloadUI()` from `C_Timer` or an event.
 - **`UseAction` is forbidden in and out of combat**; `EditMacro` and
   `SetOverrideBindingClick` are blocked in combat only (**reported**).
   `SecureActionButton:SetAttribute` raised no error in combat, but "no error" is not
