@@ -174,9 +174,14 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
 - `UNIT_AURA`'s added/removed payload lists arrive as secret tables in combat.
 
 ### Tools the client gives us
-- **Forced-restriction CVars for testing without a fight:** `addonCombatRestrictionsForced`,
-  `addonMapRestrictionsForced`, `addonPvPMatchRestrictionsForced`,
-  `addonEncounterRestrictionsForced` (wiki; **to verify** they exist on 1.60.1).
+- **Forced-restriction CVars for testing without a fight:** `addonCombatRestrictionsForced`
+  **exists on 1.60.1 (ours, 2026-09-19):** `C_CVar.GetCVarInfo` returns value "0", default
+  "0", and false for server-stored, locked-from-user, secure and read-only.
+  `/vfsecrets force` toggles it; the report and the login line say when it is on, because
+  the CVar outlives the session. **To verify:** that setting it to 1 really flips the
+  `C_Secrets` gates and makes the aura API throw. The siblings
+  `addonMapRestrictionsForced`, `addonPvPMatchRestrictionsForced` and
+  `addonEncounterRestrictionsForced` (wiki) are unchecked.
 - **More secret helpers than we use:** `issecrettable`, `canaccesstable`,
   `hasanysecretvalues`, `scrub`, `scrubsecretvalues`, `secretwrap`, `canaccesssecrets`,
   `dropsecretaccess`; on widgets `HasSecretAspect`, `HasSecretValues`, `HasAnySecretAspect`,
@@ -194,8 +199,10 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
   widget to tick.
 - **12.1 aura widgets:** `CreateFrame("AuraContainer")` with `AddAuraGroup`/`AddAuraSlot`/
   `AddItemEnchantment`; the container creates its `AuraButton`s itself and they carry
-  forbidden aspects. On 12.1 this is the route to show auras in combat from addon code;
-  **to verify** that `CreateFrame("AuraContainer")` works on 1.60.1.
+  forbidden aspects. On 12.1 this is the route to show auras in combat from addon code.
+  **Ours, 2026-09-19:** `pcall(CreateFrame, "AuraContainer", nil, UIParent)` returns true
+  and a frame on 1.60.1 -- the widget type exists. Not yet tried: adding a group and
+  seeing buttons appear in combat.
   `SecureAuraHeaderTemplate` is removed. Also 12.1: `getglobal`/`setglobal` deprecated,
   `MouseIsOver` -> `InputUtil.IsMouseOver`, `UnitClass`/`UnitSex`/`UnitGroupRolesAssigned`
   secret when unit identity is secret.

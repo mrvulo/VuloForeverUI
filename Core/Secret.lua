@@ -176,18 +176,44 @@ end
 -- and in a raid, because the answers differ per restriction state.
 ns:RegisterSlash({ key = "SECRETS", commands = { "/vfsecrets" },
     desc = "Report which combat values this client lets the addon read right now.",
-    note = "Run it out of combat, in combat, and in a raid: the answers differ.",
+    note = "Run it out of combat, in combat, and in a raid: the answers differ. "
+        .. "'/vfsecrets force' toggles the client's simulated combat restrictions.",
 })
-ns.Slash.SECRETS = function()
+
+-- The client ships a CVar that forces the combat restriction state without a
+-- fight (present on 1.60.1, not locked, not secure -- checked 2026-09-19). It
+-- is a test switch: it is never set by anything but this command, and the
+-- report says when it is on so a forgotten "1" cannot pass for real behaviour.
+local FORCE_CVAR = "addonCombatRestrictionsForced"
+
+local function restrictionsForced()
+    return C_CVar.GetCVar(FORCE_CVAR) == "1"
+end
+ns.RestrictionsForced = restrictionsForced   -- Init.lua warns at login: the CVar outlives the session
+
+ns.Slash.SECRETS = function(msg)
     local A, R = ns.C.accent, ns.C.r
+    if (msg or ""):lower():match("^%s*force") then
+        if InCombatLockdown() then
+            ns:Print("Not while in combat.")
+            return
+        end
+        local ok = pcall(C_CVar.SetCVar, FORCE_CVAR, restrictionsForced() and "0" or "1")
+        ns:Print("simulated combat restrictions: %s%s", restrictionsForced()
+            and (ns.C.yellow .. "ON" .. R .. " -- run /vfsecrets, then switch it off again")
+            or  (ns.C.pos .. "off" .. R),
+            ok and "" or (ns.C.neg .. "  (the client refused the change)" .. R))
+        return
+    end
     local function state(v)
         if not ns.IsSecret(v) then return ns.C.pos .. "readable" .. R end
         if ns.CanRead(v) then return ns.C.yellow .. "secret, accessible" .. R end
         return ns.C.neg .. "secret" .. R
     end
 
-    ns:Print("%sForever secret-value report%s — combat: %s", A, R,
-        InCombatLockdown() and "yes" or "no")
+    ns:Print("%sForever secret-value report%s — combat: %s%s", A, R,
+        InCombatLockdown() and "yes" or "no",
+        restrictionsForced() and (ns.C.yellow .. "  (restrictions FORCED by CVar)" .. R) or "")
 
     -- Every probe runs in its own pcall: the aura API THROWS when restricted
     -- (seen 2026-09-18), and one throw must not eat the rest of the report.

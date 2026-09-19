@@ -35,6 +35,9 @@ initFrame:SetScript("OnEvent", function(_, event, addonName)
             ns:Print(unpack(n))
         end
         ns.migrationNotes = nil
+        if ns.RestrictionsForced and ns.RestrictionsForced() then
+            ns:Print("simulated combat restrictions are still ON -- '/vfsecrets force' switches them off.")
+        end
         if ns._svSeedNote then
             ns:Print("dev seed: %s", ns._svSeedNote)
             ns._svSeedNote = nil
