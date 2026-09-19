@@ -6,7 +6,7 @@
 ## SavedVariables: VuloForeverUIDB
 ## SavedVariablesPerCharacter: VuloForeverUICharDB
 ## IconTexture: Interface\AddOns\VuloForeverUI\Media\Icons\vui4
-## Category: VuloUI
+
 
 Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
@@ -47,6 +47,7 @@ Modules\GlobalSettings.lua
 Modules\Profiles.lua
 Modules\BarSetups.lua
 Modules\Minimap.lua
+Modules\MinimapCollector.lua
 Modules\UnitFrames\Skins.lua
 Modules\UnitFrames\Engine.lua
 Modules\UnitFrames\Extras.lua

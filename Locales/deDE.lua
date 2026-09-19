@@ -31,4 +31,22 @@ ns:RegisterLocale("deDE", {
     ["|cffaaaaaaClassic keeps Blizzard's frames underneath: target auras, the target cast bar and the pet frame stay, and Edit Mode moves them.|r"] = "|cffaaaaaaClassic behält Blizzards Rahmen darunter: Ziel-Auren, Ziel-Zauberleiste und Pet-Rahmen bleiben, Edit Mode verschiebt sie.|r",
     ["Modern"] = "Modern",
     ["Player and target frames: Blizzard's own with extras, the Classic look, or a flat Modern look."] = "Spieler- und Zielrahmen: Blizzards eigene mit Extras, der Classic-Look oder ein flacher Modern-Look.",
+
+    -- Minimap button collector
+    ["Minimap Button Collector"] = "Minimap-Button-Sammler",
+    ["Collects the other addons' minimap buttons in one box that opens from a single button on the minimap."] = "Sammelt die Minimap-Buttons der anderen Addons in einer Box, die sich über einen einzigen Button an der Minimap öffnet.",
+    ["|cffaaaaaaOne button on the minimap opens a box with the minimap buttons of all your other addons, so the minimap itself stays clean. Turning the module off puts every button back where it was.|r"] = "|cffaaaaaaEin Button an der Minimap öffnet eine Box mit den Minimap-Buttons all deiner anderen Addons, die Minimap selbst bleibt aufgeräumt. Wird das Modul ausgeschaltet, kommt jeder Button an seinen alten Platz zurück.|r",
+    ["Minimap buttons"] = "Minimap-Buttons",
+    ["Click: show or hide the collected buttons"] = "Klick: gesammelte Buttons zeigen oder verbergen",
+    ["Shift+drag: move this button"] = "Shift+Ziehen: diesen Button verschieben",
+    ["No addon buttons found."] = "Keine Addon-Buttons gefunden.",
+    ["Buttons per row"] = "Buttons pro Reihe",
+    ["Button size"] = "Button-Größe",
+    ["Angle (degrees)"] = "Winkel (Grad)",
+    ["Also collect the VuloForeverUI button"] = "Auch den VuloForeverUI-Button einsammeln",
+    ["If off, the VuloForeverUI button stays on the minimap rim."] = "Wenn aus, bleibt der VuloForeverUI-Button am Rand der Minimap.",
+    ["Close the box when the mouse leaves"] = "Box schließen, wenn die Maus sie verlässt",
+    ["Closes the box shortly after the mouse has left both the box and its button."] = "Schließt die Box kurz nachdem die Maus sowohl die Box als auch ihren Button verlassen hat.",
+    ["Collect now"] = "Jetzt einsammeln",
+    ["Searches the minimap again for addon buttons."] = "Sucht die Minimap erneut nach Addon-Buttons ab.",
 })
