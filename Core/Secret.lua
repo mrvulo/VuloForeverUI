@@ -364,7 +364,16 @@ local function nameplateReport()
     end
 
     -- 4. What the colour chain and the text slots read.
-    probe("UnitName", function() return state((UnitName("target"))) end)
+    -- The VALUE too, in brackets: a nameplate showed "Wilde_der_Staubschwingen"
+    -- where the chat log says "Wilde der Staubschwingen", so the question is
+    -- whether the client hands out underscores or our FontString draws them.
+    -- Forever also returns TWO values here (main, secondary), so both are shown.
+    probe("UnitName", function()
+        local main, second = UnitName("target")
+        if not ns.CanRead(main) then return state(main) end
+        return ("%s  [%s]%s"):format(state(main), tostring(main),
+            ns.Exists(second) and ("  second [" .. tostring(second) .. "]") or "")
+    end)
     probe("UnitClass", function() return state((select(2, UnitClass("target")))) end)
     probe("UnitClassification", function() return state(UnitClassification("target")) end)
     probe("UnitEffectiveLevel", function() return state(UnitEffectiveLevel("target")) end)
