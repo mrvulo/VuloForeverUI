@@ -22,29 +22,10 @@ NP.AuraStyle = Style
 -- which words. Seconds up to a minute, then "5m", then "2h", then "3d" --
 -- Blizzard's own one-letter shape, which is what fits under a 24 px icon.
 -- ---------------------------------------------------------------------------
-local formatter
-
-local function buildFormatter()
-    local util = C_StringUtil
-    if not (util and util.CreateNumericRuleFormatter) then return nil end
-    local ok, f = pcall(util.CreateNumericRuleFormatter)
-    if not ok or not f then return nil end
-    local Up = Enum.NumericRuleFormatRounding and Enum.NumericRuleFormatRounding.Up
-    local okSet = pcall(f.SetBreakpoints, f, {
-        -- rounding sits on the COMPONENT: on the breakpoint it would only
-        -- round `step`, which is not set, and 91 s would read "2m".
-        { threshold = 0,     format = "%d" },
-        { threshold = 60,    format = "%dm", components = { { div = 60, rounding = Up } } },
-        { threshold = 3600,  format = "%dh", components = { { div = 3600, rounding = Up } } },
-        { threshold = 86400, format = "%dd", components = { { div = 86400, rounding = Up } } },
-    })
-    if not okSet then return nil end
-    return f
-end
-
+-- Built once for the whole suite (ns.AuraDurationFormatter, Core/Utils): the
+-- player's aura bars want the same wording under their icons.
 function Style.Formatter()
-    if formatter == nil then formatter = buildFormatter() or false end
-    return formatter or nil
+    return ns.AuraDurationFormatter()
 end
 
 -- ---------------------------------------------------------------------------

@@ -673,12 +673,31 @@ local hooked = false
 -- Bound to the page being SHOWN, never to GetOptions: the settings search
 -- calls GetOptions for every module and tab on every keystroke, and doing
 -- this there put hidden bars on screen while someone typed.
+-- The settings window is built on first use, so at login there is nothing to
+-- hook. The window's own close hook is therefore laid here, the first time the
+-- page is shown -- laying it at login silently did nothing, and the preview
+-- could be entered but never left.
+local hookedHide = false
+
 local function enterPreview()
     if CM.optionsOpen then return end
     CM.optionsOpen = true
+    if not hookedHide then
+        local f = UI.mainFrame
+        if f then
+            hookedHide = true
+            f:HookScript("OnHide", function() CM.LeavePreview() end)
+        end
+    end
     -- Restyle, not just show: the bars grow by their stand-in icons.
     CM.RestyleAll()
     CM.UpdateVisibilityAll()
+end
+
+-- The hook is laid from OnEnable. It used to be laid INSIDE enterPreview,
+-- which meant the only thing that could call enterPreview was a hook that
+-- nothing had installed yet: the on-screen preview never ran once.
+function CM.HookPreview()
     if hooked then return end
     hooked = true
     hooksecurefunc(UI, "ShowModulePage", function(_, key)
@@ -688,8 +707,6 @@ local function enterPreview()
             CM.LeavePreview()
         end
     end)
-    local f = UI.mainFrame
-    if f then f:HookScript("OnHide", function() CM.LeavePreview() end) end
 end
 
 function CM.LeavePreview()

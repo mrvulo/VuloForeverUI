@@ -356,6 +356,35 @@ plates all confirmed in the client.
   `SystemFont_NamePlate_Outlined` restyles every name-only plate at once, which is also the
   only route that survives inside instances.
 
+## Cast bars and duration text (measured in the client 2026-09-20)
+
+- **`C_DurationUtil.CreateDurationTextBinding` writes nothing.** A binding created from
+  addon code, given a font string and fed the cast's duration object, left the font string
+  empty in the client -- no error, no text. The route that DOES work is the one
+  `Modules/Nameplates/CastBar.lua:345` has used all along: format the object's own getter,
+  `fs:SetFormattedText("%.1f", dur:GetRemainingDuration())`. The number stays secret and
+  `string.format` on a secret is allowed. Now wrapped as `ns:DurationText(host, fs, dur)`
+  in `Core/Secret.lua`; the cooldown icons keep the binding as their first choice and fall
+  back to one shared ticker. **Open:** whether the binding is broken outright or needs
+  something we did not do -- the cooldown countdown is the clean test, because it is the
+  one place both routes still exist side by side.
+- **Blizzard's `PlayerCastingBarFrame` takes the classic treatment** the same way the
+  target/focus bars do: `Border`, `BorderShield`, `Background`, `Spark`, `Flash`, `Text`
+  are all there, and the modern decoration (`Flakes01..03`, `BaseGlow`, `WispGlow`,
+  `Sparkles01/02`, `Shine`, `EnergyGlow`, `InterruptGlow`, `ChargeGlow`, `ChargeFlash`,
+  `StandardGlow`, `CraftGlow`, `ChannelShadow`, `DropShadow`, `TextBorder`) is hidden
+  region by region. The methods worth hooking are `SetLook`, `UpdateShownState`,
+  `UpdateBarFillTexture`, `ShowSpark`, `PlayFadeAnim`, `PlayFinishAnim` and
+  `PlayInterruptAnims` -- Blizzard re-sets its own art on each of them.
+- **Never write a field on a cast bar, and never call its own methods from addon code.**
+  A field written by us taints every later read of it and the bar's update loop then trips
+  over the secret cast values it carries; calling `SetLook` or `UpdateShownState` makes the
+  client read those values inside our context. State about the bar belongs in a table keyed
+  by the frame (`Modules/ResourceBars/CastSkin.lua`).
+- **The fill colour can be chosen without reading the cast type.** The type is secret, but
+  the ATLAS NAME Blizzard just picked for the fill is a plain string and says the same
+  thing: `interrupted` / `uninterrupt` / `channel` / `full` in the name decide the colour.
+
 ## To verify in the beta
 1. ~~Values of `/dump WOW_PROJECT_ID`, `GetBuildInfo()`, `C_GameRules.GetActiveGameMode()`.~~ Done 2026-09-18, see Facts.
 2. ~~Whether a plain `.toc` with `## Interface: 16001` loads~~ (it does), and whether a `_Mainline.toc` suffix is accepted.

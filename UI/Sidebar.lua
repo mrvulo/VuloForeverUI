@@ -35,7 +35,9 @@ for _, key in ipairs({
     MODULE_ICONS[key] = ICON_DIR .. key .. ".tga"
 end
 MODULE_ICONS.minimapcollector = ICON_DIR .. "minimap.tga"   -- shares the minimap glyph
-MODULE_ICONS.buffdurations    = ICON_DIR .. "auras.tga"
+-- The glyph on disk is named after what this page was called before the suite
+-- settled on "Edit Mode"; the art is the padlock, which still fits.
+MODULE_ICONS.editmode         = ICON_DIR .. "unlockmode.tga"
 MODULE_ICONS.damagemeter      = ICON_DIR .. "meter.tga"
 local MODULE_ICON_FALLBACK = ICON_DIR .. "_fallback.tga"
 

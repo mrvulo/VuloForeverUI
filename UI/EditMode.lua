@@ -4,26 +4,63 @@ local L  = ns.L
 local UI = ns.UI
 local accent = ns.COLORS.accent
 
+-- Everything the editing session remembers, grid included. The db path still
+-- says `grid` because that is where the first four keys were written and a
+-- rename would drop every saved preference; `ghost` has lived here since long
+-- before the rest joined it.
+--
 -- Falls back to a local table when called before the DB exists.
+local EDIT_DEFAULTS = {
+    show        = false,     -- draw the alignment grid
+    snap        = true,      -- legacy grid-snap flag, now seeds snapTo
+    size        = 32,        -- grid spacing
+    ghost       = false,     -- see-through boxes
+    snapTo      = "both",    -- both | elements | grid | none
+    coords      = false,     -- X/Y readout on every box
+    cursorLight = false,     -- a soft light following the cursor
+    dimBg       = true,      -- darken the interface behind the boxes
+    hoverBar    = false,     -- the toolbar fades until the mouse reaches it
+}
+
+local function fillEditDefaults(g)
+    for k, v in pairs(EDIT_DEFAULTS) do
+        if g[k] == nil then g[k] = v end
+    end
+    -- A profile written before the snap modes existed carries `snap` alone,
+    -- and `snap` only ever gated the GRID: windows snapped to each other
+    -- whatever it said. So its off state migrates to "elements", not to
+    -- "none" -- mapping it to "none" would take away edge alignment that the
+    -- player never switched off.
+    if g._snapToSeeded == nil then
+        g._snapToSeeded = true
+        if g.snap == false then g.snapTo = "elements" end
+    end
+    return g
+end
+
 local function gridState()
     local p = ns.db and ns.db.profile
     if p then
         p.editmode      = p.editmode      or {}
         p.editmode.grid = p.editmode.grid or {}
-        local g = p.editmode.grid
-        if g.show == nil then g.show = false end
-        if g.snap == nil then g.snap = true  end
-        if g.size == nil then g.size = 32    end
-        if g.ghost == nil then g.ghost = false end
-        return g
+        return fillEditDefaults(p.editmode.grid)
     end
-    ns._editGridFallback = ns._editGridFallback or { show = false, snap = true, size = 32, ghost = false }
+    ns._editGridFallback = fillEditDefaults(ns._editGridFallback or {})
     return ns._editGridFallback
+end
+ns.EditState = gridState
+
+-- Which of the two snap kinds the current mode allows.
+local function snapKinds(g)
+    local mode = g.snapTo or "both"
+    return (mode == "both" or mode == "elements"),   -- elements
+           (mode == "both" or mode == "grid")        -- grid
 end
 
 function ns:EditSnapXY(x, y, ratio)
     local g = gridState()
-    if not g.snap then return x, y end
+    local _, useGrid = snapKinds(g)
+    if not useGrid then return x, y end
     local s = g.size or 32
     if s <= 0 then return x, y end
     -- Snap in UIParent units (where the grid is drawn), then convert back to frame-local units.
@@ -34,6 +71,9 @@ function ns:EditSnapXY(x, y, ratio)
 end
 
 local dim, toolbar, built
+-- Assigned further down, where the frames they read are in scope. Declared
+-- here so the session refresh below can call them.
+local layoutsShown, refreshCoordText
 local gridPool = {}
 
 local function refreshGrid()
@@ -87,6 +127,87 @@ local function refreshGrid()
     y = cy - size;       while y > 0 do hline(y, false); y = y - size end
 end
 ns.RefreshEditGrid = refreshGrid
+
+-- ---------------------------------------------------------------------------
+-- The three session looks: how dark the interface behind the boxes goes, the
+-- light that follows the cursor, and whether the toolbar waits for the mouse.
+-- All three are settings, so each one is a function the options page can call.
+
+local function refreshDim()
+    if not (dim and dim.fill) then return end
+    -- The frame keeps its mouse either way: a click on empty space is what
+    -- deselects, and that has to work with the darkening turned off.
+    local g = gridState()
+    dim.fill:SetColorTexture(0, 0, 0, g.dimBg and 0.35 or 0)
+end
+
+local cursorLight
+
+local function refreshCursorLight()
+    if not dim then return end
+    local g = gridState()
+    if not g.cursorLight then
+        if cursorLight then cursorLight:Hide() end
+        dim:SetScript("OnUpdate", nil)
+        return
+    end
+    if not cursorLight then
+        cursorLight = dim:CreateTexture(nil, "ARTWORK")
+        cursorLight:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\textures\\soft-glow.tga")
+        cursorLight:SetBlendMode("ADD")
+        cursorLight:SetSize(420, 420)
+    end
+    local a = ns.COLORS.accent
+    cursorLight:SetVertexColor(a.r, a.g, a.b, 0.16)
+    cursorLight:Show()
+    -- OnUpdate on `dim` and nowhere else: a hidden frame gets no OnUpdate, so
+    -- this costs nothing once the session closes.
+    dim:SetScript("OnUpdate", function()
+        local x, y = GetCursorPosition()
+        local s = UIParent:GetEffectiveScale()
+        if not s or s == 0 then return end
+        cursorLight:ClearAllPoints()
+        cursorLight:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / s, y / s)
+    end)
+end
+
+local HOVER_BAR_ALPHA = 0.12
+
+local function refreshHoverBar()
+    if not toolbar then return end
+    local g = gridState()
+    if not g.hoverBar then
+        toolbar:SetScript("OnUpdate", nil)
+        toolbar:SetAlpha(1)
+        return
+    end
+    toolbar:SetScript("OnUpdate", function(self, elapsed)
+        self._hoverT = (self._hoverT or 0) + elapsed
+        if self._hoverT < 0.1 then return end
+        self._hoverT = 0
+        -- The layouts panel is opened FROM the toolbar and sits away from it;
+        -- fading the bar out from under an open panel reads as a bug.
+        local near = self:IsMouseOver(12, -12, -12, 12) or (layoutsShown and layoutsShown())
+        self:SetAlpha(near and 1 or HOVER_BAR_ALPHA)
+    end)
+    toolbar:SetAlpha(toolbar:IsMouseOver(12, -12, -12, 12) and 1 or HOVER_BAR_ALPHA)
+end
+
+-- Everything a setting can change about a running session, in one call. The
+-- toolbar switches read the same keys, so they are pushed back in step -- a
+-- widget built once keeps showing the value it was built with otherwise.
+function ns:RefreshEditMode()
+    refreshGrid()
+    refreshDim()
+    refreshCursorLight()
+    refreshHoverBar()
+    if toolbar and toolbar._switches then
+        for _, w in ipairs(toolbar._switches) do
+            if w._refresh then w._refresh() end
+        end
+    end
+    if ns.RefreshMoverStyles then ns:RefreshMoverStyles() end
+end
 
 local function build()
     if built then return end
@@ -182,11 +303,20 @@ local function build()
     gridTog:SetSize(108, 24)
     gridTog:SetPoint("LEFT", discardBtn, "RIGHT", 16, 0)
 
+    -- This switch keeps the meaning it always had -- the GRID half of snapping
+    -- -- and leaves the element half exactly as the global settings left it.
+    -- Flipping it off and on again has to give the mode back unchanged.
+    local GRID_OFF = { both = "elements", grid = "none" }
+    local GRID_ON  = { elements = "both", none = "grid" }
     local snapTog = UI:CreateToggle(toolbar, {
         label   = L["Snap"],
-        tooltip = L["Snap windows to the grid while dragging."],
-        get     = function() return gridState().snap end,
-        set     = function(_, v) gridState().snap = v end,
+        tooltip = L["Snap windows to the grid while dragging. Snapping to other windows is a separate setting, in the global settings."],
+        get     = function() local _, useGrid = snapKinds(gridState()); return useGrid end,
+        set     = function(_, v)
+            local g = gridState()
+            local mode = g.snapTo or "both"
+            g.snapTo = (v and GRID_ON[mode] or GRID_OFF[mode]) or mode
+        end,
     })
     snapTog:SetSize(140, 24)
     snapTog:SetPoint("LEFT", gridTog, "RIGHT", 14, 0)
@@ -237,6 +367,13 @@ local function build()
     })
     ghostTog:SetSize(140, 24)
     ghostTog:SetPoint("RIGHT", layoutsBtn, "LEFT", -18, 0)
+
+    -- The same keys are editable in the global settings; RefreshEditMode
+    -- pushes a change made there back into these switches. The size slider is
+    -- not among them -- it has no refresh hook, so a grid size changed from
+    -- the options page redraws the grid but leaves this slider on its old
+    -- number until the session is reopened.
+    toolbar._switches = { gridTog, snapTog, ghostTog }
 end
 
 function ns:IsEditModeActive()
@@ -273,7 +410,7 @@ function ns:SetEditMode(state, opts)
         if main and main.IsShown and main:IsShown() then main:Hide() end
         dim:Show()
         toolbar:Show()
-        refreshGrid()
+        ns:RefreshEditMode()
     else
         -- Abort an in-flight drag (combat auto-exit can fire mid-drag) or the frame sticks to the cursor.
         if ns.AbortMoverDrag then ns:AbortMoverDrag() end
@@ -284,7 +421,12 @@ function ns:SetEditMode(state, opts)
         if ns._hideGuides then ns._hideGuides() end
         if ns._hideLinks  then ns._hideLinks()  end
         dim:Hide()
+        dim:SetScript("OnUpdate", nil)
         toolbar:Hide()
+        -- A faded toolbar must not come back faded next session before the
+        -- first OnUpdate tick, and the script has nothing to do while hidden.
+        toolbar:SetScript("OnUpdate", nil)
+        toolbar:SetAlpha(1)
         if not (opts and opts.keepSnapshot) and ns.ClearEditSnapshot then ns:ClearEditSnapshot() end
     end
     ns:SetMoversEditMode(state)
@@ -409,6 +551,7 @@ function ns:RefreshMoverStyles()
                 m.bg:SetColorTexture(0.05, 0.07, 0.10, editing and 0.92 or 0.45)
             end
         end
+        if refreshCoordText then refreshCoordText(m) end
         if m.label then
             m.label:SetShown(not quiet and not ghosted)
             -- orange marks a docked window, the same signal the link overlay uses
@@ -471,6 +614,23 @@ local function moverXY(m)
     if x and y then return x, y end
     if m and m.opts and m.opts.db then return m.opts.db.x or 0, m.opts.db.y or 0 end
     return 0, 0
+end
+
+-- The X/Y readout on a box. The mover already draws one during a drag and
+-- keeps it live frame by frame (Core/Mover.lua); the setting only decides
+-- whether it stays on the box for the whole session instead of retiring on the
+-- drop. A second font string of our own would just disagree with that one.
+refreshCoordText = function(m)
+    if not m then return end
+    local g = gridState()
+    local editing = ns._moverEditGlobal
+        or (m.opts and m.opts.scope and ns._moverEditScopes and ns._moverEditScopes[m.opts.scope])
+        or false
+    if g.coords and editing and m:IsShown() then
+        if ns.UpdateMoverCoord then ns.UpdateMoverCoord(m) end
+    elseif m.coord and not m._drag then
+        m.coord:Hide()
+    end
 end
 
 local function refreshPanel()
@@ -1054,9 +1214,16 @@ local pickHint
 function ns:IsAnchorPicking() return ns._anchorPick ~= nil end
 
 -- The screen visibly darkens while picking, so it reads as a distinct mode.
+-- Picking an anchor target dims harder, so the box you are about to click
+-- stands out. Letting go returns to whatever the DARKENING SETTING says --
+-- restoring a fixed 0.35 would switch the darkening back on behind the back of
+-- a player who turned it off.
 local function setPickDim(on)
-    if dim and dim.fill then
-        dim.fill:SetColorTexture(0, 0, 0, on and 0.6 or 0.35)
+    if not (dim and dim.fill) then return end
+    if on then
+        dim.fill:SetColorTexture(0, 0, 0, 0.6)
+    else
+        refreshDim()
     end
 end
 
@@ -1158,6 +1325,7 @@ end
 
 function ns:OnMoverMoved(mover)
     if mover == ns._selectedMover then refreshPanel() end
+    if refreshCoordText then refreshCoordText(mover) end
 end
 
 local guideFrame, guidePool = nil, {}
@@ -1477,17 +1645,19 @@ end
 
 function ns:EditResolveDrop(mover, x, y)
     local g = gridState()
+    local useElements, useGrid = snapKinds(g)
     local t = mover.target
     local r = (ns.GetScaleRatio and t) and ns:GetScaleRatio(t) or 1
-    local dx, lineX, dy, lineY = computeSnap(mover, x, y)
-    if dx then x = x + dx elseif g.snap then x = snapVal(x * r, g.size) / r end
-    if dy then y = y + dy elseif g.snap then y = snapVal(y * r, g.size) / r end
+    local dx, lineX, dy, lineY
+    if useElements then dx, lineX, dy, lineY = computeSnap(mover, x, y) end
+    if dx then x = x + dx elseif useGrid then x = snapVal(x * r, g.size) / r end
+    if dy then y = y + dy elseif useGrid then y = snapVal(y * r, g.size) / r end
     -- Pixel grid is the last resort only: an edge snap already sits exactly on
     -- the neighbour's edge and a grid snap on its line, so re-rounding either
     -- would nudge it a pixel off the thing it was just aligned to.
     if t then
-        if not dx and not g.snap then x = ns:PixelSnapCenter(x, t:GetWidth() or 0, t) end
-        if not dy and not g.snap then y = ns:PixelSnapCenter(y, t:GetHeight() or 0, t) end
+        if not dx and not useGrid then x = ns:PixelSnapCenter(x, t:GetWidth() or 0, t) end
+        if not dy and not useGrid then y = ns:PixelSnapCenter(y, t:GetHeight() or 0, t) end
     end
     drawGuides(dx and lineX or nil, dy and lineY or nil)
     return x, y
@@ -1862,4 +2032,9 @@ end
 
 function ns:HideLayouts()
     if layoutsPanel then layoutsPanel:Hide() end
+end
+
+-- Read by the fading toolbar, which must not fade out from under an open panel.
+layoutsShown = function()
+    return layoutsPanel ~= nil and layoutsPanel:IsShown()
 end

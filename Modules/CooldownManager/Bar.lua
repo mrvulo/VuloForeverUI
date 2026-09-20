@@ -28,8 +28,47 @@ CM.frames = CM.frames or {}
 local WHITE = CM.WHITE
 local DU = _G.C_DurationUtil
 
--- The engine-side countdown. One binding per icon, created with the icon and
--- re-pointed at a new duration on every paint.
+-- THE COUNTDOWN, AND WHY THERE ARE TWO WAYS TO WRITE IT
+--
+-- The engine-side binding below is the nice one: the client writes the text
+-- itself, tenths and all, and nothing ticks in Lua. It is tried first -- but
+-- on this build it produced no text at all where the cast bar used it, so a
+-- second route stands behind it, the one Modules/Nameplates/CastBar has been
+-- running on: format the object's own getter. The number stays secret and
+-- string.format on a secret is allowed.
+--
+-- The fallback is ONE ticker for every icon on every bar, not an OnUpdate per
+-- icon: a full set of bars is two dozen icons, and two dozen handlers for one
+-- line of text each is how a countdown becomes a frame-rate problem.
+local timed, timedCount, ticker = {}, 0, nil
+
+local function tickTimed()
+    for icon, dur in pairs(timed) do
+        if icon.button:IsShown() and icon.countdown:IsShown() then
+            if not pcall(icon.countdown.SetFormattedText, icon.countdown, "%.1f", dur:GetRemainingDuration()) then
+                icon.countdown:SetText("")
+                timed[icon] = nil
+                timedCount = timedCount - 1
+            end
+        end
+    end
+    if timedCount <= 0 and ticker then
+        ns:CancelTicker(ticker)
+        ticker = nil
+    end
+end
+
+local function driveText(icon, duration)
+    if type(duration) == "nil" then
+        if timed[icon] then timed[icon] = nil; timedCount = timedCount - 1 end
+        icon.countdown:SetText("")
+        return
+    end
+    if not timed[icon] then timedCount = timedCount + 1 end
+    timed[icon] = duration
+    if not ticker then ticker = ns:AddTicker(0.05, tickTimed, nil, "cooldownmanager.countdown") end
+end
+
 local function ensureBinding(icon)
     if icon.binding ~= nil then return icon.binding end
     icon.binding = false
@@ -682,11 +721,15 @@ local function paintIcon(bar, icon, entry)
         pcall(icon.cooldown.SetReverse, icon.cooldown, active and true or false)
         pcall(icon.cooldown.SetCooldownFromDurationObject, icon.cooldown, duration)
         local binding = ensureBinding(icon)
-        if binding then binding:SetDuration(duration) end
+        if binding then
+            binding:SetDuration(duration)
+        else
+            driveText(icon, duration)
+        end
         isZero = duration.IsZero and duration:IsZero()
     elseif not kept then
         pcall(icon.cooldown.Clear, icon.cooldown)
-        if icon.binding then icon.binding:SetDuration(nil) end
+        if icon.binding then icon.binding:SetDuration(nil) else driveText(icon, nil) end
     end
 
     -- Dim while it runs. IsZero is a secret boolean; FoldValue picks a

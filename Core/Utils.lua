@@ -60,6 +60,33 @@ function ns:PixelSnap(value, frame)
     return math.floor(value / px + 0.5) * px
 end
 
+-- Duration text on an engine-made aura button: the client formats the time
+-- itself, we only say in which words. Seconds up to a minute, then "5m", "2h",
+-- "3d" -- Blizzard's own one-letter shape, which is what fits under an icon.
+-- Shared, because every aura display in the suite wants the same wording.
+local durationFormatter
+
+function ns.AuraDurationFormatter()
+    if durationFormatter ~= nil then return durationFormatter or nil end
+    durationFormatter = false
+    local util = C_StringUtil
+    if not (util and util.CreateNumericRuleFormatter) then return nil end
+    local ok, f = pcall(util.CreateNumericRuleFormatter)
+    if not ok or not f then return nil end
+    local Up = Enum.NumericRuleFormatRounding and Enum.NumericRuleFormatRounding.Up
+    -- rounding sits on the COMPONENT: on the breakpoint it would only round
+    -- `step`, which is not set, and 91 s would read "2m".
+    local okSet = pcall(f.SetBreakpoints, f, {
+        { threshold = 0,     format = "%d" },
+        { threshold = 60,    format = "%dm", components = { { div = 60, rounding = Up } } },
+        { threshold = 3600,  format = "%dh", components = { { div = 3600, rounding = Up } } },
+        { threshold = 86400, format = "%dd", components = { { div = 86400, rounding = Up } } },
+    })
+    if not okSet then return nil end
+    durationFormatter = f
+    return f
+end
+
 -- Four one-pixel edge textures, not a filled quad: outlines an icon or bar
 -- without washing it out. Shared by nameplates, the power bar and the arena
 -- aura ring, which each hand-rolled the same four textures before.

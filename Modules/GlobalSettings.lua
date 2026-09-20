@@ -16,10 +16,10 @@ local mod = ns:RegisterModule("globalsettings", {
 })
 
 mod.tabs = {
-    { id = "general", label = "General" },
-    { id = "fonts",   label = "Fonts" },
-    { id = "colors",  label = "Colors" },
-    { id = "profile", label = "Profile" },
+    { id = "general",  label = "General" },
+    { id = "fonts",    label = "Fonts" },
+    { id = "colors",   label = "Colors" },
+    { id = "profile",  label = "Profile" },
     -- Bar setups get their own tab rather than a ninth section on the profile
     -- page. Two reasons: on that page it would need scrolling to reach, which
     -- is the problem it was moved out of the sidebar to solve; and "profile"
@@ -345,6 +345,8 @@ local function moduleFontsSection()
           desc = L["Chat messages, the input box and the tab labels, while the chat module uses the addon font."] },
         { key = "characterpanel", name = L["Character Panel"],
           desc = L["The stats sheet of the modern character panel."] },
+        { key = "auras", name = L["Auras"],
+          desc = L["Time left and stack count on your own buff and debuff icons."] },
     }
 
     local rows = {

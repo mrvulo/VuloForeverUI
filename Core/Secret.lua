@@ -177,6 +177,46 @@ function ns:SetSpellCooldown(cd, spell)
     cd:SetCooldown(info.startTime, info.duration, info.modRate)
 end
 
+-- The remaining time of a duration object, written into a font string.
+--
+-- The obvious route is C_DurationUtil.CreateDurationTextBinding, and that is
+-- what the first draft of the cast bar used -- it produced no text at all in
+-- the client. What DOES work, and is what Modules/Nameplates/CastBar has been
+-- running on all along, is to format the object's own getter: the number is
+-- secret, and string.format on a secret is allowed, so the engine writes a
+-- time nobody read.
+--
+-- `host` owns the ticking. A hidden frame gets no OnUpdate, so a bar that is
+-- not on screen costs nothing, and passing a nil duration stops it for good.
+local function durationTick(host, elapsed)
+    host._durWait = (host._durWait or 0) + elapsed
+    if host._durWait < 0.05 then return end
+    host._durWait = 0
+    local fs, dur = host._durText, host._duration
+    if not (fs and type(dur) ~= "nil") then
+        host:SetScript("OnUpdate", nil)
+        return
+    end
+    -- pcall, not a check: an object whose cast has ended can refuse the getter,
+    -- and one refused frame must not take the handler down with it.
+    if not pcall(fs.SetFormattedText, fs, "%.1f", dur:GetRemainingDuration()) then
+        fs:SetText("")
+        host:SetScript("OnUpdate", nil)
+    end
+end
+
+function ns:DurationText(host, fontString, duration)
+    if not (host and fontString) then return end
+    host._durText = fontString
+    host._duration = duration
+    if type(duration) == "nil" then
+        host:SetScript("OnUpdate", nil)
+        fontString:SetText("")
+        return
+    end
+    host:SetScript("OnUpdate", durationTick)
+end
+
 -- "Is there a value at all" for something that may be secret. Every other test
 -- -- `if v then`, `v ~= nil` -- is a boolean test or a comparison and throws on
 -- a secret; type() is the one question a secret answers.

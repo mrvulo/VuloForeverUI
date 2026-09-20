@@ -854,6 +854,20 @@ local function updateCoordText(mover)
         fs:Show()
     end
 end
+ns.UpdateMoverCoord = updateCoordText
+
+-- With "Show coordinates" on, the readout is not a drag artefact: it stays on
+-- the box for the whole editing session, so it refreshes here instead of
+-- hiding. Off, a drop or leaving the box retires it, the way it always did.
+local function retireCoordText(mover)
+    if not (mover and mover.coord) then return end
+    local g = ns.EditState and ns.EditState()
+    if g and g.coords and ns.IsEditModeActive and ns:IsEditModeActive() then
+        updateCoordText(mover)
+    else
+        mover.coord:Hide()
+    end
+end
 
 -- Manual drag tick. Shift locks to the dominant axis: the direction is decided
 -- once, after 3px of travel, and releasing Shift frees it again mid-drag.
@@ -1047,7 +1061,7 @@ function ns:CreateMover(target, opts)
     end)
     mover:SetScript("OnDragStop", function()
         mover:SetScript("OnUpdate", nil)
-        if mover.coord then mover.coord:Hide() end
+        retireCoordText(mover)
         if mover._drag and mover._drag.engineMove then
             pcall(target.StopMovingOrSizing, target)
         end
@@ -1102,7 +1116,7 @@ function ns:CreateMover(target, opts)
     mover:SetScript("OnLeave", function(self)
         if ns._activeMover == self then ns._activeMover = nil end
         -- a nudge readout has no drop event; leaving the box retires it
-        if self.coord and not self._drag then self.coord:Hide() end
+        if not self._drag then retireCoordText(self) end
     end)
 
     -- SetPropagateKeyboardInput ist eine geschuetzte Funktion: ruft ein Addon
@@ -1279,7 +1293,7 @@ function ns:AbortMoverDrag(mover)
     mover._drag = nil
     -- an aborted drag has no drop event; a free-move box stays shown and
     -- would otherwise keep the stale readout
-    if mover.coord then mover.coord:Hide() end
+    retireCoordText(mover)
     if mover.target and mover.target.StopMovingOrSizing then
         pcall(mover.target.StopMovingOrSizing, mover.target)
     end

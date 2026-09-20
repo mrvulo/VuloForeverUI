@@ -60,7 +60,7 @@ Fully localized in English and German.
 - **Resource Bars** *(power, cast bar, swing timer)*
 - **Minimap Button** *(quick access, Shift+drag to move)*
 - **Minimap Button Collector** *(one box for every other addon's button)*
-- **Short Buff Durations** *(58m instead of 58 min)*
+- **Auras** *(your own buff and debuff rows, or just 58m instead of 58 min)*
 - **Bar Setups** *(save and restore bars, macros, keybindings)*
 - **Profiles** *(per-class defaults, import and export)*
 - **Global Settings** *(fonts, colours, scale, per-module font overrides)*

@@ -18,6 +18,11 @@ local wireEvents
 
 UF.Frames = UF.Frames or {}
 
+-- The four font strings a skin may hand a unit value to. Which value each one
+-- carries is the skin's business (UnitFramesSkins, `content`); the painters
+-- below only ask "does any slot want a name / health / power right now".
+UF.TEXT_SLOTS = { "Name", "HealthText", "HealthPct", "PowerText" }
+
 local FRAME_NAMES = {
     player = "VuloForeverUI_PlayerFrame",
     target = "VuloForeverUI_TargetFrame",
@@ -39,6 +44,10 @@ end
 local function newText(parent, layer)
     local fs = parent:CreateFontString(nil, layer or "OVERLAY")
     ns.UI.Font(fs, 11, "OUTLINE")
+    -- A slot has a fixed width so the columns line up; a long name has to be
+    -- cut off at that width, not wrapped onto a second line the bar has no
+    -- room for.
+    fs:SetWordWrap(false)
     fs:SetText("")
     return fs
 end
@@ -108,6 +117,9 @@ end
 function UF.SetSkin(frame, skinName, opts)
     local skin = UF.Skins[skinName]
     if not skin then return end
+    -- A registry entry may be a BUILDER: Modern turns the unit's settings into
+    -- the same table shape the constant Classic skin has.
+    if skin.build then skin = skin.build(opts and opts.cfg) end
     frame.skin, frame.skinOpts = skin, opts
     UF.ApplySkin(frame, skin, opts)
     -- the mover box should match the new size; ApplyMover re-reads it
@@ -133,42 +145,111 @@ end
 
 function UF.ClassColor(unit)
     local _, token = UnitClass(unit)
-    if not token or not ns.CanRead(token) then return nil end
+    -- CanRead FIRST: `not token` is a boolean test, and a boolean test on a
+    -- secret throws before any gate behind it gets a say. CanRead is safe on
+    -- nil (nothing secret about it) and answers true, so the type check below
+    -- is what rejects a missing token.
+    if not ns.CanRead(token) then return nil end
+    if type(token) ~= "string" then return nil end
     local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS[token]
     if not c then return nil end
     return c.r, c.g, c.b
 end
 
+-- The colour a text slot wears. Class colour is per slot; a slot that does not
+-- ask for it is plain white, whatever it says.
+local function textColor(f, fs)
+    if not fs.vfClassColor then
+        fs:SetTextColor(1, 1, 1)
+        return
+    end
+    local r, g, b = UF.ClassColor(f.unit)
+    if r then
+        fs:SetTextColor(r, g, b)
+        return
+    end
+    if not UnitIsPlayer(f.unit) then
+        -- Same order as ClassColor: the gate goes before the test, and before
+        -- the reaction is used as a table key.
+        local reaction = UnitReaction(f.unit, "player")
+        if ns.CanRead(reaction) and type(reaction) == "number" and FACTION_BAR_COLORS then
+            local col = FACTION_BAR_COLORS[reaction]
+            if col then
+                fs:SetTextColor(col.r, col.g, col.b)
+                return
+            end
+        end
+    end
+    fs:SetTextColor(1, 1, 1)
+end
+
+-- No closures in the painters below: UNIT_HEALTH and UNIT_POWER_UPDATE are the
+-- two hottest events in the game, and a per-event closure is garbage the frame
+-- pays for forever.
+local SLOTS = UF.TEXT_SLOTS
+
+local function healthColor(f)
+    local skin = f.skin
+    if not skin then return end
+    if not skin.flat then
+        -- Classic: Blizzard's green, class colour is what the name carries
+        f.Health:SetStatusBarColor(0, 1, 0)
+        return
+    end
+    if skin.healthClassColor == false then
+        local c = skin.healthColor
+        f.Health:SetStatusBarColor(c.r, c.g, c.b)
+        return
+    end
+    local r, g, b = UF.ClassColor(f.unit)
+    if r then
+        f.Health:SetStatusBarColor(r, g, b)
+        return
+    end
+    local color = UnitHealthPercent(f.unit, true, getHealthCurve())
+    if color and color.GetRGB then
+        f.Health:SetStatusBarColor(color:GetRGB())
+    end
+end
+
 local function paintHealth(f)
     local unit = f.unit
     ns:SetHealthFill(f.Health, unit)
-    if not UnitIsConnected(unit) then
-        f.HealthText:SetText(L["Offline"])
-        f.HealthPct:SetText("")
-        f.Health:SetStatusBarColor(0.5, 0.5, 0.5)
-        return
-    end
-    if UnitIsDeadOrGhost(unit) then
-        f.HealthText:SetText(UnitIsGhost(unit) and L["Ghost"] or L["Dead"])
-        f.HealthPct:SetText("")
-        f.Health:SetStatusBarColor(0.5, 0.5, 0.5)
-        return
-    end
-    -- both arguments may be secret; the widget takes them as they are
-    f.HealthText:SetFormattedText("%s", AbbreviateNumbers(UnitHealth(unit)))
-    f.HealthPct:SetFormattedText("%d%%", UnitHealthPercent(unit, true, CurveConstants.ScaleTo100))
+    local content = f.content
+    if not content then return end
 
-    local r, g, b = UF.ClassColor(unit)
-    if r and f.skin and f.skin.flat then
-        f.Health:SetStatusBarColor(r, g, b)
-    elseif f.skin and f.skin.flat then
-        local color = UnitHealthPercent(unit, true, getHealthCurve())
-        if color and color.GetRGB then
-            f.Health:SetStatusBarColor(color:GetRGB())
-        end
+    local state
+    if not UnitIsConnected(unit) then
+        state = L["Offline"]
+    elseif UnitIsDeadOrGhost(unit) then
+        state = UnitIsGhost(unit) and L["Ghost"] or L["Dead"]
+    end
+    if state then
+        f.Health:SetStatusBarColor(0.5, 0.5, 0.5)
     else
-        -- Classic: Blizzard's green, class colour is what the name carries
-        f.Health:SetStatusBarColor(0, 1, 0)
+        healthColor(f)
+    end
+
+    for i = 1, #SLOTS do
+        local key = SLOTS[i]
+        local c = content[key]
+        if c == "curhp" or c == "perhp" or c == "hpboth" then
+            local fs = f[key]
+            if state then
+                -- the word goes in the first health slot; the rest clear
+                fs:SetText(state)
+                state = ""
+            elseif c == "curhp" then
+                -- the argument may be secret; the widget takes it as it is
+                fs:SetFormattedText("%s", AbbreviateNumbers(UnitHealth(unit)))
+            elseif c == "perhp" then
+                fs:SetFormattedText("%d%%", UnitHealthPercent(unit, true, CurveConstants.ScaleTo100))
+            else
+                fs:SetFormattedText("%s  %d%%", AbbreviateNumbers(UnitHealth(unit)),
+                    UnitHealthPercent(unit, true, CurveConstants.ScaleTo100))
+            end
+            textColor(f, fs)
+        end
     end
 end
 
@@ -176,31 +257,52 @@ local POWER_FALLBACK = { r = 0, g = 0, b = 1 }   -- mana
 local function paintPower(f)
     local unit = f.unit
     ns:SetPowerFill(f.Power, unit)
-    local ptype, ptoken = UnitPowerType(unit)
-    local info
-    if ptoken and ns.CanRead(ptoken) then info = PowerBarColor[ptoken] end
-    if not info and ptype and ns.CanRead(ptype) then info = PowerBarColor[ptype] end
-    info = info or POWER_FALLBACK
-    f.Power:SetStatusBarColor(info.r, info.g, info.b)
-    if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
-        f.PowerText:SetText("")
+    local skin = f.skin
+    if skin and skin.flat and skin.powerTypeColor == false then
+        local c = skin.powerColor
+        f.Power:SetStatusBarColor(c.r, c.g, c.b)
     else
-        f.PowerText:SetFormattedText("%s", AbbreviateNumbers(UnitPower(unit)))
+        local ptype, ptoken = UnitPowerType(unit)
+        local info
+        if ptoken and ns.CanRead(ptoken) then info = PowerBarColor[ptoken] end
+        if not info and ptype and ns.CanRead(ptype) then info = PowerBarColor[ptype] end
+        info = info or POWER_FALLBACK
+        f.Power:SetStatusBarColor(info.r, info.g, info.b)
+    end
+
+    local content = f.content
+    if not content then return end
+    local blank = UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit)
+    for i = 1, #SLOTS do
+        local key = SLOTS[i]
+        local c = content[key]
+        if c == "curpp" or c == "ppboth" then
+            local fs = f[key]
+            if blank then
+                fs:SetText("")
+            elseif c == "curpp" then
+                fs:SetFormattedText("%s", AbbreviateNumbers(UnitPower(unit)))
+            else
+                -- no percent: dividing a secret current by a secret max is the
+                -- arithmetic that throws, and power has no percent API
+                fs:SetFormattedText("%s/%s", AbbreviateNumbers(UnitPower(unit)),
+                    AbbreviateNumbers(UnitPowerMax(unit)))
+            end
+            textColor(f, fs)
+        end
     end
 end
 
 local function paintName(f)
-    local unit = f.unit
-    f.Name:SetText(UnitName(unit))          -- may be secret; SetText accepts it
-    local r, g, b = UF.ClassColor(unit)
-    if r then
-        f.Name:SetTextColor(r, g, b)
-    elseif UnitIsPlayer(unit) then
-        f.Name:SetTextColor(1, 1, 1)
-    else
-        local reaction = UnitReaction(unit, "player")
-        local col = reaction and ns.CanRead(reaction) and FACTION_BAR_COLORS and FACTION_BAR_COLORS[reaction]
-        if col then f.Name:SetTextColor(col.r, col.g, col.b) else f.Name:SetTextColor(1, 1, 1) end
+    local content = f.content
+    if not content then return end
+    for i = 1, #SLOTS do
+        local key = SLOTS[i]
+        if content[key] == "name" then
+            local fs = f[key]
+            fs:SetText(UnitName(f.unit))    -- may be secret; SetText accepts it
+            textColor(f, fs)
+        end
     end
 end
 
@@ -476,11 +578,34 @@ function UF.ActivateOwnFrames(mod)
     if mod.db.style ~= "modern" then return end
     for _, unit in ipairs({ "player", "target" }) do
         local f = UF.CreateUnitFrame(unit, mod.db[unit], LABELS[unit])
-        UF.SetSkin(f, "modern", { unit = unit, portrait = mod.db.portrait })
+        UF.SetSkin(f, "modern", { unit = unit, cfg = mod.db[unit].modern })
         RegisterUnitWatch(f)
         UF.SetEventsEnabled(f, true)
         UF.SilenceBlizzard(unit)
     end
+end
+
+-- A setting changed: rebuild that unit's skin from db and repaint. SetSkin
+-- calls SetSize on a secure unit button, which the client refuses in combat,
+-- so a change made mid-fight lands when the fight ends.
+local refreshPending = {}
+
+function UF.RefreshModern(mod, unit)
+    if mod.db.style ~= "modern" then return end
+    local f = UF.Frames[unit]
+    if not f then return end
+    if ns:InCombat() then
+        if not refreshPending[unit] then
+            refreshPending[unit] = true
+            ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", function()
+                refreshPending[unit] = nil
+                UF.RefreshModern(mod, unit)
+            end)
+        end
+        return
+    end
+    UF.SetSkin(f, "modern", { unit = unit, cfg = mod.db[unit].modern })
+    UF.Paint(f)
 end
 
 function UF.DeactivateOwnFrames()

@@ -617,6 +617,7 @@ function mod:OnEnable()
         end)
     end
 
+    if CM.HookPreview then CM.HookPreview() end
     if IsLoggedIn() then buildAll() end
 
     ns:RegisterSlash({ key = "COOLDOWNS", commands = { "/vfcd" },
