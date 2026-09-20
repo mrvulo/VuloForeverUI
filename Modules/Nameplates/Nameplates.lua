@@ -31,6 +31,15 @@ ns.NP = NP
 
 local function c(r, g, b, a) return { r = r, g = g, b = b, a = a } end
 
+-- Which unit a base plate is showing. The field is unitToken and the getter is
+-- GetUnit -- the retail name namePlateUnitToken does NOT exist on 1.60.1
+-- (proven in the client 2026-09-20: reading it gave nil and UnitIsUnit threw).
+function NP.UnitOf(nameplate)
+    if not nameplate then return nil end
+    local unit = (nameplate.GetUnit and nameplate:GetUnit()) or nameplate.unitToken
+    return type(unit) == "string" and unit or nil
+end
+
 local M = ns:RegisterModule("nameplates", {
     name        = "Nameplates",
     group       = "HUD",
@@ -292,8 +301,9 @@ local CVARS = {
     nameplateMaxAlphaDistance = "40", nameplateMinAlphaDistance = "-100000",
     nameplateOverlapH = "1",
     nameplateShowAll = "1",
-    -- the class colour of enemy players is read off Blizzard's hidden bar
-    nameplateShowClassColor = "1", ShowClassColorInNameplate = "1",
+    -- the class colour of enemy players is read off Blizzard's hidden bar.
+    -- (ShowClassColorInNameplate, the retail sibling, does not exist here.)
+    nameplateShowClassColor = "1",
 }
 
 local showEnemies
@@ -454,8 +464,8 @@ function M:OnEnable()
 
     -- Plates that were up before we were (a /reload in a pack).
     for _, nameplate in ipairs(C_NamePlate.GetNamePlates()) do
-        local unit = nameplate.namePlateUnitToken or (nameplate.GetUnit and nameplate:GetUnit())
-        if type(unit) == "string" then attach(unit) end
+        local unit = NP.UnitOf(nameplate)
+        if unit then attach(unit) end
     end
 
     C_Timer.After(2, function() if M.active then prewarm() end end)

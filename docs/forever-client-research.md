@@ -221,6 +221,42 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
 - Version trap: retail-style checks `select(4, GetBuildInfo()) >= 100000` are false here.
   Ours uses the 16000-20000 range plus the `C_SwingTimer` probe, which is correct.
 
+## Nameplates (measured in the client 2026-09-20, build 69913)
+
+`/vfsecrets np` on a targeted mob, out of combat. What it settled:
+
+- **`nameplate.namePlateUnitToken` does NOT exist.** The retail field name returns nil and
+  `UnitIsUnit(nil, "target")` throws "bad argument #1". The base plate keeps its unit in
+  **`.unitToken`**, read with **`:GetUnit()`** (`Blizzard_NamePlateBase.lua:29-38`). Any code
+  that maps a base plate back to a unit must use the getter -- `ns.NP.UnitOf(nameplate)`
+  does, and the module additionally keeps its own weak `nameplate -> plate` map.
+- **`ShowClassColorInNameplate` does not exist** on this client. `nameplateShowClassColor`
+  does, and that is the one that matters.
+- **CVars confirmed present:** `nameplateMinScale`, `nameplateMaxScale`,
+  `nameplateSelectedScale`, `nameplateMinAlpha`, `nameplateMaxAlpha`,
+  `nameplateMaxAlphaDistance`, `nameplateMinAlphaDistance`, `nameplateOverlapH`,
+  `nameplateOverlapV`, `nameplateOccludedAlphaMult`, `nameplateStackingTypes`,
+  `nameplateShowAll`, `nameplateShowEnemies`, `nameplateShowEnemyPets`,
+  `nameplateShowClassColor`, `nameplateMaxDistance`. So the scale/alpha/distance set the
+  Settings panel does not register is real after all.
+- **Readable for a nameplate unit, out of combat:** `UnitClassification`,
+  `UnitEffectiveLevel`, `UnitReaction`, `UnitIsTapDenied`, `UnitAffectingCombat`, and the
+  `GetStatusBarColor()` of Blizzard's hidden health bar -- which is the route to an enemy
+  player's class colour, since `UnitClass` is identity-restricted.
+- **`UnitGetTotalAbsorbs` is secret** even out of combat, like health.
+- `UnitThreatSituation` and `GetRaidTargetIndex` returned **nil** with no threat
+  relationship and no marker set -- nil, not secret, so `type(v) == "nil"` is the right
+  test for both.
+- **`UnitGroupRolesAssigned("player")` returns "NONE"** while solo. Whether it ever returns
+  TANK on Forever is still open; the nameplate module has an "I am the tank" option for
+  exactly that reason.
+
+**Still to measure** (the report's first half was not captured): whether
+`SetFormattedText`/`string.format`/`AbbreviateNumbers` accept a secret number, what
+`UnitCastingInfo` hands over field by field on a casting nameplate unit, whether the
+duration object's getters work, and whether `SetNamePlateSize` /
+`SetNamePlateHitTestInsets` are refused in combat.
+
 ## To verify in the beta
 1. ~~Values of `/dump WOW_PROJECT_ID`, `GetBuildInfo()`, `C_GameRules.GetActiveGameMode()`.~~ Done 2026-09-18, see Facts.
 2. ~~Whether a plain `.toc` with `## Interface: 16001` loads~~ (it does), and whether a `_Mainline.toc` suffix is accepted.

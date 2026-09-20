@@ -361,8 +361,15 @@ local function nameplateReport()
     probe("plate token vs target", function()
         local plate = C_NamePlate.GetNamePlateForUnit("target")
         if not plate then return "target has no plate" end
-        local token = plate.namePlateUnitToken
-        return ("%s, UnitIsUnit %s"):format(tostring(token), state(UnitIsUnit(token, "target")))
+        -- The base plate keeps its unit in .unitToken / :GetUnit(); the retail
+        -- name .namePlateUnitToken does NOT exist here (client, 2026-09-20).
+        local token = (plate.GetUnit and plate:GetUnit()) or plate.unitToken or plate.namePlateUnitToken
+        if type(token) ~= "string" then
+            return ("no token (GetUnit %s, .unitToken %s, .namePlateUnitToken %s)"):format(
+                tostring(plate.GetUnit and plate:GetUnit()), tostring(plate.unitToken),
+                tostring(plate.namePlateUnitToken))
+        end
+        return ("%s, UnitIsUnit %s"):format(token, state(UnitIsUnit(token, "target")))
     end)
     probe("hidden bar colour", function()
         local plate = C_NamePlate.GetNamePlateForUnit("target")
@@ -382,20 +389,29 @@ local function nameplateReport()
     ns:Print("  cvars present: %s", table.concat(have, ", "))
     ns:Print("  cvars %smissing%s: %s", ns.C.neg, R, #missing > 0 and table.concat(missing, ", ") or "none")
 
-    -- 6. The player's interrupt.
-    probe("interrupt spell", function()
-        local found
-        for _, id in ipairs(KICK_PET_CANDIDATES) do
-            if not found and C_SpellBook.IsSpellKnownOrInSpellBook(id, Enum.SpellBookSpellBank.Pet) then found = id end
-        end
-        for _, id in ipairs(KICK_CANDIDATES) do
-            if not found and C_SpellBook.IsSpellKnownOrInSpellBook(id) then found = id end
-        end
-        if not found then return "none of the candidates is known" end
+    -- 6. The player's interrupt. Each candidate id is printed with the name
+    -- the client gives it: an id that resolves to nothing (or to the wrong
+    -- spell) is a wrong id, an id that resolves but is not known is simply a
+    -- spell this character does not have. Forever renumbers some spells.
+    local _, playerClass = UnitClass("player")
+    ns:Print("  interrupt candidates (%s, level %d):", tostring(playerClass), UnitLevel("player") or 0)
+    local found, foundBank
+    for i = 1, #KICK_CANDIDATES + #KICK_PET_CANDIDATES do
+        local pet = i > #KICK_CANDIDATES
+        local id = pet and KICK_PET_CANDIDATES[i - #KICK_CANDIDATES] or KICK_CANDIDATES[i]
+        local bank = pet and Enum.SpellBookSpellBank.Pet or Enum.SpellBookSpellBank.Player
+        local okName, name = pcall(C_Spell.GetSpellName, id)
+        local okKnown, known = pcall(C_SpellBook.IsSpellKnownOrInSpellBook, id, bank)
+        if okKnown and known and not found then found, foundBank = id, bank end
+        ns:Print("    %-6d %-22s %s%s", id, (okName and name) or (ns.C.neg .. "no such spell" .. R),
+            (okKnown and known) and (ns.C.pos .. "known" .. R) or "not known", pet and "  (pet book)" or "")
+    end
+    probe("interrupt cooldown", function()
+        if not found then return "no interrupt known -- kick colour and tick stay off" end
         local d = C_Spell.GetSpellCooldownDuration(found)
         local zero
         if type(d) ~= "nil" then zero = d:IsZero() end
-        return ("%d (%s), duration %s, IsZero %s"):format(found, C_Spell.GetSpellName(found) or "?",
+        return ("%d, duration %s, IsZero %s"):format(found,
             type(d) == "nil" and "nil" or "object", state(zero))
     end)
 end
