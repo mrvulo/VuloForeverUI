@@ -407,7 +407,9 @@ function Cast.Start(plate, isChannel)
         if ns.Exists(name) then isChannel = false end
     end
     if not ns.Exists(name) and isChannel ~= false then
-        name, _, texture, _, _, _, notInt, spellID = UnitChannelInfo(unit)
+        -- a channel puts castBarID at 11, not 10 (isEmpowered and
+        -- numEmpowerStages sit in between)
+        name, _, texture, _, _, _, notInt, spellID, _, _, barID = UnitChannelInfo(unit)
         if ns.Exists(name) then isChannel = true end
     end
     if not ns.Exists(name) then

@@ -288,8 +288,22 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
   warrior, and Shield Bash is learned at 12: "no interrupt known" was the correct answer,
   not a bug. Re-check the kick colour and the tick once a character has one.
 
-**Still to measure:** `UnitCastingInfo` field by field and the duration object's getters,
-both of which need a nameplate unit that is actually casting.
+**Third run, in combat against a CASTING mob -- the cast bar is fully answered:**
+
+- `UnitCastingInfo(target)`: **name, texture, start, notInterruptible and spellID are all
+  secret**, exactly as the documentation promises. Nothing there may be branched on; name
+  and texture go straight into `SetText`/`SetTexture`, `notInterruptible` into a boolean
+  fold.
+- **`UnitCastingDuration` returns a duration OBJECT and the object itself is readable.**
+  That is the whole cast bar: `StatusBar:SetTimerDuration(object)` and the client runs the
+  fill.
+- **The object's getters return secrets** (`GetRemainingDuration`, `GetElapsedDuration`,
+  `GetTotalDuration`) **and the timer text was still accepted**:
+  `SetFormattedText("%.1f", d:GetRemainingDuration())` works. Secret numbers into
+  `SetMinMaxValues`/`SetValue` are what the kick mark is built from, so that holds too.
+- Return positions, checked against the docs and in use: `UnitCastingInfo` gives
+  `castBarID` at 10, `UnitChannelInfo` at **11** -- a channel has `isEmpowered` and
+  `numEmpowerStages` in between.
 
 ## To verify in the beta
 1. ~~Values of `/dump WOW_PROJECT_ID`, `GetBuildInfo()`, `C_GameRules.GetActiveGameMode()`.~~ Done 2026-09-18, see Facts.
