@@ -165,7 +165,7 @@ local M = ns:RegisterModule("nameplates", {
         questMobColor = c(.157, .855, .475),
         executeEnabled = false, executeThreshold = 20,
         executeColor = c(.9, .1, .1), executeGlowSize = 6,
-        comboEnabled = true, comboColor = c(1, .84, .3),
+        comboEnabled = false, comboColor = c(1, .84, .3),
         comboHeight = 5, comboGap = 2, comboOffset = 2,
 
         -- friendly plates
