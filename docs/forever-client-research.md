@@ -318,6 +318,9 @@ plates all confirmed in the client.
   `AuraButton` intrinsic ships no `<Size>`, and a group's `layout.elementWidth` feeds the
   layout arithmetic only. The initializer must call `button:SetSize(...)` itself, or every
   button stays 0x0 -- with no error anywhere, because every call involved succeeds.
+- **The quest marker works**, so `C_TooltipInfo.GetUnit(unit).lines` is readable out of
+  combat and `Enum.TooltipDataLineType.QuestTitle` (17) plus `C_QuestLog.IsOnQuest` is a
+  usable "is this a quest mob" test on this client.
 - **Friendly plates work through the font objects.** Setting `SystemFont_NamePlate` and
   `SystemFont_NamePlate_Outlined` restyles every name-only plate at once, which is also the
   only route that survives inside instances.
