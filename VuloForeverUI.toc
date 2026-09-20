@@ -6,6 +6,7 @@
 ## SavedVariables: VuloForeverUIDB
 ## SavedVariablesPerCharacter: VuloForeverUICharDB
 ## IconTexture: Interface\AddOns\VuloForeverUI\Media\Icons\vui4
+## X-Curse-Project-ID: 1704138
 
 
 Libs\LibStub\LibStub.lua
@@ -85,5 +86,12 @@ Modules\CooldownManager\Glow.lua
 Modules\CooldownManager\Bar.lua
 Modules\CooldownManager\Preview.lua
 Modules\CooldownManager\Options.lua
+
+Modules\ResourceBars\Core.lua
+Modules\ResourceBars\Bar.lua
+Modules\ResourceBars\Power.lua
+Modules\ResourceBars\Cast.lua
+Modules\ResourceBars\Swing.lua
+Modules\ResourceBars\Options.lua
 
 Core\Init.lua
