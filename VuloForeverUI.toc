@@ -57,5 +57,14 @@ Modules\UnitFrames\ClassicTarget.lua
 Modules\UnitFrames\ClassicCastBar.lua
 Modules\UnitFrames\ClassicPet.lua
 Modules\UnitFrames\UnitFrames.lua
+Modules\Nameplates\Nameplates.lua
+Modules\Nameplates\Suppress.lua
+Modules\Nameplates\Health.lua
+Modules\Nameplates\Colors.lua
+Modules\Nameplates\Kick.lua
+Modules\Nameplates\CastBar.lua
+Modules\Nameplates\Target.lua
+Modules\Nameplates\Plate.lua
+Modules\Nameplates\Options.lua
 
 Core\Init.lua
