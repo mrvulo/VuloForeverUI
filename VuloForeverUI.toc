@@ -64,6 +64,8 @@ Modules\Nameplates\Colors.lua
 Modules\Nameplates\Kick.lua
 Modules\Nameplates\CastBar.lua
 Modules\Nameplates\Target.lua
+Modules\Nameplates\AuraStyle.lua
+Modules\Nameplates\Auras.lua
 Modules\Nameplates\Plate.lua
 Modules\Nameplates\Options.lua
 

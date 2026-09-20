@@ -76,6 +76,20 @@ local M = ns:RegisterModule("nameplates", {
         },
         nameRaidMarkerEnabled = false, nameRaidMarkerSize = 14,
 
+        -- auras: the engine shows them, we only say where and how many
+        debuffSlot = "top", buffSlot = "left", ccSlot = "right",
+        auras = {
+            debuffs = { max = 5, spacing = 2, crop = false, cropPct = 10, hideBorder = false },
+            buffs   = { max = 4, spacing = 2, crop = false, cropPct = 10, hideBorder = false },
+            cc      = { max = 2, spacing = 2, crop = false, cropPct = 10, hideBorder = false },
+        },
+        auraText = {
+            duration = { position = "topleft",     size = 11, color = c(1, 1, 1), x = 0, y = 0 },
+            stacks   = { position = "bottomright", size = 11, color = c(1, 1, 1), x = 0, y = 0 },
+        },
+        debuffIncludeCC = false, showAllDebuffs = false,
+        enemyBuffFilter = "important",
+
         -- colours: enemy types
         neutral = c(.81, .72, .19), tapped = c(.5, .5, .5),
         enemyInCombat = c(.8, .137, .137), caster = c(.231, .51, .965),
@@ -458,11 +472,16 @@ function M:OnEnable()
                              "ZONE_CHANGED_NEW_AREA", "PLAYER_ROLES_ASSIGNED" }) do
         self:RegisterEvent(event, NP.Colors.RefreshAll)
     end
-    self:RegisterEvent("SPELLS_CHANGED", NP.Kick.Resolve)
+    self:RegisterEvent("SPELLS_CHANGED", function()
+        NP.Kick.Resolve()
+        NP.AuraStyle.RefreshDispel()
+    end)
     self:RegisterEvent("UNIT_PET", NP.Kick.Resolve)
 
     NP.Colors.RefreshContext()
     NP.Kick.Resolve()
+    NP.AuraStyle.RefreshDispel()
+    NP.Auras.ApplyCVars()
     NP.Target.OnTargetChanged()
     showEnemies(InCombatLockdown())
 

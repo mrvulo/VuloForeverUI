@@ -21,7 +21,12 @@ local TEXT_SLOTS = { "Top", "Right", "Left", "Center" }
 -- sat there to "none". Names evict names: a plate shows its name once.
 -- ---------------------------------------------------------------------------
 local NAME_FAMILY = { enemyName = true, levelName = true, nameLevel = true }
-local ICON_KEYS = { raidMarker = "raidMarkerPos", classification = "classificationSlot" }
+-- Icons and aura rows share the six slots and the one rule: assigning an
+-- element to a slot sends whoever sat there to "none".
+local ICON_KEYS = {
+    raidMarker = "raidMarkerPos", classification = "classificationSlot",
+    debuffs = "debuffSlot", buffs = "buffSlot", cc = "ccSlot",
+}
 NP.ICON_KEYS = ICON_KEYS
 
 function NP.AssignTextSlot(slot, element)
@@ -45,6 +50,11 @@ function NP.AssignIconSlot(slot, element)
     end
     if element ~= "none" and ICON_KEYS[element] then db[ICON_KEYS[element]] = slot end
     NP.Bump()
+end
+
+-- Which slot an aura kind sits in ("none" when it is switched off).
+function NP.SlotOfAura(kind)
+    return NP.db()[ICON_KEYS[kind]] or "none"
 end
 
 function NP.IconInSlot(slot)
@@ -229,6 +239,7 @@ function Plate:ApplyAppearance()
     self.stack:SetPoint("TOP", self.health, "TOP", 0, (nameSize + 4) * db.stackSpacingScale / 100)
 
     self.lastR = nil        -- a new bar texture may come without the colour
+    NP.Auras.ApplyAppearance(self)
     NP.Health.ApplyAppearance(self)
     NP.Cast.ApplyAppearance(self)
     NP.Target.ApplyAppearance(self)
@@ -375,6 +386,7 @@ function Plate:SetUnit(unit, nameplate)
         pcall(self.RegisterUnitEvent, self, event, unit)
     end
     NP.byNameplate[nameplate] = self
+    NP.Auras.Attach(self)
 
     -- Everything at once, so a recycled plate never shows its last unit; and
     -- once more a frame later, when the unit has settled (name, classification
@@ -390,6 +402,7 @@ end
 function Plate:Clear()
     local nameplate = self.nameplate
     self:UnregisterAllEvents()
+    NP.Auras.Detach(self)
     NP.Cast.Stop(self, "clear")
     NP.Target.Reset(self)
     NP.Health.Forget(self)

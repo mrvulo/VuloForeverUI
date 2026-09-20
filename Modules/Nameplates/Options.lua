@@ -164,6 +164,9 @@ end
 local function iconSlotRow(slot)
     local elements = {
         { value = "none",           text = L["None"] },
+        { value = "debuffs",        text = L["Debuffs"] },
+        { value = "buffs",          text = L["Buffs"] },
+        { value = "cc",             text = L["Crowd Control"] },
         { value = "raidMarker",     text = L["Raid Marker"] },
         { value = "classification", text = L["Rare/Elite Indicator"] },
     }
@@ -193,6 +196,93 @@ local function sideValues(withCenter)
                 { value = "right", text = L["Right"] } }
     if withCenter then v[#v + 1] = { value = "center", text = L["Centre"] } end
     return v
+end
+
+-- Auras. Everything here is a setting the ENGINE acts on: how many icons it may
+-- show, how they are cut and where its own texts sit. A change to the button
+-- style cannot reach buttons that already exist -- they belong to the engine --
+-- so those rows throw the containers away and let fresh ones be built.
+local function restyleAuras()
+    NP.Bump()
+    NP.Auras.Rebuild()
+end
+
+local function auraKindRows(kind, label)
+    local cfg = function() return db().auras[kind] end
+    local function num(field, text, min, max, after)
+        return { type = "slider", label = text, min = min, max = max, step = 1,
+            get = function() return cfg()[field] end,
+            set = function(_, v) cfg()[field] = v; (after or NP.Bump)() end }
+    end
+    local function flag(field, text, after)
+        return { type = "toggle", label = text,
+            get = function() return cfg()[field] end,
+            set = function(_, v) cfg()[field] = v and true or false; (after or NP.Bump)() end }
+    end
+    return { type = "dropdown", label = label, values = {
+            { value = "none", text = L["None"] }, { value = "top", text = L["Top"] },
+            { value = "bottom", text = L["Bottom"] }, { value = "left", text = L["Left"] },
+            { value = "right", text = L["Right"] },
+            { value = "topleft", text = L["Top left"] }, { value = "topright", text = L["Top right"] },
+        },
+        get = function() return NP.SlotOfAura(kind) end,
+        set = function(_, v) NP.AssignIconSlot(v, v ~= "none" and kind or "none") end,
+        inline = {
+            resize(label, {
+                num("max", L["Max Icons"], 1, 10),
+                num("spacing", L["Spacing"], -5, 20),
+                flag("crop", L["Cropped Icons"], restyleAuras),
+                num("cropPct", L["Adjust Crop"], 5, 25, restyleAuras),
+                flag("hideBorder", L["Hide Border"], restyleAuras),
+            }),
+        } }
+end
+
+local function auraTextRows(key, label)
+    local cfg = function() return db().auraText[key] end
+    local positions = {
+        { value = "none",        text = L["None"] },
+        { value = "topleft",     text = L["Top left"] },
+        { value = "topright",    text = L["Top right"] },
+        { value = "bottomleft",  text = L["Bottom left"] },
+        { value = "bottomright", text = L["Bottom right"] },
+        { value = "centre",      text = L["Centre"] },
+    }
+    local function num(field, text, min, max)
+        return { type = "slider", label = text, min = min, max = max, step = 1,
+            get = function() return cfg()[field] end,
+            set = function(_, v) cfg()[field] = v; restyleAuras() end }
+    end
+    return { type = "dropdown", label = label, values = positions,
+        get = function() return cfg().position end,
+        set = function(_, v) cfg().position = v; restyleAuras() end,
+        inline = {
+            { kind = "color", tooltip = L["Text color"],
+              get = function() return cfg().color end,
+              set = function(r, g, b) local c = cfg().color; c.r, c.g, c.b = r, g, b; restyleAuras() end },
+            resize(label, {
+                num("size", L["Size"], 6, 20),
+                num("x", L["X Offset"], -50, 50),
+                num("y", L["Y Offset"], -50, 50),
+            }),
+        } }
+end
+
+local function aurasSection()
+    return section(L["Auras"], {
+        { type = "desc", text = L["|cffaaaaaaThe game decides which auras a nameplate may show and draws them itself; these settings say where they go and how many.|r"] },
+        auraKindRows("debuffs", L["Debuffs"]),
+        auraKindRows("buffs", L["Buffs"]),
+        auraKindRows("cc", L["Crowd Control"]),
+        toggle("debuffIncludeCC", L["Debuffs include Crowd Control"]),
+        toggle("showAllDebuffs", L["Show All Debuffs"], L["Also show debuffs cast by other players."]),
+        dropdown("enemyBuffFilter", L["Enemy Buff Filter"], {
+            { value = "important",   text = L["Important"] },
+            { value = "dispellable", text = L["Only Dispellable"] },
+        }),
+        auraTextRows("duration", L["Duration Text"]),
+        auraTextRows("stacks", L["Stack Text"]),
+    })
 end
 
 local function displayPage()
@@ -376,7 +466,7 @@ local function displayPage()
             } }),
     })
 
-    return { style, positions, texts, bars, castColors, effects, castText }
+    return { style, positions, texts, aurasSection(), bars, castColors, effects, castText }
 end
 
 -- ---------------------------------------------------------------------------
