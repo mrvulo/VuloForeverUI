@@ -39,9 +39,11 @@ local function filterFor(kind, db)
     local plate = F.IncludeNameplateOnly or "INCLUDE_NAME_PLATE_ONLY"
     local cc = F.CrowdControl or "CROWD_CONTROL"
     local harmful, helpful = F.Harmful or "HARMFUL", F.Helpful or "HELPFUL"
-    if kind == "cc" then return filter(harmful, cc) end
+    if kind == "cc" then return filter(harmful, plate, cc) end
     if kind == "buffs" then
-        if db.enemyBuffFilter == "dispellable" then
+        -- "only dispellable" is pointless for a character who cannot dispel;
+        -- the capability comes from the spellbook, never from an aura.
+        if db.enemyBuffFilter == "dispellable" and NP.AuraStyle.CanDispelMagic() then
             return filter(helpful, plate, F.Dispellable or "DISPELLABLE")
         end
         return filter(helpful, plate, F.Important or "IMPORTANT")
@@ -72,28 +74,40 @@ end
 local free = {}
 local available   -- nil = not asked yet, false = this client cannot
 
+local probe
+
 local function canBuild()
     if available == nil then
-        available = (pcall(CreateFrame, "AuraContainer", nil, UIParent,
-            "CustomAuraContainerTemplate")) and true or false
+        local ok, c = pcall(CreateFrame, "AuraContainer", nil, UIParent,
+            "CustomAuraContainerTemplate")
+        available = (ok and c) and true or false
+        if c then c:Hide(); probe = c end   -- kept, not leaked onto UIParent
     end
     return available
 end
 
-local ICON_SIZE = 24
+-- One size per kind, and it is the SLOT's size: the buttons, the layout
+-- arithmetic and the wrap width must all agree or the row breaks in the wrong
+-- place and the icons come out the wrong size.
+local function sizeFor(kind)
+    local slot = NP.SlotOfAura(kind)
+    local cfg = slot ~= "none" and NP.db().iconSlots[slot]
+    return cfg and cfg.size or 24
+end
 
 local function newContainer(holder, kind)
     local ok, c = pcall(CreateFrame, "AuraContainer", nil, holder, "CustomAuraContainerTemplate")
     if not ok or not c then return nil end
     local db = NP.db()
     local a = db.auras[kind]
+    local size = sizeFor(kind)
     local opts = {
         maxFrameCount    = a.max,
         sortMethod       = sortFor(kind, db),
         sortDirection    = _G.AuraContainerSortDirection and _G.AuraContainerSortDirection.Normal,
         candidateFilters = candidatesFor(kind, db),
-        initializeFrame  = NP.AuraStyle.Initializer(kind),
-        layout = { elementWidth = ICON_SIZE, elementHeight = ICON_SIZE,
+        initializeFrame  = NP.AuraStyle.Initializer(kind, size),
+        layout = { elementWidth = size, elementHeight = size,
                    elementSpacing = a.spacing, lineSpacing = a.spacing },
     }
     if not pcall(c.AddAuraGroup, c, "main", filterFor(kind, db), opts) then return nil end
@@ -111,11 +125,14 @@ local function newBundle()
     for _, kind in ipairs(KINDS) do
         if NP.SlotOfAura(kind) ~= "none" then
             b[kind] = newContainer(holder, kind)
-            if not b[kind] then return nil end
+            if not b[kind] then return nil, "refused" end
             any = true
         end
     end
-    return any and b or nil
+    -- "empty" is a setting, "refused" is a client that cannot do this at all.
+    -- Confusing the two switched auras off for the rest of the session.
+    if not any then return nil, "empty" end
+    return b
 end
 
 -- ---------------------------------------------------------------------------
@@ -144,7 +161,11 @@ local function applyLayout(container, slot, size, spacing, count)
         pcall(container.SetFlowLayoutGrowthDirection, container, horizontal, vertical)
     end
     if container.SetFlowLayoutAnchorPoint then
-        pcall(container.SetFlowLayoutAnchorPoint, container, SLOT_ANCHOR[slot][1])
+        -- a CORNER: anchoring elements to a mid-edge starts the row at the
+        -- container's centre instead of filling it
+        local corner = (slot == "topleft") and "BOTTOMRIGHT" or "BOTTOMLEFT"
+        if slot == "bottom" then corner = "TOPLEFT" end
+        pcall(container.SetFlowLayoutAnchorPoint, container, corner)
     end
     if container.SetFlowLayoutMaximumLineSize then
         -- a single column beside the bar, a full row above or below it
@@ -177,7 +198,7 @@ function Auras.Layout(plate)
             local anchorTo = (slot == "bottom") and plate.cast or plate.health
             container:SetPoint(anc[1], anchorTo, anc[2],
                 anc[3] * 2 + cfg.x, anc[4] * gap + cfg.y)
-            applyLayout(container, slot, cfg.size, db.auras[kind].spacing, db.auras[kind].max)
+            applyLayout(container, slot, sizeFor(kind), db.auras[kind].spacing, db.auras[kind].max)
             container:Show()
         end
     end
@@ -187,13 +208,15 @@ end
 -- On and off a unit
 -- ---------------------------------------------------------------------------
 function Auras.Attach(plate)
-    if plate.auras or not plate.unit or not canBuild() then return end
-    local bundle = table.remove(free) or newBundle()
+    if plate.auras or not plate.unit or plate.friendly or not canBuild() then return end
+    local bundle, why = table.remove(free)
+    if not bundle then bundle, why = newBundle() end
     if not bundle then
-        available = false            -- this client cannot; stop asking
+        if why == "refused" then available = false end   -- stop asking
         return
     end
     plate.auras = bundle
+    bundle.holder:Show()
     Auras.Layout(plate)
     for _, kind in ipairs(KINDS) do
         local c = bundle[kind]
@@ -210,6 +233,9 @@ function Auras.Detach(plate)
         local c = bundle[kind]
         if c then pcall(c.SetUnit, c, "none") end
     end
+    -- hidden as a whole: the containers keep the points Layout gave them, and
+    -- a SetUnit that was refused would leave icons hanging at the old spot
+    bundle.holder:Hide()
     bundle.holder:SetParent(UIParent)
     bundle.holder:ClearAllPoints()
     free[#free + 1] = bundle
@@ -236,8 +262,9 @@ function Auras.ApplyAppearance(plate)
             end
             -- merged over the DEFAULTS, not over what is set, so every field we
             -- want kept has to be in this table
+            local size = sizeFor(kind)
             pcall(c.SetAuraGroupLayout, c, "main", {
-                elementWidth = ICON_SIZE, elementHeight = ICON_SIZE,
+                elementWidth = size, elementHeight = size,
                 elementSpacing = a.spacing, lineSpacing = a.spacing,
             })
         end
@@ -245,8 +272,16 @@ function Auras.ApplyAppearance(plate)
     Auras.Layout(plate)
 end
 
--- Style-level change: every bundle is dropped so fresh buttons get built.
-function Auras.Rebuild()
+-- Style-level change. A button can only be styled while the engine is creating
+-- it, so new styling means new buttons -- and the engine gives none of the old
+-- ones back (it deliberately exposes no way to remove a group). Every rebuild
+-- therefore costs real frames, which is why a slider drag is collapsed into a
+-- single rebuild at the end instead of one per step.
+local rebuildQueued
+
+local function doRebuild()
+    rebuildQueued = false
+    if not NP.mod.active then return end
     for _, plate in pairs(NP.plates) do
         if plate.auras then Auras.Detach(plate) end
     end
@@ -254,23 +289,14 @@ function Auras.Rebuild()
     for _, plate in pairs(NP.plates) do Auras.Attach(plate) end
 end
 
--- ---------------------------------------------------------------------------
--- The client only reports plate auras at all when these bitfields say so.
--- ---------------------------------------------------------------------------
-function Auras.ApplyCVars()
-    local set = C_CVar.SetCVarBitfield
-    if not set then return end
-    local npc, player = Enum.NamePlateEnemyNpcAuraDisplay, Enum.NamePlateEnemyPlayerAuraDisplay
-    if npc then
-        pcall(set, "nameplateEnemyNpcAuraDisplay", npc.Debuffs, true)
-        if npc.CrowdControl then
-            pcall(set, "nameplateEnemyNpcAuraDisplay", npc.CrowdControl, true)
-        end
-    end
-    if player then
-        pcall(set, "nameplateEnemyPlayerAuraDisplay", player.Debuffs, true)
-        if player.LossOfControl then
-            pcall(set, "nameplateEnemyPlayerAuraDisplay", player.LossOfControl, true)
-        end
-    end
+function Auras.Rebuild()
+    if rebuildQueued then return end
+    rebuildQueued = true
+    C_Timer.After(0.35, doRebuild)
 end
+
+-- No CVars here on purpose. nameplateEnemyNpcAuraDisplay and its siblings only
+-- drive SetShown on BLIZZARD's own aura list frames (Blizzard_NamePlateAuras.lua
+-- UpdateEnemyNpcAuraFrames); nothing in the aura container or in C_UnitAuras
+-- consults them. What we get is decided by the filter string alone, so writing
+-- them would change a player's settings for no effect at all.

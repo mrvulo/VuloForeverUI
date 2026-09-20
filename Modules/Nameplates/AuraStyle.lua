@@ -17,8 +17,6 @@ local NP = ns.NP
 local Style = {}
 NP.AuraStyle = Style
 
-local WHITE = "Interface\Buttons\WHITE8X8"
-
 -- ---------------------------------------------------------------------------
 -- Duration text. The client formats the remaining time itself; we only say in
 -- which words. Seconds up to a minute, then "5m", then "2h", then "3d" --
@@ -33,10 +31,12 @@ local function buildFormatter()
     if not ok or not f then return nil end
     local Up = Enum.NumericRuleFormatRounding and Enum.NumericRuleFormatRounding.Up
     local okSet = pcall(f.SetBreakpoints, f, {
-        { threshold = 0,     format = "%d",  rounding = Up },
-        { threshold = 60,    format = "%dm", rounding = Up, components = { { div = 60 } } },
-        { threshold = 3600,  format = "%dh", rounding = Up, components = { { div = 3600 } } },
-        { threshold = 86400, format = "%dd", rounding = Up, components = { { div = 86400 } } },
+        -- rounding sits on the COMPONENT: on the breakpoint it would only
+        -- round `step`, which is not set, and 91 s would read "2m".
+        { threshold = 0,     format = "%d" },
+        { threshold = 60,    format = "%dm", components = { { div = 60, rounding = Up } } },
+        { threshold = 3600,  format = "%dh", components = { { div = 3600, rounding = Up } } },
+        { threshold = 86400, format = "%dd", components = { { div = 86400, rounding = Up } } },
     })
     if not okSet then return nil end
     return f
@@ -123,10 +123,17 @@ local function register(button, method, ...)
     return (pcall(f, button, ...))
 end
 
-function Style.Initializer(kind)
+function Style.Initializer(kind, size)
     return function(button)
         local a, durCfg, stackCfg = styleOf(kind)
         local font = ns.ModuleFontPath("nameplates")
+
+        -- The AuraButton intrinsic carries no size of its own, and the flow
+        -- layout only ANCHORS its elements -- layout.elementWidth is used for
+        -- the spacing arithmetic and never reaches the frame. Without this the
+        -- button stays 0x0 and nothing is ever visible, while every call
+        -- involved reports success.
+        button:SetSize(size, size)
 
         local icon = button:CreateTexture(nil, "ARTWORK")
         icon:SetAllPoints(button)
@@ -157,7 +164,9 @@ function Style.Initializer(kind)
 
         register(button, "SetIcon", icon)
         register(button, "SetDurationCooldown", cd)
-        register(button, "SetApplicationCount", stacks, {})
+        if stackCfg.position ~= "none" then
+            register(button, "SetApplicationCount", stacks, {})
+        end
 
         if durCfg.position ~= "none" then
             local f = Style.Formatter()

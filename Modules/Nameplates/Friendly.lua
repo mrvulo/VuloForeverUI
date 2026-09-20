@@ -34,10 +34,12 @@ NP.Friendly = Friendly
 local FONT_OBJECTS = { "SystemFont_NamePlate", "SystemFont_NamePlate_Outlined" }
 local original = {}
 
+-- Recorded even when GetFont answers nothing: an object we changed but could
+-- not read would otherwise never be given back.
 local function saveOriginal(name, fo)
     if original[name] then return end
     local file, size, flags = fo:GetFont()
-    if file then original[name] = { file, size, flags } end
+    original[name] = { file or ns.UI.FONT_PATH, size or 12, flags or "" }
 end
 
 local function applyFonts()
@@ -72,7 +74,9 @@ function Friendly.ApplyCVars()
     NP.SetCVar("nameplateShowOnlyNameForFriendlyPlayerUnits", nameOnly and "1" or "0")
     NP.SetCVar("nameplateUseClassColorForFriendlyPlayerUnitNames",
         db.classColorFriendly and "1" or "0")
-    NP.SetCVar("ShowClassColorInFriendlyNameplate", db.classColorFriendly and "1" or "0")
+    -- the bar-side one; nameplateUseClassColorForFriendlyPlayerUnitNames above
+    -- only colours the name text
+    NP.SetCVar("nameplateShowFriendlyClassColor", db.classColorFriendly and "1" or "0")
     NP.SetCVar("UnitNameFriendlyPlayerName", db.showFriendlyPlayers and "1" or "0")
     NP.SetCVar("nameplateShowFriendlyPlayers", db.showFriendlyPlayers and "1" or "0")
     NP.SetCVar("nameplateShowFriendlyNpcs",
@@ -138,7 +142,7 @@ end
 -- ---------------------------------------------------------------------------
 function Friendly.Apply()
     if not NP.mod.active then return end
-    applyFonts()
+    if NP.db().showFriendlyPlayers then applyFonts() else restoreFonts() end
     ns:RunOutOfCombatOnce("np-friendly", function()
         Friendly.ApplyCVars()
         applyClickThrough()

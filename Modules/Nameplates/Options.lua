@@ -179,7 +179,11 @@ local function iconSlotRow(slot)
             resize(title, {
                 { type = "slider", label = L["Size"], min = 10, max = 50, step = 1,
                   get = function() return db().iconSlots[slot].size end,
-                  set = function(_, v) db().iconSlots[slot].size = v; NP.Bump() end },
+                  set = function(_, v)
+                      db().iconSlots[slot].size = v
+                      NP.Bump()
+                      if NP.IconInSlot(slot) ~= "none" then NP.Auras.Rebuild() end
+                  end },
                 { type = "slider", label = L["X Offset"], min = -300, max = 300, step = 1,
                   get = function() return db().iconSlots[slot].x end,
                   set = function(_, v) db().iconSlots[slot].x = v; NP.Bump() end },
@@ -226,7 +230,18 @@ local function auraKindRows(kind, label)
             { value = "topleft", text = L["Top left"] }, { value = "topright", text = L["Top right"] },
         },
         get = function() return NP.SlotOfAura(kind) end,
-        set = function(_, v) NP.AssignIconSlot(v, v ~= "none" and kind or "none") end,
+        set = function(_, v)
+            -- "none" clears THIS kind's slot; AssignIconSlot("none", "none")
+            -- would have cleared nothing at all.
+            if v == "none" then
+                NP.AssignIconSlot(NP.SlotOfAura(kind), "none")
+            else
+                NP.AssignIconSlot(v, kind)
+            end
+            -- a kind that gains or loses its slot needs its container built
+            -- or dropped, which only a rebuild does
+            NP.Auras.Rebuild()
+        end,
         inline = {
             resize(label, {
                 num("max", L["Max Icons"], 1, 10),

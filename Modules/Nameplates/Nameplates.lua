@@ -318,9 +318,18 @@ local function recheck(_, unit)
     if type(unit) ~= "string" then return end
     if NP.pending[unit] then
         attach(unit)
-    elseif NP.plates[unit] and not isEnemy(unit) and not NP.Friendly.WantsOwnPlate(unit) then
-        detach(unit)
-        NP.pending[unit] = true
+    elseif NP.plates[unit] then
+        local plate = NP.plates[unit]
+        if not isEnemy(unit) and not NP.Friendly.WantsOwnPlate(unit) then
+            detach(unit)
+            NP.pending[unit] = true
+        elseif plate.friendly ~= not isEnemy(unit) then
+            -- a duel started or ended under a plate we keep: the side changed,
+            -- and with it the whole colour chain
+            plate.friendly = not isEnemy(unit)
+            NP.Colors.Apply(plate)
+            NP.Extras.Update(plate)
+        end
     end
 end
 
@@ -494,8 +503,10 @@ function M:OnEnable()
             NP.Colors.Apply(plate)
         end
     end)
-    self:RegisterEvent("UNIT_POWER_UPDATE", function(_, unit)
-        if unit == "player" then NP.Extras.UpdateAll("combo") end
+    self:RegisterEvent("UNIT_POWER_UPDATE", function(_, unit, powerType)
+        if unit == "player" and (powerType == nil or powerType == "COMBO_POINTS") then
+            NP.Extras.UpdateAll("combo")
+        end
     end)
     self:RegisterEvent("UNIT_MAXPOWER", function(_, unit)
         if unit == "player" then NP.Extras.UpdateAll("combo") end
@@ -517,7 +528,6 @@ function M:OnEnable()
     NP.Colors.RefreshContext()
     NP.Kick.Resolve()
     NP.AuraStyle.RefreshDispel()
-    NP.Auras.ApplyCVars()
     NP.Friendly.Apply()
     NP.Target.OnTargetChanged()
     showEnemies(InCombatLockdown())

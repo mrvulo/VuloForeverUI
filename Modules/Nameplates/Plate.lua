@@ -329,7 +329,6 @@ function Plate:UpdateClassification()
     local unit = self.unit
     if not unit or not tex.slotted then tex:Hide(); return end
     local db = NP.db()
-    if NP.ctx.inInstance and not db.classificationShowInInstances then tex:Hide(); return end
     if NP.Extras.IsQuestMob(unit) then
         -- SetTexture replaces whatever atlas was on it; clearing first is not
         -- worth the risk of SetAtlas(nil) being refused.
@@ -337,6 +336,7 @@ function Plate:UpdateClassification()
         tex:Show()
         return
     end
+    if NP.ctx.inInstance and not db.classificationShowInInstances then tex:Hide(); return end
     local class = UnitClassification(unit)
     local atlas = ns.CanRead(class) and CLASSIFICATION_ATLAS[class]
     if atlas then
@@ -413,7 +413,7 @@ end
 function Plate:Clear()
     local nameplate = self.nameplate
     self:UnregisterAllEvents()
-    NP.Extras.ForgetQuest(self.unit)
+    if self.unit then NP.Extras.ForgetQuest(self.unit) end
     NP.Auras.Detach(self)
     NP.Cast.Stop(self, "clear")
     NP.Target.Reset(self)
@@ -430,6 +430,8 @@ function Plate:Clear()
     for _, tex in pairs(self.icons) do tex:Hide() end
     self.unit, self.nameplate = nil, nil
     self.isTarget, self.isFocus, self.isHover = false, false, false
+    if self.executeGlow then self.executeGlow:Hide() end
+    if self.comboBar then self.comboBar:Hide() end
     self:Hide()
     self:SetParent(UIParent)
     self:ClearAllPoints()

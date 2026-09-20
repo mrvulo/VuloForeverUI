@@ -108,9 +108,13 @@ function Extras.UpdateExecute(plate)
     end
     local c = executeCurve()
     if not c then glow:Hide(); return end
-    local ok, col = pcall(UnitHealthPercent, plate.unit, true, c)
-    if not ok or not ns.Exists(col) then glow:Hide(); return end
-    local r, g, b, a = col:GetRGBA()
+    -- GetRGBA has to be inside the pcall: the colour comes out of a secret
+    -- evaluation, and a throw here would fire once per plate per frame.
+    local unit = plate.unit
+    local ok, r, g, b, a = pcall(function()
+        return UnitHealthPercent(unit, true, c):GetRGBA()
+    end)
+    if not ok then glow:Hide(); return end
     for _, tex in pairs(plate.executeEdges) do tex:SetVertexColor(r, g, b, a) end
     glow:Show()
 end

@@ -270,4 +270,5 @@ ns:RegisterLocale("deDE", {
     ["Combo Points"] = "Kombopunkte",
     ["Shows your combo points under the plate of your target."] = "Zeigt deine Kombopunkte unter der Plakette deines Ziels.",
     ["Pip Height"] = "Hoehe der Punkte",
+    ["Nameplates"] = "Namensplaketten",
 })
