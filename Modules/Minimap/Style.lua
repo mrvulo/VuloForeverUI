@@ -21,6 +21,10 @@
 local _, ns = ...
 local L = ns.L
 
+-- Shared between the files in this folder; Elements.lua hangs off it.
+ns.MM = ns.MM or {}
+local MM = ns.MM
+
 local mod = ns:RegisterModule("minimapstyle", {
     name        = "Minimap",
     group       = "HUD",
@@ -35,23 +39,41 @@ local mod = ns:RegisterModule("minimapstyle", {
         borderColor = { r = .067, g = .067, b = .067 },
         borderClassColor = false,
 
-        coordsMode      = "never",      -- never | hover | always
-        coordsPosition  = "BOTTOM",
-        coordsPrecision = 0,
-        coordsSize      = 11,
+        -- The five readouts. Each one has the same five settings, so they are
+        -- named the same way and Elements.lua walks them by key.
+        coordsMode = "never", coordsPosition = "BOTTOM", coordsSize = 11,
+        coordsOffsetX = 0, coordsOffsetY = 0, coordsScale = 1, coordsPrecision = 0,
 
-        zoneMode     = "inside",        -- none | inside | top
-        zonePosition = "TOP",
-        zoneSize     = 12,
-        showClock    = true,
+        zoneMode = "inside", zonePosition = "TOP", zoneSize = 12,
+        zoneOffsetX = 0, zoneOffsetY = 0, zoneScale = 1,
+        zoneSubzone = false, zoneReactiveColor = false,
 
+        clockMode = "edge", clockPosition = "BOTTOM", clockSize = 11,
+        clockOffsetX = 0, clockOffsetY = 0, clockScale = 1, clock24 = true,
+
+        fpsMode = "none", fpsPosition = "BOTTOMLEFT", fpsSize = 11,
+        fpsOffsetX = 0, fpsOffsetY = 0, fpsScale = 1, fpsShowMS = true,
+
+        diffMode = "none", diffPosition = "TOPLEFT", diffSize = 11,
+        diffOffsetX = 0, diffOffsetY = 0, diffScale = 1,
+
+        -- behaviour
         scrollZoom   = true,
+        zoomReset    = 0,               -- seconds of quiet before zooming back out; 0 = off
+        middleClickMenu = false,
+        visibility   = "always",        -- always | instances | never
+        visHideMounted = false,
+        visHideNoTarget = false,
+        visHideNoEnemy = false,
+
         hideZoom     = true,
         hideTracking = false,
         hideMail     = false,
+        hideClock    = true,            -- the client's own clock; ours is an element
         hideDiel     = false,           -- Forever's day/night indicator
     },
 })
+MM.mod = mod
 
 local CLASSIC_CLUSTER, CLASSIC_MAP = 192, 140
 
@@ -169,51 +191,15 @@ local function applyClutter()
         setShown(cluster.IndicatorFrame, not db.hideMail)
         setShown(cluster.DielFrame, not db.hideDiel)
         setShown(cluster.BorderTop, db.style == "standard")
+        -- Blizzard's zone text steps aside for our own readout unless we are
+        -- hands-off in standard.
         if cluster.ZoneTextButton then
-            setShown(cluster.ZoneTextButton, db.zoneMode ~= "none" or db.style == "standard")
+            setShown(cluster.ZoneTextButton, db.style == "standard")
         end
     end
-    if _G.TimeManagerClockButton then setShown(_G.TimeManagerClockButton, db.showClock) end
-end
-
--- ---------------------------------------------------------------------------
--- Coordinates
---
--- C_Map.GetPlayerMapPosition allocates about 1.8 KB per call, so this never
--- runs per frame -- a ticker at 5 Hz is far more than the eye needs.
--- ---------------------------------------------------------------------------
-local coordsText, coordsTicker
-
-local function updateCoords()
-    if not coordsText or not coordsText:IsShown() then return end
-    local map = C_Map.GetBestMapForUnit("player")
-    local pos = map and C_Map.GetPlayerMapPosition(map, "player")
-    if not pos then coordsText:SetText("") return end
-    local x, y = pos:GetXY()
-    if not x then coordsText:SetText("") return end
-    local fmt = mod.db.coordsPrecision > 0 and "%.1f, %.1f" or "%d, %d"
-    coordsText:SetFormattedText(fmt, x * 100, y * 100)
-end
-
-local function applyCoords()
-    local db = mod.db
-    if db.coordsMode == "never" then
-        if coordsText then coordsText:Hide() end
-        if coordsTicker then ns:CancelTicker(coordsTicker); coordsTicker = nil end
-        return
+    if _G.TimeManagerClockButton then
+        setShown(_G.TimeManagerClockButton, db.style == "standard" or not db.hideClock)
     end
-    if not coordsText then
-        coordsText = Minimap:CreateFontString(nil, "OVERLAY")
-    end
-    coordsText:SetFont(ns.ModuleFontPath("minimapstyle"), db.coordsSize, "OUTLINE")
-    coordsText:ClearAllPoints()
-    local inset = db.coordsPosition:find("TOP") and -4 or 4
-    coordsText:SetPoint(db.coordsPosition, Minimap, db.coordsPosition, 0, inset)
-    coordsText:SetShown(db.coordsMode == "always")
-    if not coordsTicker then
-        coordsTicker = ns:AddTicker(0.2, updateCoords, nil, "minimapstyle")
-    end
-    updateCoords()
 end
 
 -- ---------------------------------------------------------------------------
@@ -424,19 +410,31 @@ function mod:Apply()
         elseif style == "modern" then applyModern()
         else applyStandard() end
         applyClutter()
-        applyCoords()
         if style ~= "standard" then applyZoneSize() end
+        MM.Elements.Apply()
+        MM.Elements.ApplyVisibility()
     end)
     applying = false
     if not ok then ns:Print(L["|cffff5555Minimap style failed:|r %s"], tostring(err)) end
 end
 
-local function onEnter()
-    if mod.db.coordsMode == "hover" and coordsText then coordsText:Show(); updateCoords() end
-end
+local function onEnter() MM.Elements.SetHovered(true) end
+local function onLeave() MM.Elements.SetHovered(false) end
 
-local function onLeave()
-    if mod.db.coordsMode == "hover" and coordsText then coordsText:Hide() end
+-- Zoom back out after a while, so a map left zoomed in does not stay that way.
+local zoomTimer
+
+local function scheduleZoomReset()
+    local seconds = mod.db.zoomReset
+    if seconds <= 0 then return end
+    if zoomTimer then ns:CancelTicker(zoomTimer); zoomTimer = nil end
+    local waited = 0
+    zoomTimer = ns:AddTicker(1, function()
+        waited = waited + 1
+        if waited < seconds then return end
+        ns:CancelTicker(zoomTimer); zoomTimer = nil
+        for _ = 1, Minimap:GetZoom() do Minimap:SetZoom(Minimap:GetZoom() - 1) end
+    end, nil, "minimapstyle")
 end
 
 function mod:OnEnable()
@@ -452,13 +450,26 @@ function mod:OnEnable()
     Minimap:SetScript("OnMouseWheel", function(_, delta)
         if not mod.db.scrollZoom then return end
         if delta > 0 then Minimap.ZoomIn:Click() else Minimap.ZoomOut:Click() end
+        scheduleZoomReset()
     end)
+    Minimap:HookScript("OnMouseUp", function(_, button)
+        if button == "MiddleButton" and mod.db.middleClickMenu then
+            if _G.MainMenuMicroButton and _G.ToggleFrame then
+                pcall(_G.ToggleFrame, _G.MicroMenuContainer)
+            end
+        end
+    end)
+    -- what the map is allowed to be seen for
+    for _, event in ipairs({ "PLAYER_TARGET_CHANGED", "PLAYER_MOUNT_DISPLAY_CHANGED",
+                             "ZONE_CHANGED_NEW_AREA", "ZONE_CHANGED" }) do
+        self:RegisterEvent(event, function() MM.Elements.ApplyVisibility() end)
+    end
     self:Apply()
 end
 
 function mod:OnDisable()
-    if coordsTicker then ns:CancelTicker(coordsTicker); coordsTicker = nil end
-    if coordsText then coordsText:Hide() end
+    MM.Elements.HideAll()
+    if MinimapCluster then MinimapCluster:Show() end
     Minimap:SetScript("OnMouseWheel", nil)
     applyStandard()
     applyClutter()
@@ -479,7 +490,7 @@ function mod:GetOptions()
     local modern = function() return d.style ~= "modern" end
     local positions = ns.AnchorPointValues()
 
-    return {
+    local rows = {
         { type = "dropdown", label = L["Minimap Style"],
           tooltip = L["Standard leaves the game's own minimap alone. Classic rebuilds the old ring. Modern is a flat map with a thin border."],
           values = {
@@ -508,41 +519,7 @@ function mod:GetOptions()
               get = function() return d.borderClassColor end, set = set("borderClassColor") },
         } },
 
-        { type = "section", title = L["Text"], items = {
-            { type = "dropdown", label = L["Coordinates"],
-              values = {
-                  { value = "never",  text = L["Never"] },
-                  { value = "hover",  text = L["On mouseover"] },
-                  { value = "always", text = L["Always"] },
-              },
-              get = function() return d.coordsMode end, set = set("coordsMode") },
-            { type = "dropdown", label = L["Coordinate Position"], values = positions,
-              disabled = function() return d.coordsMode == "never" end,
-              get = function() return d.coordsPosition end, set = set("coordsPosition") },
-            { type = "slider", label = L["Decimals"], min = 0, max = 1, step = 1,
-              disabled = function() return d.coordsMode == "never" end,
-              get = function() return d.coordsPrecision end, set = set("coordsPrecision") },
-            { type = "slider", label = L["Coordinate Size"], min = 6, max = 20, step = 1,
-              disabled = function() return d.coordsMode == "never" end,
-              get = function() return d.coordsSize end, set = set("coordsSize") },
-            { type = "dropdown", label = L["Zone Name"],
-              values = {
-                  { value = "none",   text = L["Hidden"] },
-                  { value = "inside", text = L["On the map"] },
-                  { value = "top",    text = L["Above the map"] },
-              },
-              get = function() return d.zoneMode end, set = set("zoneMode") },
-            { type = "slider", label = L["Zone Name Size"], min = 6, max = 24, step = 1,
-              disabled = function() return d.zoneMode == "none" end,
-              get = function() return d.zoneSize end, set = set("zoneSize") },
-            { type = "dropdown", label = L["Zone Name Position"], values = positions,
-              disabled = function() return d.zoneMode ~= "inside" end,
-              get = function() return d.zonePosition end, set = set("zonePosition") },
-        } },
-
         { type = "section", title = L["Around the Map"], items = {
-            { type = "toggle", label = L["Show Clock"],
-              get = function() return d.showClock end, set = set("showClock") },
             { type = "toggle", label = L["Zoom with the mouse wheel"],
               get = function() return d.scrollZoom end, set = set("scrollZoom") },
             { type = "toggle", label = L["Hide Zoom Buttons"],
@@ -554,6 +531,39 @@ function mod:GetOptions()
             { type = "toggle", label = L["Hide Day/Night Indicator"],
               tooltip = L["The sun and moon dial this client shows next to the map."],
               get = function() return d.hideDiel end, set = set("hideDiel") },
+            { type = "toggle", label = L["Hide the game's own clock"],
+              tooltip = L["Our own clock readout replaces it; see the Clock section."],
+              get = function() return d.hideClock end, set = set("hideClock") },
+            { type = "slider", label = L["Zoom back out after"], min = 0, max = 60, step = 5,
+              tooltip = L["Seconds of quiet before the map returns to its widest zoom. 0 leaves it alone."],
+              get = function() return d.zoomReset end, set = set("zoomReset") },
+            { type = "toggle", label = L["Middle click opens the menu"],
+              get = function() return d.middleClickMenu end, set = set("middleClickMenu") },
+        } },
+
+        { type = "section", title = L["When to show the map"], items = {
+            { type = "dropdown", label = L["Show the minimap"],
+              values = {
+                  { value = "always",    text = L["Always"] },
+                  { value = "instances", text = L["Only in instances"] },
+                  { value = "never",     text = L["Never"] },
+              },
+              get = function() return d.visibility end,
+              set = set("visibility", function() MM.Elements.ApplyVisibility() end) },
+            { type = "toggle", label = L["Hide while mounted"],
+              get = function() return d.visHideMounted end,
+              set = set("visHideMounted", function() MM.Elements.ApplyVisibility() end) },
+            { type = "toggle", label = L["Hide without a target"],
+              get = function() return d.visHideNoTarget end,
+              set = set("visHideNoTarget", function() MM.Elements.ApplyVisibility() end) },
+            { type = "toggle", label = L["Hide without an enemy target"],
+              get = function() return d.visHideNoEnemy end,
+              set = set("visHideNoEnemy", function() MM.Elements.ApplyVisibility() end) },
         } },
     }
+
+    for _, section in ipairs(MM.Elements.Options(set, positions)) do
+        rows[#rows + 1] = section
+    end
+    return rows
 end
