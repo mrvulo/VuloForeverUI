@@ -251,11 +251,38 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
   TANK on Forever is still open; the nameplate module has an "I am the tank" option for
   exactly that reason.
 
-**Still to measure** (the report's first half was not captured): whether
-`SetFormattedText`/`string.format`/`AbbreviateNumbers` accept a secret number, what
-`UnitCastingInfo` hands over field by field on a casting nameplate unit, whether the
-duration object's getters work, and whether `SetNamePlateSize` /
-`SetNamePlateHitTestInsets` are refused in combat.
+**Second run, IN COMBAT, same build.** The remaining questions, answered:
+
+- **Text from a secret number works after all, through the widget and through
+  `string.format`.** All three accepted a secret: `SetFormattedText("%d%%", secret)`,
+  `string.format("%d", secret)` (its result is a secret string, which `SetText` takes) and
+  `AbbreviateNumbers(secret)`. This does not contradict "text from a secret number: only
+  natively" above -- that entry is about the *formatter objects*
+  (`Curve:Evaluate`, `SecondsFormatter:Format`, `NumericFormatter:FormatNumber`), which
+  stay `AllowedWhenUntainted`. Plain format strings are the open route, exactly as the
+  12.x wiki says. **So health percent, health number and the cast timer need no fallback.**
+- `CurveConstants`, `AbbreviateNumbers` and `GetCreatureDifficultyColor` all exist as
+  globals -- the three the nameplate spec had listed as unlocated.
+- **`C_NamePlate.SetNamePlateSize` and `C_NamePlateManager.SetNamePlateHitTestInsets` were
+  accepted IN COMBAT** (156x17). Careful: the probe fed them the values they already had,
+  so this proves the call is not blocked outright, not that a real change takes effect
+  mid-fight. The module still defers both to out of combat.
+- **In combat, on an open-world mob:** `UnitName`, `UnitClass`, `UnitClassification`,
+  `UnitEffectiveLevel`, `UnitReaction`, `UnitIsTapDenied`, `UnitAffectingCombat` and
+  `UnitThreatSituation` are all **readable**; `UnitGetTotalAbsorbs` is secret and
+  `GetRaidTargetIndex` nil (none set). Identity is documented as restricted on
+  "addon-restricted maps", so expect this to differ in instances and PvP -- the module
+  guards every one of these reads anyway.
+- **`UnitIsUnit(plate token, "target")` is readable**, and the plate token is `nameplate1`
+  -- the `GetUnit()` route works.
+- **The interrupt spell ids are right.** Every candidate resolved to its proper German
+  name (Tritt, Schildhieb, Zuschlagen, Gegenzauber, Erdschock, Stille, Wilde Attacke,
+  Zaubersperre), so Forever does not renumber these. The test character is a level 11
+  warrior, and Shield Bash is learned at 12: "no interrupt known" was the correct answer,
+  not a bug. Re-check the kick colour and the tick once a character has one.
+
+**Still to measure:** `UnitCastingInfo` field by field and the duration object's getters,
+both of which need a nameplate unit that is actually casting.
 
 ## To verify in the beta
 1. ~~Values of `/dump WOW_PROJECT_ID`, `GetBuildInfo()`, `C_GameRules.GetActiveGameMode()`.~~ Done 2026-09-18, see Facts.
