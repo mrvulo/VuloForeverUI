@@ -49,6 +49,7 @@ Modules\Profiles.lua
 Modules\BarSetups.lua
 Modules\Minimap.lua
 Modules\MinimapCollector.lua
+Modules\MinimapStyle.lua
 Modules\BuffDurations.lua
 Modules\UnitFrames\Skins.lua
 Modules\UnitFrames\Engine.lua
@@ -90,6 +91,7 @@ Modules\CooldownManager\Options.lua
 Modules\ResourceBars\Core.lua
 Modules\ResourceBars\Bar.lua
 Modules\ResourceBars\Power.lua
+Modules\ResourceBars\CastSkin.lua
 Modules\ResourceBars\Cast.lua
 Modules\ResourceBars\Swing.lua
 Modules\ResourceBars\Options.lua
