@@ -706,4 +706,5 @@ ns:RegisterLocale("deDE", {
     ["Hide Day/Night Indicator"] = "Tag/Nacht-Anzeige ausblenden",
     ["The sun and moon dial this client shows next to the map."] = "Die Sonnen- und Mondscheibe, die dieser Client neben der Karte zeigt.",
     ["|cffff5555Minimap style failed:|r %s"] = "|cffff5555Minimap-Stil fehlgeschlagen:|r %s",
+    ["This client does not ship the classic minimap art, so the frame stays empty. The layout still applies."] = "Dieser Client bringt die klassische Minimap-Grafik nicht mit, der Rahmen bleibt deshalb leer. Die Anordnung greift trotzdem.",
 })

@@ -54,9 +54,22 @@ local mod = ns:RegisterModule("minimapstyle", {
 })
 
 local CLASSIC_CLUSTER, CLASSIC_MAP = 192, 140
+
+-- Masks are TEXTURE PATHS. The round one the client itself uses is an atlas,
+-- which SetMaskTexture does take, but the classic look wants the old circular
+-- alpha mask -- the same one portraits use.
 local SQUARE_MASK  = "Interface\\Buttons\\WHITE8X8"
 local ROUND_MASK   = "ui-hud-minimap-frame-generic-mask"
-local CLASSIC_RING = "Interface\\Minimap\\UI-Minimap-Border"
+local CIRCLE_MASK  = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
+
+-- UI-Minimap-Border is ONE sheet holding both the header bar and the ring, so
+-- each piece has to be cut out of it. Drawing the whole file is what produced
+-- the dark blob over the map on the first attempt.
+local CLASSIC_SHEET = "Interface\\Minimap\\UI-Minimap-Border"
+local SHEET_TOP  = { 0.25, 1, 0,     0.125 }   -- the header bar
+local SHEET_RING = { 0.25, 1, 0.125, 0.875 }   -- the ring around the map
+local COMPASS_RING  = "Interface\\Minimap\\CompassRing"
+local COMPASS_NORTH = "Interface\\Minimap\\CompassNorthTag"
 
 -- ---------------------------------------------------------------------------
 -- Remembering what we found
@@ -122,7 +135,7 @@ end
 
 local function applyShape(round)
     if not Minimap.SetMaskTexture then return end
-    pcall(Minimap.SetMaskTexture, Minimap, round and ROUND_MASK or SQUARE_MASK)
+    pcall(Minimap.SetMaskTexture, Minimap, round and CIRCLE_MASK or SQUARE_MASK)
 end
 
 -- The zone name lives on a button in the cluster; its font string is where the
@@ -217,68 +230,144 @@ local function applyStandard()
     restore(Minimap.ZoomIn, "zoomin")
     restore(Minimap.ZoomOut, "zoomout")
     restore(cluster, "cluster")
+    restore(cluster and cluster.Tracking, "tracking")
+    restore(cluster and cluster.IndicatorFrame, "mail")
+    restore(_G.TimeManagerClockButton, "clock")
     setShown(MinimapCompassTexture, true)
-    if cluster then cluster:SetScale(mod.db.scale) end
-    -- the client's own skin puts the frame and the mask back
-    if _G.MinimapCluster_UpdateMinimapConfig then
-        pcall(_G.MinimapCluster_UpdateMinimapConfig)
+
+    -- The Camelot skin that owns this look lives in a local function we cannot
+    -- call, so the two things it sets are set here by hand: the round frame
+    -- from its atlas, and the matching mask.
+    local rotate = C_CVar and C_CVar.GetCVarBool and C_CVar.GetCVarBool("rotateMinimap")
+    if MinimapCompassTexture then
+        pcall(MinimapCompassTexture.SetAtlas, MinimapCompassTexture,
+            rotate and "UI-HUD-Minimap-Frame-Pointer" or "UI-HUD-Minimap-Frame")
     end
+    pcall(Minimap.SetMaskTexture, Minimap, ROUND_MASK)
+    if cluster then cluster:SetScale(mod.db.scale) end
 end
 
--- The 1.x cluster: a heavy ring with the map sunk into it. The ring art is
--- Blizzard's own classic texture; if this client does not ship it the ring
--- simply stays empty and the rest of the layout still holds.
+-- The 1.x cluster: a 192px frame with the map sunk into it, the zone name
+-- across the top and the buttons riding the rim. Every number here is the
+-- original layout; the art is Blizzard's own, so a client that does not ship
+-- it leaves the frame empty and the placement still holds.
 local function applyClassic()
-    local cluster, backdrop = MinimapCluster, MinimapBackdrop
-    if not (cluster and backdrop) then return end
-    remember(cluster, "cluster")
+    local cluster, backdrop, map = MinimapCluster, MinimapBackdrop, Minimap
+    if not (cluster and backdrop and map) then return end
+    for frame, key in pairs({ [cluster] = "cluster", [backdrop] = "backdrop", [map] = "map" }) do
+        remember(frame, key)
+    end
     remember(cluster.MinimapContainer, "container")
-    remember(Minimap, "map")
-    remember(backdrop, "backdrop")
     remember(cluster.ZoneTextButton, "zonebtn")
+    remember(cluster.Tracking, "tracking")
+    remember(cluster.IndicatorFrame, "mail")
+    remember(_G.TimeManagerClockButton, "clock")
 
     cluster:SetSize(CLASSIC_CLUSTER, CLASSIC_CLUSTER)
+    setShown(cluster.BorderTop, false)
     if cluster.MinimapContainer then
+        cluster.MinimapContainer:SetScale(1)
         cluster.MinimapContainer:SetSize(CLASSIC_MAP, CLASSIC_MAP)
         cluster.MinimapContainer:ClearAllPoints()
-        cluster.MinimapContainer:SetPoint("CENTER", cluster, "CENTER", 0, -6)
+        cluster.MinimapContainer:SetPoint("CENTER", cluster, "TOP", 9, -92)
     end
-    Minimap:SetSize(CLASSIC_MAP, CLASSIC_MAP)
-    Minimap:ClearAllPoints()
-    Minimap:SetPoint("CENTER", cluster.MinimapContainer or cluster, "CENTER", 0, 0)
-    applyShape(true)
+    map:SetSize(CLASSIC_MAP, CLASSIC_MAP)
+    map:ClearAllPoints()
+    map:SetPoint("CENTER", cluster.MinimapContainer or cluster, "CENTER", 0, 0)
+    pcall(map.SetMaskTexture, map, CIRCLE_MASK)
 
     backdrop:SetSize(CLASSIC_CLUSTER, CLASSIC_CLUSTER)
     backdrop:ClearAllPoints()
-    backdrop:SetPoint("CENTER", Minimap, "CENTER", 0, 0)
+    backdrop:SetPoint("CENTER", cluster, "CENTER", 0, -20)
+    if backdrop.StaticOverlayTexture then backdrop.StaticOverlayTexture:SetAlpha(0) end
+
+    -- the two pieces cut out of the one border sheet
+    local top = region(cluster, "borderTop", "ARTWORK")
+    top:SetTexture(CLASSIC_SHEET)
+    top:SetTexCoord(unpack(SHEET_TOP))
+    top:SetSize(CLASSIC_CLUSTER, 32)
+    top:ClearAllPoints()
+    top:SetPoint("TOPRIGHT", cluster, "TOPRIGHT", 0, 0)
+    top:Show()
 
     local ring = region(backdrop, "ring", "ARTWORK")
-    ring:SetTexture(CLASSIC_RING)
+    ring:SetTexture(CLASSIC_SHEET)
+    -- GetTexture comes back nil when the file is not in the client. Said once,
+    -- because an empty frame otherwise just looks like a bug in the layout.
+    if not ring:GetTexture() and not mod._warnedArt then
+        mod._warnedArt = true
+        ns:Print(L["This client does not ship the classic minimap art, so the frame stays empty. The layout still applies."])
+    end
+    ring:SetTexCoord(unpack(SHEET_RING))
     ring:ClearAllPoints()
-    ring:SetPoint("CENTER", Minimap, "CENTER", 10, -12)
-    ring:SetSize(CLASSIC_MAP * 1.55, CLASSIC_MAP * 1.55)
+    ring:SetAllPoints(backdrop)
     ring:Show()
-    -- the Camelot frame would sit on top of the classic ring
-    setShown(MinimapCompassTexture, false)
 
-    if cluster.ZoneTextButton then
-        cluster.ZoneTextButton:ClearAllPoints()
-        cluster.ZoneTextButton:SetPoint("BOTTOM", Minimap, "TOP", 0, 14)
-        cluster.ZoneTextButton:SetSize(CLASSIC_MAP, 14)
+    -- The client's own round frame would sit on top of the classic one.
+    setShown(MinimapCompassTexture, false)
+    setShown(MinimapCompassTextureUnderlay, false)
+
+    -- A rotating map gets the compass ring, a fixed one the little N.
+    local rotate = C_CVar and C_CVar.GetCVarBool and C_CVar.GetCVarBool("rotateMinimap")
+    local north = region(backdrop, "north", "OVERLAY")
+    north:SetTexture(COMPASS_NORTH)
+    north:SetSize(16, 16)
+    north:ClearAllPoints()
+    north:SetPoint("CENTER", map, "CENTER", 0, 67)
+    north:SetShown(not rotate)
+    if MinimapCompassTexture and rotate then
+        MinimapCompassTexture:SetTexture(COMPASS_RING)
+        MinimapCompassTexture:SetTexCoord(0, 1, 0, 1)
+        MinimapCompassTexture:SetSize(256, 256)
+        MinimapCompassTexture:ClearAllPoints()
+        MinimapCompassTexture:SetPoint("CENTER", map, "CENTER", -2, 0)
+        MinimapCompassTexture:SetDrawLayer("OVERLAY")
+        MinimapCompassTexture:Show()
     end
 
-    -- Zoom buttons ride the lower right of the ring and must sit above the map
-    -- to take a click at all.
-    local above = Minimap:GetFrameLevel() + 5
-    for _, e in ipairs({ { Minimap.ZoomIn, "zoomin", 62, -50 }, { Minimap.ZoomOut, "zoomout", 44, -66 } }) do
+    -- Zone name across the header bar.
+    if cluster.ZoneTextButton then
+        cluster.ZoneTextButton:SetScale(1)
+        cluster.ZoneTextButton:SetSize(CLASSIC_MAP, 12)
+        cluster.ZoneTextButton:ClearAllPoints()
+        cluster.ZoneTextButton:SetPoint("CENTER", cluster, "TOP", 0, -12)
+    end
+
+    -- Anything sitting over the map edge must be above it to take a click.
+    local above = map:GetFrameLevel() + 5
+    for _, e in ipairs({ { map.ZoomIn, 72, -25 }, { map.ZoomOut, 50, -43 } }) do
         local button = e[1]
         if button then
-            remember(button, e[2])
-            button:SetParent(Minimap)
+            button:SetParent(backdrop)
             button:SetFrameLevel(above)
+            button:SetSize(32, 32)
             button:ClearAllPoints()
-            button:SetPoint("CENTER", Minimap, "CENTER", e[3], e[4])
+            button:SetPoint("CENTER", backdrop, "CENTER", e[2], e[3])
         end
+    end
+    if cluster.Tracking then
+        cluster.Tracking:SetParent(backdrop)
+        cluster.Tracking:SetFrameLevel(above)
+        cluster.Tracking:SetSize(32, 32)
+        cluster.Tracking:ClearAllPoints()
+        cluster.Tracking:SetPoint("TOPLEFT", backdrop, "TOPLEFT", 9, -45)
+    end
+    if cluster.IndicatorFrame then
+        cluster.IndicatorFrame:SetFrameLevel(above)
+        cluster.IndicatorFrame:SetSize(33, 33)
+        cluster.IndicatorFrame:ClearAllPoints()
+        cluster.IndicatorFrame:SetPoint("TOPRIGHT", map, "TOPRIGHT", 24, -37)
+    end
+    if cluster.DielFrame then
+        cluster.DielFrame:ClearAllPoints()
+        cluster.DielFrame:SetPoint("TOPRIGHT", map, "TOPRIGHT", 20, -2)
+    end
+    if _G.TimeManagerClockButton then
+        local clock = _G.TimeManagerClockButton
+        clock:SetParent(map)
+        clock:SetFrameLevel(above)
+        clock:ClearAllPoints()
+        clock:SetPoint("CENTER", map, "CENTER", 0, -75)
     end
     cluster:SetScale(mod.db.scale)
 end
