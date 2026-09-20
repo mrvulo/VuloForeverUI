@@ -171,13 +171,57 @@ function ns:SetSpellCooldown(cd, spell)
     end
 end
 
+-- "Is there a value at all" for something that may be secret. Every other test
+-- -- `if v then`, `v ~= nil` -- is a boolean test or a comparison and throws on
+-- a secret; type() is the one question a secret answers.
+function ns.Exists(v)
+    return type(v) ~= "nil"
+end
+
+-- A two-way colour choice on a boolean that may be secret (a cast's
+-- notInterruptible, a duration object's IsZero): the client picks per channel,
+-- our code never sees which way it went. First colour when the boolean is true.
+-- A plain boolean takes the ordinary branch, so callers need not care which
+-- kind they hold.
+local evalColor = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean
+
+function ns.FoldColor(bool, r1, g1, b1, r2, g2, b2)
+    if not ns.IsSecret(bool) or not evalColor then
+        if bool then return r1, g1, b1 end
+        return r2, g2, b2
+    end
+    return evalColor(bool, r1, r2), evalColor(bool, g1, g2), evalColor(bool, b1, b2)
+end
+
+-- One channel of the same, for an alpha that hangs on two booleans in a row.
+function ns.FoldValue(bool, ifTrue, ifFalse)
+    if not ns.IsSecret(bool) or not evalColor then
+        if bool then return ifTrue end
+        return ifFalse
+    end
+    return evalColor(bool, ifTrue, ifFalse)
+end
+
+-- Show a region while the boolean is true. The setter's own defaults are
+-- documented as 255/0, so both ends are passed.
+function ns.AlphaFromBool(region, bool, alphaIfTrue, alphaIfFalse)
+    if not region then return end
+    alphaIfTrue, alphaIfFalse = alphaIfTrue or 1, alphaIfFalse or 0
+    if ns.IsSecret(bool) and region.SetAlphaFromBoolean then
+        region:SetAlphaFromBoolean(bool, alphaIfTrue, alphaIfFalse)
+    else
+        region:SetAlpha(bool and alphaIfTrue or alphaIfFalse)
+    end
+end
+
 -- Diagnostics. Prints what is readable right now, which is the one question the
 -- API documentation cannot answer -- run it standing still, then again mid-fight
 -- and in a raid, because the answers differ per restriction state.
 ns:RegisterSlash({ key = "SECRETS", commands = { "/vfsecrets" },
     desc = "Report which combat values this client lets the addon read right now.",
     note = "Run it out of combat, in combat, and in a raid: the answers differ. "
-        .. "'/vfsecrets force' toggles the client's simulated combat restrictions.",
+        .. "'/vfsecrets force' toggles the client's simulated combat restrictions. "
+        .. "'/vfsecrets np' reports what a nameplate may read about your target.",
 })
 
 -- The client ships a CVar that forces the combat restriction state without a
@@ -191,8 +235,157 @@ local function restrictionsForced()
 end
 ns.RestrictionsForced = restrictionsForced   -- Init.lua warns at login: the CVar outlives the session
 
+-- "/vfsecrets np": what a nameplate module may read about the TARGET. Its own
+-- report because it needs a target with a plate (ideally one that is casting)
+-- and answers different questions: which display paths the client accepts.
+-- Interrupt candidates by their classic spell ids; the report says which one
+-- this client knows, the nameplate cast bar takes its list from that answer.
+local KICK_CANDIDATES = { 1766, 6552, 72, 2139, 8042, 19244, 19647 }
+
+local NP_CVARS = {
+    "nameplateMinScale", "nameplateMaxScale", "nameplateSelectedScale",
+    "nameplateMinAlpha", "nameplateMaxAlpha", "nameplateMaxAlphaDistance",
+    "nameplateMinAlphaDistance", "nameplateOverlapH", "nameplateOverlapV",
+    "nameplateOccludedAlphaMult", "nameplateStackingTypes", "nameplateShowAll",
+    "nameplateShowEnemies", "nameplateShowEnemyPets", "nameplateShowClassColor",
+    "ShowClassColorInNameplate", "nameplateMaxDistance",
+}
+
+local scratchText
+
+local function nameplateReport()
+    local A, R = ns.C.accent, ns.C.r
+    local function state(v)
+        if type(v) == "nil" then return "nil" end
+        if not ns.IsSecret(v) then return ns.C.pos .. "readable" .. R end
+        if ns.CanRead(v) then return ns.C.yellow .. "secret, accessible" .. R end
+        return ns.C.neg .. "secret" .. R
+    end
+    local function probe(label, fn)
+        local ok, res = pcall(fn)
+        if ok then
+            ns:Print("  %-26s%s", label, res)
+        else
+            ns:Print("  %-26s%sthrows:%s %s", label, ns.C.neg, R, tostring(res))
+        end
+    end
+    local function accepted() return ns.C.pos .. "accepted" .. R end
+
+    if not UnitExists("target") then
+        ns:Print("Target something with a nameplate first -- best a mob that is casting.")
+        return
+    end
+    ns:Print("%sNameplate report%s — combat: %s%s", A, R, InCombatLockdown() and "yes" or "no",
+        restrictionsForced() and (ns.C.yellow .. "  (restrictions FORCED)" .. R) or "")
+
+    -- 1. Text from a secret number: the health text and the cast timer hang on it.
+    scratchText = scratchText or UIParent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    scratchText:Hide()
+    probe("globals", function()
+        return ("CurveConstants %s, AbbreviateNumbers %s, GetCreatureDifficultyColor %s"):format(
+            tostring(_G.CurveConstants ~= nil), tostring(_G.AbbreviateNumbers ~= nil),
+            tostring(_G.GetCreatureDifficultyColor ~= nil))
+    end)
+    probe("SetFormattedText(%d%%)", function()
+        local scale = _G.CurveConstants and _G.CurveConstants.ScaleTo100
+        scratchText:SetFormattedText("%d%%", UnitHealthPercent("target", true, scale))
+        return accepted()
+    end)
+    probe("string.format(secret)", function()
+        local s = string.format("%d", UnitHealth("target"))
+        return accepted() .. ", result " .. state(s)
+    end)
+    probe("AbbreviateNumbers(secret)", function()
+        scratchText:SetText(AbbreviateNumbers(UnitHealth("target")))
+        return accepted()
+    end)
+
+    -- 2. Cast info, field by field. Only meaningful while the target casts.
+    probe("UnitCastingInfo(target)", function()
+        local name, text, texture, startMS, endMS, isTrade, castID, notInt, spellID = UnitCastingInfo("target")
+        if type(name) == "nil" then
+            name, text, texture, startMS, endMS, isTrade, notInt, spellID = UnitChannelInfo("target")
+            if type(name) == "nil" then return "not casting" end
+        end
+        return ("name %s, texture %s, start %s, notInterruptible %s, spellID %s"):format(
+            state(name), state(texture), state(startMS), state(notInt), state(spellID))
+    end)
+    probe("UnitCastingDuration", function()
+        local d = UnitCastingDuration("target")
+        if type(d) == "nil" then d = UnitChannelDuration("target") end
+        return type(d) == "nil" and "nil (not casting?)" or ("object, " .. state(d))
+    end)
+
+    -- 3. Geometry setters, fed their own current values so nothing changes.
+    probe("SetNamePlateSize", function()
+        local w, h = C_NamePlate.GetNamePlateSize()
+        C_NamePlate.SetNamePlateSize(w, h)
+        return accepted() .. (" (%dx%d)"):format(w, h)
+    end)
+    probe("SetNamePlateHitTestInsets", function()
+        local t = Enum.NamePlateType.Enemy
+        local l, r, top, b = C_NamePlateManager.GetNamePlateHitTestInsets(t)
+        C_NamePlateManager.SetNamePlateHitTestInsets(t, l, r, top, b)
+        return accepted()
+    end)
+
+    -- 4. What the colour chain and the text slots read.
+    probe("UnitName", function() return state((UnitName("target"))) end)
+    probe("UnitClass", function() return state((select(2, UnitClass("target")))) end)
+    probe("UnitClassification", function() return state(UnitClassification("target")) end)
+    probe("UnitEffectiveLevel", function() return state(UnitEffectiveLevel("target")) end)
+    probe("UnitReaction", function() return state(UnitReaction("target", "player")) end)
+    probe("UnitIsTapDenied", function() return state(UnitIsTapDenied("target")) end)
+    probe("UnitAffectingCombat", function() return state(UnitAffectingCombat("target")) end)
+    probe("UnitThreatSituation", function() return state(UnitThreatSituation("player", "target")) end)
+    probe("GetRaidTargetIndex", function() return state(GetRaidTargetIndex("target")) end)
+    probe("UnitGetTotalAbsorbs", function() return state(UnitGetTotalAbsorbs("target")) end)
+    probe("UnitGroupRolesAssigned", function() return tostring(UnitGroupRolesAssigned("player")) end)
+    probe("plate token vs target", function()
+        local plate = C_NamePlate.GetNamePlateForUnit("target")
+        if not plate then return "target has no plate" end
+        local token = plate.namePlateUnitToken
+        return ("%s, UnitIsUnit %s"):format(tostring(token), state(UnitIsUnit(token, "target")))
+    end)
+    probe("hidden bar colour", function()
+        local plate = C_NamePlate.GetNamePlateForUnit("target")
+        local hb = plate and plate.UnitFrame and plate.UnitFrame.healthBar
+            or plate and plate.UnitFrame and plate.UnitFrame.HealthBarsContainer
+               and plate.UnitFrame.HealthBarsContainer.healthBar
+        if not hb then return "no Blizzard health bar" end
+        return state((hb:GetStatusBarColor()))
+    end)
+
+    -- 5. Which CVars this client has at all.
+    local have, missing = {}, {}
+    for _, name in ipairs(NP_CVARS) do
+        local ok, v = pcall(C_CVar.GetCVar, name)
+        table.insert((ok and v ~= nil) and have or missing, name)
+    end
+    ns:Print("  cvars present: %s", table.concat(have, ", "))
+    ns:Print("  cvars %smissing%s: %s", ns.C.neg, R, #missing > 0 and table.concat(missing, ", ") or "none")
+
+    -- 6. The player's interrupt.
+    probe("interrupt spell", function()
+        for _, id in ipairs(KICK_CANDIDATES) do
+            if C_SpellBook.IsSpellKnownOrInSpellBook(id)
+                or C_SpellBook.IsSpellKnownOrInSpellBook(id, Enum.SpellBookSpellBank.Pet) then
+                local d = C_Spell.GetSpellCooldownDuration(id)
+                local zero = d and d:IsZero()
+                return ("%d (%s), duration %s, IsZero %s"):format(id, C_Spell.GetSpellName(id) or "?",
+                    type(d) == "nil" and "nil" or "object", state(zero))
+            end
+        end
+        return "none of the candidates is known"
+    end)
+end
+
 ns.Slash.SECRETS = function(msg)
     local A, R = ns.C.accent, ns.C.r
+    if (msg or ""):lower():match("^%s*np") then
+        nameplateReport()
+        return
+    end
     if (msg or ""):lower():match("^%s*force") then
         if InCombatLockdown() then
             ns:Print("Not while in combat.")
