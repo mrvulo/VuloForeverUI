@@ -259,4 +259,15 @@ ns:RegisterLocale("deDE", {
     ["NPC Color"] = "NSC-Farbe",
     ["Friendly Names Not Clickable"] = "Freundliche Namen nicht anklickbar",
     ["|cffaaaaaaIn name-only mode the game draws these plates itself and only the font changes -- which is also the only thing that still works inside a dungeon, where friendly plates are closed to addons.|r"] = "|cffaaaaaaIm Nur-Name-Modus zeichnet das Spiel diese Plaketten selbst und nur die Schrift aendert sich -- das ist zugleich das Einzige, was in einer Instanz noch greift, wo freundliche Plaketten fuer Addons gesperrt sind.|r",
+    -- Nameplate extras
+    ["Quest Mob Marker"] = "Quest-Gegner markieren",
+    ["Puts a quest marker on a mob one of your quests needs."] = "Setzt ein Questsymbol auf Gegner, die eine deiner Quests braucht.",
+    ["Color Quest Mobs"] = "Quest-Gegner faerben",
+    ["Quest Mob Color"] = "Farbe fuer Quest-Gegner",
+    ["Execute Glow"] = "Hinrichtungs-Leuchten",
+    ["Lights the plate up once the enemy is low enough to finish."] = "Laesst die Plakette leuchten, sobald der Gegner niedrig genug zum Toeten ist.",
+    ["Execute Threshold"] = "Schwelle",
+    ["Combo Points"] = "Kombopunkte",
+    ["Shows your combo points under the plate of your target."] = "Zeigt deine Kombopunkte unter der Plakette deines Ziels.",
+    ["Pip Height"] = "Hoehe der Punkte",
 })

@@ -486,6 +486,12 @@ local function colorsPage()
                 toggle("darkenOOCRecolor", L["Change Color Instead"]),
                 color("darkenOOCColor", L["Out of Combat Color"], nil, function() return not d.darkenOOCRecolor end),
             }) } }),
+        toggle("questMobEnabled", L["Quest Mob Marker"],
+            L["Puts a quest marker on a mob one of your quests needs."],
+            { after = function() NP.Extras.ForgetQuest(); NP.Bump() end }),
+        toggle("questMobColorEnabled", L["Color Quest Mobs"], nil, { inline = {
+            swatch("questMobColor", L["Quest Mob Color"],
+                function() return not d.questMobColorEnabled end) } }),
         toggle("enemyNameTextReactionColor", L["Color Name by Reaction"], nil, { inline = {
             swatch("enemyNameNeutralColor", L["Neutral Color"], function() return not d.enemyNameTextReactionColor end),
             swatch("enemyNameHostileColor", L["Hostile Color"], function() return not d.enemyNameTextReactionColor end),
@@ -578,6 +584,25 @@ local function generalPage()
         toggle("hideEnemyNameWhileCasting", L["Hide Enemy Name While Casting"]),
         toggle("nameRaidMarkerEnabled", L["Name Raid Marker"], L["A small raid marker next to the name."], { inline = {
             gear(L["Name Raid Marker"], { slider("nameRaidMarkerSize", L["Size"], 6, 32) }) } }),
+        toggle("executeEnabled", L["Execute Glow"],
+            L["Lights the plate up once the enemy is low enough to finish."],
+            { inline = {
+                swatch("executeColor", L["Glow color"]),
+                gear(L["Execute Glow"], {
+                    slider("executeThreshold", L["Execute Threshold"], 5, 50),
+                    slider("executeGlowSize", L["Size"], 2, 16),
+                }),
+            } }),
+        toggle("comboEnabled", L["Combo Points"],
+            L["Shows your combo points under the plate of your target."],
+            { inline = {
+                swatch("comboColor", L["Bar color"]),
+                gear(L["Combo Points"], {
+                    slider("comboHeight", L["Pip Height"], 2, 16),
+                    slider("comboGap", L["Spacing"], 0, 10),
+                    slider("comboOffset", L["Y Offset"], -20, 20),
+                }),
+            } }),
         toggle("showEnemyPets", L["Show Enemy Pet Nameplates"], nil, { after = function() NP.ApplyCVars() end }),
         toggle("hideEnemyPlatesOOC", L["Hide Enemy Nameplates out of Combat"], nil, { after = function() NP.ApplyShowEnemies() end }),
     }

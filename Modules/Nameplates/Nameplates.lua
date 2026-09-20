@@ -160,6 +160,14 @@ local M = ns:RegisterModule("nameplates", {
         castTimerColor = c(1, 1, 1), castTimerOffsetX = 0, castTimerOffsetY = 0,
         hideEnemyNameWhileCasting = false,
 
+        -- extras
+        questMobEnabled = true, questMobColorEnabled = false,
+        questMobColor = c(.157, .855, .475),
+        executeEnabled = false, executeThreshold = 20,
+        executeColor = c(.9, .1, .1), executeGlowSize = 6,
+        comboEnabled = true, comboColor = c(1, .84, .3),
+        comboHeight = 5, comboGap = 2, comboOffset = 2,
+
         -- friendly plates
         showFriendlyPlayers = true, friendlyNameOnly = true, showFriendlyNPCs = false,
         friendlyNameSize = 15, classColorFriendly = true,
@@ -476,6 +484,19 @@ function M:OnEnable()
     self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", NP.Target.OnMouseover)
     self:RegisterEvent("RAID_TARGET_UPDATE", function()
         for _, plate in pairs(NP.plates) do plate:UpdateRaidMarker() end
+    end)
+    self:RegisterEvent("QUEST_LOG_UPDATE", function()
+        NP.Extras.ForgetQuest()
+        for _, plate in pairs(NP.plates) do
+            plate:UpdateClassification()
+            NP.Colors.Apply(plate)
+        end
+    end)
+    self:RegisterEvent("UNIT_POWER_UPDATE", function(_, unit)
+        if unit == "player" then NP.Extras.UpdateAll("combo") end
+    end)
+    self:RegisterEvent("UNIT_MAXPOWER", function(_, unit)
+        if unit == "player" then NP.Extras.UpdateAll("combo") end
     end)
 
     -- combat edges: the out-of-combat dim, and the "only in combat" switch

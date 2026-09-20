@@ -103,6 +103,7 @@ function Health.Update(plate)
         health:SetValue(UnitHealth(unit))
     end
     Health.UpdateText(plate)
+    NP.Extras.UpdateExecute(plate)
 end
 
 -- ---------------------------------------------------------------------------

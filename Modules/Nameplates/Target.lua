@@ -265,6 +265,7 @@ function Target.Apply(plate)
 
     updateScale(plate)
     Target.ApplyAlpha(plate)
+    NP.Extras.UpdateCombo(plate)
 end
 
 function Target.SetHover(plate, on)

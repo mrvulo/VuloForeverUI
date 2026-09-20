@@ -148,6 +148,7 @@ function Plate:Build()
     NP.Health.Build(self)
     NP.Cast.Build(self)
     NP.Target.Build(self)
+    NP.Extras.Build(self)
 end
 
 -- ---------------------------------------------------------------------------
@@ -243,6 +244,7 @@ function Plate:ApplyAppearance()
     NP.Health.ApplyAppearance(self)
     NP.Cast.ApplyAppearance(self)
     NP.Target.ApplyAppearance(self)
+    NP.Extras.ApplyAppearance(self)
 end
 
 -- ---------------------------------------------------------------------------
@@ -328,9 +330,16 @@ function Plate:UpdateClassification()
     if not unit or not tex.slotted then tex:Hide(); return end
     local db = NP.db()
     if NP.ctx.inInstance and not db.classificationShowInInstances then tex:Hide(); return end
+    if NP.Extras.IsQuestMob(unit) then
+        tex:SetAtlas(nil)
+        tex:SetTexture(NP.QUEST_ICON)
+        tex:Show()
+        return
+    end
     local class = UnitClassification(unit)
     local atlas = ns.CanRead(class) and CLASSIFICATION_ATLAS[class]
     if atlas then
+        tex:SetTexture(nil)
         tex:SetAtlas(atlas)
         tex:Show()
     else
@@ -364,6 +373,7 @@ function Plate:Refresh()
     self:UpdateClassification()
     NP.Colors.Apply(self)
     NP.Target.Apply(self)
+    NP.Extras.Update(self)
     NP.Cast.Resume(self)
 end
 
@@ -402,6 +412,7 @@ end
 function Plate:Clear()
     local nameplate = self.nameplate
     self:UnregisterAllEvents()
+    NP.Extras.ForgetQuest(self.unit)
     NP.Auras.Detach(self)
     NP.Cast.Stop(self, "clear")
     NP.Target.Reset(self)

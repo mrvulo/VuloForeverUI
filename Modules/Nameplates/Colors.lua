@@ -154,6 +154,11 @@ function Colors.Apply(plate)
         return setPlain(plate, c.r, c.g, c.b)
     end
 
+    if db.questMobColorEnabled and NP.Extras.IsQuestMob(unit) then
+        local c = db.questMobColor
+        return setPlain(plate, dim(db, unit, c.r, c.g, c.b))
+    end
+
     local kind = mobType(unit)
 
     if NP.ctx.inGroup then
