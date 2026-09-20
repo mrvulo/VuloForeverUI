@@ -102,6 +102,8 @@ local ZOOM_ART = {
     ZoomOut = "Interface\\Minimap\\UI-Minimap-ZoomOutButton-",
 }
 local ZOOM_HIGHLIGHT = "Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight"
+local CLOCK_PLATE   = "Interface\\TimeManager\\ClockBackground"
+local CALENDAR_ART  = "Interface\\Calendar\\UI-Calendar-Button"
 
 -- ---------------------------------------------------------------------------
 -- Remembering what we found
@@ -316,6 +318,46 @@ local function applyStandard()
     if cluster then cluster:SetScale(mod.db.scale) end
 end
 
+-- The calendar: the day number on the stone calendar face. Its art is one
+-- sheet with the pressed state beside the normal one.
+local function skinCalendar()
+    local button = _G.GameTimeFrame
+    if not button then return end
+    rememberButtonArt(button, "calendar")
+    pcall(button.SetNormalTexture, button, CALENDAR_ART)
+    pcall(button.SetPushedTexture, button, CALENDAR_ART)
+    pcall(button.SetHighlightTexture, button, ZOOM_HIGHLIGHT)
+    local normal, pushed = button:GetNormalTexture(), button:GetPushedTexture()
+    local hl = button:GetHighlightTexture()
+    if normal then
+        normal:SetTexCoord(0, 0.390625, 0, 0.78125)
+        normal:ClearAllPoints(); normal:SetAllPoints(button); normal:SetDrawLayer("BACKGROUND")
+    end
+    if pushed then
+        pushed:SetTexCoord(0.5, 0.890625, 0, 0.78125)
+        pushed:ClearAllPoints(); pushed:SetAllPoints(button); pushed:SetDrawLayer("BACKGROUND")
+    end
+    if hl then
+        hl:SetTexCoord(0, 1, 0, 1)
+        hl:ClearAllPoints(); hl:SetAllPoints(button); hl:SetBlendMode("ADD")
+    end
+    for _, r in ipairs({ button:GetRegions() }) do
+        if r:IsObjectType("Texture") and r ~= normal and r ~= pushed and r ~= hl then r:SetAlpha(0) end
+    end
+    local fs = button:GetFontString()
+    if not fs then
+        fs = button:CreateFontString(nil, "OVERLAY", "GameFontBlack")
+        button:SetFontString(fs)
+    end
+    fs:SetFontObject("GameFontBlack")
+    fs:ClearAllPoints()
+    fs:SetPoint("CENTER", button, "CENTER", -1, -1)
+    fs:SetDrawLayer("OVERLAY")
+    local t = C_DateAndTime and C_DateAndTime.GetCurrentCalendarTime
+        and C_DateAndTime.GetCurrentCalendarTime()
+    if t and t.monthDay then button:SetText(t.monthDay) end
+end
+
 -- The 1.x cluster: a 192px frame with the map sunk into it, the zone name
 -- across the top and the buttons riding the rim. Every number here is the
 -- original layout; the art is Blizzard's own, so a client that does not ship
@@ -497,13 +539,61 @@ local function applyClassic()
         cluster.DielFrame:ClearAllPoints()
         cluster.DielFrame:SetPoint("TOPRIGHT", map, "TOPRIGHT", 20, -2)
     end
-    if _G.TimeManagerClockButton then
-        local clock = _G.TimeManagerClockButton
+    -- The clock sits on a stone plate under the map. Blizzard's own rounded
+    -- backing is faded rather than hidden, because hiding its regions is what
+    -- would take the time text with them.
+    local clock = _G.TimeManagerClockButton
+    if clock then
         clock:SetParent(map)
         clock:SetFrameLevel(above)
+        clock:SetSize(60, 28)
         clock:ClearAllPoints()
         clock:SetPoint("CENTER", map, "CENTER", 0, -75)
+        local plate = region(clock, "plate", "BORDER")
+        for _, r in ipairs({ clock:GetRegions() }) do
+            if r ~= plate and r:IsObjectType("Texture") then r:SetAlpha(0) end
+        end
+        plate:SetTexture(CLOCK_PLATE)
+        plate:SetTexCoord(0.015625, 0.8125, 0.015625, 0.390625)
+        plate:SetAllPoints(clock)
+        plate:SetAlpha(1)
+        plate:Show()
+        if _G.TimeManagerClockTicker then
+            _G.TimeManagerClockTicker:ClearAllPoints()
+            _G.TimeManagerClockTicker:SetPoint("CENTER", clock, "CENTER", 3, 1)
+        end
     end
+
+    -- The queue eye on the lower left, wearing the same stone ring.
+    if _G.QueueStatusButton then
+        local q = _G.QueueStatusButton
+        q:SetParent(backdrop)
+        q:SetFrameLevel(above)
+        q:SetScale(1)
+        q:SetSize(33, 33)
+        q:ClearAllPoints()
+        q:SetPoint("TOPLEFT", backdrop, "TOPLEFT", 22, -100)
+        local ring = region(q, "ring", "OVERLAY")
+        ring:SetTexture(TRACK_BORDER)
+        ring:SetSize(52, 52)
+        ring:ClearAllPoints()
+        ring:SetPoint("TOPLEFT", q, "TOPLEFT", 1, -1)
+        ring:Show()
+    end
+    if cluster.InstanceDifficulty then
+        cluster.InstanceDifficulty:ClearAllPoints()
+        cluster.InstanceDifficulty:SetPoint("TOPLEFT", cluster, "TOPLEFT", 22, -17)
+    end
+
+    -- 1.x has no landing-page button; it stays reachable from the micro menu,
+    -- so it is faded rather than hidden.
+    if _G.ExpansionLandingPageMinimapButton then
+        _G.ExpansionLandingPageMinimapButton:SetAlpha(0)
+        _G.ExpansionLandingPageMinimapButton:EnableMouse(false)
+    end
+
+    if _G.AddonCompartmentFrame then _G.AddonCompartmentFrame:Hide() end
+    skinCalendar()
     cluster:SetScale(mod.db.scale)
 end
 
@@ -587,6 +677,56 @@ local function scheduleZoomReset()
 end
 
 function mod:OnEnable()
+    -- MinimapCluster lays itself out again on its own -- an Edit Mode change, a
+    -- size setting, a zone with a different header. Without this hook our
+    -- placement survives exactly until the next time it does.
+    if not self._layoutHooked then
+        self._layoutHooked = true
+        local function relayout()
+            if mod.active and mod.db.style ~= "standard" then
+                ns.NextFrame(function() mod:Apply() end)
+            end
+        end
+        -- Everything that lays the cluster out again behind our back.
+        local cluster = MinimapCluster
+        if cluster then
+            if cluster.Layout then hooksecurefunc(cluster, "Layout", relayout) end
+            if cluster.SetRotateMinimap then hooksecurefunc(cluster, "SetRotateMinimap", relayout) end
+            if cluster.IndicatorFrame and cluster.IndicatorFrame.Layout then
+                hooksecurefunc(cluster.IndicatorFrame, "Layout", relayout)
+            end
+        end
+        if _G.QueueStatusButton and _G.QueueStatusButton.UpdatePosition then
+            hooksecurefunc(_G.QueueStatusButton, "UpdatePosition", relayout)
+        end
+        -- The calendar redraws its own face whenever the date is set.
+        if _G.GameTimeFrame_SetDate then
+            hooksecurefunc("GameTimeFrame_SetDate", function()
+                if mod.active and mod.db.style == "classic" then skinCalendar() end
+            end)
+        end
+        -- Two frames that put themselves back: 1.x has neither.
+        if _G.AddonCompartmentFrame and _G.AddonCompartmentFrame.UpdateDisplay then
+            hooksecurefunc(_G.AddonCompartmentFrame, "UpdateDisplay", function(self)
+                if mod.active and mod.db.style == "classic" then self:Hide() end
+            end)
+        end
+        if _G.ExpansionLandingPageMinimapButton and _G.ExpansionLandingPageMinimapButton.UpdateIcon then
+            hooksecurefunc(_G.ExpansionLandingPageMinimapButton, "UpdateIcon", function(self)
+                if mod.active and mod.db.style == "classic" then
+                    self:SetAlpha(0); self:EnableMouse(false)
+                end
+            end)
+        end
+        -- The client hides the zoom buttons when the mouse leaves the map; in
+        -- the classic look they are part of the frame and stay put.
+        Minimap:HookScript("OnLeave", function()
+            if mod.active and mod.db.style == "classic" and not mod.db.hideZoom then
+                setShown(Minimap.ZoomIn, true)
+                setShown(Minimap.ZoomOut, true)
+            end
+        end)
+    end
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function() self:Apply() end)
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA", updateCoords)
     -- the Camelot skin rebuilds itself when this CVar flips, undoing our work
@@ -645,6 +785,8 @@ local CLASSIC_ART = {
     "Interface\\Minimap\\UI-Minimap-ZoomOutButton-Disabled",
     "Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight",
     "Interface\\CharacterFrame\\TempPortraitAlphaMask",
+    "Interface\\TimeManager\\ClockBackground",
+    "Interface\\Calendar\\UI-Calendar-Button",
 }
 
 ns:RegisterSlash({ key = "MMTEX", commands = { "/vfmmtex" },
