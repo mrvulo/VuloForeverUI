@@ -47,9 +47,9 @@ UI\EditMode.lua
 Modules\GlobalSettings.lua
 Modules\Profiles.lua
 Modules\BarSetups.lua
-Modules\Minimap.lua
-Modules\MinimapCollector.lua
-Modules\MinimapStyle.lua
+Modules\Minimap\Button.lua
+Modules\Minimap\Collector.lua
+Modules\Minimap\Style.lua
 Modules\BuffDurations.lua
 Modules\UnitFrames\Skins.lua
 Modules\UnitFrames\Engine.lua

@@ -425,7 +425,7 @@ const GLOBAL_OK = [
     /^VuloForeverUI(Char)?DB$/,   // our saved variables, declared in the TOC
     // Button libraries read this one by name, so it has to be global. It is
     // allowed here only because it captures the previous definition and hands
-    // back to it when our module is off - see Modules/MinimapStyle.lua.
+    // back to it when our module is off - see Modules/Minimap/Style.lua.
     /^GetMinimapShape$/,
 ];
 // Core/Compat.lua IS the shim layer: its whole job is to fill in absent game

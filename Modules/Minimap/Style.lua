@@ -1,4 +1,4 @@
--- VuloForeverUI / Modules / MinimapStyle
+-- VuloForeverUI / Modules / Minimap / Style
 --
 -- Three looks for the minimap, picked from one dropdown:
 --
