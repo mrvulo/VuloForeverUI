@@ -339,17 +339,29 @@ local function nameplateReport()
     end)
 
     -- 3. Geometry setters, fed their own current values so nothing changes.
-    probe("SetNamePlateSize", function()
-        local w, h = C_NamePlate.GetNamePlateSize()
-        C_NamePlate.SetNamePlateSize(w, h)
-        return accepted() .. (" (%dx%d)"):format(w, h)
-    end)
-    probe("SetNamePlateHitTestInsets", function()
-        local t = Enum.NamePlateType.Enemy
-        local l, r, top, b = C_NamePlateManager.GetNamePlateHitTestInsets(t)
-        C_NamePlateManager.SetNamePlateHitTestInsets(t, l, r, top, b)
-        return accepted()
-    end)
+    --
+    -- NOT called in combat, and this is the whole lesson of 2026-09-20: these
+    -- are PROTECTED functions. A protected call from tainted code in combat
+    -- raises no Lua error at all -- the client fires ADDON_ACTION_BLOCKED and
+    -- does nothing -- so the pcall around it returns TRUE and an earlier
+    -- version of this report cheerfully printed "accepted" for a call that had
+    -- just been refused. Never let a pcall stand in for "this worked" on a
+    -- protected function.
+    if InCombatLockdown() then
+        ns:Print("  %-26s%sprotected, not called in combat%s", "plate geometry", ns.C.yellow, R)
+    else
+        probe("SetNamePlateSize", function()
+            local w, h = C_NamePlate.GetNamePlateSize()
+            C_NamePlate.SetNamePlateSize(w, h)
+            return accepted() .. (" (%dx%d)"):format(w, h)
+        end)
+        probe("SetNamePlateHitTestInsets", function()
+            local t = Enum.NamePlateType.Enemy
+            local l, r, top, b = C_NamePlateManager.GetNamePlateHitTestInsets(t)
+            C_NamePlateManager.SetNamePlateHitTestInsets(t, l, r, top, b)
+            return accepted()
+        end)
+    end
 
     -- 4. What the colour chain and the text slots read.
     probe("UnitName", function() return state((UnitName("target"))) end)

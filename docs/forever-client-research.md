@@ -263,10 +263,17 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
   12.x wiki says. **So health percent, health number and the cast timer need no fallback.**
 - `CurveConstants`, `AbbreviateNumbers` and `GetCreatureDifficultyColor` all exist as
   globals -- the three the nameplate spec had listed as unlocated.
-- **`C_NamePlate.SetNamePlateSize` and `C_NamePlateManager.SetNamePlateHitTestInsets` were
-  accepted IN COMBAT** (156x17). Careful: the probe fed them the values they already had,
-  so this proves the call is not blocked outright, not that a real change takes effect
-  mid-fight. The module still defers both to out of combat.
+- **`C_NamePlate.SetNamePlateSize` is PROTECTED and is blocked in combat** -- and the way
+  we learned that is the point. The probe called it mid-fight inside a `pcall`, the pcall
+  returned true, and the report printed "accepted (156x17)". It had not been accepted: the
+  client had fired `ADDON_ACTION_BLOCKED` ("AddOn 'VuloForeverUI' hat versucht die
+  geschuetzte Funktion 'SetNamePlateSize()' aufzurufen") and done nothing.
+  **A blocked protected call raises no Lua error, so `pcall` can never tell you it
+  happened** -- the same trap the `COMBAT_LOG_EVENT_UNFILTERED` entry above describes.
+  To test a protected function, either stay out of combat or listen for
+  `ADDON_ACTION_BLOCKED`; never read success out of a pcall.
+  Out of combat both setters work (the module sets them at login without a blocked
+  action). `/vfsecrets np` now skips them entirely while in combat.
 - **In combat, on an open-world mob:** `UnitName`, `UnitClass`, `UnitClassification`,
   `UnitEffectiveLevel`, `UnitReaction`, `UnitIsTapDenied`, `UnitAffectingCombat` and
   `UnitThreatSituation` are all **readable**; `UnitGetTotalAbsorbs` is secret and

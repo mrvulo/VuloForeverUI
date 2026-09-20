@@ -356,10 +356,16 @@ end
 -- ---------------------------------------------------------------------------
 -- Clickable area. The base plate is what the client hit-tests; it is sized to
 -- the health bar, and the insets are pushed far out so the client clamps them
--- to exactly that plate. Both setters carry restrictions -- out of combat only.
+-- to exactly that plate. Both setters are PROTECTED: out of combat only, and a
+-- change asked for during a fight lands when the fight ends.
 -- ---------------------------------------------------------------------------
+-- PROTECTED, proven in the client 2026-09-20: called in combat, the client
+-- fires ADDON_ACTION_BLOCKED and does nothing -- without raising a Lua error,
+-- so the pcall below would report success for a call that was refused. Every
+-- caller already goes through RunOutOfCombatOnce; this guard is here so a
+-- future one cannot slip past it silently.
 local function applyHitbox()
-    if not M.active then return end
+    if not M.active or InCombatLockdown() then return end
     local db = M.db
     if not NP.oldSize then
         local ok, ow, oh = pcall(C_NamePlate.GetNamePlateSize)
@@ -383,6 +389,7 @@ end
 -- asked to push its size again -- that function writes Blizzard's shared option
 -- tables, and written from here they would be tainted for every plate after.
 local function restoreHitbox()
+    if InCombatLockdown() then return end     -- protected, see applyHitbox
     local old = NP.oldInsets
     if old then
         pcall(C_NamePlateManager.SetNamePlateHitTestInsets, Enum.NamePlateType.Enemy,
