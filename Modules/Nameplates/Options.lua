@@ -525,6 +525,27 @@ end
 -- ---------------------------------------------------------------------------
 -- General
 -- ---------------------------------------------------------------------------
+local function friendlySection()
+    local d = db()
+    local refresh = { after = function() NP.Friendly.Refresh() end }
+    local off = function() return not d.showFriendlyPlayers end
+    local notNameOnly = function() return not (d.showFriendlyPlayers and d.friendlyNameOnly) end
+    return section(L["Friendly Nameplates"], {
+        { type = "desc", text = L["|cffaaaaaaIn name-only mode the game draws these plates itself and only the font changes -- which is also the only thing that still works inside a dungeon, where friendly plates are closed to addons.|r"] },
+        toggle("showFriendlyPlayers", L["Show Friendly Players"], nil, refresh),
+        toggle("friendlyNameOnly", L["Name Only"],
+            L["Just the name, drawn by the game. Switch it off for a full plate with a health bar."],
+            { after = refresh.after, disabled = off }),
+        slider("friendlyNameSize", L["Friendly Name Size"], 8, 30, 1,
+            { after = function() NP.Friendly.Apply() end, disabled = notNameOnly }),
+        toggle("classColorFriendly", L["Class Color"], nil, { after = refresh.after, disabled = off,
+            inline = { swatch("friendlyBarColor", L["Bar color"], function() return d.classColorFriendly end) } }),
+        toggle("showFriendlyNPCs", L["Show Friendly NPCs"], nil, { after = refresh.after,
+            inline = { swatch("friendlyNPCColor", L["NPC Color"], function() return not d.showFriendlyNPCs end) } }),
+        toggle("friendlyClickThrough", L["Friendly Names Not Clickable"], nil, refresh),
+    })
+end
+
 local function generalPage()
     local d = db()
     local hitbox = { after = function() NP.ApplyHitbox() end }
@@ -570,7 +591,7 @@ local function generalPage()
                 if not InCombatLockdown() then pcall(C_CVar.SetCVar, "nameplateOccludedAlphaMult", tostring(v)) end
             end }
     end
-    return { spacing, targetFocus, section(L["Extras"], extras) }
+    return { friendlySection(), spacing, targetFocus, section(L["Extras"], extras) }
 end
 
 function M:GetOptions(tabId)

@@ -248,4 +248,15 @@ ns:RegisterLocale("deDE", {
     ["Important"] = "Wichtige",
     ["Only Dispellable"] = "Nur entfernbare",
     ["|cffaaaaaaThe game decides which auras a nameplate may show and draws them itself; these settings say where they go and how many.|r"] = "|cffaaaaaaDas Spiel entscheidet, welche Auren eine Namensplakette zeigen darf, und zeichnet sie selbst; diese Einstellungen sagen nur, wohin sie kommen und wie viele.|r",
+    -- Friendly nameplates
+    ["Friendly Nameplates"] = "Freundliche Namensplaketten",
+    ["Show Friendly Players"] = "Freundliche Spieler zeigen",
+    ["Name Only"] = "Nur den Namen",
+    ["Just the name, drawn by the game. Switch it off for a full plate with a health bar."] = "Nur den Namen, vom Spiel gezeichnet. Ausgeschaltet gibt es eine volle Plakette mit Lebensleiste.",
+    ["Friendly Name Size"] = "Namensgroesse",
+    ["Class Color"] = "Klassenfarbe",
+    ["Show Friendly NPCs"] = "Freundliche NSCs zeigen",
+    ["NPC Color"] = "NSC-Farbe",
+    ["Friendly Names Not Clickable"] = "Freundliche Namen nicht anklickbar",
+    ["|cffaaaaaaIn name-only mode the game draws these plates itself and only the font changes -- which is also the only thing that still works inside a dungeon, where friendly plates are closed to addons.|r"] = "|cffaaaaaaIm Nur-Name-Modus zeichnet das Spiel diese Plaketten selbst und nur die Schrift aendert sich -- das ist zugleich das Einzige, was in einer Instanz noch greift, wo freundliche Plaketten fuer Addons gesperrt sind.|r",
 })

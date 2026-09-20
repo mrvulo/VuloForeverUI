@@ -160,6 +160,12 @@ local M = ns:RegisterModule("nameplates", {
         castTimerColor = c(1, 1, 1), castTimerOffsetX = 0, castTimerOffsetY = 0,
         hideEnemyNameWhileCasting = false,
 
+        -- friendly plates
+        showFriendlyPlayers = true, friendlyNameOnly = true, showFriendlyNPCs = false,
+        friendlyNameSize = 15, classColorFriendly = true,
+        friendlyBarColor = c(.314, .8, .408), friendlyNPCColor = c(0, 1, 0),
+        friendlyClickThrough = false,
+
         -- spacing and behaviour
         stackingEnabled = true, stackSpacingScale = 100,
         hitboxScaleX = 100, hitboxScaleY = 100,
@@ -264,18 +270,25 @@ local function attach(unit)
     local isSelf = UnitIsUnit(unit, "player")
     if not ns.IsSecret(isSelf) and isSelf then return end
     if not isEnemy(unit) then
-        -- "Attackable" can still read false on a unit's very first frame.
-        if not NP.pending[unit] then
-            NP.pending[unit] = true
-            C_Timer.After(0.1, function() if NP.pending[unit] and NP.mod.active then NP.Attach(unit) end end)
+        -- Not an enemy: ours only when the friendly side asks for a real plate.
+        -- In name-only mode the client's own plate is left completely alone.
+        if not NP.Friendly.WantsOwnPlate(unit) then
+            -- "Attackable" can still read false on a unit's very first frame.
+            if not NP.pending[unit] then
+                NP.pending[unit] = true
+                C_Timer.After(0.1, function()
+                    if NP.pending[unit] and NP.mod.active then NP.Attach(unit) end
+                end)
+            end
+            return
         end
-        return
     end
     NP.pending[unit] = nil
     local blizz = NP.Suppress(nameplate)
     local plate = NP.Acquire()
     NP.plates[unit] = plate
     plate.blizz = blizz
+    plate.friendly = not isEnemy(unit)
     plate:SetUnit(unit, nameplate)
 end
 
@@ -297,7 +310,7 @@ local function recheck(_, unit)
     if type(unit) ~= "string" then return end
     if NP.pending[unit] then
         attach(unit)
-    elseif NP.plates[unit] and not isEnemy(unit) then
+    elseif NP.plates[unit] and not isEnemy(unit) and not NP.Friendly.WantsOwnPlate(unit) then
         detach(unit)
         NP.pending[unit] = true
     end
@@ -482,6 +495,7 @@ function M:OnEnable()
     NP.Kick.Resolve()
     NP.AuraStyle.RefreshDispel()
     NP.Auras.ApplyCVars()
+    NP.Friendly.Apply()
     NP.Target.OnTargetChanged()
     showEnemies(InCombatLockdown())
 
@@ -502,6 +516,7 @@ function M:OnDisable()
     for unit in pairs(NP.plates) do units[#units + 1] = unit end
     for _, unit in ipairs(units) do detach(unit) end
     wipe(NP.pending)
+    NP.Friendly.Restore()
     ns:RunOutOfCombatOnce("np-cvars-off", restoreCVars)
     ns:RunOutOfCombatOnce("np-hitbox-off", restoreHitbox)
 end

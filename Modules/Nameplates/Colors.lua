@@ -34,6 +34,8 @@ end
 
 function Colors.RefreshAll()
     Colors.RefreshContext()
+    -- entering an instance changes what the friendly side may do at all
+    if NP.Friendly then NP.Friendly.Apply() end
     for _, plate in pairs(NP.plates) do
         Colors.Apply(plate)
         plate:UpdateClassification()
@@ -131,6 +133,21 @@ function Colors.Apply(plate)
     local unit = plate.unit
     if not unit then return end
     local db = NP.db()
+
+    -- A friendly unit has no threat, no tap state and no mob type. Its colour
+    -- is its class or a flat one, and the class of a player outside our group
+    -- is unreadable -- then the colour comes off Blizzard's own hidden bar and
+    -- must not enter the last-colour cache.
+    if plate.friendly then
+        local r, g, b, secret = NP.Friendly.BarColor(plate)
+        if secret then
+            plate.lastR = nil
+            plate.health:SetStatusBarColor(r, g, b)
+        else
+            setPlain(plate, r, g, b)
+        end
+        return
+    end
 
     if plainTrue(UnitIsTapDenied(unit)) then
         local c = db.tapped
