@@ -48,6 +48,7 @@ Modules\Profiles.lua
 Modules\BarSetups.lua
 Modules\Minimap.lua
 Modules\MinimapCollector.lua
+Modules\BuffDurations.lua
 Modules\UnitFrames\Skins.lua
 Modules\UnitFrames\Engine.lua
 Modules\UnitFrames\Extras.lua
@@ -70,5 +71,19 @@ Modules\Nameplates\Friendly.lua
 Modules\Nameplates\Extras.lua
 Modules\Nameplates\Plate.lua
 Modules\Nameplates\Options.lua
+
+Modules\DamageMeter\Core.lua
+Modules\DamageMeter\Window.lua
+Modules\DamageMeter\Breakdown.lua
+Modules\DamageMeter\Timer.lua
+Modules\DamageMeter\SpellHistory.lua
+Modules\DamageMeter\Options.lua
+
+Modules\CooldownManager\Core.lua
+Modules\CooldownManager\Bindings.lua
+Modules\CooldownManager\Glow.lua
+Modules\CooldownManager\Bar.lua
+Modules\CooldownManager\Preview.lua
+Modules\CooldownManager\Options.lua
 
 Core\Init.lua

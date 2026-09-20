@@ -134,8 +134,20 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
   `initialConfigFunction` throws "attempt to call a nil value". We use none of these today
   (checked 2026-09-19); ActionBars and anything with state drivers will hit it. Guard with
   `if loadstring_untainted then`.
-- **`C_CooldownViewer` categories are empty** for Forever specs (**reported**). A cooldown
-  module has to read the spellbook, not the viewer data.
+- **`C_CooldownViewer` DOES carry data** (corrected 2026-09-20 in the client, warrior,
+  `/vfsecrets cd`): `IsCooldownViewerAvailable` true, Essential 3 entries (first 6546),
+  Utility 2 (100), TrackedBuff 6 (2687); TrackedBar, GroupBuff, the two SpecAgnostic and
+  the two EquipSlot sets are empty. The earlier note here said every category was empty,
+  which was static analysis and wrong. **The enum carries two extra members,
+  `HiddenActive` and `HiddenPassive`, that `GetCooldownViewerCategorySet` REJECTS**
+  ("bad argument #1"), so a loop over `Enum.CooldownViewerCategory` must pcall or skip
+  those two. The spellbook stays the fallback source (that character: 4 skill lines,
+  20 items, 12 active spells).
+- **The cooldown display path works out of combat** (same run): `GetSpellCooldownDuration`
+  returns an object whose `IsZero` is readable, `Cooldown:SetCooldownFromDurationObject`
+  is accepted on our own frame, `C_DurationUtil.CreateDuration` and
+  `StatusBar:SetTimerDuration` exist, and `CreateFrame("AuraContainer")` works. The
+  in-combat half is still unmeasured.
 - **`C_AssistedCombat` is inert** (`IsAvailable()` false) (**reported**).
 
 ### Restrictions
@@ -178,8 +190,12 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
   **exists on 1.60.1 (ours, 2026-09-19):** `C_CVar.GetCVarInfo` returns value "0", default
   "0", and false for server-stored, locked-from-user, secure and read-only.
   `/vfsecrets force` toggles it; the report and the login line say when it is on, because
-  the CVar outlives the session. **To verify:** that setting it to 1 really flips the
-  `C_Secrets` gates and makes the aura API throw. The siblings
+  the CVar outlives the session. **Confirmed in the client 2026-09-19:** with the CVar at 1
+  and no fight, `restricted: auras/cooldowns/power` read true, `GetAuraDataByIndex` throws
+  the same "cannot be accessed when secret while tainted" error as in real combat, and
+  spell cooldowns come back secret -- secret paths can be tested standing still.
+  Not checked: whether `InCombatLockdown()` follows the CVar (the report's "combat:" line
+  says); until then assume protected-frame code still needs a real fight. The siblings
   `addonMapRestrictionsForced`, `addonPvPMatchRestrictionsForced` and
   `addonEncounterRestrictionsForced` (wiki) are unchecked.
 - **More secret helpers than we use:** `issecrettable`, `canaccesstable`,
@@ -206,6 +222,21 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
   `SecureAuraHeaderTemplate` is removed. Also 12.1: `getglobal`/`setglobal` deprecated,
   `MouseIsOver` -> `InputUtil.IsMouseOver`, `UnitClass`/`UnitSex`/`UnitGroupRolesAssigned`
   secret when unit identity is secret.
+- **Text from a secret number: only natively (source, 2026-09-19).** Every route that hands
+  a secret to a formatter from addon code is closed: `Curve:Evaluate`,
+  `SecondsFormatter:Format` and `NumericFormatter:FormatNumber` are all
+  `SecretArguments = "AllowedWhenUntainted"`, and `C_UnitAuras.GetAuraDuration` needs aura
+  access, which addon code does not have in combat. **Seen in the client:** in combat
+  the hook `Modules/BuffDurations.lua` puts on Blizzard's buff buttons leaves Blizzard's
+  "58 min" text alone, which is what it does for a time it may not read; out of combat
+  it writes "58m". The open route is the aura widget: `CustomAuraButtonDurationTextOptions`
+  (`AuraContainerUtilDocumentation.lua:325`) takes a `textFormatter` (a `NumericFormatter`,
+  e.g. `C_StringUtil.CreateNumericRuleFormatter()` with breakpoints
+  `{ threshold, format = "%dm", components = { { div = 60, rounding = Up } } }`) or a
+  `textFormat`, and the client formats the secret time itself. Blizzard's own default is
+  built that way in `Blizzard_AuraContainer/Blizzard_AuraContainerShared.lua:74`
+  (SecondsFormatter, one-letter, step curve at 1.5x per unit). So custom duration
+  wording in combat means our own buff bar on `AuraContainer`, not a hook on BuffFrame.
 - `C_Secrets.GetSpellAuraSecrecy(id)` returns `Enum.SecrecyLevel`
   (NeverSecret / AlwaysSecret / ContextuallySecret) -- whitelisted spells can be shown
   with full data even in combat.

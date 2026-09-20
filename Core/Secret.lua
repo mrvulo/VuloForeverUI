@@ -162,13 +162,19 @@ end
 -- we created ourselves it is fine.
 function ns:SetSpellCooldown(cd, spell)
     if not cd then return end
-    local info = C_Spell.GetSpellCooldown(spell)
-    if not info then return end
-    if info.duration and cd.SetCooldownFromDurationObject and type(info.duration) == "table" then
-        cd:SetCooldownFromDurationObject(info.duration)
-    else
-        cd:SetCooldown(info.startTime, info.duration, info.modRate)
+    -- The duration object is asked for directly instead of being dug out of
+    -- the info table. Two reasons: it is the sanctioned path, and the old
+    -- line `if info.duration and ...` was a BOOLEAN TEST on a field that is
+    -- secret in combat, which throws -- the one shape that reads as harmless
+    -- and is not.
+    local duration = C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(spell)
+    if type(duration) ~= "nil" and cd.SetCooldownFromDurationObject then
+        cd:SetCooldownFromDurationObject(duration)
+        return
     end
+    local info = C_Spell.GetSpellCooldown(spell)
+    if type(info) ~= "table" then return end
+    cd:SetCooldown(info.startTime, info.duration, info.modRate)
 end
 
 -- "Is there a value at all" for something that may be secret. Every other test
@@ -264,6 +270,7 @@ local NP_CVARS = {
 }
 
 local scratchText
+local scratchCooldown
 
 local function nameplateReport()
     local A, R = ns.C.accent, ns.C.r
@@ -442,8 +449,139 @@ local function nameplateReport()
     end)
 end
 
+-- "/vfsecrets cd": what a cooldown module may build on. Two questions decide
+-- the whole design. Does the client's own cooldown viewer carry any data for
+-- a Forever spec (static analysis says its category sets come back empty, so
+-- the spell list would have to come from the spellbook instead), and does a
+-- duration object reach a Cooldown widget and keep ticking once a fight has
+-- started. Run it standing still, then again mid-fight.
+local function cooldownReport()
+    local A, R = ns.C.accent, ns.C.r
+    local function state(v)
+        if type(v) == "nil" then return "nil" end
+        if not ns.IsSecret(v) then return ns.C.pos .. "readable" .. R end
+        if ns.CanRead(v) then return ns.C.yellow .. "secret, accessible" .. R end
+        return ns.C.neg .. "secret" .. R
+    end
+    local function probe(label, fn)
+        local ok, res = pcall(fn)
+        if ok then
+            ns:Print("  %-26s%s", label, res)
+        else
+            ns:Print("  %-26s%sthrows:%s %s", label, ns.C.neg, R, tostring(res))
+        end
+    end
+
+    ns:Print("%sCooldown report%s — combat: %s%s", A, R, InCombatLockdown() and "yes" or "no",
+        restrictionsForced() and (ns.C.yellow .. "  (restrictions FORCED)" .. R) or "")
+
+    -- 1. The client's own viewer: is there anything in it for this spec?
+    local CV = _G.C_CooldownViewer
+    probe("C_CooldownViewer", function()
+        return CV and (ns.C.pos .. "present" .. R) or (ns.C.neg .. "MISSING" .. R)
+    end)
+    if CV then
+        probe("IsCooldownViewerAvailable", function()
+            local ok, why = CV.IsCooldownViewerAvailable()
+            return ("%s%s"):format(tostring(ok), (not ok and why and why ~= "") and ("  (" .. why .. ")") or "")
+        end)
+        local cats = Enum.CooldownViewerCategory or {}
+        local names = {}
+        for name, value in pairs(cats) do names[#names + 1] = { name = name, value = value } end
+        table.sort(names, function(a, b) return a.value < b.value end)
+        for _, c in ipairs(names) do
+            probe("category " .. c.name, function()
+                local known = CV.GetCooldownViewerCategorySet(c.value, false)
+                local all   = CV.GetCooldownViewerCategorySet(c.value, true)
+                local n1 = type(known) == "table" and #known or -1
+                local n2 = type(all) == "table" and #all or -1
+                local first = ""
+                if n1 > 0 then
+                    local info = CV.GetCooldownViewerCooldownInfo(known[1])
+                    local sid = info and info.spellID
+                    first = ("  first: %s %s"):format(tostring(sid),
+                        (sid and C_Spell.GetSpellName(sid)) or "?")
+                end
+                return ("known %d, with unlearned %d%s"):format(n1, n2, first)
+            end)
+        end
+        probe("GetGroupBuffItems", function()
+            local t = CV.GetGroupBuffItems()
+            return ("%d entries"):format(type(t) == "table" and #t or -1)
+        end)
+    end
+
+    -- 2. The spellbook, the fallback source for the spell list.
+    local firstSpell
+    probe("spellbook", function()
+        local lines = C_SpellBook.GetNumSpellBookSkillLines()
+        local total, known = 0, 0
+        for i = 1, lines do
+            local info = C_SpellBook.GetSpellBookSkillLineInfo(i)
+            if info then
+                for s = info.itemIndexOffset + 1, info.itemIndexOffset + info.numSpellBookItems do
+                    total = total + 1
+                    local item = C_SpellBook.GetSpellBookItemInfo(s, Enum.SpellBookSpellBank.Player)
+                    if item and item.spellID and not item.isPassive then
+                        known = known + 1
+                        if not firstSpell and item.actionID then firstSpell = item.spellID end
+                    end
+                end
+            end
+        end
+        return ("%d skill lines, %d items, %d active spells"):format(lines, total, known)
+    end)
+
+    -- 3. The display path: duration object into a Cooldown widget of our own.
+    scratchCooldown = scratchCooldown or CreateFrame("Cooldown", nil, UIParent, "CooldownFrameTemplate")
+    scratchCooldown:Hide()
+    probe("GetSpellCooldownDuration", function()
+        if not firstSpell then return "no active spell found" end
+        local d = C_Spell.GetSpellCooldownDuration(firstSpell)
+        if type(d) == "nil" then return "nil" end
+        return ("%s (%s), IsZero %s"):format(C_Spell.GetSpellName(firstSpell) or "?",
+            type(d), state(d:IsZero()))
+    end)
+    probe("SetCooldownFromDurationObject", function()
+        if not firstSpell then return "no active spell found" end
+        local d = C_Spell.GetSpellCooldownDuration(firstSpell)
+        if type(d) == "nil" then return "no duration object" end
+        if not scratchCooldown.SetCooldownFromDurationObject then return ns.C.neg .. "method missing" .. R end
+        scratchCooldown:SetCooldownFromDurationObject(d)
+        return ns.C.pos .. "accepted" .. R
+    end)
+    probe("spellbook duration object", function()
+        if not C_SpellBook.GetSpellBookItemCooldownDuration then return "method missing" end
+        local d = C_SpellBook.GetSpellBookItemCooldownDuration(1, Enum.SpellBookSpellBank.Player)
+        return type(d) == "nil" and "nil" or "object"
+    end)
+    probe("charges", function()
+        if not firstSpell then return "no active spell found" end
+        local c = C_Spell.GetSpellCharges(firstSpell)
+        if type(c) == "nil" then return "nil (spell has no charges)" end
+        return ("current %s, max %s"):format(state(c.currentCharges), state(c.maxCharges))
+    end)
+
+    -- 4. The widgets a bar display would need.
+    probe("C_DurationUtil", function()
+        local D = _G.C_DurationUtil
+        return ("CreateDuration %s, StatusBar:SetTimerDuration %s"):format(
+            tostring(D and D.CreateDuration ~= nil),
+            tostring(UIParent.SetTimerDuration ~= nil or CreateFrame("StatusBar").SetTimerDuration ~= nil))
+    end)
+    probe("AuraContainer widget", function()
+        local ok = pcall(CreateFrame, "AuraContainer", nil, UIParent)
+        return ok and (ns.C.pos .. "creatable" .. R) or (ns.C.neg .. "not available" .. R)
+    end)
+    probe("restricted: cooldowns", function() return tostring(ns.CooldownsRestricted()) end)
+end
+
 ns.Slash.SECRETS = function(msg)
     local A, R = ns.C.accent, ns.C.r
+    if (msg or ""):lower():match("^%s*cd") then
+        cooldownReport()
+        return
+    end
     if (msg or ""):lower():match("^%s*np") then
         nameplateReport()
         return

@@ -64,7 +64,8 @@ local function recolor(statusbar, unit)
     end
 end
 
-local threatFS, threatGlow, classIcons
+local threatFS, threatGlow, classIcons, classRings
+local portraitOf = {}
 
 local function ensureRegions()
     if threatFS then return end
@@ -80,18 +81,44 @@ local function ensureRegions()
     threatGlow:SetPoint("BOTTOMRIGHT", bars, "BOTTOMRIGHT", 3, -14)
     threatGlow:Hide()
 
-    classIcons = {}
+    classIcons, classRings = {}, {}
     for unit, portrait in pairs({ player = playerPortrait(), target = targetPortrait() }) do
         if portrait then
-            local icon = portrait:GetParent():CreateTexture(nil, "OVERLAY")
+            local icon = portrait:GetParent():CreateTexture(nil, "OVERLAY", nil, 1)
             icon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
             icon:SetSize(16, 16)
             -- top corner: the bottom one is where Blizzard's level circle sits
             icon:SetPoint("TOPLEFT", portrait, "TOPLEFT", -2, 2)
             icon:Hide()
             classIcons[unit] = icon
+            portraitOf[unit] = portrait
         end
     end
+
+    -- Classic: the target's icon is a badge on the portrait's rim, 22 px in a
+    -- gold ring. The ring file's hole is 20 px wide with its centre at
+    -- (15.5, -14.5) of 53 x 53, so the ring's centre sits (11, -12) off the
+    -- icon's. Native size on purpose (seen 2026-09-19): at 58 px the class
+    -- circle, which does not fill its 22 px cell, floats in the hole; at
+    -- 48 px the ring's inner bevel covers the circle's edge.
+    local icon = classIcons.target
+    if icon then
+        local ring = icon:GetParent():CreateTexture(nil, "OVERLAY", nil, 2)
+        ring:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+        ring:SetSize(53, 53)
+        ring:SetPoint("CENTER", icon, "CENTER", 11, -12)
+        ring:Hide()
+        classRings.target = ring
+    end
+end
+
+-- Which units get an icon, and how big: Standard has its own switch and the
+-- plain 16 px icon on both frames, Classic the ringed badge on the target.
+local function iconWanted(unit)
+    if mod.db.style == "classic" then
+        return mod.db.classicClassIcon and unit == "target", 22, true, -6, 6
+    end
+    return mod.db.classIcon, 16, false, -2, 2
 end
 
 local function paintThreat()
@@ -105,14 +132,20 @@ end
 local function paintClassIcons()
     for unit, icon in pairs(classIcons or {}) do
         local _, token = UnitClass(unit)
-        local coords = active and mod.db.classIcon and UnitExists(unit) and UnitIsPlayer(unit)
+        local wanted, size, ringed, x, y
+        if active then wanted, size, ringed, x, y = iconWanted(unit) end
+        local coords = wanted and UnitExists(unit) and UnitIsPlayer(unit)
             and token and ns.CanRead(token) and CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[token]
+        local ring = classRings[unit]
         if coords then
+            icon:SetSize(size, size)
+            icon:SetPoint("TOPLEFT", portraitOf[unit], "TOPLEFT", x, y)
             icon:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
             icon:Show()
         else
             icon:Hide()
         end
+        if ring then ring:SetShown(coords and ringed and true or false) end
     end
 end
 
@@ -170,6 +203,7 @@ function Extras.Disable()
     events:UnregisterAllEvents()
     if threatFS then threatFS:SetText(""); threatGlow:Hide() end
     for _, icon in pairs(classIcons or {}) do icon:Hide() end
+    for _, ring in pairs(classRings or {}) do ring:Hide() end
     -- Blizzard repaints its own colour on the next health update; we do not
     -- guess at it here.
 end

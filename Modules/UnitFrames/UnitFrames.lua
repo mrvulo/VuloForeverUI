@@ -25,6 +25,7 @@ local mod = ns:RegisterModule("unitframes", {
         playerElite = true,
         classicClassColor = false,     -- Classic: Blizzard's green unless asked
         classicStatusText = true,      -- Classic: Blizzard's bar text, always on, percent + value
+        classicClassIcon  = false,     -- Classic: ringed class badge on the target portrait
         portrait    = true,
         player      = { x = -260, y = -180, scale = 1 },
         target      = { x =  260, y = -180, scale = 1 },
@@ -141,6 +142,9 @@ function mod:GetOptions()
         items[#items + 1] = { type = "toggle", label = L["Class color on the health bar"],
             get = function() return mod.db.classicClassColor end,
             set = function(_, v) mod.db.classicClassColor = v; applyStyle() end }
+        items[#items + 1] = { type = "toggle", label = L["Class icon on the target portrait"],
+            get = function() return mod.db.classicClassIcon end,
+            set = function(_, v) mod.db.classicClassIcon = v; applyStyle() end }
         items[#items + 1] = { type = "toggle", label = L["Status text on the bars"],
             tooltip = L["Sets Blizzard's status text to percent and value, always shown. Change it back under Blizzard's options."],
             get = function() return mod.db.classicStatusText end,

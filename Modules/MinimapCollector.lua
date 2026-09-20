@@ -4,7 +4,7 @@ local L = ns.L
 
 local mod = ns:RegisterModule("minimapcollector", {
     name        = "Minimap Button Collector",
-    group       = "Core",
+    group       = "HUD",     -- "Core" is hidden from the sidebar: no row, no switch, no options
     description = "Collects the other addons' minimap buttons in one box that opens from a single button on the minimap.",
     defaults = {
         enabled      = true,
@@ -127,9 +127,25 @@ local function snapshot(b, libName)
         level   = b:GetFrameLevel(),
         scale   = b:GetScale(),
         libName = libName,
+        -- The common minimap-button recipe pins both; see setLayer.
+        fixedStrata = b.HasFixedFrameStrata and b:HasFixedFrameStrata() or false,
+        fixedLevel  = b.HasFixedFrameLevel and b:HasFixedFrameLevel() or false,
     }
     records[b] = rec
     return rec
+end
+
+-- A button that pinned its strata and level keeps them through SetFrameStrata
+-- and SetFrameLevel (seen in the client 2026-09-19: the box was sized for its
+-- buttons and showed none -- they sat at MEDIUM underneath the DIALOG
+-- backdrop). So: unpin, set, pin again to whatever the caller wants kept.
+local function setLayer(b, strata, level, pinStrata, pinLevel)
+    if b.SetFixedFrameStrata then pcall(b.SetFixedFrameStrata, b, false) end
+    if b.SetFixedFrameLevel then pcall(b.SetFixedFrameLevel, b, false) end
+    if strata then pcall(b.SetFrameStrata, b, strata) end
+    if level then pcall(b.SetFrameLevel, b, level) end
+    if b.SetFixedFrameStrata then pcall(b.SetFixedFrameStrata, b, pinStrata and true or false) end
+    if b.SetFixedFrameLevel then pcall(b.SetFixedFrameLevel, b, pinLevel and true or false) end
 end
 
 local function restore(b)
@@ -144,8 +160,7 @@ local function restore(b)
     for _, p in ipairs(rec.points) do
         pcall(b.SetPoint, b, p[1], p[2], p[3], p[4], p[5])
     end
-    if rec.strata then pcall(b.SetFrameStrata, b, rec.strata) end
-    if rec.level then pcall(b.SetFrameLevel, b, rec.level) end
+    setLayer(b, rec.strata, rec.level, rec.fixedStrata, rec.fixedLevel)
 
     -- The owner knows the current place better than a snapshot does: the icon
     -- library re-reads the saved angle, our own button its module setting.
@@ -366,10 +381,9 @@ local function layoutTray()
     for i = 1, #order do
         local b = order[i]
         if b:GetParent() ~= tray then pcall(b.SetParent, b, tray) end
-        -- Set outright, not inherited: several of these buttons pin their
-        -- strata and level, and would otherwise sit underneath the box.
-        b:SetFrameStrata(tray:GetFrameStrata())
-        b:SetFrameLevel(level)
+        -- Set outright and pinned there, so nothing the owner does to the
+        -- button's old parent can drop it underneath the box again.
+        setLayer(b, tray:GetFrameStrata(), level, true, true)
         -- A hidden button (switched off in its own addon) gets no cell, so the
         -- grid has no holes. Its Show hook asks for a new layout.
         if b:IsShown() then
@@ -703,7 +717,14 @@ function mod:GetOptions()
         {
             type = "button", label = L["Collect now"], width = 160,
             tooltip = L["Searches the minimap again for addon buttons."],
-            onClick = function() requestSync() end,
+            onClick = function()
+                sync()
+                local names = {}
+                for i = 1, #order do
+                    names[i] = records[order[i]] and records[order[i]].libName or order[i]:GetName() or "?"
+                end
+                ns:Print(L["%d buttons collected: %s"], #order, table.concat(names, ", "))
+            end,
         },
     }
 end
