@@ -203,6 +203,8 @@ function Cast.ApplyAppearance(plate)
 
     -- spark, shield, glow
     local spark = plate.castSpark
+    spark:ClearAllPoints()      -- the bar may just have been given a new fill texture
+    spark:SetPoint("CENTER", cast:GetStatusBarTexture(), "RIGHT", 0, 0)
     spark:SetSize(castH * 0.6, castH * 2)
     spark:SetShown(db.castBarSparkEnabled)
     plate.castShield:ClearAllPoints()
@@ -372,11 +374,12 @@ end
 -- ---------------------------------------------------------------------------
 local function wrapBorder(plate, on)
     local db = NP.db()
-    if not (db.showBorder and db.wrapBorderCastbar) then return end
+    -- switched off mid-cast, the border still has to come back to the bar
+    local wrap = on and db.showBorder and db.wrapBorderCastbar
     local host = plate.borderHost
     host:ClearAllPoints()
     host:SetPoint("TOPLEFT", plate.health, "TOPLEFT", 0, 0)
-    host:SetPoint("BOTTOMRIGHT", on and plate.cast or plate.health, "BOTTOMRIGHT", 0, 0)
+    host:SetPoint("BOTTOMRIGHT", wrap and plate.cast or plate.health, "BOTTOMRIGHT", 0, 0)
 end
 
 local function hide(plate)
@@ -448,11 +451,12 @@ function Cast.Start(plate, isChannel)
         plate.castGlowHost:SetAlpha(0)
     end
 
-    Cast.UpdateTarget(plate, name)
     refreshShield(plate)
     layoutKick(plate)
     cast:Show()
     wrapBorder(plate, true)
+    -- after the bar is up: a refusal in here must not leave a cast without a bar
+    xpcall(Cast.UpdateTarget, onError, plate, name)
     if db.hideEnemyNameWhileCasting then plate.texts.Top:SetAlpha(0) end
     if NP.Target then NP.Target.SetCastScale(plate, true) end
     track(plate, true)
@@ -475,7 +479,7 @@ function Cast.UpdateTarget(plate, spellName)
         local class = UnitSpellTargetClass(unit)
         if ns.Exists(class) then
             local ok, color = pcall(C_ClassColor.GetClassColor, class)
-            if ok and color then r, g, b = color:GetRGB() end
+            if ok and ns.Exists(color) then r, g, b = color:GetRGB() end
         end
     end
     if db.castCombineNameTarget then
@@ -506,15 +510,16 @@ local function flash(plate, interruptedBy)
     plate.castTarget:SetText("")
 
     -- GUID -> unit token -> name; the GUID may be secret and is only handed on.
-    local who
+    -- `who` may be a secret string, so whether there is one is kept apart.
+    local who, hasWho = nil, false
     if ns.Exists(interruptedBy) and UnitTokenFromGUID then
         local ok, token = pcall(UnitTokenFromGUID, interruptedBy)
         if ok and ns.Exists(token) then
             local okName, name = pcall(UnitName, token)
-            if okName and ns.Exists(name) then who = name end
+            if okName and ns.Exists(name) then who, hasWho = name, true end
         end
     end
-    if who then
+    if hasWho then
         plate.castName:SetFormattedText("%s (%s)", L["Interrupted"], who)
     else
         plate.castName:SetText(L["Interrupted"])
@@ -529,8 +534,9 @@ function Cast.Stop(plate, reason, interruptedBy)
         flash(plate, interruptedBy)
         return
     end
-    -- the STOP that follows an interrupt must not cut the flash short
-    if reason == "stop" and not plate.isCasting then return end
+    -- the STOP (or a second INTERRUPTED) that follows an interrupt must not
+    -- cut the flash short
+    if (reason == "stop" or reason == "interrupted") and not plate.isCasting then return end
     plate.flashToken = (plate.flashToken or 0) + 1
     hide(plate)
 end
@@ -561,7 +567,8 @@ function Cast.OnEvent(plate, event, _, _, _, p4, p5)
     elseif event == "UNIT_SPELLCAST_INTERRUPTED" then
         if sameBar(plate, p5) then Cast.Stop(plate, "interrupted", p4) end
     elseif event == "UNIT_SPELLCAST_CHANNEL_STOP" then
-        if sameBar(plate, p5) then Cast.Stop(plate, "stop") end
+        -- an interrupted channel ends with CHANNEL_STOP carrying who did it
+        if sameBar(plate, p5) then Cast.Stop(plate, ns.Exists(p4) and "interrupted" or "stop", p4) end
     elseif event == "UNIT_SPELLCAST_STOP" or event == "UNIT_SPELLCAST_FAILED" then
         if sameBar(plate, p4) then Cast.Stop(plate, "stop") end
     elseif event == "UNIT_SPELLCAST_INTERRUPTIBLE" or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE" then

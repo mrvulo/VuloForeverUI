@@ -22,6 +22,7 @@ local L = ns.L
 
 local NP = {
     plates  = {},   -- unit token -> our plate
+    byNameplate = setmetatable({}, { __mode = "k" }),   -- base plate -> our plate
     pending = {},   -- unit token -> true: has a Blizzard plate we left alone (not attackable)
     gen     = 1,    -- appearance generation; a plate restyles when its own is older
     ctx     = { inGroup = false, isTank = false, inInstance = false },
@@ -199,6 +200,10 @@ local function prewarm()
     handle = ns:AddTicker(0.1, function()
         if not M.active or made >= 20 then
             ns:CancelTicker(handle)
+            if NP._warm then
+                for _, plate in ipairs(NP._warm) do NP.Release(plate) end
+                NP._warm = nil
+            end
             return
         end
         made = made + 1
@@ -223,7 +228,14 @@ local function isEnemy(unit)
 end
 
 local function attach(unit)
-    if NP.plates[unit] then return end
+    local have = NP.plates[unit]
+    if have then
+        -- Our event can arrive before the driver has put its unit frame on the
+        -- plate; then there was nothing to suppress yet. The driver hook calls
+        -- in again right after, and this is where that frame is taken over.
+        if not have.blizz and have.nameplate then have.blizz = NP.Suppress(have.nameplate) end
+        return
+    end
     local nameplate = C_NamePlate.GetNamePlateForUnit(unit)
     if not nameplate then return end            -- forbidden plate: not ours to touch
     local isSelf = UnitIsUnit(unit, "player")
@@ -301,16 +313,26 @@ end
 NP.SetCVar = setCVar
 
 local function applyCVars()
+    if not M.active then return end      -- queued in a fight the module was switched off in
     M.db.savedCVars = M.db.savedCVars or {}
     for name, value in pairs(CVARS) do setCVar(name, value) end
     setCVar("nameplateShowEnemyPets", M.db.showEnemyPets and "1" or "0")
     if Enum.NamePlateStackType and getCVar("nameplateStackingTypes") ~= nil then
-        pcall(C_CVar.SetCVarBitfield, "nameplateStackingTypes",
-            Enum.NamePlateStackType.Enemy, M.db.stackingEnabled and true or false)
+        local bit = Enum.NamePlateStackType.Enemy
+        if M.db.savedStacking == nil and C_CVar.GetCVarBitfield then
+            local ok, was = pcall(C_CVar.GetCVarBitfield, "nameplateStackingTypes", bit)
+            if ok then M.db.savedStacking = was and true or false end
+        end
+        pcall(C_CVar.SetCVarBitfield, "nameplateStackingTypes", bit, M.db.stackingEnabled and true or false)
     end
 end
 
 local function restoreCVars()
+    if M.db.hideEnemyPlatesOOC then pcall(C_CVar.SetCVar, "nameplateShowEnemies", "1") end
+    if M.db.savedStacking ~= nil and Enum.NamePlateStackType then
+        pcall(C_CVar.SetCVarBitfield, "nameplateStackingTypes", Enum.NamePlateStackType.Enemy, M.db.savedStacking)
+        M.db.savedStacking = nil
+    end
     local saved = M.db.savedCVars
     if not saved then return end
     for name, value in pairs(saved) do pcall(C_CVar.SetCVar, name, value) end
@@ -327,7 +349,12 @@ end
 -- to exactly that plate. Both setters carry restrictions -- out of combat only.
 -- ---------------------------------------------------------------------------
 local function applyHitbox()
+    if not M.active then return end
     local db = M.db
+    if not NP.oldSize then
+        local ok, ow, oh = pcall(C_NamePlate.GetNamePlateSize)
+        if ok and ns.Num(ow) and ns.Num(oh) then NP.oldSize = { ow, oh } end
+    end
     local w = db.healthBarWidth * db.hitboxScaleX / 100
     local h = db.healthBarHeight * db.hitboxScaleY / 100
     pcall(C_NamePlate.SetNamePlateSize, w, h)
@@ -342,18 +369,17 @@ local function applyHitbox()
     end
 end
 
--- Switching the module off: the insets as found, and the driver pushes its own
--- plate size again (our hook on that call stands down while we are inactive).
+-- Switching the module off: insets and plate size as found. The driver is NOT
+-- asked to push its size again -- that function writes Blizzard's shared option
+-- tables, and written from here they would be tainted for every plate after.
 local function restoreHitbox()
     local old = NP.oldInsets
     if old then
         pcall(C_NamePlateManager.SetNamePlateHitTestInsets, Enum.NamePlateType.Enemy,
             old[1], old[2], old[3], old[4])
     end
-    local driver = NamePlateDriverFrame
-    if driver and driver.UpdateNamePlateOptions then
-        pcall(driver.UpdateNamePlateOptions, driver)
-    end
+    local size = NP.oldSize
+    if size then pcall(C_NamePlate.SetNamePlateSize, size[1], size[2]) end
 end
 
 function NP.ApplyHitbox()
@@ -428,8 +454,8 @@ function M:OnEnable()
 
     -- Plates that were up before we were (a /reload in a pack).
     for _, nameplate in ipairs(C_NamePlate.GetNamePlates()) do
-        local unit = nameplate.namePlateUnitToken
-        if unit then attach(unit) end
+        local unit = nameplate.namePlateUnitToken or (nameplate.GetUnit and nameplate:GetUnit())
+        if type(unit) == "string" then attach(unit) end
     end
 
     C_Timer.After(2, function() if M.active then prewarm() end end)
@@ -440,6 +466,6 @@ function M:OnDisable()
     for unit in pairs(NP.plates) do units[#units + 1] = unit end
     for _, unit in ipairs(units) do detach(unit) end
     wipe(NP.pending)
-    ns:RunOutOfCombatOnce("np-cvars", restoreCVars)
-    ns:RunOutOfCombatOnce("np-hitbox", restoreHitbox)
+    ns:RunOutOfCombatOnce("np-cvars-off", restoreCVars)
+    ns:RunOutOfCombatOnce("np-hitbox-off", restoreHitbox)
 end

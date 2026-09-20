@@ -46,7 +46,10 @@ end
 function ns:Pixel(frame, n)
     local _, physH = GetPhysicalScreenSize()
     if not physH or physH <= 0 then physH = 1080 end
-    local es = (frame and frame.GetEffectiveScale and frame:GetEffectiveScale()) or 1
+    -- The scale of a frame inside a restricted tree (a nameplate) can come back
+    -- secret; ns.Num is defined later in the load order but only called here.
+    local es = frame and frame.GetEffectiveScale and frame:GetEffectiveScale()
+    es = ns.Num and ns.Num(es, nil) or (type(es) == "number" and es) or 1
     if es <= 0 then es = 1 end
     return (n or 1) * (768 / physH) / es
 end

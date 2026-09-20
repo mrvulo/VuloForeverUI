@@ -271,9 +271,9 @@ function Plate:UpdateTexts()
             end
             fs:SetTextColor(r, g, b)
         elseif element == "levelName" then
-            if hasName then fs:SetFormattedText("%s | %s", levelText(unit), name) end
+            if hasName then fs:SetFormattedText("%s | %s", levelText(unit), name) else fs:SetText("") end
         elseif element == "nameLevel" then
-            if hasName then fs:SetFormattedText("%s | %s", name, (levelText(unit))) end
+            if hasName then fs:SetFormattedText("%s | %s", name, (levelText(unit))) else fs:SetText("") end
         end
     end
     NP.Colors.Name(self)
@@ -287,7 +287,7 @@ local CLASSIFICATION_ATLAS = {
     elite     = "nameplates-icon-elite-gold",
     worldboss = "nameplates-icon-elite-gold",
     rareelite = "nameplates-icon-elite-silver",
-    rare      = "nameplates-icon-rareelite",
+    rare      = "UI-HUD-UnitFrame-Target-PortraitOn-Boss-Rare-Star",
 }
 
 function Plate:UpdateRaidMarker()
@@ -335,9 +335,18 @@ local UNIT_EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_ABSORB_AMOUNT_CHANG
 
 -- Everything the plate shows, from scratch. Cheap enough to be the answer to
 -- "something about this unit changed and I do not know what".
+-- The client stacks plates by this frame. It cannot be taken away again (the
+-- argument is not nilable), so "off" hands the base plate itself back.
+function Plate:ApplyStacking()
+    local nameplate = self.nameplate
+    if not (nameplate and nameplate.SetStackingBoundsFrame) then return end
+    pcall(nameplate.SetStackingBoundsFrame, nameplate, NP.db().stackingEnabled and self.stack or nameplate)
+end
+
 function Plate:Refresh()
     if not self.unit then return end
     self.maxValid = false
+    self:ApplyStacking()
     NP.Health.Update(self)
     self:UpdateTexts()
     self:UpdateRaidMarker()
@@ -365,14 +374,12 @@ function Plate:SetUnit(unit, nameplate)
     for _, event in ipairs(NP.Cast.EVENTS) do
         pcall(self.RegisterUnitEvent, self, event, unit)
     end
-    if NP.db().stackingEnabled and nameplate.SetStackingBoundsFrame then
-        pcall(nameplate.SetStackingBoundsFrame, nameplate, self.stack)
-    end
+    NP.byNameplate[nameplate] = self
 
-    -- Health at once, so the bar never shows up empty; the rest a frame later,
-    -- when the unit has settled (name, classification and attackability can
-    -- still be missing on the frame a plate appears).
-    NP.Health.Update(self)
+    -- Everything at once, so a recycled plate never shows its last unit; and
+    -- once more a frame later, when the unit has settled (name, classification
+    -- and attackability can still be missing on the frame a plate appears).
+    xpcall(self.Refresh, geterrorhandler(), self)
     self:Show()
     local token = unit
     C_Timer.After(0, function()
@@ -386,9 +393,16 @@ function Plate:Clear()
     NP.Cast.Stop(self, "clear")
     NP.Target.Reset(self)
     NP.Health.Forget(self)
-    if nameplate and nameplate.SetStackingBoundsFrame then
-        pcall(nameplate.SetStackingBoundsFrame, nameplate, nil)
+    if nameplate then
+        NP.byNameplate[nameplate] = nil
+        if nameplate.SetStackingBoundsFrame then
+            pcall(nameplate.SetStackingBoundsFrame, nameplate, nameplate)
+        end
     end
+    -- the focus cast bar has its own height; the next unit must lay it out anew
+    if self.isFocus then self.gen = nil end
+    for _, fs in pairs(self.texts) do fs:SetText("") end
+    for _, tex in pairs(self.icons) do tex:Hide() end
     self.unit, self.nameplate = nil, nil
     self.isTarget, self.isFocus, self.isHover = false, false, false
     self:Hide()

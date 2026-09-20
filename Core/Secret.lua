@@ -186,19 +186,21 @@ end
 local evalColor = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean
 
 function ns.FoldColor(bool, r1, g1, b1, r2, g2, b2)
-    if not ns.IsSecret(bool) or not evalColor then
+    if not ns.IsSecret(bool) then
         if bool then return r1, g1, b1 end
         return r2, g2, b2
     end
+    if not evalColor then return r2, g2, b2 end   -- cannot ask: never test a secret
     return evalColor(bool, r1, r2), evalColor(bool, g1, g2), evalColor(bool, b1, b2)
 end
 
 -- One channel of the same, for an alpha that hangs on two booleans in a row.
 function ns.FoldValue(bool, ifTrue, ifFalse)
-    if not ns.IsSecret(bool) or not evalColor then
+    if not ns.IsSecret(bool) then
         if bool then return ifTrue end
         return ifFalse
     end
+    if not evalColor then return ifFalse end
     return evalColor(bool, ifTrue, ifFalse)
 end
 
@@ -207,8 +209,12 @@ end
 function ns.AlphaFromBool(region, bool, alphaIfTrue, alphaIfFalse)
     if not region then return end
     alphaIfTrue, alphaIfFalse = alphaIfTrue or 1, alphaIfFalse or 0
-    if ns.IsSecret(bool) and region.SetAlphaFromBoolean then
-        region:SetAlphaFromBoolean(bool, alphaIfTrue, alphaIfFalse)
+    if ns.IsSecret(bool) then
+        if region.SetAlphaFromBoolean then
+            region:SetAlphaFromBoolean(bool, alphaIfTrue, alphaIfFalse)
+        else
+            region:SetAlpha(alphaIfFalse)
+        end
     else
         region:SetAlpha(bool and alphaIfTrue or alphaIfFalse)
     end
@@ -240,7 +246,8 @@ ns.RestrictionsForced = restrictionsForced   -- Init.lua warns at login: the CVa
 -- and answers different questions: which display paths the client accepts.
 -- Interrupt candidates by their classic spell ids; the report says which one
 -- this client knows, the nameplate cast bar takes its list from that answer.
-local KICK_CANDIDATES = { 1766, 6552, 72, 2139, 8042, 19244, 19647 }
+local KICK_CANDIDATES = { 1766, 6552, 72, 2139, 8042, 15487 }
+local KICK_PET_CANDIDATES = { 19647, 19244 }
 
 local NP_CVARS = {
     "nameplateMinScale", "nameplateMaxScale", "nameplateSelectedScale",
@@ -315,6 +322,16 @@ local function nameplateReport()
         if type(d) == "nil" then d = UnitChannelDuration("target") end
         return type(d) == "nil" and "nil (not casting?)" or ("object, " .. state(d))
     end)
+    -- The cast bar calls these on the object; a refusal here is a refusal there.
+    probe("duration getters", function()
+        local d = UnitCastingDuration("target")
+        if type(d) == "nil" then d = UnitChannelDuration("target") end
+        if type(d) == "nil" then return "not casting" end
+        scratchText:SetFormattedText("%.1f", d:GetRemainingDuration())
+        return ("remaining %s, elapsed %s, total %s -- timer text %s"):format(
+            state(d:GetRemainingDuration()), state(d:GetElapsedDuration()),
+            state(d:GetTotalDuration()), accepted())
+    end)
 
     -- 3. Geometry setters, fed their own current values so nothing changes.
     probe("SetNamePlateSize", function()
@@ -367,16 +384,19 @@ local function nameplateReport()
 
     -- 6. The player's interrupt.
     probe("interrupt spell", function()
-        for _, id in ipairs(KICK_CANDIDATES) do
-            if C_SpellBook.IsSpellKnownOrInSpellBook(id)
-                or C_SpellBook.IsSpellKnownOrInSpellBook(id, Enum.SpellBookSpellBank.Pet) then
-                local d = C_Spell.GetSpellCooldownDuration(id)
-                local zero = d and d:IsZero()
-                return ("%d (%s), duration %s, IsZero %s"):format(id, C_Spell.GetSpellName(id) or "?",
-                    type(d) == "nil" and "nil" or "object", state(zero))
-            end
+        local found
+        for _, id in ipairs(KICK_PET_CANDIDATES) do
+            if not found and C_SpellBook.IsSpellKnownOrInSpellBook(id, Enum.SpellBookSpellBank.Pet) then found = id end
         end
-        return "none of the candidates is known"
+        for _, id in ipairs(KICK_CANDIDATES) do
+            if not found and C_SpellBook.IsSpellKnownOrInSpellBook(id) then found = id end
+        end
+        if not found then return "none of the candidates is known" end
+        local d = C_Spell.GetSpellCooldownDuration(found)
+        local zero
+        if type(d) ~= "nil" then zero = d:IsZero() end
+        return ("%d (%s), duration %s, IsZero %s"):format(found, C_Spell.GetSpellName(found) or "?",
+            type(d) == "nil" and "nil" or "object", state(zero))
     end)
 end
 

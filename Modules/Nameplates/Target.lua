@@ -175,6 +175,12 @@ end
 -- ---------------------------------------------------------------------------
 local hasTarget = false
 
+-- Which plate currently holds each role. Kept up to date by Apply itself, not
+-- only by the change events: a plate that shows up AFTER the target was picked
+-- (walk up to a targeted mob, /reload in a pack) has to be known here, or the
+-- next target change cannot take its glow away again.
+local curTarget, curFocus, curHover, hoverTicker
+
 function Target.ApplyAlpha(plate)
     local db = NP.db()
     local a = 1
@@ -197,6 +203,8 @@ function Target.Apply(plate)
     local wasFocus = plate.isFocus
     plate.isTarget = ns.CanRead(isT) and isT == true
     plate.isFocus  = ns.CanRead(isF) and isF == true
+    if plate.isTarget then curTarget = plate elseif curTarget == plate then curTarget = nil end
+    if plate.isFocus then curFocus = plate elseif curFocus == plate then curFocus = nil end
     local T, F, H = plate.isTarget, plate.isFocus, plate.isHover and not plate.isTarget
 
     -- glow
@@ -280,11 +288,8 @@ end
 -- ---------------------------------------------------------------------------
 local function plateOf(token)
     local nameplate = C_NamePlate.GetNamePlateForUnit(token)
-    local unit = nameplate and nameplate.namePlateUnitToken
-    return unit and NP.plates[unit]
+    return nameplate and NP.byNameplate[nameplate]
 end
-
-local curTarget, curFocus, curHover, hoverTicker
 
 -- A plate that goes away takes its role with it.
 function Target.Forget(plate)
@@ -302,7 +307,7 @@ end
 
 function Target.OnTargetChanged()
     local old = curTarget
-    curTarget = plateOf("target")
+    curTarget = plateOf("target") or nil
     hasTarget = UnitExists("target") and true or false
     if old ~= curTarget then restyle(old) end
     restyle(curTarget)
@@ -311,7 +316,7 @@ end
 
 function Target.OnFocusChanged()
     local old = curFocus
-    curFocus = plateOf("focus")
+    curFocus = plateOf("focus") or nil
     if old ~= curFocus then restyle(old) end
     restyle(curFocus)
 end

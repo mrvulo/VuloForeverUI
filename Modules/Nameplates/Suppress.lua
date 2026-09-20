@@ -2,12 +2,16 @@
 --
 -- Makes Blizzard's unit frame on a base plate invisible and gives it back.
 --
--- The frame is NOT hidden and NOT moved away: parked or hidden, clicking a mob
--- in a pack stops selecting it. It stays where it is at alpha 0, its child
--- frames go to a hidden holder, and its events are taken away so it stops
--- working on a plate nobody sees. The driver's next SetUnit on that frame
--- registers everything again, so all of this repeats per unit -- it heals
--- itself and needs no bookkeeping beyond "which frames are ours right now".
+-- The frame is NOT hidden and NOT moved away, and neither is its health bar:
+-- Blizzard builds the clickable region from hit-test points on that bar, and a
+-- hidden or parked bar stops a mob in a pack from being selected. So the unit
+-- frame stays where it is at alpha 0 and keeps its children; only the aura
+-- frame is parked, because its icons are mouse-enabled and would trap tooltips
+-- over our plate.
+--
+-- Blizzard's events stay registered. The hidden plate keeps itself current,
+-- which is what lets it be handed back in working order (a duel ending, the
+-- module switched off) and keeps the class colour we read off its bar right.
 --
 -- Nothing is written onto Blizzard's frames; the weak tables below hold it.
 local _, ns = ...
@@ -36,8 +40,12 @@ local function forceAlpha(uf)
     forcing = false
 end
 
+-- The selection highlight is a region of the HEALTH BAR, not of the unit
+-- frame, so its owner is looked up rather than asked for.
+local highlightOwner = setmetatable({}, { __mode = "k" })
+
 local function hideAgain(region)
-    local uf = region:GetParent()
+    local uf = highlightOwner[region]
     if uf and owned[uf] then region:Hide() end
 end
 
@@ -48,21 +56,10 @@ local function hookOnce(uf)
     local sel = uf.selectionHighlight
     if sel and not hooked[sel] then
         hooked[sel] = true
+        highlightOwner[sel] = uf
         hooksecurefunc(sel, "Show", hideAgain)
         hooksecurefunc(sel, "SetShown", hideAgain)
     end
-end
-
--- UnregisterAllEvents is refused on some Blizzard trees ("forbidden aspect
--- EventRegistrations", seen 2026-09-18 on the target frame) -- hence the pcalls.
-local KEEP_EVENTS = { "PLAYER_TARGET_CHANGED", "PLAYER_SOFT_FRIEND_CHANGED", "PLAYER_SOFT_ENEMY_CHANGED" }
-
-local function quiet(uf)
-    if pcall(uf.UnregisterAllEvents, uf) then
-        for _, event in ipairs(KEEP_EVENTS) do pcall(uf.RegisterEvent, uf, event) end
-    end
-    local cast = uf.castBar or (uf.CastBarsContainer and uf.CastBarsContainer.castBar)
-    if cast and not untouchable(cast) then pcall(cast.UnregisterAllEvents, cast) end
 end
 
 -- Returns the unit frame it took over; the caller keeps it and hands it to
@@ -78,17 +75,24 @@ function NP.Suppress(nameplate)
     uf:SetAlpha(0)
     if uf.selectionHighlight then uf.selectionHighlight:Hide() end
 
-    -- Blizzard reaches its children through parent keys (self.AurasFrame, ...),
-    -- never through GetParent, so moving them breaks none of its code. The aura
-    -- frame goes too: its items are mouse-enabled and would trap tooltips.
+    -- Children follow the unit frame's alpha unless they opted out of it.
+    -- Blizzard reaches them through parent keys (self.AurasFrame, ...), never
+    -- through GetParent, so moving one breaks none of its code.
     for _, child in ipairs({ uf:GetChildren() }) do
         if not untouchable(child) then
             local key = child.GetParentKey and child:GetParentKey()
-            child:SetParent(KEEP[key or ""] and nameplate or holder)
-            parked[child] = uf
+            if not ns.CanRead(key) then key = nil end   -- a getter on a Blizzard frame
+            if key == "AurasFrame" then
+                child:SetParent(holder)
+                parked[child] = uf
+            elseif KEEP[key or ""] then
+                child:SetParent(nameplate)
+                parked[child] = uf
+            elseif child.SetIgnoreParentAlpha then
+                pcall(child.SetIgnoreParentAlpha, child, false)
+            end
         end
     end
-    quiet(uf)
     return uf
 end
 

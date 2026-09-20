@@ -591,6 +591,9 @@ local function setRowIcon(b, tex, tip, onClick, level)
     b.icon:SetVertexColor(0.62, 0.62, 0.70)
     b._tip = tip
     b._onClick = onClick
+    -- pooled: an inline icon may have been greyed out on its last row
+    b:SetAlpha(1)
+    b:EnableMouse(true)
     b:SetFrameLevel(level)
     b:Show()
     return b
@@ -1077,6 +1080,10 @@ local function placeInlineIcons(parent, item, widget, level)
                 onClick = function() openRowPopup(widget, def.popup or def) end
             end
             b = setRowIcon(makeRowIcon(parent), tex, def.tooltip, onClick, level)
+            -- same rule as the swatch: an icon that cannot do anything says so
+            local off = def.disabled and def.disabled()
+            b:SetAlpha(off and 0.15 or 1)
+            b:EnableMouse(not off)
         end
         b:ClearAllPoints()
         b:SetPoint("RIGHT", anchor, "LEFT", -6 - used, 0)
