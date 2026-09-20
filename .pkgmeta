@@ -1,0 +1,24 @@
+# Build recipe for the BigWigs packager (github.com/BigWigsMods/packager).
+#
+# The packager checks the repo out at a tag, strips everything listed under
+# `ignore`, zips what is left with `package-as` as the top folder, and uploads
+# that to CurseForge and to a GitHub release.
+#
+# The libraries under Libs/ are committed to this repo on purpose and are NOT
+# declared as `externals`: they are what the addon was tested against, and a
+# build that silently pulls newer copies is a build nobody tested.
+
+package-as: VuloForeverUI
+
+# Everything that only serves development. Dev/ is NOT in here: the TOC loads
+# Dev/SavedSeed.lua, and the committed copy is an empty stub.
+ignore:
+  - tools
+  - docs
+  - CLAUDE.md
+  - .pkgmeta
+  - .gitignore
+  - "*.zip"
+
+# No stripped-down "nolib" package: the libraries are part of the addon.
+enable-nolib-creation: no

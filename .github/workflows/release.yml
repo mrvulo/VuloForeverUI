@@ -1,0 +1,40 @@
+# Builds and publishes a release whenever a version tag is pushed:
+#
+#     git tag v0.2.0 && git push --tags
+#
+# What it needs, once:
+#   * `## X-Curse-Project-ID: <id>` in VuloForeverUI.toc -- the number
+#     CurseForge shows on the project page after it is approved. Without it the
+#     packager skips the CurseForge upload and only makes a GitHub release, so
+#     this workflow is safe to have in place before the project exists.
+#   * a repository secret CF_API_KEY, from
+#     https://legacy.curseforge.com/account/api-tokens
+#     (GitHub: Settings -> Secrets and variables -> Actions -> New secret)
+#
+# GITHUB_TOKEN is provided by Actions itself; nothing to set up for that.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write          # needed to create the GitHub release
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the tag
+        uses: actions/checkout@v4
+        with:
+          # the packager builds the changelog from the commits since the last
+          # tag, so it needs the whole history, not a shallow clone
+          fetch-depth: 0
+
+      - name: Package and upload
+        uses: BigWigsMods/packager@v2
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
