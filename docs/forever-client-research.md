@@ -305,6 +305,23 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
   `castBarID` at 10, `UnitChannelInfo` at **11** -- a channel has `isEmpowered` and
   `numEmpowerStages` in between.
 
+**Fourth run, 2026-09-20: the whole module runs.** Enemy plates, auras and friendly
+plates all confirmed in the client.
+
+- **The 12.1 aura widget works for addon code.** A debuff appeared on a custom nameplate
+  through `CreateFrame("AuraContainer", nil, parent, "CustomAuraContainerTemplate")` +
+  `AddAuraGroup("main", "HARMFUL|INCLUDE_NAME_PLATE_ONLY|!CROWD_CONTROL", opts)` +
+  `SetUnit(unit)`, with the icon registered from inside `initializeFrame` via
+  `button:SetIcon(texture)`. That closes the older note "not yet tried: adding a group and
+  seeing buttons appear in combat".
+- **One trap costs the whole feature silently: the engine never sizes its buttons.** The
+  `AuraButton` intrinsic ships no `<Size>`, and a group's `layout.elementWidth` feeds the
+  layout arithmetic only. The initializer must call `button:SetSize(...)` itself, or every
+  button stays 0x0 -- with no error anywhere, because every call involved succeeds.
+- **Friendly plates work through the font objects.** Setting `SystemFont_NamePlate` and
+  `SystemFont_NamePlate_Outlined` restyles every name-only plate at once, which is also the
+  only route that survives inside instances.
+
 ## To verify in the beta
 1. ~~Values of `/dump WOW_PROJECT_ID`, `GetBuildInfo()`, `C_GameRules.GetActiveGameMode()`.~~ Done 2026-09-18, see Facts.
 2. ~~Whether a plain `.toc` with `## Interface: 16001` loads~~ (it does), and whether a `_Mainline.toc` suffix is accepted.
