@@ -246,7 +246,12 @@ ns.RestrictionsForced = restrictionsForced   -- Init.lua warns at login: the CVa
 -- and answers different questions: which display paths the client accepts.
 -- Interrupt candidates by their classic spell ids; the report says which one
 -- this client knows, the nameplate cast bar takes its list from that answer.
-local KICK_CANDIDATES = { 1766, 6552, 72, 2139, 8042, 15487 }
+-- Kept in step with Modules/Nameplates/Kick.lua: every rank, because a
+-- Classic-shaped spellbook gives each rank its own id.
+local KICK_CANDIDATES = {
+    1769, 1768, 1767, 1766, 1672, 1671, 72, 6554, 6552, 2139,
+    10414, 10413, 10412, 8046, 8045, 8044, 8042, 15487, 16979,
+}
 local KICK_PET_CANDIDATES = { 19647, 19244 }
 
 local NP_CVARS = {

@@ -13,11 +13,24 @@ local NP = ns.NP
 local Kick = {}
 NP.Kick = Kick
 
--- Kick, Pummel, Shield Bash, Counterspell, Earth Shock, Silence; then the
--- felhunter's Spell Lock, which lives in the pet's book. `/vfsecrets np` names
--- the one this client knows.
-local PLAYER_SPELLS = { 1766, 6552, 72, 2139, 8042, 15487 }
-local PET_SPELLS    = { 19647, 19244 }
+-- Every RANK of every interrupt, because a Classic-shaped spellbook gives each
+-- rank its own id: a shaman at rank 3 does not "know" 8042. Highest rank first,
+-- so the id we settle on is the one the player actually casts.
+--   Kick, Shield Bash, Pummel, Counterspell, Earth Shock, Silence,
+--   Feral Charge; then the felhunter's Spell Lock, which is in the pet's book.
+-- `/vfsecrets np` prints each id with the name this client gives it -- Forever
+-- renumbers some spells (the GCD spell is 29515 here, not 61304), so an id that
+-- resolves to nothing is a wrong id, not a missing spell.
+local PLAYER_SPELLS = {
+    1769, 1768, 1767, 1766,                          -- Kick
+    1672, 1671, 72,                                  -- Shield Bash
+    6554, 6552,                                      -- Pummel
+    2139,                                            -- Counterspell
+    10414, 10413, 10412, 8046, 8045, 8044, 8042,     -- Earth Shock
+    15487,                                           -- Silence
+    16979,                                           -- Feral Charge
+}
+local PET_SPELLS = { 19647, 19244 }                  -- Spell Lock
 
 local spell
 
