@@ -92,6 +92,16 @@ local SHEET_TOP  = { 0.25, 1, 0,     0.125 }   -- the header bar
 local SHEET_RING = { 0.25, 1, 0.125, 0.875 }   -- the ring around the map
 local COMPASS_RING  = "Interface\\Minimap\\CompassRing"
 local COMPASS_NORTH = "Interface\\Minimap\\CompassNorthTag"
+local TRACK_BORDER  = "Interface\\Minimap\\MiniMap-TrackingBorder"
+local MAP_BACKGROUND = "Interface\\Minimap\\UI-Minimap-Background"
+
+-- The zoom buttons come as four states each. Confirmed present on 1.60.1
+-- (/vfmmtex reports all thirteen classic files), so no fallback is needed.
+local ZOOM_ART = {
+    ZoomIn  = "Interface\\Minimap\\UI-Minimap-ZoomInButton-",
+    ZoomOut = "Interface\\Minimap\\UI-Minimap-ZoomOutButton-",
+}
+local ZOOM_HIGHLIGHT = "Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight"
 
 -- ---------------------------------------------------------------------------
 -- Remembering what we found
@@ -106,6 +116,11 @@ local function remember(frame, key)
     local entry = { parent = frame:GetParent(), points = {} }
     local ok, w, h = pcall(frame.GetSize, frame)
     if ok then entry.w, entry.h = w, h end
+    -- Textures remember their file too: the classic look overwrites the zoom
+    -- and tracking faces, and without this they stayed classic after switching
+    -- back. A nil path is a real answer (the region had none) and is kept as
+    -- `false` so restore can tell it apart from "never recorded".
+    if frame.GetTexture then entry.tex = frame:GetTexture() or false end
     for i = 1, (frame.GetNumPoints and frame:GetNumPoints() or 0) do
         local p, rel, relP, x, y = frame:GetPoint(i)
         entry.points[i] = { p, rel, relP, x, y }
@@ -121,7 +136,30 @@ local function restore(frame, key)
         pcall(frame.SetPoint, frame, pt[1], pt[2], pt[3], pt[4], pt[5])
     end
     if entry.w and entry.w > 0 then pcall(frame.SetSize, frame, entry.w, entry.h) end
+    if entry.tex ~= nil and frame.SetTexture then
+        pcall(frame.SetTexture, frame, entry.tex or nil)
+    end
     saved[key] = nil
+end
+
+-- The button faces the classic look replaces, remembered per state so the
+-- client's own art comes back when the style does.
+local function rememberButtonArt(button, key)
+    if not button then return end
+    for _, state in ipairs({ "Normal", "Pushed", "Disabled", "Highlight" }) do
+        local getter = button["Get" .. state .. "Texture"]
+        local tex = getter and getter(button)
+        if tex then remember(tex, key .. state) end
+    end
+end
+
+local function restoreButtonArt(button, key)
+    if not button then return end
+    for _, state in ipairs({ "Normal", "Pushed", "Disabled", "Highlight" }) do
+        local getter = button["Get" .. state .. "Texture"]
+        local tex = getter and getter(button)
+        if tex then restore(tex, key .. state) end
+    end
 end
 
 -- Our own regions on Blizzard frames, kept in a weak table rather than as a
@@ -135,10 +173,21 @@ local function region(parent, key, layer)
     return set[key]
 end
 
+-- A slot holds either one texture or a set of them (the modern border is four
+-- edges). Missing the second case is what left a square outline around the map
+-- after switching from modern to classic.
 local function hideOurs(parent)
     local set = ours[parent]
     if not set then return end
-    for _, tex in pairs(set) do tex:Hide() end
+    for _, item in pairs(set) do
+        if item.Hide then
+            item:Hide()
+        else
+            for _, tex in pairs(item) do
+                if tex.Hide then tex:Hide() end
+            end
+        end
+    end
 end
 
 -- ---------------------------------------------------------------------------
@@ -230,8 +279,19 @@ end
 -- ---------------------------------------------------------------------------
 local function applyStandard()
     local cluster = MinimapCluster
+    -- Minimap included: the modern border lives there, and a leftover border is
+    -- exactly what made a switch look broken.
     hideOurs(cluster)
     hideOurs(MinimapBackdrop)
+    hideOurs(Minimap)
+    if cluster then
+        hideOurs(cluster.Tracking)
+        hideOurs(cluster.IndicatorFrame)
+    end
+    restoreButtonArt(Minimap.ZoomIn, "ZoomIn")
+    restoreButtonArt(Minimap.ZoomOut, "ZoomOut")
+    restore(cluster and cluster.Tracking and cluster.Tracking.Background, "trackbg")
+    restoreButtonArt(cluster and cluster.Tracking and cluster.Tracking.Button, "track")
     restore(cluster and cluster.MinimapContainer, "container")
     restore(Minimap, "map")
     restore(MinimapBackdrop, "backdrop")
@@ -344,28 +404,94 @@ local function applyClassic()
 
     -- Anything sitting over the map edge must be above it to take a click.
     local above = map:GetFrameLevel() + 5
-    for _, e in ipairs({ { map.ZoomIn, 72, -25 }, { map.ZoomOut, 50, -43 } }) do
-        local button = e[1]
+    for _, e in ipairs({ { "ZoomIn", 72, -25 }, { "ZoomOut", 50, -43 } }) do
+        local button = map[e[1]]
         if button then
             button:SetParent(backdrop)
             button:SetFrameLevel(above)
             button:SetSize(32, 32)
             button:ClearAllPoints()
             button:SetPoint("CENTER", backdrop, "CENTER", e[2], e[3])
+            -- the 1.x button faces, one file per state
+            rememberButtonArt(button, e[1])
+            local base = ZOOM_ART[e[1]]
+            for state, suffix in pairs({ Normal = "Up", Pushed = "Down", Disabled = "Disabled" }) do
+                local setter = button["Set" .. state .. "Texture"]
+                if setter then pcall(setter, button, base .. suffix) end
+            end
+            pcall(button.SetHighlightTexture, button, ZOOM_HIGHLIGHT)
+            for _, state in ipairs({ "Normal", "Pushed", "Disabled", "Highlight" }) do
+                local tex = button["Get" .. state .. "Texture"](button)
+                if tex then
+                    tex:SetTexCoord(0, 1, 0, 1)
+                    tex:ClearAllPoints()
+                    tex:SetAllPoints(button)
+                end
+            end
+            local hl = button:GetHighlightTexture()
+            if hl then hl:SetBlendMode("ADD") end
+            button:SetHitRectInsets(4, 4, 2, 6)
+            button:Show()
         end
     end
-    if cluster.Tracking then
-        cluster.Tracking:SetParent(backdrop)
-        cluster.Tracking:SetFrameLevel(above)
-        cluster.Tracking:SetSize(32, 32)
-        cluster.Tracking:ClearAllPoints()
-        cluster.Tracking:SetPoint("TOPLEFT", backdrop, "TOPLEFT", 9, -45)
+
+    -- Tracking: the stone ring around it is a texture of its own, and the icon
+    -- Blizzard draws as the button face is shrunk back to its 1.x size.
+    local tracking = cluster.Tracking
+    if tracking then
+        tracking:SetParent(backdrop)
+        tracking:SetFrameLevel(above)
+        tracking:SetSize(32, 32)
+        tracking:ClearAllPoints()
+        tracking:SetPoint("TOPLEFT", backdrop, "TOPLEFT", 9, -45)
+        local ring = region(tracking, "ring", "BORDER")
+        ring:SetTexture(TRACK_BORDER)
+        ring:SetSize(54, 54)
+        ring:ClearAllPoints()
+        ring:SetPoint("TOPLEFT", tracking, "TOPLEFT", 0, 0)
+        ring:Show()
+        if tracking.Background then
+            remember(tracking.Background, "trackbg")
+            tracking.Background:SetTexture(MAP_BACKGROUND)
+            tracking.Background:SetTexCoord(0, 1, 0, 1)
+            tracking.Background:SetSize(25, 25)
+            tracking.Background:ClearAllPoints()
+            tracking.Background:SetPoint("TOPLEFT", tracking, "TOPLEFT", 2, -4)
+            tracking.Background:SetAlpha(0.6)
+        end
+        local button = tracking.Button
+        if button then
+            rememberButtonArt(button, "track")
+            button:SetSize(32, 32)
+            button:SetFrameLevel(above + 1)
+            button:ClearAllPoints()
+            button:SetPoint("TOPLEFT", tracking, "TOPLEFT", 0, 0)
+            for _, state in ipairs({ "Normal", "Pushed" }) do
+                local tex = button["Get" .. state .. "Texture"](button)
+                if tex then
+                    local o = state == "Pushed" and 8 or 6
+                    tex:SetSize(20, 20)
+                    tex:ClearAllPoints()
+                    tex:SetPoint("TOPLEFT", tracking, "TOPLEFT", o, -o)
+                end
+            end
+        end
     end
-    if cluster.IndicatorFrame then
-        cluster.IndicatorFrame:SetFrameLevel(above)
-        cluster.IndicatorFrame:SetSize(33, 33)
-        cluster.IndicatorFrame:ClearAllPoints()
-        cluster.IndicatorFrame:SetPoint("TOPRIGHT", map, "TOPRIGHT", 24, -37)
+
+    -- Mail gets the same stone ring, up on the right of the map.
+    local indicator = cluster.IndicatorFrame
+    if indicator then
+        indicator:SetFrameLevel(above)
+        indicator:SetSize(33, 33)
+        indicator:ClearAllPoints()
+        indicator:SetPoint("TOPRIGHT", map, "TOPRIGHT", 24, -37)
+        local host = indicator.MailFrame or indicator
+        local ring = region(host, "ring", "OVERLAY")
+        ring:SetTexture(TRACK_BORDER)
+        ring:SetSize(52, 52)
+        ring:ClearAllPoints()
+        ring:SetPoint("TOPLEFT", host, "TOPLEFT", 0, 0)
+        ring:Show()
     end
     if cluster.DielFrame then
         cluster.DielFrame:ClearAllPoints()
