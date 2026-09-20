@@ -476,6 +476,49 @@ function mod:OnDisable()
 end
 
 -- ---------------------------------------------------------------------------
+-- Which classic textures this client actually ships
+--
+-- The classic look is built from Blizzard's own 1.x art. Whether Forever still
+-- carries those files is not something the UI source can answer -- only the
+-- running client can, and SetTexture returning false is how it says no.
+-- ---------------------------------------------------------------------------
+local CLASSIC_ART = {
+    "Interface\\Minimap\\UI-Minimap-Border",
+    "Interface\\Minimap\\UI-Minimap-Background",
+    "Interface\\Minimap\\CompassRing",
+    "Interface\\Minimap\\CompassNorthTag",
+    "Interface\\Minimap\\MiniMap-TrackingBorder",
+    "Interface\\Minimap\\UI-Minimap-ZoomInButton-Up",
+    "Interface\\Minimap\\UI-Minimap-ZoomInButton-Down",
+    "Interface\\Minimap\\UI-Minimap-ZoomInButton-Disabled",
+    "Interface\\Minimap\\UI-Minimap-ZoomOutButton-Up",
+    "Interface\\Minimap\\UI-Minimap-ZoomOutButton-Down",
+    "Interface\\Minimap\\UI-Minimap-ZoomOutButton-Disabled",
+    "Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight",
+    "Interface\\CharacterFrame\\TempPortraitAlphaMask",
+}
+
+ns:RegisterSlash({ key = "MMTEX", commands = { "/vfmmtex" },
+    desc = "Report which classic minimap textures this client ships.",
+})
+
+local probeTex
+
+ns.Slash.MMTEX = function()
+    if not probeTex then probeTex = UIParent:CreateTexture(nil, "BACKGROUND"); probeTex:Hide() end
+    local A, R = ns.C.accent, ns.C.r
+    ns:Print("%sClassic minimap art%s", A, R)
+    local missing = 0
+    for _, path in ipairs(CLASSIC_ART) do
+        local ok = probeTex:SetTexture(path) ~= false and probeTex:GetTexture() ~= nil
+        if not ok then missing = missing + 1 end
+        ns:Print("  %s%-52s%s", ok and (ns.C.pos .. "yes  " .. R) or (ns.C.neg .. "NO   " .. R),
+            path:gsub("Interface\\", ""), "")
+    end
+    ns:Print("  %d of %d missing", missing, #CLASSIC_ART)
+end
+
+-- ---------------------------------------------------------------------------
 -- Options
 -- ---------------------------------------------------------------------------
 local function set(key, after)
