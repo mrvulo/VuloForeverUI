@@ -113,6 +113,8 @@ local frames = {}
 
 local function want(def)
     local d = db()
+    -- The style decides who draws what; in standard we draw nothing at all.
+    if not MM.Allows(def.key) then return false end
     local mode = d[def.mode]
     if mode == "never" or mode == "none" then return false end
     -- "hover" only shows while the mouse is on the map; the ticker still runs

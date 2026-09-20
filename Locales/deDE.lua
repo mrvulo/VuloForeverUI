@@ -730,4 +730,5 @@ ns:RegisterLocale("deDE", {
     ["Show the minimap"] = "Minimap zeigen",
     ["When to show the map"] = "Wann die Karte sichtbar ist",
     ["Zoom back out after"] = "Zurueckzoomen nach",
+    ["Only in the classic look. Modern draws its own clock instead, and standard leaves the game's alone."] = "Nur im Classic-Look. Modern zeichnet eine eigene Uhr, Standard laesst die des Spiels in Ruhe.",
 })

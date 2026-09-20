@@ -179,26 +179,49 @@ local function setShown(frame, shown)
     if frame then pcall(frame.SetShown, frame, shown) end
 end
 
+-- Who shows the zone name and the clock, per style. Getting this wrong is how
+-- the zone ended up written twice on the standard map: the client's own text
+-- was still there and ours was drawn on top of it.
+--
+--   standard  the client's, untouched. We add nothing.
+--   classic   the client's, moved onto the header bar and under the map.
+--   modern    ours, and the client's are hidden.
+local BLIZZ_TEXT = {
+    standard = { border = true,  zone = true,  clock = true },
+    classic  = { border = false, zone = true,  clock = true },
+    modern   = { border = false, zone = false, clock = false },
+}
+
+-- Which of our own readouts a style allows. Coordinates, framerate and
+-- difficulty have no counterpart in the client, so they add nothing twice --
+-- but standard means hands off, and that includes ours.
+local OWN_TEXT = {
+    standard = {},
+    classic  = { coords = true, fps = true, diff = true },
+    modern   = { coords = true, zone = true, clock = true, fps = true, diff = true },
+}
+
+function MM.Allows(key)
+    return (OWN_TEXT[mod.db.style] or OWN_TEXT.standard)[key] and true or false
+end
+
 -- What sits around the edge. Every one of these is optional and every one is
 -- a Blizzard frame, so nothing here is more than a Show or a Hide.
 local function applyClutter()
     local db = mod.db
     local cluster = MinimapCluster
+    local blizz = BLIZZ_TEXT[db.style] or BLIZZ_TEXT.standard
     setShown(Minimap.ZoomIn, not db.hideZoom)
     setShown(Minimap.ZoomOut, not db.hideZoom)
     if cluster then
         setShown(cluster.Tracking, not db.hideTracking)
         setShown(cluster.IndicatorFrame, not db.hideMail)
         setShown(cluster.DielFrame, not db.hideDiel)
-        setShown(cluster.BorderTop, db.style == "standard")
-        -- Blizzard's zone text steps aside for our own readout unless we are
-        -- hands-off in standard.
-        if cluster.ZoneTextButton then
-            setShown(cluster.ZoneTextButton, db.style == "standard")
-        end
+        setShown(cluster.BorderTop, blizz.border)
+        setShown(cluster.ZoneTextButton, blizz.zone)
     end
     if _G.TimeManagerClockButton then
-        setShown(_G.TimeManagerClockButton, db.style == "standard" or not db.hideClock)
+        setShown(_G.TimeManagerClockButton, blizz.clock and not (db.style == "classic" and db.hideClock))
     end
 end
 
@@ -575,7 +598,8 @@ function mod:GetOptions()
               tooltip = L["The sun and moon dial this client shows next to the map."],
               get = function() return d.hideDiel end, set = set("hideDiel") },
             { type = "toggle", label = L["Hide the game's own clock"],
-              tooltip = L["Our own clock readout replaces it; see the Clock section."],
+              tooltip = L["Only in the classic look. Modern draws its own clock instead, and standard leaves the game's alone."],
+              disabled = function() return d.style ~= "classic" end,
               get = function() return d.hideClock end, set = set("hideClock") },
             { type = "slider", label = L["Zoom back out after"], min = 0, max = 60, step = 5,
               tooltip = L["Seconds of quiet before the map returns to its widest zoom. 0 leaves it alone."],
