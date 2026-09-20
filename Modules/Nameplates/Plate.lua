@@ -331,7 +331,8 @@ function Plate:UpdateClassification()
     local db = NP.db()
     if NP.ctx.inInstance and not db.classificationShowInInstances then tex:Hide(); return end
     if NP.Extras.IsQuestMob(unit) then
-        tex:SetAtlas(nil)
+        -- SetTexture replaces whatever atlas was on it; clearing first is not
+        -- worth the risk of SetAtlas(nil) being refused.
         tex:SetTexture(NP.QUEST_ICON)
         tex:Show()
         return

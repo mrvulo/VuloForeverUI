@@ -351,6 +351,9 @@ end
 local function setCVar(name, value)
     local cur = getCVar(name)
     if cur == nil or cur == value then return end
+    -- The store is created here, not in applyCVars: the friendly side writes
+    -- its own CVars and runs first.
+    M.db.savedCVars = M.db.savedCVars or {}
     local saved = M.db.savedCVars
     if saved[name] == nil then saved[name] = cur end
     pcall(C_CVar.SetCVar, name, value)
@@ -359,7 +362,6 @@ NP.SetCVar = setCVar
 
 local function applyCVars()
     if not M.active then return end      -- queued in a fight the module was switched off in
-    M.db.savedCVars = M.db.savedCVars or {}
     for name, value in pairs(CVARS) do setCVar(name, value) end
     setCVar("nameplateShowEnemyPets", M.db.showEnemyPets and "1" or "0")
     if Enum.NamePlateStackType and getCVar("nameplateStackingTypes") ~= nil then
