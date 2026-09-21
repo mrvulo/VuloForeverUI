@@ -5,9 +5,15 @@
   "scripts": {
     "check": "node check.js",
     "seed": "node sv-seed.js",
-    "seed:watch": "node sv-seed.js --watch"
+    "seed:watch": "node sv-seed.js --watch",
+    "secrets": "node secretlint.js",
+    "secrets:all": "node secretlint.js --all",
+    "secrets:baseline": "node secretlint.js --write-baseline"
   },
   "dependencies": {
     "luaparse": "^0.3.1"
+  },
+  "devDependencies": {
+    "wow-secret-lint": "^1.7.0"
   }
 }

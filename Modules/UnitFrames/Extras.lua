@@ -134,8 +134,10 @@ local function paintClassIcons()
         local _, token = UnitClass(unit)
         local wanted, size, ringed, x, y
         if active then wanted, size, ringed, x, y = iconWanted(unit) end
+        -- CanRead before the token is tested: a boolean test on a secret token
+        -- throws, and it would throw before the gate behind it gets a say.
         local coords = wanted and UnitExists(unit) and UnitIsPlayer(unit)
-            and token and ns.CanRead(token) and CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[token]
+            and ns.CanRead(token) and token and CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[token]
         local ring = classRings[unit]
         if coords then
             icon:SetSize(size, size)

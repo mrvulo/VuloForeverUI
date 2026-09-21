@@ -33,6 +33,13 @@ the full retail 12.x in-combat addon restrictions, with Classic-style art and a 
    file-scope-style blocks.
 7. **Before assuming an API exists, check the client source**, not memory. Mirrors used
    for the research are Gethe/wow-ui-source branches `forever` (1.60.1) and `live` (12.1).
+   For the quick question "gibt es das überhaupt" there are generated lists for the same
+   1.60.1 build — Ketho/BlizzardInterfaceResources, branch `forever`, folder `Resources/`:
+   `Templates.lua` (template → type, mixin, inherits), `Mixins`, `Frames`, `Events`,
+   `CVars`, `GlobalAPI`, `WidgetAPI`, `ScriptObjectAPI`, `LuaEnum`, `AtlasInfo`,
+   `GlobalStrings/`. They are an index, not a substitute for the source: the source
+   decides how something behaves, the lists only say whether it exists.
+   More sources and their limits: [docs/addon-dev-toolchain.md](docs/addon-dev-toolchain.md).
 
 ## Layout
 
@@ -46,7 +53,8 @@ Modules/   feature modules: single files (GlobalSettings, Profiles, BarSetups,
 Media/     fonts, textures, icons
 Libs/      LibStub, CallbackHandler, LibSharedMedia, LibDataBroker, LibDeflate,
            LibEditModeOverride
-tools/     node check.js — syntax, locals cap, locale coverage, house rules, TOC
+tools/     node check.js — syntax, locals cap, locale coverage, house rules, TOC,
+           secret-value lint (calls secretlint.js, baseline in secret-lint-baseline.json)
            node sv-seed.js — dev workaround for the beta's saved-variables bug
 Dev/       SavedSeed.lua: empty stub in git, generated copy of the saved files
            on a dev machine (never commit the generated one)
@@ -84,3 +92,10 @@ run `cd tools && node check.js`.
 `cd tools && node check.js` must print `RESULT: OK`. In the client, `/vfsecrets` tells you
 what is actually readable — the API docs cannot, and a module built on a value that turns
 secret in combat fails only in combat.
+
+The checker's last pass is the secret-value lint (`tools/secretlint.js`, driving
+`wow-secret-lint`). It follows a value across a whole file, which the other passes do not,
+and it fails on anything **new** since `tools/secret-lint-baseline.json`. Its rule table is
+generated from retail 12.1.5, so it does not know Forever's own deviations — where the two
+disagree, `docs/forever-client-research.md` and `/vfsecrets` win. Look at every finding
+before accepting it; only then `node tools/secretlint.js --write-baseline`.

@@ -206,10 +206,14 @@ local function healthColor(f)
         f.Health:SetStatusBarColor(r, g, b)
         return
     end
-    local color = UnitHealthPercent(f.unit, true, getHealthCurve())
-    if color and color.GetRGB then
-        f.Health:SetStatusBarColor(color:GetRGB())
-    end
+    -- No boolean test and no field lookup on the returned colour: it comes out
+    -- of a secret evaluation, and both would throw. Ask it for its channels
+    -- inside the pcall, exactly as the nameplate execute glow does.
+    local unit = f.unit
+    local ok, r, g, b = pcall(function()
+        return UnitHealthPercent(unit, true, getHealthCurve()):GetRGB()
+    end)
+    if ok then f.Health:SetStatusBarColor(r, g, b) end
 end
 
 local function paintHealth(f)
@@ -385,7 +389,10 @@ end
 
 local function paintClassIcon(f)
     local _, token = UnitClass(f.unit)
-    local coords = token and ns.CanRead(token) and UnitIsPlayer(f.unit) and CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[token]
+    -- CanRead before anything else: `token and ...` is a boolean test, and on a
+    -- secret token that throws before the gate behind it is ever reached.
+    local coords = ns.CanRead(token) and token and UnitIsPlayer(f.unit)
+        and CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[token]
     if coords and f.skin and f.skin.classIcon then
         f.ClassIcon:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
         f.ClassIcon:Show()

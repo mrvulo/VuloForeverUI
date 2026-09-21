@@ -761,5 +761,36 @@ console.log('\n== release notes ==');
     }
 }
 
+// ---- 12: secret-value lint ---------------------------------------------------
+// A second opinion on rule 2. secretlint.js drives wow-secret-lint, which
+// follows a value across a whole file -- through assignments, table fields and
+// returns -- which the passes above do not. Its rule table is generated from
+// retail 12.1.5, so where it disagrees with the client,
+// docs/forever-client-research.md and /vfsecrets win; the baseline in
+// secret-lint-baseline.json holds what we have already looked at and accepted.
+//
+// Only NEW findings fail. A missing devDependency is a note, not a failure:
+// check.js has to keep working on a clean clone without npm install.
+console.log('\n== secret values ==');
+{
+    const binName = process.platform === 'win32' ? 'wow-secret-lint.cmd' : 'wow-secret-lint';
+    const bin = path.join(__dirname, 'node_modules', '.bin', binName);
+    if (!fs.existsSync(bin)) {
+        console.log('  wow-secret-lint not installed - skipped (run: npm install in tools/)');
+    } else {
+        const run = require('child_process').spawnSync(
+            process.execPath, [path.join(__dirname, 'secretlint.js')], { encoding: 'utf8' });
+        const out = ((run.stdout || '') + (run.stderr || '')).replace(/\s+$/, '');
+        if (run.status === 0) {
+            console.log('clean (nothing new since the baseline)');
+        } else {
+            if (out) console.log(out.split('\n').map((l) => '  ' + l).join('\n'));
+            console.log('  new secret-value findings'
+                + ' (accept with: node tools/secretlint.js --write-baseline)');
+            hardFail = true;
+        }
+    }
+}
+
 console.log('\n' + (hardFail ? 'RESULT: FAIL' : 'RESULT: OK (warnings above, if any)'));
 process.exit(hardFail ? 1 : 0);
