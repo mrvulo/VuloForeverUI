@@ -53,12 +53,56 @@ local mod = ns:RegisterModule("bags", {
 
         qualityBorder = true,
         showCount     = true,
+        countSize     = 11,
         showItemLevel = true,
         itemLevelSize = 11,
         itemLevelColor = { r = 0.95, g = 0.85, b = 0.4 },
         dimJunk       = true,
 
+        -- display
+        iconZoom          = 0,
+        autoSize          = false,
+        mergeDuplicates   = false,
+        categoryTitleSize = 11,
+        defaultView       = "all",
+        -- An empty list means every category: a player who has never opened
+        -- the list has not switched anything off.
+        enabledCategories = {},
+        currencies        = {},
+
+        -- gear
+        splitEquipmentSets = false,
+        groupArmoryBySlot  = false,
+        groupByExpansion   = false,
+        showSetNames   = false,
+        setNameSize    = 10,
+        setNameLetters = 3,
+        setNameColor   = { r = 0.6, g = 0.8, b = 1 },
+        showBindTags   = false,
+        bindTagSize    = 10,
+        bindTagColor   = { r = 0.4, g = 1, b = 0.4 },
+        warboundColor  = { r = 1, g = 0.7, b = 0.3 },
+
+        -- extras
+        showSortButton = true,
+        showPinned     = true,
+        showRecent     = true,
+        recentColor    = { r = 0.3, g = 0.8, b = 1 },
+        pinnedTips     = true,
+        goldTracking   = true,
+        moveWithoutShift = false,
+        stackSplitter  = false,
+        hideBagWarnings = false,
+        pinned         = {},
+
+        -- the bank, which groups and filters on its own switches
         bank = true,
+        bankGroupByCategory = true,
+        bankGroupByExpansion = false,
+        bankSidebar = false,
+        bankHideTabsInSidebar = false,
+        bankHideEmptyWhenGrouped = false,
+        bagSidebar = false,
     },
 })
 Bags.mod = mod
@@ -163,9 +207,28 @@ end
 
 function mod:OnEnable()
     -- What changed the SHAPE of the bags gets a full layout.
-    self:RegisterEvent("BAG_UPDATE_DELAYED", function() Bags.Refresh() end)
+    self:RegisterEvent("BAG_UPDATE_DELAYED", function()
+        -- The snapshot first: "what is new" is the difference between this
+        -- pass and the last one, so it has to be taken before the draw that
+        -- wants to mark it.
+        Bags.Marks.Scan()
+        Bags.Refresh()
+    end)
     self:RegisterEvent("PLAYERBANKSLOTS_CHANGED", function() Bags.Refresh() end)
-    self:RegisterEvent("PLAYER_MONEY", function() Bags.Refresh() end)
+    -- A tab bought, renamed or refiltered: the sidebar draws its name and its
+    -- icon from the client, so it has to be asked again.
+    self:RegisterEvent("BANK_TAB_SETTINGS_UPDATED", function() Bags.Refresh() end)
+    self:RegisterEvent("BANK_TABS_CHANGED", function() Bags.Refresh() end)
+    self:RegisterEvent("PLAYER_MONEY", function()
+        Bags.Gold.Record()
+        Bags.Refresh()
+    end)
+    -- An item the client had not loaded yet answered with nothing, so its tags
+    -- were left undecided rather than decided wrongly. This is the answer.
+    self:RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID)
+        Bags.Items.Forget(itemID)
+        Bags.Repaint()
+    end)
     -- What only changed an ITEM gets a repaint. These two fire constantly --
     -- every cooldown that starts, twice for every item picked up.
     self:RegisterEvent("ITEM_LOCK_CHANGED", function() Bags.Repaint() end)
@@ -200,6 +263,8 @@ function mod:OnEnable()
         Bags.HookBlizzard()
         if Bags.Bank then Bags.Bank.Hook() end
     end
+    Bags.Marks.Scan()
+    Bags.Gold.Record()
 
     ns:RegisterSlash({ key = "BAGS", commands = { "/vfbags" },
         desc = "Open the bag window.",

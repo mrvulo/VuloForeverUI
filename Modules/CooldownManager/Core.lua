@@ -317,12 +317,19 @@ function CM.Bar(key)
     return bar
 end
 
-function CM.AddBar(name)
+-- A new bar, optionally of a KIND.
+--
+-- The kind is the client's own cooldown-viewer category, and it is stored
+-- rather than resolved here: CM.Spells fills a bar from its seed the first
+-- time a spec asks for it, so a bar added for a spec you are not in fills
+-- correctly when you get there instead of being filled once, now, wrongly.
+function CM.AddBar(name, seed)
     local db = CM.db()
     if #db.barOrder >= CM.MAX_BARS then return nil end
     db.nextBarId = (tonumber(db.nextBarId) or 1) + 1
     local key = "bar" .. db.nextBarId
     local bar = copyDefaults()
+    bar.seed = seed
     bar.name = name or (L["Bar"] .. " " .. tostring(db.nextBarId))
     db.bars[key] = bar
     db.barOrder[#db.barOrder + 1] = key
@@ -449,12 +456,63 @@ function CM.SpellBarName(spellID)
     return nil
 end
 
+-- ---------------------------------------------------------------- slots --
+--
+-- A third kind of row: an EQUIPMENT SLOT. The row is the slot, not the item in
+-- it, so a trinket swapped between dungeons keeps its place on the bar instead
+-- of leaving a hole and needing to be added again.
+--
+-- Everything downstream still only knows spells and items, so the slot is
+-- resolved to whatever is worn in it at paint time -- one function, called
+-- wherever an id is needed.
+CM.SLOTS = {
+    { id = 13, g = "TRINKET0SLOT_UNIQUE" },
+    { id = 14, g = "TRINKET1SLOT_UNIQUE" },
+    { id = 1,  g = "HEADSLOT" },
+    { id = 2,  g = "NECKSLOT" },
+    { id = 3,  g = "SHOULDERSLOT" },
+    { id = 15, g = "BACKSLOT" },
+    { id = 5,  g = "CHESTSLOT" },
+    { id = 9,  g = "WRISTSLOT" },
+    { id = 10, g = "HANDSSLOT" },
+    { id = 6,  g = "WAISTSLOT" },
+    { id = 7,  g = "LEGSSLOT" },
+    { id = 8,  g = "FEETSLOT" },
+    { id = 11, g = "FINGER0SLOT_UNIQUE" },
+    { id = 16, g = "MAINHANDSLOT" },
+    { id = 17, g = "SECONDARYHANDSLOT" },
+}
+
+-- The client's own name for a slot, so the menu reads in the player's
+-- language without a locale entry of ours for every piece of armour.
+function CM.SlotName(slotID)
+    for _, slot in ipairs(CM.SLOTS) do
+        if slot.id == slotID then
+            local name = _G[slot.g]
+            if type(name) == "string" and name ~= "" then return name end
+            return slot.g
+        end
+    end
+    return tostring(slotID)
+end
+
+-- What an entry POINTS AT right now: its own id for a spell or an item, and
+-- for a slot whatever is worn there. An empty slot answers nil, and the icon
+-- that draws it stays blank rather than drawing the last thing it saw.
+function CM.Resolve(entry)
+    if type(entry) ~= "table" then return nil, "spell" end
+    if entry.kind ~= "slot" then return entry.id, entry.kind end
+    local itemID = GetInventoryItemID("player", entry.id)
+    if type(itemID) == "number" then return itemID, "item" end
+    return nil, "item"
+end
+
 function CM.AddSpell(barKey, spellID, kind)
     local bar = CM.Bar(barKey)
     if not bar or type(spellID) ~= "number" then return end
-    -- A spell lives on one bar only: adding it elsewhere moves it, which is
-    -- what someone dragging it to another row means.
-    CM.RemoveSpellEverywhere(spellID)
+    -- A row lives on one bar only: adding it elsewhere moves it, which is
+    -- what someone dragging it to another bar means.
+    CM.RemoveSpellEverywhere(spellID, kind or "spell")
     local list = CM.Spells(bar)
     list[#list + 1] = { id = spellID, kind = kind or "spell" }
     -- Restyle, not Refresh: the number of icons changed, and only Restyle
@@ -462,14 +520,18 @@ function CM.AddSpell(barKey, spellID, kind)
     CM.RestyleAll()
 end
 
-function CM.RemoveSpellEverywhere(spellID)
+-- The KIND is part of the match. Without it, adding trinket slot 13 swept
+-- away any other row that happened to carry the number 13.
+function CM.RemoveSpellEverywhere(spellID, kind)
     local db = CM.db()
     for _, key in ipairs(db.barOrder or {}) do
         local bar = db.bars[key]
         if bar then
             local list = CM.Spells(bar)
             for i = #list, 1, -1 do
-                if list[i].id == spellID then table.remove(list, i) end
+                if list[i].id == spellID and (kind == nil or list[i].kind == kind) then
+                    table.remove(list, i)
+                end
             end
         end
     end

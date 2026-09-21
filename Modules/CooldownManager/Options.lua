@@ -28,12 +28,21 @@ mod.tabs = {
 -- place in the settings window, not a setting.
 local selected, selectedRow
 
+-- The fallback is RETURNED, never written back.
+--
+-- It used to assign, and that was a trap with a long fuse. The options builder
+-- runs every row's getter once per page build against the module's DEFAULTS,
+-- to find out which settings differ from them -- and the defaults carry only
+-- the three starter bars. A getter that writes during that pass writes while
+-- the db underneath it is the default one, and the write survives the restore.
+-- So selecting a bar you had added landed on "cooldowns" one frame later, on
+-- every page build, and a bar added past the first three could not be reached
+-- at all.
 local function currentKey()
     local db = CM.db()
     CM.EnsureBars()
     if selected and db.bars[selected] then return selected end
-    selected = db.barOrder[1]
-    return selected
+    return db.barOrder[1]
 end
 
 local function bar()
@@ -56,6 +65,12 @@ local function rebuild(tabId)
     ns.NextFrame(function()
         UI:BuildOptionsPage("cooldownmanager", tabId)
     end)
+end
+
+-- The same redraw, for the parts of the module that change a bar from OUTSIDE
+-- the options page: the plus menu and the drag-and-drop in the live preview.
+function CM.RebuildOptions(tabId)
+    rebuild(tabId or "spells")
 end
 
 -- ---------------------------------------------------------------- widgets --
@@ -82,8 +97,49 @@ local function color(label, key)
         end }
 end
 
+-- The kinds a new bar can be started as. Same three the client's own cooldown
+-- viewer keeps, and the same three a fresh profile starts with -- a bar added
+-- here is the bar that was there from the beginning, not a lesser one.
+-- Built per call, not memoised: a memo of resolved locale strings outlives a
+-- language change, and the table next to this one is rebuilt for the same
+-- reason. One table per page build is not worth a stale label.
+--
+-- The NAMES are the raw English the starter bars use, not locale lookups. A
+-- bar's name is display text the user edits, and a translated new bar beside
+-- three untranslated old ones reads as a mistake.
+local function newBarKinds()
+    return {
+        { seed = "Essential",   name = "Cooldowns", label = L["Add a cooldown bar"] },
+        { seed = "Utility",     name = "Utility",   label = L["Add a utility bar"] },
+        { seed = "TrackedBuff", name = "Buffs",     label = L["Add a buff bar"] },
+    }
+end
+
+-- A name nothing else on the list is already using. Two bars called
+-- "Cooldowns" address the right bar everywhere -- the dropdown's value is the
+-- key -- but everything that SHOWS a name goes ambiguous, including the
+-- "already on <bar>" hint when adding a spell.
+local function freeName(db, wanted)
+    local taken = {}
+    for _, key in ipairs(db.barOrder) do
+        local b = db.bars[key]
+        if b and type(b.name) == "string" then taken[b.name] = true end
+    end
+    if not taken[wanted] then return wanted end
+    for n = 2, CM.MAX_BARS + 1 do
+        local try = wanted .. " " .. n
+        if not taken[try] then return try end
+    end
+    return wanted
+end
+
 -- The bar chooser, repeated at the top of every tab so the page always says
 -- which bar is being edited.
+--
+-- No label and centred: the row is not one setting among others, it is the
+-- question "which bar is this page about", and the page underneath it changes
+-- completely with the answer. A label to its left would file it next to the
+-- sliders as if it were one of them.
 local function barSelector(tabId)
     local db = CM.db()
     local values = {}
@@ -91,21 +147,40 @@ local function barSelector(tabId)
         local b = db.bars[key]
         values[#values + 1] = { value = key, text = b.name }
     end
-    values[#values + 1] = {
-        value = "__add", text = L["Add a bar"], action = true,
-        onClick = function()
-            local key = CM.AddBar()
-            if key then selected = key end
-            rebuild(tabId)
-        end,
-    }
-    return { type = "dropdown", label = L["Bar"], width = 240, values = values,
-        get = function() return currentKey() end,
-        set = function(_, v)
-            if v ~= "__add" then selected = v; selectedRow = nil end
-            CM.SetPreviewBar(selected)
-            rebuild(tabId)
-        end }
+
+    -- The room left, asked once: with the list full, the three add rows would
+    -- be three rows that answer "no". Better not to offer them.
+    if #db.barOrder < CM.MAX_BARS then
+        values[#values + 1] = { value = nil, text = " ", separator = true }
+        for _, kind in ipairs(newBarKinds()) do
+            local k = kind
+            values[#values + 1] = {
+                -- The plus sits in the code, not in the locale: it is the
+                -- affordance, the same in every language, and nine translators
+                -- should not each have to remember to type it.
+                value = "__add_" .. k.seed, text = "+ " .. k.label, action = true,
+                onClick = function()
+                    local key = CM.AddBar(freeName(db, k.name), k.seed)
+                    if key then selected = key; selectedRow = nil end
+                    CM.SetPreviewBar(selected)
+                    rebuild(tabId)
+                end,
+            }
+        end
+    end
+
+    return { type = "group", layout = "row", align = "center", items = {
+        -- Not a setting, so it has no default to differ from: without this the
+        -- builder marks it "changed" and offers a reset dot for "which bar the
+        -- page is showing".
+        { type = "dropdown", width = 320, values = values, noDefaultMark = true,
+          get = function() return currentKey() end,
+          set = function(_, v)
+              selected = v; selectedRow = nil
+              CM.SetPreviewBar(selected)
+              rebuild(tabId)
+          end },
+    } }
 end
 
 local function entryName(entry)

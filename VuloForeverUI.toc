@@ -76,6 +76,7 @@ Modules\Nameplates\Auras.lua
 Modules\Nameplates\Friendly.lua
 Modules\Nameplates\Extras.lua
 Modules\Nameplates\Plate.lua
+Modules\Nameplates\Preview.lua
 Modules\Nameplates\Options.lua
 
 Modules\DamageMeter\Core.lua
@@ -89,6 +90,7 @@ Modules\CooldownManager\Core.lua
 Modules\CooldownManager\Bindings.lua
 Modules\CooldownManager\Glow.lua
 Modules\CooldownManager\Bar.lua
+Modules\CooldownManager\Picker.lua
 Modules\CooldownManager\Preview.lua
 Modules\CooldownManager\Options.lua
 
@@ -110,8 +112,12 @@ Modules\Chat\History.lua
 Modules\Chat\Options.lua
 
 Modules\Bags\Core.lua
+Modules\Bags\Items.lua
+Modules\Bags\Marks.lua
+Modules\Bags\Gold.lua
 Modules\Bags\Categories.lua
 Modules\Bags\Slots.lua
+Modules\Bags\Sidebar.lua
 Modules\Bags\Window.lua
 Modules\Bags\Bank.lua
 Modules\Bags\Options.lua

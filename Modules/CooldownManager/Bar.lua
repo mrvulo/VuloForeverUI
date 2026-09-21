@@ -641,6 +641,9 @@ end
 -- just drawn.
 local function applyCooldown(icon, entry)
     local cd = icon.cooldown
+    -- A slot row answers with the item worn in it; from here on it IS an item.
+    local rid, rkind = CM.Resolve(entry)
+    if rid and rkind ~= entry.kind then entry = { id = rid, kind = rkind } end
     if entry.kind == "item" then
         if C_Item and C_Item.GetItemCooldownDuration then
             local ok, duration = pcall(C_Item.GetItemCooldownDuration, entry.id)
@@ -690,17 +693,28 @@ end
 -- One icon's live state. Every value here may be secret and none is read.
 local function paintIcon(bar, icon, entry)
     local b = icon.button
-    b._spellID = entry.id
-    b._kind = entry.kind
+    -- The tooltip, the texture and the cooldown all want what the row POINTS
+    -- AT, which for an equipment slot is whatever is worn in it right now.
+    local rid, rkind = CM.Resolve(entry)
+    b._spellID = rid
+    b._kind = rkind
     b:Show()
 
     local tex
-    if entry.kind == "item" then
-        tex = C_Item.GetItemIconByID and C_Item.GetItemIconByID(entry.id)
+    if rid == nil then
+        tex = nil
+    elseif rkind == "item" then
+        tex = C_Item.GetItemIconByID and C_Item.GetItemIconByID(rid)
     else
-        tex = C_Spell.GetSpellTexture(entry.id)
+        tex = C_Spell.GetSpellTexture(rid)
     end
-    if type(tex) ~= "nil" then icon.texture:SetTexture(tex) end
+    -- An empty equipment slot draws the slot's own empty art rather than the
+    -- last item that was in it.
+    if rid == nil and entry.kind == "slot" then
+        icon.texture:SetTexture("Interface\\PaperDoll\\UI-PaperDoll-Slot-Trinket")
+    elseif type(tex) ~= "nil" then
+        icon.texture:SetTexture(tex)
+    end
 
     icon.readySound = CM.SoundPath(CM.Val(bar, entry, "readySound"))
 
@@ -791,7 +805,10 @@ local function paintIcon(bar, icon, entry)
     -- long as the engine does the formatting.
     local chargeMode = entry.chargeMode or (CM.Val(bar, entry, "showCharges") ~= false and "count" or "none")
     icon.charges:SetShown(chargeMode ~= "none")
-    if chargeMode ~= "none" and entry.kind ~= "item" then
+    -- Charges are a SPELL thing. An item row has none, and a slot row is an
+    -- item once it is resolved -- asking the client for the charges of the
+    -- number 13 is a question about nothing.
+    if chargeMode ~= "none" and entry.kind == "spell" then
         -- In combat this comes back as a SECRET TABLE, and reading a field of
         -- one throws -- type() says "table" either way, so the guard has to be
         -- the pcall, not the type check.

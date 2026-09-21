@@ -188,6 +188,9 @@ function NP.db() return M.db end
 -- the generation stamp.
 function NP.Bump()
     NP.gen = NP.gen + 1
+    -- The settings preview is our own frame, not a plate on a unit: it follows
+    -- every setting even while the module itself is switched off.
+    if NP.Preview then NP.Preview.Refresh() end
     if not M.active then return end
     for _, plate in pairs(NP.plates) do
         plate:ApplyAppearance()

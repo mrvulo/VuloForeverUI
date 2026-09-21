@@ -2270,6 +2270,13 @@ function UI:BuildOptionsPage(key, tabId)
     -- panel's own setters close over the OLD spec table. Closing first also
     -- hands its rows back to the pools before the page asks for them.
     closeRowPopup()
+    -- The dropdown menu too, and for the same reason: it is parented to
+    -- UIParent and anchored to a widget the rebuild is about to hand back to
+    -- the pool, so an open one would be left hanging over the page pointing at
+    -- nothing. A single-select menu closes itself on the first click and rarely
+    -- outlived a rebuild; a multi-select one is meant to stay open, so this is
+    -- now the ordinary case rather than the rare one.
+    if UI.CloseDropdownPopup then UI.CloseDropdownPopup() end
     -- a sub-module redirects to its container + own tab, so rebuildPage("itskey") keeps working
     local m0 = ns.modules[key]
     if m0 and m0.parentTab then

@@ -8,7 +8,7 @@ local mod = ns:RegisterModule("globalsettings", {
     description = "Global UI settings + profile management.",
     -- Per TAB, because this module owns the profile tab and only delegates its
     -- options -- there is no "profile" module to carry the flag.
-    optionsGrid = { profile = true, general = true, fonts = true, colors = true },
+    optionsGrid = { profile = true, general = true, fonts = true, colors = true, styles = true },
     defaults    = {
         enabled    = true,
         themeColor = { r = 0.608, g = 0.424, b = 1.000 },   -- house purple
@@ -19,6 +19,10 @@ mod.tabs = {
     { id = "general",  label = "General" },
     { id = "fonts",    label = "Fonts" },
     { id = "colors",   label = "Colors" },
+    -- Styles sits next to Fonts and Colors because it answers the same kind of
+    -- question -- what the suite LOOKS like, across every module -- rather than
+    -- what one module does.
+    { id = "styles",   label = "Styles" },
     { id = "profile",  label = "Profile" },
     -- Bar setups get their own tab rather than a ninth section on the profile
     -- page. Two reasons: on that page it would need scrolling to reach, which
@@ -434,6 +438,15 @@ local function fontsOptions()
     }
 end
 
+-- The Styles tab. Empty on purpose for now: a page of settings that nothing
+-- reads yet would be a page of switches that do nothing, and the checker says
+-- so out loud (module defaults nothing reads).
+local function stylesOptions()
+    return {
+        { type = "desc", text = L["|cffaaaaaaNothing here yet. This tab is where the look shared by every module will live -- bar textures, borders and backdrops, the way Fonts and Colors already work.|r"] },
+    }
+end
+
 local function colorsOptions()
     local g = ns.db.global
 
@@ -767,6 +780,9 @@ function mod:GetOptions(tabId)
     end
     if tabId == "colors" then
         return colorsOptions()
+    end
+    if tabId == "styles" then
+        return stylesOptions()
     end
     if tabId == "profile" then
         return delegate("profiles", L["|cffff5555Profile module not loaded.|r"])

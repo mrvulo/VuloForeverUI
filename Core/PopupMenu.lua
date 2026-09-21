@@ -125,6 +125,15 @@ local function getMenuButton(lv, idx)
     btn.arrow:SetText(">")
     btn.arrow:Hide()
 
+    -- An optional icon on the right: a list of spells reads far faster with
+    -- the artwork beside the name, and a list without icons loses nothing --
+    -- the texture simply stays hidden.
+    btn.iconTex = btn:CreateTexture(nil, "ARTWORK")
+    btn.iconTex:SetSize(16, 16)
+    btn.iconTex:SetPoint("RIGHT", btn, "RIGHT", -6, 0)
+    btn.iconTex:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    btn.iconTex:Hide()
+
     btn.hl = btn:CreateTexture(nil, "BACKGROUND")
     btn.hl:SetAllPoints(btn)
     btn.hl:SetColorTexture(ac.r, ac.g, ac.b, 0.22)
@@ -159,6 +168,10 @@ renderLevel = function(i, entries, anchorFn)
     local last  = math.min(#entries, first + MAX_VISIBLE - 1)
 
     local y, maxTextWidth, shown = -6, 0, 0
+    local anyIcon = false
+    for ei = first, last do
+        if entries[ei] and entries[ei].icon then anyIcon = true; break end
+    end
 
     for ei = first, last do
         local entry = entries[ei]
@@ -167,9 +180,21 @@ renderLevel = function(i, entries, anchorFn)
         btn:Show()
         btn.check:Hide()
         btn.arrow:Hide()
+        btn.iconTex:Hide()
         btn._clickable = false
         btn._level = i
         btn._submenu = nil
+
+        -- The icon goes on before the branches below, because every kind of
+        -- row may carry one -- a title with an icon is a heading with a
+        -- picture, which is what a spell group wants.
+        if entry.icon and not entry.separator then
+            btn.iconTex:SetTexture(entry.icon)
+            btn.iconTex:Show()
+            btn.text:SetPoint("RIGHT", btn, "RIGHT", -26, 0)
+        else
+            btn.text:SetPoint("RIGHT", btn, "RIGHT", -10, 0)
+        end
 
         if entry.separator then
             btn:SetHeight(6)
@@ -263,7 +288,7 @@ renderLevel = function(i, entries, anchorFn)
 
     -- keep the width over a wheel re-render: only the rows change, and a menu
     -- that breathes sideways under the cursor drops the hover
-    local desiredWidth = math.min(360, math.max(180, maxTextWidth + 52))
+    local desiredWidth = math.min(360, math.max(180, maxTextWidth + 52 + (anyIcon and 22 or 0)))
     if anchorFn or not lv.keptWidth then
         lv.keptWidth = desiredWidth
     end

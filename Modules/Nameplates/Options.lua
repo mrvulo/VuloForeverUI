@@ -481,7 +481,7 @@ local function displayPage()
             } }),
     })
 
-    return { style, positions, texts, aurasSection(), bars, castColors, effects, castText }
+    return { NP.Preview.Item(), style, positions, texts, aurasSection(), bars, castColors, effects, castText }
 end
 
 -- ---------------------------------------------------------------------------
@@ -540,7 +540,7 @@ local function colorsPage()
         } }),
         toggle("offTankAggroEnabled", L["Tank: Show Special \"Off-Tank\" Color"], nil, { inline = { swatch("offTankAggro", L["Off-Tank"]) } }),
     })
-    return { enemy, threat }
+    return { NP.Preview.Item(), enemy, threat }
 end
 
 -- ---------------------------------------------------------------------------
@@ -631,7 +631,7 @@ local function generalPage()
                 if not InCombatLockdown() then pcall(C_CVar.SetCVar, "nameplateOccludedAlphaMult", tostring(v)) end
             end }
     end
-    return { friendlySection(), spacing, targetFocus, section(L["Extras"], extras) }
+    return { NP.Preview.Item(), friendlySection(), spacing, targetFocus, section(L["Extras"], extras) }
 end
 
 function M:GetOptions(tabId)

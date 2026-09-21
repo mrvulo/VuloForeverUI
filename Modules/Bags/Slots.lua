@@ -72,6 +72,57 @@ local function makeSlot(owner)
     level:SetPoint("TOPLEFT", button, "TOPLEFT", 2, -2)
     slot.level = level
 
+    -- The three small marks an item can carry, each in a corner of its own so
+    -- two of them are never drawn on top of each other: the bind tag bottom
+    -- left, the set name bottom right, the pin top right.
+    local tag = button:CreateFontString(nil, "OVERLAY")
+    tag:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 2, 2)
+    slot.tag = tag
+
+    local setName = button:CreateFontString(nil, "OVERLAY")
+    setName:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -2, 2)
+    setName:SetJustifyH("RIGHT")
+    slot.setName = setName
+
+    local pin = button:CreateTexture(nil, "OVERLAY")
+    pin:SetAtlas("PetJournal-FavoritesIcon")
+    pin:SetSize(10, 10)
+    pin:SetPoint("TOPRIGHT", button, "TOPRIGHT", -1, -1)
+    pin:Hide()
+    slot.pin = pin
+
+    -- "Just picked up": a tinted frame around the icon rather than a fourth
+    -- corner mark, because it has to read at a glance across a full bag.
+    slot.freshEdges = ns.MakeEdges(button, "OVERLAY")
+
+    -- The tool overlay. It is a plain button, it only exists while a tool mode
+    -- is on, and it is what makes pinning and splitting possible at all: the
+    -- item button underneath is SECURE, so a click on it uses the item and no
+    -- hook of ours may take that click away.
+    local overlay = CreateFrame("Button", nil, parent)
+    overlay:SetAllPoints(parent)
+    overlay:SetFrameLevel(button:GetFrameLevel() + 5)
+    overlay:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    overlay:Hide()
+    local wash = overlay:CreateTexture(nil, "BACKGROUND")
+    wash:SetAllPoints(overlay)
+    wash:SetColorTexture(0, 0, 0, 0.35)
+    overlay.wash = wash
+    slot.overlay = overlay
+
+    -- The tip under the item's own tooltip. HookScript, not SetScript: the
+    -- template's own handler is what shows the tooltip in the first place, and
+    -- taking it away would leave a bag with no tooltips at all. A hook adds no
+    -- field to the button and takes no click.
+    button:HookScript("OnEnter", function(self)
+        local db = Bags.db()
+        if not db.pinnedTips then return end
+        if not (GameTooltip and GameTooltip:IsShown() and GameTooltip:GetOwner() == self) then return end
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine(ns.L["Pin and recent marks are set from the bag's tool row."], 0.6, 0.6, 0.65)
+        GameTooltip:Show()
+    end)
+
     local p = poolFor(owner)
     p.slots[#p.slots + 1] = slot
     return slot
@@ -133,6 +184,18 @@ local POOR = (Enum.ItemQuality and Enum.ItemQuality.Poor) or 0
 -- swallowed -- the first draft wrapped each call in a bare pcall, and when the
 -- method was not there the window came up with headings and no items and no
 -- word about why.
+-- The first n LETTERS of a name, not the first n bytes. A German set name is
+-- full of two-byte characters, and cutting one in half draws a question mark.
+local function firstLetters(text, n)
+    local out, count = "", 0
+    for char in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+        out = out .. char
+        count = count + 1
+        if count >= n then break end
+    end
+    return out
+end
+
 local reported = {}
 
 local function callSetter(button, name, ...)
@@ -190,8 +253,24 @@ function Slots.Paint(slot, bagID, slotID, info)
         local tex = button.icon or button.Icon
         if tex then tex:SetTexture(icon) end
     end
+
+    -- The zoom: a crop of the icon's own texture coordinates, set AFTER the
+    -- texture. No setter takes it, and SetItemButtonTexture resets the coords
+    -- along with the texture -- cropping first left every icon uncropped.
+    local zoom = math.max(0, math.min(0.2, db.iconZoom or 0))
+    local iconTex = button.icon or button.Icon
+    if iconTex then iconTex:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom) end
+
     callSetter(button, "SetItemButtonCount",
-        (db.showCount ~= false and info) and info.stackCount or 0)
+        (db.showCount ~= false and info) and (slot.mergedCount or info.stackCount) or 0)
+
+    -- The stack count is the template's own font string, so it is restyled
+    -- rather than replaced: replacing it would mean a second number drawn on
+    -- top of the client's.
+    local count = button.Count or button.count
+    if count then
+        ns.UI.FontFor("bags", count, db.countSize or 11, "OUTLINE")
+    end
 
     -- The quality border: the client's own setter knows every item type there
     -- is, including the ones a guess would miss.
@@ -202,8 +281,8 @@ function Slots.Paint(slot, bagID, slotID, info)
     end
 
     -- Grey items go quiet so the rest of the bag can be read.
-    local dim = db.dimJunk and info and type(info.quality) == "number" and info.quality == POOR
-    callSetter(button, "SetItemButtonDesaturated", dim and true or false)
+    local isJunk = info and type(info.quality) == "number" and info.quality == POOR
+    callSetter(button, "SetItemButtonDesaturated", (db.dimJunk and isJunk) and true or false)
 
     -- The cooldown swirl, driven by the client's own numbers.
     local cd = button.Cooldown or button.cooldown
@@ -238,6 +317,43 @@ function Slots.Paint(slot, bagID, slotID, info)
         slot.level:Hide()
     end
 
+    -- The bind tag. Two letters in a corner rather than the client's own
+    -- sentence, which is a tooltip line and would not fit on an icon.
+    local tag = db.showBindTags and info and Bags.Items.BindTag(info) or nil
+    if tag then
+        ns.UI.FontFor("bags", slot.tag, db.bindTagSize or 10, "OUTLINE")
+        local c = (tag == "BoE") and db.bindTagColor or db.warboundColor
+        slot.tag:SetTextColor(c.r, c.g, c.b)
+        slot.tag:SetText(tag)
+        slot.tag:Show()
+    else
+        slot.tag:Hide()
+    end
+
+    -- The name of the equipment set a piece of gear belongs to, shortened to
+    -- its first few letters: a corner of a 37 px icon has room for about
+    -- three, and the full name is in the tooltip anyway.
+    local setName = db.showSetNames and info and Bags.Items.SetName(bagID, slotID) or nil
+    if setName then
+        ns.UI.FontFor("bags", slot.setName, db.setNameSize or 10, "OUTLINE")
+        slot.setName:SetTextColor(db.setNameColor.r, db.setNameColor.g, db.setNameColor.b)
+        slot.setName:SetText(firstLetters(setName, db.setNameLetters or 3))
+        slot.setName:Show()
+    else
+        slot.setName:Hide()
+    end
+
+    -- Pinned and just-picked-up. Both are ours, both come from Marks, and
+    -- neither asks the item anything.
+    local id = info and info.itemID
+    slot.pin:SetShown(db.showPinned and Bags.Marks.IsPinned(id) or false)
+    if db.showRecent and Bags.Marks.IsRecent(id) then
+        local c = db.recentColor
+        ns.LayoutEdges(slot.freshEdges, button, 2, c.r, c.g, c.b, 1, 0)
+    else
+        ns.LayoutEdges(slot.freshEdges, button, 0, 1, 1, 1, 1)
+    end
+
     -- A locked item -- one that is on the cursor or being moved -- is drawn
     -- faded, the way the client draws it in its own bags.
     local locked = info and info.isLocked
@@ -256,4 +372,67 @@ end
 -- so the eye goes to what was searched for.
 function Slots.SetFiltered(slot, filtered)
     slot.frame:SetAlpha(filtered and 0.25 or 1)
+end
+
+-- ---------------------------------------------------------------- tools --
+--
+-- Pinning an item and splitting a stack both need a CLICK on a slot, and the
+-- slot's own click belongs to the client: it uses, equips or picks up the
+-- item, and nothing of ours may take that away. So a tool is a MODE. While one
+-- is on, every slot wears a plain button of its own over the top, the mode's
+-- click lands on that, and switching the mode off takes it away again.
+--
+-- The alternative -- a modifier on the secure click -- was rejected on
+-- purpose: a hook cannot cancel the secure action underneath, so alt-right
+-- clicking a flask to pin it would have drunk the flask.
+
+local mode = nil
+
+function Slots.Mode() return mode end
+
+function Slots.SetMode(new)
+    mode = (mode == new) and nil or new
+    Bags.Refresh()
+    return mode
+end
+
+local function pinClick(overlay)
+    Bags.Marks.TogglePin(overlay.itemID)
+end
+
+-- The client's own splitter, driven the way the client drives it: it asks the
+-- OWNER frame for SplitStack when the player confirms, so the overlay carries
+-- that method. No secure call is involved -- moving part of a stack inside the
+-- bags is an ordinary container call.
+local function splitClick(overlay)
+    local frame = _G.StackSplitFrame
+    local open = frame and frame.OpenStackSplitFrame
+    if type(open) ~= "function" or (overlay.stack or 1) < 2 then return end
+    pcall(open, frame, overlay.stack, overlay, "BOTTOMLEFT", "TOPLEFT")
+end
+
+-- Everything the mode needs about this slot, refreshed on every paint: the
+-- overlay is pooled with the slot and may have been over a different item a
+-- moment ago.
+function Slots.ApplyMode(slot, bagID, slotID, info)
+    local overlay = slot.overlay
+    if not mode or not info then overlay:Hide(); return end
+
+    overlay.bagID, overlay.slotID = bagID, slotID
+    overlay.itemID = info.itemID
+    overlay.stack = tonumber(info.stackCount) or 1
+    overlay.SplitStack = function(self, amount)
+        if type(amount) == "number" and amount > 0 then
+            pcall(C_Container.SplitContainerItem, self.bagID, self.slotID, amount)
+        end
+    end
+
+    if mode == "pin" then
+        overlay.wash:SetColorTexture(0.9, 0.7, 0.2, 0.25)
+        overlay:SetScript("OnClick", pinClick)
+    else
+        overlay.wash:SetColorTexture(0.2, 0.6, 0.9, 0.25)
+        overlay:SetScript("OnClick", splitClick)
+    end
+    overlay:Show()
 end

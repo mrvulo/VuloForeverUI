@@ -1470,7 +1470,9 @@ local function openPopup(button, config)
     -- landing at the top of two hundred entries hides the very thing the menu is
     -- there to show.
     local offset = 0
-    if p._maxOffset > 0 then
+    -- A multi-select box has no single current value to open on, and no `get`
+    -- to ask for one, so it simply opens at the top.
+    if p._maxOffset > 0 and config.get then
         local cur = config.get(button)
         for i, opt in ipairs(values) do
             -- a caption row carries no value; with cur nil it would match one
@@ -1623,6 +1625,28 @@ local function openPopup(button, config)
             item:SetScript("OnClick", function()
                 closeActivePopup()
                 if opt.onClick then opt.onClick(opt.value, opt) end
+            end)
+        elseif config.multi then
+            -- Several at once, and the menu STAYS OPEN: ticking five boxes
+            -- should be five clicks, not five clicks and five reopenings. The
+            -- row repaints itself and tells the closed box to re-read its
+            -- summary, rather than rebuilding the menu -- a rebuild would
+            -- throw away the scroll position on every tick.
+            item:EnableMouse(true)
+            local function paint()
+                local on = config.isChecked and config.isChecked(opt.value) and true or false
+                item._check:SetShown(on)
+                if on then
+                    item._text:SetTextColor(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b)
+                else
+                    item._text:SetTextColor(0.88, 0.88, 0.90)
+                end
+            end
+            paint()
+            item:SetScript("OnClick", function()
+                if config.toggle then config.toggle(opt.value) end
+                paint()
+                if button._refresh then button._refresh() end
             end)
         else
             item:EnableMouse(true)
@@ -1902,6 +1926,20 @@ function UI:CreateDropdown(parent, config)
     local function refresh()
         local cfg = container._vcConfig
         if not cfg then return end
+        -- A multi-select box has no single value to name, so it names the ones
+        -- that ARE on. The closed box clips what does not fit and the hover
+        -- tooltip restores it, which is the behaviour a long single value
+        -- already has here.
+        if cfg.multi then
+            local parts = {}
+            for _, opt in ipairs(cfg.values or {}) do
+                if opt.value ~= nil and cfg.isChecked and cfg.isChecked(opt.value) then
+                    parts[#parts + 1] = clean(L[opt.text])
+                end
+            end
+            setText(#parts > 0 and table.concat(parts, ", ") or (cfg.emptyText or L["None"]))
+            return
+        end
         local current = cfg.get(btn)
         for _, opt in ipairs(cfg.values or {}) do
             if opt.value == current then
