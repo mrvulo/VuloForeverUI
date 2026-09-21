@@ -74,6 +74,16 @@ local function ghost(index)
 
     g = CreateFrame("Frame", nil, s)
     g:EnableMouse(false)
+
+    -- The tab's own ground, behind everything else in the ghost. It fills the
+    -- ghost, which is the real tab's rectangle to the pixel -- so a coloured
+    -- tab is coloured exactly where the player will click.
+    g.bg = g:CreateTexture(nil, "BACKGROUND")
+    g.bg:SetAllPoints(g)
+    g.bg:SetTexture("Interface\\Buttons\\WHITE8X8")
+
+    g.edges = ns.MakeEdges(g, "BORDER")
+
     g.text = g:CreateFontString(nil, "OVERLAY")
     -- Anchored by its left edge and never measured: a whisper tab's label can
     -- be secret, and measuring a secret string is as forbidden as comparing
@@ -100,6 +110,72 @@ local function tabLabel(tab)
     local ok, text = pcall(fs.GetText, fs)
     if not ok then return nil end
     return text
+end
+
+-- The tab font: its own choice from shared media, or the chat font when the
+-- setting is empty. Outline stays NONE either way -- the ghosts sit on the
+-- client's own tab art, and an outline on top of that reads as a smudge.
+-- Asked through MediaFontValid, not through MediaFont alone: the latter
+-- answers an unknown name with the addon font, so a font whose addon has been
+-- uninstalled would quietly replace the chat font instead of falling back to
+-- it.
+local function applyFont(g, db)
+    local own = db.tabFont
+    local path = type(own) == "string" and ns.MediaFontValid and ns.MediaFontValid(own)
+        and ns.MediaFont(own)
+    if path then
+        g.text:SetFont(path, db.tabFontSize or 11, "NONE")
+    else
+        ns.UI.FontFor("chat", g.text, db.tabFontSize or 11, "NONE")
+    end
+end
+
+-- The underline's colour. Accent mode reads ns.COLORS.accent at paint time
+-- rather than copying it into the settings: the theme colour is live-mutated,
+-- and a copy would freeze whatever it happened to be when it was saved.
+local function underlineColor(db)
+    if db.underlineAccent ~= false then
+        local a = ns.COLORS.accent
+        -- The opacity comes from the custom colour either way, so the slider
+        -- next to it keeps working in accent mode instead of going dead the
+        -- moment the theme colour is switched on.
+        return { r = a.r, g = a.g, b = a.b, a = db.underlineColor.a or 0.9 }
+    end
+    return db.underlineColor
+end
+
+-- The ground and the border of one tab, in its current state.
+--
+-- The border reads the PANEL's settings while it is synced, so switching the
+-- chat's border off switches the tabs' off with it and there is only ever one
+-- answer to "what does a border look like here".
+local function paintGround(g, db, active)
+    local c = active and db.tabBgColorActive or db.tabBgColor
+    local wanted = db.tabTexture
+    local file = type(wanted) == "string" and wanted ~= ""
+        and ns.MediaStatusbarValid and ns.MediaStatusbarValid(wanted)
+        and ns.MediaStatusbar(wanted)
+    if file then
+        g.bg:SetTexture(file)
+        g.bg:SetVertexColor(c.r, c.g, c.b, c.a or 0)
+    else
+        g.bg:SetColorTexture(c.r, c.g, c.b, c.a or 0)
+        g.bg:SetVertexColor(1, 1, 1, 1)
+    end
+
+    local size, col
+    if db.tabBorderSync ~= false then
+        size = db.showBorder and (db.borderSize or 1) or 0
+        col = db.borderColor
+    else
+        size = db.tabBorderSize or 0
+        col = active and db.tabBorderColorActive or db.tabBorderColor
+    end
+    -- Drawn INSIDE the tab, hence the negative padding. LayoutEdges puts the
+    -- border outside its anchor by default, which is right for the panel but
+    -- wrong here: tabs sit shoulder to shoulder, so an outside border lands on
+    -- the neighbour's rectangle and on the dock line under them.
+    ns.LayoutEdges(g.edges, g, size, col.r, col.g, col.b, col.a or 0.18, -size)
 end
 
 local function isSelected(cf)
@@ -129,17 +205,25 @@ function Tabs.Refresh()
             g:SetPoint("TOPLEFT", tab, "TOPLEFT", 0, 0)
             g:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 0, 0)
 
-            ns.UI.FontFor("chat", g.text, db.tabFontSize or 11, "NONE")
+            applyFont(g, db)
+            g.text:ClearAllPoints()
+            g.text:SetPoint("LEFT", g, "LEFT", db.tabPaddingX or 0, 0)
+
             local label = tabLabel(tab)
             if type(label) ~= "nil" then g.text:SetText(label) end
 
             local active = isSelected(cf)
-            if active then
-                g.text:SetTextColor(1, 1, 1)
-                g.underline:SetShown(db.activeUnderline ~= false)
-                g.underline:SetColorTexture(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b, 0.9)
+            paintGround(g, db, active)
+
+            local text = active and db.tabTextColorActive or db.tabTextColor
+            g.text:SetTextColor(text.r, text.g, text.b)
+
+            if active and db.activeUnderline ~= false then
+                local u = underlineColor(db)
+                g.underline:SetHeight(math.max(1, db.underlineSize or 2))
+                g.underline:SetColorTexture(u.r, u.g, u.b, u.a or 0.9)
+                g.underline:Show()
             else
-                g.text:SetTextColor(0.6, 0.6, 0.62)
                 g.underline:Hide()
             end
             g:Show()
@@ -153,6 +237,14 @@ end
 -- we do is re-read which tab is selected, on the next frame.
 function Tabs.OnMessage()
     Chat.Queue("chat.tabs", function() Tabs.Refresh() end)
+end
+
+-- The strip, for the fade. It is a UIParent child of its own rather than a
+-- child of the panel -- it has to sit above the client's tab row, which is
+-- outside the panel's rectangle -- so the fade cannot reach it by parentage
+-- and has to be handed it.
+function Tabs.Strip()
+    return strip
 end
 
 function Tabs.Release()

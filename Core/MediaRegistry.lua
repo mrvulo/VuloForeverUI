@@ -103,6 +103,17 @@ function ns.MediaFont(name, fallback)
     return fallback or (ns.UI and ns.UI.FONT_PATH) or "Fonts\\FRIZQT__.TTF"
 end
 
+-- True for any font MediaFont can actually resolve. The sibling of
+-- MediaStatusbarValid, and needed for the same reason: MediaFont answers a
+-- name it does not know with the addon font rather than with nothing, so a
+-- caller that wants to fall back to something of its own has no way to tell
+-- "the user picked this" from "the addon that owned this font is gone".
+function ns.MediaFontValid(name)
+    if not (LSM and name and name ~= "") then return false end
+    local hash = LSM:HashTable("font")
+    return (hash and hash[name] and hash[name] ~= "") and true or false
+end
+
 function ns.MediaFontValues()
     local v, seen = {}, {}
     for _, n in ipairs(BUNDLED_FONTS) do

@@ -23,21 +23,36 @@ local current, target = 1, 1
 -- in here: their alpha is the suppression the engine set, and a fade that
 -- wrote over it would bring the client's text back at half strength on top of
 -- ours.
+--
+-- The tab strip and the button column are asked for BY NAME. Both are parented
+-- to UIParent, not to the panel -- they have to sit beside and above it -- so
+-- neither inherits the panel's alpha, and leaving them out meant the chat
+-- faded while its own tabs and buttons stayed at full strength. Invisible at
+-- "never", that left a row of labels and five icons floating over nothing.
+-- Each surface comes with its own ceiling, which the fade multiplies into.
+-- That is how the button column gets a "only while the mouse is near" of its
+-- own without a second piece of code writing the same frame's alpha.
 local function surfaces()
     local out = {}
     for _, cf in ipairs(Chat.Frames()) do
         local d = Chat.Data(cf)
         if d.bridged then
-            if d.bg then out[#out + 1] = d.bg end
-            if d.host then out[#out + 1] = d.host end
+            if d.bg then out[#out + 1] = { f = d.bg, max = 1 } end
+            if d.host then out[#out + 1] = { f = d.host, max = 1 } end
         end
+    end
+    local strip = Chat.Tabs and Chat.Tabs.Strip and Chat.Tabs.Strip()
+    if strip then out[#out + 1] = { f = strip, max = 1 } end
+    local bar = Chat.Sidebar and Chat.Sidebar.Bar and Chat.Sidebar.Bar()
+    if bar then
+        out[#out + 1] = { f = bar, max = Chat.Sidebar.AlphaCeiling() }
     end
     return out
 end
 
 local function applyAlpha(alpha)
-    for _, frame in ipairs(surfaces()) do
-        frame:SetAlpha(alpha)
+    for _, s in ipairs(surfaces()) do
+        s.f:SetAlpha(math.min(alpha, s.max))
     end
 end
 
@@ -70,10 +85,24 @@ end
 
 -- ---------------------------------------------------------------- state --
 
+-- The ceiling the visibility setting puts on everything below it.
+--
+-- One authority, not two. "Never" and an un-hovered "mouseover" are simply a
+-- ceiling of zero, so the idle fade underneath keeps working exactly as it did
+-- and never has to know which mode it is in -- it just cannot slide ABOVE the
+-- ceiling. Two systems both writing alpha is how a chat ends up visible in a
+-- mode that says it should not be.
+local function ceiling()
+    local mode = Chat.db().visibility or "always"
+    if mode == "never" then return 0 end
+    if mode == "mouseover" then return Fade.mouseOver and 1 or 0 end
+    return 1
+end
+
 local function fadedAlpha()
     local db = Chat.db()
     local strength = math.max(0, math.min(100, db.idleFadeStrength or 40))
-    return 1 - strength / 100
+    return math.min(ceiling(), 1 - strength / 100)
 end
 
 local function startIdle()
@@ -86,11 +115,17 @@ end
 function Fade.Poke()
     if not Chat.mod.active then return end
     local db = Chat.db()
-    if not db.idleFade then
-        slideTo(1)
+    local top = ceiling()
+    if top <= 0 then
+        if timer then timer:Cancel(); timer = nil end
+        slideTo(0)
         return
     end
-    slideTo(1)
+    if not db.idleFade then
+        slideTo(top)
+        return
+    end
+    slideTo(top)
     if timer then timer:Cancel() end
     timer = C_Timer.NewTimer(db.idleFadeDelay or 15, startIdle)
 end
@@ -99,10 +134,27 @@ function Fade.SetMouseOver(over)
     Fade.mouseOver = over and true or false
     if over then
         Fade.Poke()
-    elseif Chat.db().idleFade then
+        return
+    end
+    -- Leaving in mouseover mode hides it whether or not the idle fade is on:
+    -- there the mouse IS the switch, and waiting for an idle timer that may be
+    -- switched off would leave the chat up for good.
+    if (Chat.db().visibility or "always") == "mouseover" then
+        if timer then timer:Cancel(); timer = nil end
+        slideTo(0)
+        return
+    end
+    if Chat.db().idleFade then
         if timer then timer:Cancel() end
         timer = C_Timer.NewTimer(1, startIdle)
+        return
     end
+    -- Nothing above changed the target, but a surface ceiling may have: the
+    -- button column's "only while the mouse is near" is one. slideTo to the
+    -- target we already have runs the driver for one pass, which re-applies
+    -- every ceiling. Without it, leaving the chat with the idle fade switched
+    -- off left the column standing.
+    slideTo(target)
 end
 
 -- The mouse watch. The chat frame itself answers the mouse for its links, so

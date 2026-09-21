@@ -100,6 +100,38 @@ local function placeEditBox(cf, db)
     end)
 end
 
+-- Height and font of the input line.
+--
+-- Split from the placement above because it applies to a box we have NOT
+-- moved: somebody who leaves the line where the client put it still gets to
+-- pick its height. What the client had is remembered on the first pass, so
+-- switching the module off puts the box back instead of leaving our numbers
+-- behind for the session.
+local function styleEditBox(cf, db)
+    local eb = cf.editBox or _G[cf:GetName() .. "EditBox"]
+    if not eb then return end
+    local index = cf.GetID and cf:GetID()
+    if type(index) ~= "number" or index > (NUM_CHAT_WINDOWS or 10) then return end
+
+    local d = Chat.Data(cf)
+    if d.editOldHeight == nil then
+        d.editOldHeight = false
+        local okh, h = pcall(eb.GetHeight, eb)
+        if okh and ns.CanRead(h) and type(h) == "number" then d.editOldHeight = h end
+        local okf, f, sz, fl = pcall(eb.GetFont, eb)
+        if okf and ns.CanRead(f) and type(f) == "string" then d.editOldFont = { f, sz, fl } end
+    end
+
+    pcall(eb.SetHeight, eb, db.inputHeight or 23)
+    if db.inputUseChatFont then
+        local path = ns.ModuleFontPath and ns.ModuleFontPath("chat") or ns.UI.FONT_PATH
+        local flags = (db.fontOutline ~= "NONE") and db.fontOutline or nil
+        pcall(eb.SetFont, eb, path, db.inputFontSize or 12, flags)
+    elseif d.editOldFont then
+        pcall(eb.SetFont, eb, d.editOldFont[1], db.inputFontSize or d.editOldFont[2], d.editOldFont[3])
+    end
+end
+
 -- ---------------------------------------------------------------- apply --
 
 function Panel.Apply(cf)
@@ -133,7 +165,26 @@ function Panel.Apply(cf)
         end
     end
 
-    bg.tex:SetColorTexture(db.bgColor.r, db.bgColor.g, db.bgColor.b, db.bgColor.a or 0.65)
+    -- A named bar texture from shared media, tinted by the background colour,
+    -- or the flat fill when none is picked. SetColorTexture would throw the
+    -- file away again, so the tinted path sets the file and the vertex colour
+    -- separately.
+    --
+    -- Asked through MediaStatusbarValid, not through MediaStatusbar alone:
+    -- the latter answers with Blizzard's own status bar for a name it cannot
+    -- resolve, so a texture whose addon has been uninstalled would come back
+    -- as grey chrome instead of falling through to the flat fill.
+    local wanted = db.bgTexture
+    local barFile = type(wanted) == "string" and wanted ~= ""
+        and ns.MediaStatusbarValid and ns.MediaStatusbarValid(wanted)
+        and ns.MediaStatusbar(wanted)
+    if barFile then
+        bg.tex:SetTexture(barFile)
+        bg.tex:SetVertexColor(db.bgColor.r, db.bgColor.g, db.bgColor.b, db.bgColor.a or 0.65)
+    else
+        bg.tex:SetColorTexture(db.bgColor.r, db.bgColor.g, db.bgColor.b, db.bgColor.a or 0.65)
+        bg.tex:SetVertexColor(1, 1, 1, 1)
+    end
     ns.LayoutEdges(bg.edges, bg, db.showBorder and (db.borderSize or 1) or 0,
         db.borderColor.r, db.borderColor.g, db.borderColor.b, db.borderColor.a or 0.18, 0)
     bg:Show()
@@ -141,6 +192,7 @@ function Panel.Apply(cf)
 
     Chat.Engine.ApplyFont(cf)
     placeEditBox(cf, db)
+    styleEditBox(cf, db)
 
     -- The panel has to follow the window when it is dragged or resized. A
     -- script hook is safe where a field write is not, and the work itself is
@@ -156,16 +208,77 @@ function Panel.Apply(cf)
     end
 end
 
+-- ----------------------------------------------------------------- lock --
+
+-- Lock the size of the main chat window.
+--
+-- The lock is SetResizable on the frame, not the grip. A grip is one way into
+-- a resize and its name changes between clients; the frame's own resizable
+-- flag is the thing every path has to go through. Confirmed present on this
+-- build: SetResizable, IsResizable and SetResizeBounds are all in the 1.60.1
+-- widget API.
+--
+-- The grip button is disabled too where it exists, so the player does not
+-- keep dragging a handle that has quietly stopped meaning anything. It is
+-- looked up rather than assumed: the generated frame list for this build does
+-- not carry ChatFrame1ResizeButton, so it may well be nil here, and a lock
+-- that depended on it would be a lock that does nothing.
+--
+-- What is deliberately NOT used is FCF_SetLocked or the window's isLocked
+-- flag. Both live in the client's dock bookkeeping, and an addon that writes
+-- there taints the pass that reads it back -- which is the whisper path.
+--
+-- Only the main window, which is what the setting says. In combat the call is
+-- skipped rather than attempted: the chat frames are protected, a blocked
+-- protected call raises NO error and pcall answers true, so an attempt in
+-- combat would look like it worked and quietly not have. The regen handler in
+-- Core runs this again the moment combat ends.
+function Panel.ApplyLock()
+    if InCombatLockdown() then return end
+    local cf = _G.ChatFrame1
+    if not cf then return end
+    local locked = Chat.mod.active and Chat.db().lockChatSize and true or false
+
+    pcall(cf.SetResizable, cf, not locked)
+
+    local btn = _G.ChatFrame1ResizeButton or cf.ResizeButton or cf.resizeButton
+    if btn then
+        pcall(btn.EnableMouse, btn, not locked)
+        -- Written, never read: GetAlpha on a chat widget can answer with a
+        -- secret while chat is restricted. Unlocking writes 1 and lets the
+        -- client's own hover scripts take the grip back from there.
+        pcall(btn.SetAlpha, btn, locked and 0 or 1)
+    end
+end
+
 function Panel.ApplyAll()
     for _, cf in ipairs(Chat.Frames()) do
         if Chat.Data(cf).bridged then Panel.Apply(cf) end
     end
+    Panel.ApplyLock()
 end
 
 function Panel.Release()
+    -- The grip first, and through the same function: mod.active is already
+    -- false by the time Release runs, so ApplyLock reads "not locked" and
+    -- gives the client its grip back without a second copy of the logic.
+    Panel.ApplyLock()
+
     for _, cf in ipairs(Chat.Frames()) do
         local d = Chat.Data(cf)
         if d.bg then d.bg:Hide() end
+        -- Height and font go back to what the client had, for every box we
+        -- styled -- including the ones we never moved.
+        if d.editOldHeight ~= nil then
+            local eb = cf.editBox or _G[cf:GetName() .. "EditBox"]
+            if eb then
+                if d.editOldHeight then pcall(eb.SetHeight, eb, d.editOldHeight) end
+                if d.editOldFont then
+                    pcall(eb.SetFont, eb, d.editOldFont[1], d.editOldFont[2], d.editOldFont[3])
+                end
+            end
+        end
+
         -- An input line we moved goes back under the window, which is where
         -- the client had it.
         if d.editMoved and d.editSide == "TOP" then

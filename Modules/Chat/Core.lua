@@ -52,7 +52,10 @@ local mod = ns:RegisterModule("chat", {
         enabled = false,
 
         -- The panel
+        visibility   = "always",    -- always | mouseover | never
+        lockChatSize = false,       -- the main window's resize grip
         bgColor      = { r = 0.03, g = 0.045, b = 0.05, a = 0.65 },
+        bgTexture    = "",          -- empty: the flat fill, no shared-media bar
         borderSize   = 1,
         borderColor  = { r = 1, g = 1, b = 1, a = 0.18 },
         showBorder   = true,
@@ -71,22 +74,97 @@ local mod = ns:RegisterModule("chat", {
         -- and the padding of a tab belong to the client's strip, which our
         -- ghosts sit exactly on top of -- setting them here would mean moving
         -- the client's tabs, and moving those is how the whisper path breaks.
+        -- Everything below is drawn INSIDE the ghost's rectangle, which is the
+        -- real tab's rectangle. That is the line: colour, font, padding and a
+        -- border of our own are ours to set, because they change what is
+        -- painted in that box. Height, spacing and alignment would change the
+        -- box itself, and the box is the client's click target.
         tabFontSize  = 11,
+        tabFont      = "",          -- empty: whatever the chat font is
+        tabTextColor       = { r = 0.6, g = 0.6, b = 0.62 },
+        tabTextColorActive = { r = 1, g = 1, b = 1 },
+        -- Both transparent out of the box. These are new, and a new setting
+        -- that paints something is a new setting that changes the look of a
+        -- chat nobody asked to have changed.
+        tabBgColor         = { r = 0.03, g = 0.045, b = 0.05, a = 0 },
+        tabBgColorActive   = { r = 0.03, g = 0.045, b = 0.05, a = 0 },
+        tabTexture         = "",
+        tabPaddingX        = 0,
+
         activeUnderline = true,
+        underlineSize   = 2,
+        -- On, the underline follows the suite's accent colour and the custom
+        -- one below is ignored. Off, the custom colour is used as it stands.
+        underlineAccent = true,
+        underlineColor  = { r = 0.05, g = 0.82, b = 0.61, a = 0.9 },
+
+        -- On, the tab border copies the panel's border settings. Off, the
+        -- three below apply.
+        --
+        -- Off by default, and the size at zero with it: syncing by default
+        -- would put a border on every tab that never had one, because the
+        -- panel's own border IS on by default. A new setting starts by
+        -- changing nothing.
+        tabBorderSync   = false,
+        tabBorderSize   = 0,
+        tabBorderColor       = { r = 1, g = 1, b = 1, a = 0.18 },
+        -- Same alpha as the inactive one: the two share a single opacity
+        -- slider, so starting them apart would make the first drag of it look
+        -- like it changed something it did not.
+        tabBorderColorActive = { r = 1, g = 1, b = 1, a = 0.18 },
 
         -- The side buttons
+        --
+        -- `sidebar` stays the on/off it always was and `sidebarVisibility`
+        -- holds only the two visible modes. The options row presents them as
+        -- one dropdown, which is what a reader wants -- but keeping the old
+        -- key as the authority means a profile saved with the column switched
+        -- off still comes back with it switched off, without a migration to
+        -- get wrong.
         sidebar      = true,
+        sidebarVisibility = "always",   -- always | mouseover
         sidebarRight = false,
         sidebarSpacing = 10,
         sidebarScale = 1,
+        -- 0 means "as wide as the icons", which is what the column has always
+        -- been. A real width centres the icons in it.
+        sidebarWidth = 0,
+        -- Hidden, because until now there was no background at all and a new
+        -- setting starts by changing nothing.
+        hideSidebarBg = true,
+        sidebarSeparate = false,
+        sidebarSeparateSpacing = 8,
+        iconColor    = { r = 1, g = 1, b = 1 },
+        iconUseAccent = false,
+        -- The jump-to-newest button on the chat itself rather than in the
+        -- column, where the client also keeps its own.
+        scrollButtonOnChat = false,
+        -- Drag the icons where you want them. Positions are offsets from the
+        -- top of the column, per button key, so a button that is switched off
+        -- and on again comes back where it was left.
+        freeMoveIcons = false,
+        iconPositions = {},
         showCopy     = true,
         showFriends  = true,
         showGuild    = false,
         showSettings = true,
         showScroll   = true,
+        hideTooltipOnHover = false,
+
+        -- The input line
+        inputOnTop   = false,
+        inputHeight  = 23,
+        inputFontSize = 12,
+        -- On, the input line wears the chat font. Off, the client's own stays.
+        inputUseChatFont = true,
+
+        -- Extras
+        -- A sound on an incoming whisper. Playing one needs no look at the
+        -- line, which is the whole point: the text may be secret, the fact
+        -- that something arrived is not.
+        whisperSound = "",
 
         -- Behaviour
-        inputOnTop   = false,
         idleFade     = true,
         idleFadeDelay = 15,
         idleFadeStrength = 40,
@@ -181,6 +259,26 @@ function mod:OnEnable()
     self:RegisterEvent("UPDATE_CHAT_WINDOWS", function() Chat.Refresh() end)
     self:RegisterEvent("UPDATE_FLOATING_CHAT_WINDOWS", function() Chat.Refresh() end)
     self:RegisterEvent("UPDATE_CHAT_COLOR", function() Chat.Refresh() end)
+
+    -- A sound on an incoming whisper. The handler never looks at the payload:
+    -- in an instance and on every Battle.net whisper the text arrives secret,
+    -- and "something arrived" is knowable without reading a word of it.
+    local function whisper()
+        if not mod.active then return end
+        local name = Chat.db().whisperSound
+        if not name or name == "" then return end
+        local file = ns.MediaSound and ns.MediaSound(name)
+        if file then PlaySoundFile(file, "Master") end
+    end
+    self:RegisterEvent("CHAT_MSG_WHISPER", whisper)
+    self:RegisterEvent("CHAT_MSG_BN_WHISPER", whisper)
+
+    -- The size lock touches a protected frame, so it is skipped in combat and
+    -- caught up here. Only the lock: a full refresh on every regen would redo
+    -- the whole panel pass for a setting nobody changed.
+    self:RegisterEvent("PLAYER_REGEN_ENABLED", function()
+        if mod.active then Chat.Panel.ApplyLock() end
+    end)
 
     if not Chat.profileHooked then
         Chat.profileHooked = true
