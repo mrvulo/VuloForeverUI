@@ -42,13 +42,13 @@ local function createButton()
     button.icon:SetSize(18, 18)
     button.icon:SetPoint("CENTER", 0, 0)
 
-    -- We ship vui4.tga locally (VuloForeverUI/Media/Icons/vui4.tga).
+    -- We ship vui4.tga locally (VuloForeverUI/Media/Icons/ui/vui4.tga).
     -- If someone has VuloMedia installed instead, that works too.
     local iconPath
     if C_AddOns.IsAddOnLoaded("VuloMedia") then
         iconPath = "Interface\\AddOns\\VuloMedia\\Icons\\vui4"
     else
-        iconPath = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\vui4"
+        iconPath = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\vui4"
     end
     button.icon:SetTexture(iconPath)
 

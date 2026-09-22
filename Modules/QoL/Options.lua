@@ -1,6 +1,6 @@
 -- VuloForeverUI / Modules / QoL / Options
 --
--- One tab per part, plus the general tab in front of them. Every setter writes
+-- One tab per part, the general tab in front of them. Every setter writes
 -- and then calls QoL.Apply(), which lets each part decide for itself what
 -- changed -- the options never know which switch turns which event on.
 local _, ns = ...
@@ -55,12 +55,59 @@ end
 
 -- ------------------------------------------------------------ general --
 
--- Deliberately empty. The tab is here so the conveniences that belong to no
--- single part have a place to arrive in, rather than being wedged into
--- whichever tab happened to be open when they were written.
 local function generalPage()
     return {
-        { type = "desc", text = L["|cffaaaaaaNothing here yet.|r"] },
+        { type = "header", text = L["Character"] },
+        toggle("character", "acceptQuests", L["Accept quests automatically"],
+            L["Hold shift while talking to a quest giver to read the quest as usual."]),
+        toggle("character", "turnInQuests", L["Hand quests in automatically"],
+            L["A quest that lets you pick between rewards stops and waits for you -- that choice is never made for you."]),
+        toggle("character", "acceptResurrect", L["Accept a resurrection automatically"],
+            L["Never during a fight: a resurrection taken mid-fight puts you straight back on the floor."]),
+        toggle("character", "acceptSummon", L["Accept a summon automatically"],
+            L["Never during a fight, and never on an offer that has already run out."]),
+        toggle("character", "releasePvP", L["Release automatically in battlegrounds and arenas"],
+            L["Only there. In the world, releasing stays your decision -- somebody may be on the way to you."]),
+        { type = "desc", text = L["|cffaaaaaaThe client can refuse an action taken without a click, and it does so silently. If one of these does nothing, the window you would have clicked simply stays open.|r"] },
+
+        { type = "header", text = L["World"] },
+        -- The same switch the Loot tab carries, not a second one: one value,
+        -- shown where both layouts look for it. The delay that goes with it
+        -- stays on the Loot tab, where there is room to explain it.
+        toggle(nil, "quickLoot", L["Loot everything in one click"],
+            L["The one-click looting. Its timing sits on the Loot tab."]),
+        toggle("world", "gossipSingle", L["Pick a single NPC dialogue option"],
+            L["Only when there is exactly one option and no quest on the frame -- a quest would otherwise be clicked past. Hold shift to talk normally."]),
+
+        { type = "header", text = L["Protection"] },
+        toggle("world", "blockInvites", L["Block group invites from strangers"],
+            L["A stranger is nobody on your friend list, in your guild, or playing one of your Battle.net friends' characters. Each block says who it was."]),
+        toggle("world", "blockTrades", L["Block trades from strangers"],
+            L["The same rule. The trade window closes again straight away."]),
+
+        { type = "header", text = L["Mail"] },
+        toggle("mail", "recipients", L["A recipient list in the send tab"],
+            L["A button beside the name field, holding the last dozen names you sent mail to. They are remembered when the mail actually goes out, not while you type."]),
+
+        { type = "header", text = L["Flight time"] },
+        toggle("flight", "showBar", L["Show a flight time bar"],
+            L["The client never says how long a ride takes, so the first flight of a route is measured and every one after it counts down."]),
+        toggle("flight", "chat", L["Say the flight time in chat"]),
+        slider("flight", "width", L["Bar width"], 120, 480, 5),
+        slider("flight", "height", L["Bar height"], 8, 40, 1),
+        dropdown("flight", "texture", L["Bar texture"], ns.MediaStatusbarValues(), 220),
+        { type = "group", layout = "row", gap = 8, items = {
+            { type = "button", label = L["Show it once"], width = 150,
+              onClick = function() QoL.Flight.Preview() end },
+            { type = "button", label = L["Forget the learned times"], width = 190,
+              onClick = function()
+                  QoL.Flight.Forget()
+                  ns.UI:BuildOptionsPage("qol", "general")
+              end },
+        } },
+        { type = "desc", text = string.format(
+            L["|cffaaaaaa%d routes learned. Placing the bar is Edit Mode's job: /vedit.|r"],
+            QoL.Flight.LearnedCount()) },
     }
 end
 
@@ -77,15 +124,11 @@ local function vendorPage()
         toggle(nil, "repairReport", L["Say what it cost"]),
         toggle(nil, "repairCoinIcons", L["Coin icons instead of letters"]),
 
-        { type = "header", text = L["Durability warning"] },
-        toggle("durability", "enabled", L["Warn before the gear is gone"]),
-        slider("durability", "threshold", L["Warn below"], 5, 95, 5),
-        slider("durability", "fontSize", L["Text size"], 10, 48, 1),
-        color("durability", "color", L["Text color"]),
-        { type = "button", label = L["Show it once"], onClick = function()
-            QoL.Vendor.PreviewDurability()
-        end },
-        { type = "desc", text = L["|cffaaaaaaThe warning stays hidden during a fight: there is nothing you could do about it there.|r"] },
+
+        { type = "header", text = L["Splitting a stack"] },
+        toggle("stackSplit", "maxButton", L["A button for the whole stack"],
+            L["Sits in the client's own split window, which is the one every bag opens -- ours, the client's, the bank."]),
+        toggle("stackSplit", "skin", L["Give that window our look"]),
     }
 end
 
@@ -139,6 +182,21 @@ local function displayPage()
             QoL.Display.ShowAlert("enter")
         end },
 
+        toggle("combatEvents", "interrupted", L["Say when a cast is interrupted"]),
+        color("combatEvents", "interruptedColor", L["Colour for that"]),
+        toggle("combatEvents", "reflected", L["Say when something is reflected"]),
+        color("combatEvents", "reflectedColor", L["Colour for that"]),
+        toggle("combatEvents", "avoided", L["Say when a hit is dodged, parried or missed"]),
+        color("combatEvents", "avoidedColor", L["Colour for that"]),
+        toggle("combatEvents", "partyDeath", L["Say when someone in the group dies"]),
+        color("combatEvents", "partyDeathColor", L["Colour for that"]),
+        toggle("durability", "line", L["Say when the gear is wearing out"],
+            L["A word on this line when the gear crosses the threshold below -- once, and again only after a repair. The warning further down is the same fact said louder, with a threshold of its own."]),
+        color("durability", "lineColor", L["Colour for that"]),
+        editbox("durability", "lineText", L["Word to say"]),
+        slider("durability", "lineThreshold", L["Say it below"], 5, 95, 5),
+        { type = "desc", text = L["|cffaaaaaaThese ride on the client's own combat text feed, which reports what kind of thing happened but never a number. A banish, a dispel or a buff handed to someone else lives only in the combat log, and this client hands out no combat log at all.|r"] },
+
         { type = "header", text = L["Crosshair"] },
         toggle("crosshair", "enabled", L["Draw a crosshair"]),
         dropdown("crosshair", "visibility", L["Show it"], {
@@ -157,6 +215,16 @@ local function displayPage()
         { type = "header", text = L["Map coordinates"] },
         toggle(nil, "mapCoords", L["Show coordinates on the world map"]),
         slider(nil, "mapCoordsSize", L["Text size"], 8, 20, 1),
+
+        { type = "header", text = L["Durability warning"] },
+        toggle("durability", "enabled", L["Warn before the gear is gone"]),
+        slider("durability", "threshold", L["Warn below"], 5, 95, 5),
+        slider("durability", "fontSize", L["Text size"], 10, 48, 1),
+        color("durability", "color", L["Text color"]),
+        { type = "button", label = L["Show it once"], onClick = function()
+            QoL.Vendor.PreviewDurability()
+        end },
+        { type = "desc", text = L["|cffaaaaaaThe warning stays hidden during a fight: there is nothing you could do about it there.|r"] },
 
         { type = "header", text = L["Shared by all of them"] },
         dropdown(nil, "font", L["Font"], ns.MediaFontValues(), 220),

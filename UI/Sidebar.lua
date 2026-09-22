@@ -31,6 +31,7 @@ for _, key in ipairs({
     -- missing from this list, so the sidebar showed the fallback for them
     "meter", "changelog", "actionring", "auras", "trackbars", "talentview",
     "fixnameplaterole", "casthistory",
+    "locales",
 }) do
     MODULE_ICONS[key] = ICON_DIR .. key .. ".tga"
 end
@@ -231,7 +232,7 @@ local function createModuleRow(parent, key, mod)
     end
     local pinIcon = pin:CreateTexture(nil, "ARTWORK")
     pinIcon:SetAllPoints(pin)
-    pinIcon:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\pin.tga")
+    pinIcon:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\pin.tga")
     pin._refresh = function()
         local on = isPinned(key)
         if on then

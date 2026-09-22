@@ -15,7 +15,7 @@ local Chat = ns.Chat
 local Sidebar = {}
 Chat.Sidebar = Sidebar
 
-local ICON = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\"
+local ICON = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\"
 
 local bar
 

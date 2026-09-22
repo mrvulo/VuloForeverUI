@@ -4,35 +4,44 @@ Modular UI suite for **World of Warcraft: Forever** (client 1.60.1, interface `1
 
 Successor to VuloClassicUI, which targets Classic Era / Anniversary / Wrath. This is a
 separate product, not a port: Forever belongs to Blizzard's **Mainline family** (internal
-game type `camelot`), so this addon is written against the retail API, Edit Mode and the
-retail in-combat restrictions. See [docs/forever-client-research.md](docs/forever-client-research.md)
-for how that was established and what it costs.
+game type `camelot`), so this addon is written against the retail API, retail Edit Mode
+and the retail in-combat restrictions. See
+[docs/forever-client-research.md](docs/forever-client-research.md) for how that was
+established and what it costs.
 
-## State
+Version 0.1.0, and the client it targets is a beta — expect both to move.
 
-Framework only. No feature modules yet.
+## What is in it
 
-| Layer | Files | Status |
-|---|---|---|
-| Core | Namespace, Locale, Utils, Slash, **Secret**, Database, Modules, Container, Events, Schedule, Profiler, MediaRegistry, Mover, PopupMenu, ColorPicker, Init | carried over from VuloClassicUI, adapted |
-| UI | Tooltip, Widgets, StringDialog, Setup, MainFrame, Sidebar, Dashboard, OptionsBuilder, EditMode | carried over unchanged |
-| Modules | GlobalSettings, Profiles, Minimap | carried over, flavour gates removed |
+Eighteen modules on top of the framework. Every module can be switched off per character,
+and off means it registers no events at all.
 
-What that already gives you: the settings window with sidebar and search, the options
-builder, profiles with per-class assignment and keybinds, import/export strings, the
-first-time setup, the addon's own Edit Mode HUD for its own frames, the minimap button,
-the module registry with per-character enable state, and the slash registry.
+| Sidebar group | Modules |
+|---|---|
+| Global | Global Settings (theme, fonts, colours, UI scale, graphics preset), Edit Mode, Locales |
+| Unit Frames | Unit Frames — Blizzard's own with extras, a Classic reskin, or our flat Modern frame |
+| General | Chat, Bags, Quality of Life (vendor, looting, readouts) |
+| HUD | Action Bars, Auras, Cooldown Manager, Damage Meter, Minimap, Minimap Button Collector, Nameplates, Resource Bars |
+| Tabs of Global Settings | Profiles (per class, per character, import/export), Bar Setups |
+| No row of its own | Minimap Button — switched from Global Settings |
+
+The framework underneath: the settings window with sidebar, search and live previews;
+the options builder; profiles with per-class assignment and keybinds; import/export
+strings; the first-time setup; the addon's own Edit Mode HUD for its own frames; the
+module and slash registries; and `Core/Secret.lua`, which is the reason the rest works at
+all — see below.
 
 ## Commands
 
 | Command | Does |
 |---|---|
-| `/vfui` | open the settings window |
-| `/vfui help` | list every command |
-| `/vfui client` | what client this is, and what the addon detected |
-| `/vfui modules` | registered modules with on/off state |
+| `/vfui`, `/vulo` | open the settings window; add `help`, `modules`, `client`, `setup`, `debug` or `reset` |
+| `/vedit` | Edit Mode: unlock the windows and place them |
 | `/vfsecrets` | which combat values this client lets the addon read **right now** |
-| `/rl` | reload, refused in combat |
+| `/vfuiprof` | which of our modules cost the most time in handlers and tickers |
+| `/vfcd`, `/vfbars`, `/vfbars2`, `/vfchat`, `/vfbags`, `/vfmeter` | jump to that module's page (`/vfmeter reset` clears the data) |
+| `/vfmmtex` | which classic minimap textures this client ships |
+| `/rl`, `/reloadui` | reload, refused in combat |
 
 `/vfsecrets` is the one to run first in the beta, in three places: standing in a city,
 mid-fight solo, and in a raid. The restriction state differs, and what it prints decides
@@ -42,18 +51,32 @@ which modules are even buildable.
 
 Forever hands addons **secret values** for combat data. A secret can be displayed but not
 reasoned about: no arithmetic, no comparison, no concatenation, no use as a table key.
+Even a truth test throws — `value or fallback` is a crash, not a fallback.
 
 > **Display a secret, never decide on one.**
 
 `Core/Secret.lua` holds the helpers (`ns.IsSecret`, `ns.CanRead`, `ns.Num`,
-`ns:SetHealthFill`, `ns:SetPowerFill`, `ns:SetSpellCooldown`, and the `SecretUtil`
-wrappers). Blizzard's own unit frames pass `UnitHealth()` straight into
+`ns:SetHealthFill`, `ns:SetPowerFill`, `ns:SetSpellCooldown`, `ns.AurasRestricted`, and
+the `SecretUtil` wrappers). Blizzard's own unit frames pass `UnitHealth()` straight into
 `StatusBar:SetValue()`; every module here does the same.
 
-**The combat log is not readable at all.** There is no addon-side event info, so anything
-that used to count damage, track other players' casts, watch diminishing returns or drive
-a swing timer from it has to find another source or not exist. `PLAYER_SWING` +
-`C_SwingTimer` replace the swing timer; `C_DamageMeter` replaces the meter.
+**The combat log is not readable at all.** `CombatLogGetCurrentEventInfo` is nil and
+`COMBAT_LOG_EVENT_UNFILTERED` is restricted, so anything that used to count damage, track
+other players' casts, watch diminishing returns or drive a swing timer from it needs a
+different source or cannot exist. `PLAYER_SWING` + `C_SwingTimer` replace the swing timer;
+`C_DamageMeter` replaces the meter.
+
+**Auras are stricter than the rest.** `C_UnitAuras.GetAuraDataByIndex` does not return a
+secret in restricted content, it *throws* — aura code has to ask
+`ns.AurasRestricted()` first. Cooldowns come back secret; threat stays readable.
+
+## Languages
+
+Keys are English text, so a missing translation shows the original rather than a blank.
+English and German both ship complete: every `L[...]` key and every declarative label has
+a German entry, and `tools/check.js` fails the build if that stops being true. The
+language is picked under **Global → Locales** (Auto follows the game client) and takes
+full effect after a `/reload`. More languages need only their own file in `Locales/`.
 
 ## Development
 
@@ -61,17 +84,33 @@ a swing timer from it has to find another source or not exist. `PLAYER_SWING` +
 cd tools && npm install && node check.js
 ```
 
-Checks Lua 5.1 syntax, the 200-local cap per chunk, locale coverage, house rules
-(no bare globals, no third-party addon names) and that the TOC file list matches what is
-on disk. Exit code 1 only on syntax errors and the locals cap.
+`check.js` must print `RESULT: OK` before anything ships. It runs, in order: Lua 5.1
+syntax and the 200-local cap per chunk, local functions read before their definition,
+locale coverage for both `L[...]` keys and declarative fields, locale keys nothing
+reaches, ASCII quotes inside German values, third-party addon names, writes to bare
+globals, module defaults nothing reads, `L[...]` resolved at file load, format specifiers
+across locales, the TOC file list against what is on disk, release notes, and last the
+secret-value lint (`tools/secretlint.js`, baseline in `tools/secret-lint-baseline.json`),
+which follows a value across a whole file and fails on anything new.
 
-Locale files are deliberately absent for now: every `L["..."]` key is its own English
-text, so the addon is fully usable untranslated, and the nine languages get generated
-once the module set is settled.
+**Beta bug worth knowing:** the 1.60.1 client writes SavedVariables and never reads them
+back, so settings are gone at every login. While testing, keep `node tools/sv-seed.js
+--watch` running; a login line starting `dev seed:` says whether the seed was used or the
+client has started loading the files itself.
 
-## Not yet verified in the client
+Adding a module: one call to `ns:RegisterModule`, an `OnEnable`/`OnDisable` pair and a
+`GetOptions`; a module of several files gets its own folder under `Modules/`. The file
+then goes into `VuloForeverUI.toc` — the checker verifies that list against disk.
 
-1. `WOW_PROJECT_ID`, `GetBuildInfo()` and `C_GameRules.GetActiveGameMode()` — `/vfui client`
-2. whether LibEditModeOverride works against camelot's Edit Mode
-3. which power types stay readable — `/vfsecrets`
-4. whether a plain `.toc` with `## Interface: 16001` loads, or a `_Mainline.toc` suffix is needed
+## Still open in the client
+
+1. Whether LibEditModeOverride works against camelot's Edit Mode. Our own Edit Mode HUD
+   (`/vedit`) is what the suite uses; the library is loaded but no module calls it yet.
+2. Which power types stay readable, per class and per situation — `/vfsecrets` answers it
+   for the character you are on, and the answers differ.
+3. How much of the restriction behaviour is intended. Blizzard has already called some of
+   it unintentional, so what `/vfsecrets` prints today may not be what it prints next build.
+
+Confirmed in the client and no longer in question: client detection via
+`GetBuildInfo()` + `C_SwingTimer`, a plain `.toc` with `## Interface: 16001` loading,
+`ReloadUI()` from our own button, and the classic unit-frame art being present.

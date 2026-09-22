@@ -27,6 +27,8 @@ local CM = ns.CM
 
 local PANEL_H    = 118
 local PREVIEW_ROWS = 5      -- how many stand-ins an empty bar borrows
+-- The biggest an icon is drawn in the preview, whatever the bar's own size is.
+local PREVIEW_ICON_MAX = 30
 
 local panel       -- the card, created once and re-parented on every page build
 local previewBar  -- the frame the two passes run on
@@ -368,7 +370,19 @@ function CM.RefreshPreview()
     local slot = (previewBar.iconSize or 0) + (bar.spacing or 0)
     if bar.vertical then h = h + slot else w = w + slot end
     local scale = math.min(1, room / math.max(w, 1), tall / math.max(h, 1))
-    if scale < 1 then previewBar:SetScale(math.max(0.25, scale)) end
+
+    -- And a ceiling on the icon, which is a different thing from the fit above.
+    -- The fit answers "does it still land on the card"; this answers "is the
+    -- card readable". At 42px the six icons of the default bar are the loudest
+    -- thing on the page and the settings around them read as an afterthought,
+    -- so the preview draws them smaller. It is the drawing that shrinks, not
+    -- the bar: nothing here writes iconSize, and the bar on screen is untouched.
+    local draw = scale
+    local size = previewBar.iconSize or 0
+    if size > PREVIEW_ICON_MAX then
+        draw = math.min(draw, PREVIEW_ICON_MAX / size)
+    end
+    if draw < 1 then previewBar:SetScale(math.max(0.25, draw)) end
 
     -- And the row is centred with the plus counted in, so the icons do not sit
     -- half a slot to the right of the middle of the card.
@@ -380,6 +394,8 @@ function CM.RefreshPreview()
         previewBar:SetPoint("CENTER", panel, "CENTER", -shift, -6)
     end
 
+    -- The percentage answers for the FIT only. It is there to say "this is not
+    -- everything", which the deliberate ceiling above is not.
     local shown = math.floor(math.min(scale, 1) * 100 + 0.5)
     if shown < 100 then
         panel.caption:SetFormattedText("%s  |cff777777(%d%%)|r", L["Live preview"], shown)

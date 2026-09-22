@@ -244,7 +244,7 @@ local function makePanel(parent)
 end
 
 -- Row icons: info shows item.tooltip, gear expands item.subOptions inline.
-local ICON_DIR  = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\"
+local ICON_DIR  = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\"
 local ICON_INFO = ICON_DIR .. "info.tga"
 local ICON_GEAR = ICON_DIR .. "gear.tga"
 -- The two arrows: opens item.popup as a floating panel instead of expanding
@@ -1261,6 +1261,11 @@ local function placeColumns(parent, run, y)
             if labelCol and widget.SetLabelWidth then
                 widget:SetLabelWidth(math.max(20, labelCol - inlineW))
             end
+            -- Size first, then lay out -- here, not at the client's
+            -- convenience. A pooled row handed back at the width its next cell
+            -- asks for raises no OnSizeChanged, so without this it would draw
+            -- the control of the row it had before.
+            if widget.Relayout then widget:Relayout() end
             widget:SetFrameLevel(base + 4)
             local wh = widget:GetHeight() or 22
             widget:ClearAllPoints()
@@ -1440,6 +1445,7 @@ placeItem = function(parent, item, y)
         -- from the width it was given, then the label column pins where the
         -- control begins.
         if UI._soloCol and widget.SetLabelWidth then widget:SetLabelWidth(UI._soloCol) end
+        if widget.Relayout then widget:Relayout() end
 
         -- Centred in the card by its REAL height, not hung from the top edge.
         -- The height createWidget reports is the height of the ROW -- what the
@@ -1814,6 +1820,7 @@ function UI:PlaceGroup(parent, group, y)
                         widget:SetWidth(cellW)
                         if labelCol and widget.SetLabelWidth then widget:SetLabelWidth(labelCol) end
                     end
+                    if widget.Relayout then widget:Relayout() end
                     if panel then widget:SetFrameLevel(base + 4) end
                     local xo = CONTENT_PADDING + (panel and 6 or 0) + (i - 1) * colWidth
                     local yo = curY - (panel and 4 or 0)

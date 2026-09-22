@@ -31,7 +31,7 @@ DM.ICON_HOVER    = 0.9
 DM.SNAP          = 6
 
 DM.WHITE = "Interface\\Buttons\\WHITE8X8"
-DM.ICON  = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\"
+DM.ICON  = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\"
 
 local mod = ns:RegisterModule("damagemeter", {
     name        = "Damage Meter",

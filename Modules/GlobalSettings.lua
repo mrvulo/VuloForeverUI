@@ -103,19 +103,6 @@ StaticPopupDialogs["VFUI_RELOAD_PROFILING"] = {
     preferredIndex = 3,
 }
 
--- StaticPopup for language override (requires /reload because module strings are
--- evaluated at file-load time, so a new locale only takes effect on reload)
-StaticPopupDialogs["VFUI_RELOAD_LOCALE"] = {
-    text = L["Language changed. /reload required to apply the new language to all UI elements."],
-    button1 = L["Reload now"],
-    button2 = L["Later"],
-    OnAccept = function() ReloadUI() end,
-    timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-}
-
 -- StaticPopup for theme color (already-painted textures keep the old color
 -- until the UI reloads)
 StaticPopupDialogs["VFUI_RELOAD_THEME"] = {
@@ -638,15 +625,6 @@ local function generalOptions()
           tooltip = L["Scales this settings window on its own. The game's interface keeps the size it has."],
           get = function() return ns.UI:MainFrameScale() end,
           set = function(_, v) ns.UI:SetMainFrameScale(v) end },
-
-        { type = "dropdown", label = L["UI Language"],
-          tooltip = L["Choose the language for the VuloForeverUI interface. 'Auto' uses your WoW client's language (German clients see German, all others see English).\n\n|cffaaaaaaRequires /reload to apply.|r"],
-          values = ns.SUPPORTED_LOCALES,
-          get = function() return ns:GetLocaleOverride() end,
-          set = function(_, v)
-              ns:SetLocaleOverride(v)
-              StaticPopup_Show("VFUI_RELOAD_LOCALE")
-          end },
 
         { type = "toggle", label = L["Show Minimap Button"],
           tooltip = L["Toggle the VuloForeverUI button on the minimap."],

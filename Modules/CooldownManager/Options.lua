@@ -211,7 +211,7 @@ local function spellsPage()
             text = entryName(entry),
             draggable = true,
             buttons = {
-                { icon = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\reset",
+                { icon = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\reset",
                   tooltip = L["Remove from this bar"],
                   onClick = function()
                       CM.RemoveSpell(key, i)

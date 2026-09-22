@@ -20,7 +20,7 @@ local OPENER_NAME = "VuloForeverUIMinimapCollector"
 local TRAY_NAME   = "VuloForeverUIMinimapTray"
 local OWN_BUTTON  = "VuloForeverUIMinimapButton"
 local OWN_PREFIX  = "VuloForeverUI"
-local ICON_PATH   = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\infinity"
+local ICON_PATH   = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\infinity"
 
 -- The icon library other addons bring along (we do not ship it). Both strings
 -- are needed to FIND its buttons; nothing else here depends on it.

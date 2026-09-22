@@ -5,7 +5,7 @@
 ## Version: 0.1.0
 ## SavedVariables: VuloForeverUIDB
 ## SavedVariablesPerCharacter: VuloForeverUICharDB
-## IconTexture: Interface\AddOns\VuloForeverUI\Media\Icons\vui4
+## IconTexture: Interface\AddOns\VuloForeverUI\Media\Icons\ui\vui4
 ## X-Curse-Project-ID: 1704138
 
 
@@ -45,6 +45,8 @@ UI\OptionsBuilder.lua
 UI\EditMode.lua
 
 Modules\GlobalSettings.lua
+Modules\Locales\Core.lua
+Modules\Locales\Options.lua
 Modules\EditMode.lua
 Modules\Profiles.lua
 Modules\BarSetups.lua
@@ -123,6 +125,11 @@ Modules\Bags\Bank.lua
 Modules\Bags\Options.lua
 
 Modules\QoL\Core.lua
+Modules\QoL\Character.lua
+Modules\QoL\World.lua
+Modules\QoL\StackSplit.lua
+Modules\QoL\Flight.lua
+Modules\QoL\Mail.lua
 Modules\QoL\Vendor.lua
 Modules\QoL\Loot.lua
 Modules\QoL\Display.lua

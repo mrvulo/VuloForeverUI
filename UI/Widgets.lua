@@ -515,7 +515,7 @@ local function collapsibleSetup(b, title, expanded, onClick, count)
     -- carry (user rule, 31.07.2026; Blizzard's plus/minus box was a second
     -- vocabulary for the same thing). Open tints it accent, closed stays dim,
     -- which is the signal the plus/minus pair used to carry.
-    b._chevron:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\gear.tga")
+    b._chevron:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\gear.tga")
     local c = expanded and ns.COLORS.accent or nil
     if c then
         b._chevron:SetVertexColor(c.r, c.g, c.b)
@@ -570,8 +570,8 @@ end
 
 -- Toggle config: { label, tooltip?, get, set, width?, style = "eye"? }
 local TOGGLE_W, TOGGLE_H = 36, 18
-local EYE_ON  = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\eye.tga"
-local EYE_OFF = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\eye_off.tga"
+local EYE_ON  = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\eye.tga"
+local EYE_OFF = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\eye_off.tga"
 
 local function setTrackColor(container, r, g, b)
     for _, t in ipairs(container._trackParts) do t:SetColorTexture(r, g, b, 1) end
@@ -1121,6 +1121,7 @@ function UI:CreateSlider(parent, config)
         layoutSliderRow(self)
     end
     row:SetScript("OnSizeChanged", function(self) layoutSliderRow(self) end)
+    row.Relayout = function(self) layoutSliderRow(self) end
 
     row._vcType  = "slider"
     row._vcSetup = sliderSetup
@@ -1804,6 +1805,7 @@ function UI:CreateSegmented(parent, config)
     -- size -- the same reason the reference build hooks OnSizeChanged rather
     -- than measuring once.
     strip:SetScript("OnSizeChanged", function() segRelayout(container) end)
+    container.Relayout = function(self) segRelayout(self) end
 
     container.SetLabelWidth = function(self, w)
         self._labelW = w and math.max(20, w) or nil
@@ -1865,6 +1867,15 @@ end
 function UI:CreateDropdown(parent, config)
     local container = CreateFrame("Frame", nil, parent)
     container:SetScript("OnSizeChanged", dropdownRelayout)
+    -- And on demand. OnSizeChanged is the client's, which means it fires when
+    -- the client gets round to it and NOT AT ALL when a set width happens to
+    -- equal the width the frame already had. These come from a pool: a
+    -- container handed back at exactly the width its next row asks for keeps
+    -- the box of its previous row, and one class row in nine is then half a
+    -- cell wider than its neighbours (user report, 22.09.2026). The builder
+    -- calls this straight after it sizes a row, so the box follows the cell
+    -- it is actually in rather than an event that may never come.
+    container.Relayout = dropdownRelayout
 
     local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     UI.Font(label, 12)
@@ -2214,7 +2225,7 @@ function UI:CreateButton(parent, config)
 end
 
 -- IconButton config: { icon = "up"/"down"/"left"/"right" or a texture path, tooltip?, onClick, width?, height?, iconInset? }
-local ARROW_DIR = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\"
+local ARROW_DIR = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\"
 local BUILTIN_ICONS = {
     up    = { tex = ARROW_DIR .. "arrow_up.tga",    tc = {0, 1, 0, 1} },
     down  = { tex = ARROW_DIR .. "arrow_down.tga",  tc = {0, 1, 0, 1} },
@@ -2292,7 +2303,7 @@ function UI:CreatePowerButton(parent, config)
 
     local icon = b:CreateTexture(nil, "ARTWORK")
     icon:SetAllPoints(b)
-    icon:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\power")
+    icon:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\power")
     b._icon = icon
 
     local function refresh()
@@ -2351,7 +2362,7 @@ function UI:CreateColorSwatch(parent, config)
     rb:SetPoint("RIGHT", sw, "LEFT", -6, 0)
     local rt = rb:CreateTexture(nil, "ARTWORK")
     rt:SetAllPoints()
-    rt:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\reset.tga")
+    rt:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\reset.tga")
     rt:SetVertexColor(0.75, 0.75, 0.80, 0.55)
     rb:Hide()
 

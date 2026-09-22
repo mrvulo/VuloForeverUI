@@ -16,8 +16,8 @@ local Target = {}
 NP.Target = Target
 
 local WHITE = "Interface\\Buttons\\WHITE8X8"
-local ARROW_LEFT  = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\arrow_right"   -- left of the bar, pointing at it
-local ARROW_RIGHT = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\arrow_left"
+local ARROW_LEFT  = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\arrow_right"   -- left of the bar, pointing at it
+local ARROW_RIGHT = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\arrow_left"
 local GLOW_SIZE = 7
 
 -- ---------------------------------------------------------------------------

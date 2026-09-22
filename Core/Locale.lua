@@ -5,18 +5,15 @@ ns.localeData = ns.localeData or {}
 
 -- Listed in their own language: someone who needs the switch cannot read the
 -- language it is currently showing.
+--
+-- Only what actually ships. The list used to name eleven languages while one
+-- locale file existed, so eight of the choices silently did nothing but put
+-- the interface back into English. A language belongs here once Locales\ has
+-- its file; Modules/Locales.lua reads this table and needs no change for it.
 ns.SUPPORTED_LOCALES = {
     { value = "auto", text = "Auto (client language)" },
     { value = "enUS", text = "English" },
     { value = "deDE", text = "Deutsch" },
-    { value = "esES", text = "Español" },
-    { value = "frFR", text = "Français" },
-    { value = "itIT", text = "Italiano" },
-    { value = "ptBR", text = "Português" },
-    { value = "ruRU", text = "Русский" },
-    { value = "koKR", text = "한국어" },
-    { value = "zhCN", text = "简体中文" },
-    { value = "zhTW", text = "繁體中文" },
 }
 
 -- Resolved live per lookup: SavedVariables (holding the override) only exist from ADDON_LOADED, so a load-time snapshot would ignore it.

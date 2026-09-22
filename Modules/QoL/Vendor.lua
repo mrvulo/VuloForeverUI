@@ -275,9 +275,15 @@ local function lowestDurability()
     return lowest
 end
 
+-- The line variant is EDGE triggered: it says its word when the gear crosses
+-- the threshold, once, and says it again only after a repair has taken it back
+-- above. The durability events arrive one per damaged slot, so a level trigger
+-- here would put the same word on the combat line a dozen times in a fight.
+local lineFired = false
+
 local function checkDurability()
     local db = QoL.db().durability
-    if not db.enabled then
+    if not (db.enabled or db.line) then
         if durFrame then durFrame:Hide() end
         return
     end
@@ -289,7 +295,23 @@ local function checkDurability()
     end
 
     local lowest = lowestDurability()
-    if lowest and lowest < db.threshold then
+
+    -- The line and the big warning are two answers to one fact, with thresholds
+    -- of their own: a word on the line early, the warning itself later.
+    if db.line and lowest then
+        if lowest < (db.lineThreshold or 15) then
+            if not lineFired and QoL.Display and QoL.Display.ShowMessage then
+                local text = db.lineText
+                if not text or text == "" then text = L["Repair"] end
+                QoL.Display.ShowMessage(text, db.lineColor)
+                lineFired = true
+            end
+        else
+            lineFired = false
+        end
+    end
+
+    if db.enabled and lowest and lowest < db.threshold then
         createDurability()
         durabilitySettings()
         durFrame.text:SetFormattedText(L["Low durability (%d%%)"], math.floor(lowest))

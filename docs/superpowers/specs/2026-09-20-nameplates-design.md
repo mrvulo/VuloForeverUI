@@ -172,7 +172,7 @@ plate
  ├ border (4 edge textures)            ├ glow (8 textures, ADD, from gradient-*.tga)
  ├ textFrame (level 900)  slot texts: top, right, left, center
  ├ iconFrame   raid marker, classification, name-inline raid marker
- ├ arrows (left/right, Media/Icons/arrow_*.tga)
+ ├ arrows (left/right, Media/Icons/ui/arrow_*.tga)
  ├ cast (StatusBar)  castBG, icon, spark, shield, important glow, kick clip
  │                   {kickPositioner, kickMarker, kickTick, kickReadyFill}, text frame
  │                   {castName, castTarget, castTimer}
@@ -401,7 +401,7 @@ deDE entries for every new key.
 ### Media — nothing new
 
 Bar textures `Media/textures/*` + LibSharedMedia; spark `Media/Castbar/CastingBarSpark.blp`;
-arrows `Media/Icons/arrow_left.tga`/`arrow_right.tga`; glow drawn from
+arrows `Media/Icons/ui/arrow_left.tga`/`arrow_right.tga`; glow drawn from
 `Media/textures/gradient-*.tga`; shield, elite/rare icons and the "blizzard" absorb art
 are Blizzard atlases. One arrow style; overlay textures come from the bar-texture list.
 

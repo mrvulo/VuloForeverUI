@@ -2,7 +2,9 @@
 --
 -- The small conveniences, in one module with four tabs:
 --
---   general  the tab the module-wide settings grow into; empty for now
+--   general  the answers you would otherwise click: quests, rez, summon,
+--            releasing in a battleground, the one-option NPC, and who is
+--            allowed to invite you or open a trade
 --   vendor   selling the greys, repairing, and a warning before the gear is gone
 --   loot     looting a corpse in one click, opening what can be opened,
 --            typing DELETE for you
@@ -38,6 +40,11 @@ local mod = ns:RegisterModule("qol", {
     name        = "Quality of Life",
     group       = "General",
     description = "The small conveniences: the vendor visit, looting and opening, and a few readouts of your own.",
+    -- Strict two columns on every tab. Without it a switch that ends up alone
+    -- on its row is stretched across the page, and next to its paired
+    -- neighbours that reads as a different kind of setting rather than as the
+    -- last one of a group (user report, 22.09.2026).
+    optionsGrid = true,
     defaults = {
         enabled = false,
 
@@ -54,10 +61,60 @@ local mod = ns:RegisterModule("qol", {
 
         durability = {
             enabled   = true,
+            -- The same watcher's second output: a word on the combat line,
+            -- with an earlier threshold than the warning itself.
+            line          = false,
+            lineText      = "Repair",
+            lineThreshold = 15,
+            lineColor     = { r = 1, g = 0.6, b = 0.25 },
             threshold = 30,
             fontSize  = 26,
             color     = { r = 1, g = 0.27, b = 0.27 },
             x = 0, y = 220, scale = 1,
+        },
+
+        -- ----------------------------------------------------------- character
+        -- All off. Every one of them takes a decision out of your hands, and a
+        -- module that ships making decisions for you is a module you have to
+        -- discover before you can stop it.
+        character = {
+            acceptQuests    = false,
+            turnInQuests    = false,
+            acceptResurrect = false,
+            acceptSummon    = false,
+            releasePvP      = false,
+        },
+
+        -- --------------------------------------------------------------- world
+        world = {
+            gossipSingle = false,
+            blockInvites = false,
+            blockTrades  = false,
+        },
+
+        -- --------------------------------------------------------- stack split
+        stackSplit = {
+            maxButton = false,
+            skin      = false,
+        },
+
+        -- --------------------------------------------------------- flight time
+        -- The learned times themselves are NOT here: they are world facts and
+        -- live account-wide (ns.db.global.qolFlightTimes), not per profile.
+        flight = {
+            showBar = false,
+            chat    = false,
+            width   = 240,
+            height  = 18,
+            texture = "Matte",
+            x = 0, y = -180, scale = 1,
+        },
+
+        -- --------------------------------------------------------------- mail
+        -- The remembered names are NOT here: like the flight times they are
+        -- account-wide (ns.db.global.qolMailNames).
+        mail = {
+            recipients = false,
         },
 
         -- -------------------------------------------------------------- loot
@@ -87,6 +144,21 @@ local mod = ns:RegisterModule("qol", {
             leaveColor = { r = 0.45, g = 1, b = 0.55 },
             fontSize   = 22,
             x = 0, y = 170, scale = 1,
+        },
+
+        -- Messages on the combat line. Only what COMBAT_TEXT_UPDATE can source:
+        -- an interrupt, a reflect, an avoided hit. A banish or a buff handed to
+        -- somebody else would need the combat log, which this client does not
+        -- hand out at all.
+        combatEvents = {
+            interrupted      = false,
+            reflected        = false,
+            avoided          = false,
+            partyDeath       = false,
+            interruptedColor = { r = 1,    g = 0.82, b = 0.25 },
+            reflectedColor   = { r = 0.60, g = 0.80, b = 1    },
+            avoidedColor     = { r = 0.75, g = 0.75, b = 0.80 },
+            partyDeathColor  = { r = 1,    g = 0.35, b = 0.35 },
         },
 
         crosshair = {
