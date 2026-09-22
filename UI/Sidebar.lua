@@ -53,7 +53,7 @@ UI.sidebarButtons     = {}
 -- themselves never appear as headers: their modules carry parentTab and so are
 -- collected into the container rows instead of getting rows of their own.
 UI.sidebarGroupOrder  = {
-    "Global", "Unit Frames", "HUD", "PvP", "Tools", "UI Reskin", "Bugfixes",
+    "Global", "Unit Frames", "General", "HUD", "PvP", "Tools", "UI Reskin", "Bugfixes",
 }
 UI.sidebarHiddenGroups = { ["_hidden"] = true, ["Account"] = true, ["Core"] = true }
 UI.sidebarGroupBuckets = {}

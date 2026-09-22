@@ -1,8 +1,8 @@
 -- VuloForeverUI / Modules / QoL / Options
 --
--- Four tabs, one per part. Every setter writes and then calls QoL.Apply(),
--- which lets each part decide for itself what changed -- the options never
--- know which switch turns which event on.
+-- One tab per part, plus the general tab in front of them. Every setter writes
+-- and then calls QoL.Apply(), which lets each part decide for itself what
+-- changed -- the options never know which switch turns which event on.
 local _, ns = ...
 local L = ns.L
 
@@ -53,6 +53,17 @@ local function editbox(sub, key, label, width)
         set = function(_, v) tbl(sub)[key] = v; apply() end }
 end
 
+-- ------------------------------------------------------------ general --
+
+-- Deliberately empty. The tab is here so the conveniences that belong to no
+-- single part have a place to arrive in, rather than being wedged into
+-- whichever tab happened to be open when they were written.
+local function generalPage()
+    return {
+        { type = "desc", text = L["|cffaaaaaaNothing here yet.|r"] },
+    }
+end
+
 -- ------------------------------------------------------------- vendor --
 
 local function vendorPage()
@@ -97,44 +108,6 @@ local function lootPage()
         toggle(nil, "autoFillDelete", L["Type the delete word for you"],
             L["Only the box is filled in. The button is still yours to press."]),
     }
-end
-
--- -------------------------------------------------------------- stats --
-
-local function statsPage()
-    local page = {
-        toggle("stats", "enabled", L["Show the secondary stats"]),
-        { type = "desc", text = L["|cffaaaaaaThe client hands these over as secret values in instances, so they are never read here -- they are passed straight to the text widget, which is why they stay live during a fight.|r"] },
-
-        { type = "header", text = L["What it shows"] },
-        toggle("stats", "showRating", L["The rating instead of the percentage"]),
-        toggle("stats", "showBoth", L["Both, rating and percentage"]),
-        toggle("stats", "abbreviate", L["One letter instead of the name"]),
-        toggle("stats", "coloredValues", L["Colour the value as well"]),
-    }
-
-    -- The rows themselves: hidden is a set, so a row is listed by its absence.
-    page[#page + 1] = { type = "header", text = L["The rows"] }
-    for _, row in ipairs(QoL.Stats.ROWS) do
-        local key = row.key
-        page[#page + 1] = { type = "toggle", label = L[row.label],
-            get = function() return not QoL.db().stats.hidden[key] end,
-            set = function(_, v)
-                QoL.db().stats.hidden[key] = (not v) or nil
-                apply()
-            end }
-    end
-
-    page[#page + 1] = { type = "header", text = L["The look"] }
-    page[#page + 1] = slider("stats", "fontSize", L["Text size"], 8, 24, 1)
-    page[#page + 1] = slider("stats", "rowGap", L["Row spacing"], 0, 12, 1)
-    page[#page + 1] = dropdown("stats", "colorMode", L["Label colour"], {
-        { value = "palette", text = L["One colour per stat"] },
-        { value = "class",   text = L["Your class colour"] },
-        { value = "custom",  text = L["A colour of your own"] },
-    })
-    page[#page + 1] = color("stats", "color", L["Label color"])
-    return page
 end
 
 -- ------------------------------------------------------------ display --
@@ -196,8 +169,8 @@ local function displayPage()
 end
 
 function mod:GetOptions(tabId)
+    if tabId == "vendor"  then return vendorPage() end
     if tabId == "loot"    then return lootPage() end
-    if tabId == "stats"   then return statsPage() end
     if tabId == "display" then return displayPage() end
-    return vendorPage()
+    return generalPage()
 end

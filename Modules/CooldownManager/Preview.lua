@@ -218,14 +218,18 @@ end
 
 -- ---------------------------------------------------------------- plus --
 
+-- The plus sits in the row, as the slot after the last icon: it is a child of
+-- the preview bar, so it takes the bar's scale, its icon size and its spacing
+-- without being told any of them twice.
 local function ensurePlus()
     if panel.plus then return panel.plus end
-    local b = CreateFrame("Button", nil, panel)
+    local b = CreateFrame("Button", nil, previewBar)
     b:SetSize(22, 22)
-    b:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -6, -4)
+    b:SetPoint("TOPLEFT", previewBar, "TOPLEFT", 0, 0)
     local text = b:CreateFontString(nil, "OVERLAY")
     ns.UI.FontFor("cooldownmanager", text, 16, nil)
     text:SetPoint("CENTER", b, "CENTER", 0, 0)
+    b.text = text
     text:SetText("+")
     text:SetTextColor(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b)
     b.edges = ns.MakeEdges(b, "OVERLAY")
@@ -241,6 +245,35 @@ local function ensurePlus()
     end)
     panel.plus = b
     return b
+end
+
+-- Where the next icon would go. Not the geometry of the bar recomputed by
+-- hand, but the last icon that is actually drawn plus one gap -- so a wrapped,
+-- split or upright bar puts the plus where the eye already is.
+local function placePlus(bar)
+    local b = panel and panel.plus
+    if not b then return end
+
+    local size = previewBar.iconSize or 22
+    local gap  = ns:PixelSnap(bar.spacing or 0, previewBar)
+
+    local last
+    for i = 1, #previewBar.icons do
+        local icon = previewBar.icons[i]
+        if icon.button:IsShown() then last = icon.button end
+    end
+
+    b:SetSize(size, size)
+    ns.UI.FontFor("cooldownmanager", b.text, math.max(8, math.floor(size * 0.6)), nil)
+    ns.LayoutEdges(b.edges, b, 1, 1, 1, 1, 0.15, 0)
+    b:ClearAllPoints()
+    if not last then
+        b:SetPoint("TOPLEFT", previewBar, "TOPLEFT", 0, 0)
+    elseif bar.vertical then
+        b:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -gap)
+    else
+        b:SetPoint("TOPLEFT", last, "TOPRIGHT", gap, 0)
+    end
 end
 
 -- ---------------------------------------------------------------- build --
@@ -323,13 +356,29 @@ function CM.RefreshPreview()
         wireDrag(i, previewBar.icons[i])
     end
 
+    placePlus(bar)
+
     -- Fit. The page is narrower than a wide bar, and a preview that runs off
     -- the card shows the left half of a setting instead of the setting.
     local room = math.max(80, (panel:GetWidth() or 480) - 24)
     local tall = PANEL_H - 30
     local w, h = previewBar:GetWidth() or 1, previewBar:GetHeight() or 1
+    -- The plus is a slot the bar does not know about, so the fit has to add it
+    -- back in -- otherwise the button is the part that hangs off the card.
+    local slot = (previewBar.iconSize or 0) + (bar.spacing or 0)
+    if bar.vertical then h = h + slot else w = w + slot end
     local scale = math.min(1, room / math.max(w, 1), tall / math.max(h, 1))
     if scale < 1 then previewBar:SetScale(math.max(0.25, scale)) end
+
+    -- And the row is centred with the plus counted in, so the icons do not sit
+    -- half a slot to the right of the middle of the card.
+    local shift = slot * previewBar:GetScale() / 2
+    previewBar:ClearAllPoints()
+    if bar.vertical then
+        previewBar:SetPoint("CENTER", panel, "CENTER", 0, -6 + shift)
+    else
+        previewBar:SetPoint("CENTER", panel, "CENTER", -shift, -6)
+    end
 
     local shown = math.floor(math.min(scale, 1) * 100 + 0.5)
     if shown < 100 then

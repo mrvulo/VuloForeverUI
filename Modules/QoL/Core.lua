@@ -2,20 +2,16 @@
 --
 -- The small conveniences, in one module with four tabs:
 --
+--   general  the tab the module-wide settings grow into; empty for now
 --   vendor   selling the greys, repairing, and a warning before the gear is gone
 --   loot     looting a corpse in one click, opening what can be opened,
 --            typing DELETE for you
---   stats    the secondary stats, drawn from values the client keeps secret
 --   display  frame rate, latency, map coordinates, a combat line, a crosshair
 --
 -- WHY THIS MODULE IS SPLIT THE WAY IT IS
 --
--- Every part here talks to a different piece of the client, and two of them
--- touch values this client will not let an addon read:
+-- Every part here talks to a different piece of the client:
 --
---   * the secondary stats are SECRET in restricted content -- they are never
---     compared, added or formatted in Lua, only handed to SetFormattedText as
---     arguments (Stats.lua carries the full reasoning)
 --   * everything the vendor and the container code does is plain item data,
 --     which stays readable, but it is RATE LIMITED by the server: the sweeps
 --     re-count and retry rather than assuming one call did the job
@@ -69,21 +65,6 @@ local mod = ns:RegisterModule("qol", {
         quickLootDelay = 0.05,
         autoOpen       = false,
         autoFillDelete = true,
-
-        -- ------------------------------------------------------------- stats
-        stats = {
-            enabled    = false,
-            fontSize   = 12,
-            rowGap     = 3,
-            colorMode  = "palette",          -- palette | class | custom
-            color      = { r = 1, g = 1, b = 1 },
-            coloredValues = false,
-            showRating = false,              -- rating instead of percent
-            showBoth   = false,              -- rating AND percent
-            abbreviate = false,
-            hidden     = { leech = true, avoidance = true, speed = true },
-            x = -360, y = 200, scale = 1,
-        },
 
         -- ----------------------------------------------------------- display
         fps = {
@@ -151,9 +132,9 @@ function QoL.SyncEvent(on, event, handler)
 end
 
 mod.tabs = {
+    { id = "general", label = "General" },
     { id = "vendor",  label = "Vendor" },
     { id = "loot",    label = "Loot" },
-    { id = "stats",   label = "Stats" },
     { id = "display", label = "Display" },
 }
 

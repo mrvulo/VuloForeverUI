@@ -125,7 +125,6 @@ Modules\Bags\Options.lua
 Modules\QoL\Core.lua
 Modules\QoL\Vendor.lua
 Modules\QoL\Loot.lua
-Modules\QoL\Stats.lua
 Modules\QoL\Display.lua
 Modules\QoL\Options.lua
 
