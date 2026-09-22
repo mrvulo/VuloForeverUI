@@ -28,6 +28,8 @@ the full retail 12.x in-combat addon restrictions, with Classic-style art and a 
 4. **Everything lives on `ns`.** No bare globals except the one addon table in
    `Core/Namespace.lua`. The checker enforces this.
 5. **Never name another addon** in code, comments, strings or commit messages.
+   Commit messages also carry **no `Co-Authored-By:` line and no tool attribution** —
+   the CurseForge changelog is generated from them.
 6. **Locale keys are English text.** Never evaluate `L[...]` at file scope — the saved
    language override only exists from `ADDON_LOADED`. Use `ns.OnLocaleReady(fn)` for
    file-scope-style blocks.

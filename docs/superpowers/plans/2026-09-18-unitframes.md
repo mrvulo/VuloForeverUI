@@ -21,7 +21,7 @@ Copied from `CLAUDE.md` and the spec (`docs/superpowers/specs/2026-09-18-unitfra
 - Locale keys are English text; never evaluate `L[...]` at file scope. Use `ns.OnLocaleReady(fn)` for file-scope blocks (StaticPopup registration).
 - Before assuming an API exists, check Forever's source: Gethe/wow-ui-source branch `forever`. The facts below were checked there on 2026-09-18.
 - `cd tools && node check.js` must print `RESULT: OK` before every commit. The checker verifies the TOC list matches disk, so a new file and its TOC line land in the same task.
-- Commit messages in German, no third-party addon names, end with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
+- Commit messages in German, no third-party addon names, no Co-Authored-By line.
 - Files in this repo use CRLF; the Write/Edit tools and git's autocrlf handle it. Shell `sed`/`python` edits must preserve CRLF (`newline=''` in Python).
 
 ## Client facts used by the tasks (checked 2026-09-18)
@@ -362,7 +362,6 @@ Classic (Original-Rahmenkunst, Masse des klassischen Spielerrahmens,
 Zielrahmen gespiegelt) und Modern (flaches Panel im Hausstil) als reine
 Daten plus ApplySkin, das jedes Kind eines Engine-Frames setzt.
 
-Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 EOF
 ```
 
@@ -552,7 +551,6 @@ Ein SecureUnitButton pro Einheit mit RegisterUnitWatch, Klick auf Ziel und
 Menue, alle Kinder einmal erzeugt; Position und Skalierung ueber den Mover.
 Ein temporaerer Probe-Befehl bleibt bis zum Modul-Anschluss.
 
-Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 EOF
 ```
 
@@ -869,7 +867,6 @@ Farbkurve, die der Client auswertet. Level, Klassifikation und Klasse
 werden nur gelesen, wenn ns.CanRead ja sagt, sonst bleibt der letzte
 Stand. Events per RegisterUnitEvent auf einem eigenen Frame je Einheit.
 
-Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 EOF
 ```
 
@@ -1205,7 +1202,6 @@ Inhalte gehen; der Zielrahmen wandert an ein verstecktes Parent. Im Kampf
 wird der Wechsel bis PLAYER_REGEN_ENABLED aufgeschoben, zurueck auf
 Standard fragt nach einem Reload.
 
-Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 EOF
 ```
 
@@ -1396,7 +1392,6 @@ Klassenfarbe nach UnitFrameHealthBar_Update, Bedrohungsanzeige am
 Zielrahmen ueber den geteilten Maler, Klassensymbol am Portrait. Nur
 hooksecurefunc und eigene Regionen, nie Blizzards Secure-State.
 
-Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 EOF
 ```
 
@@ -1438,7 +1433,6 @@ git add docs/forever-client-research.md CLAUDE.md Modules
 git commit -F - <<'EOF'
 Unit Frames: Review-Befunde und Doku
 
-Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 EOF
 ```
 

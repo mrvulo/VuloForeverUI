@@ -20,7 +20,7 @@
 - Lua's 200-locals-per-function cap is enforced by the checker: keep file-scope locals low, put shared state on `ns.NP`.
 - Every new file is added to `VuloForeverUI.toc` in load order; `cd tools && node check.js` must print `RESULT: OK` before each commit.
 - Before using an API not yet confirmed in the spec, look it up in the `forever` branch of the UI source.
-- Commit messages: German, house style, ending with the Co-Authored-By line.
+- Commit messages: German, house style, no Co-Authored-By line.
 - No new media files.
 
 ## File structure
