@@ -10,6 +10,14 @@
 
 package-as: VuloForeverUI
 
+# The notes the packager publishes. WITHOUT this it builds them from the commit
+# messages since the last tag, which is a different audience's text: commits are
+# written for whoever works on the addon, release notes for whoever plays with
+# it. This file is the second kind.
+manual-changelog:
+  filename: CHANGELOG-release.md
+  markup-type: markdown
+
 # Everything that only serves development. Dev/ is NOT in here: the TOC loads
 # Dev/SavedSeed.lua, and the committed copy is an empty stub.
 ignore:
