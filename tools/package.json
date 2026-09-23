@@ -8,7 +8,10 @@
     "seed:watch": "node sv-seed.js --watch",
     "secrets": "node secretlint.js",
     "secrets:all": "node secretlint.js --all",
-    "secrets:baseline": "node secretlint.js --write-baseline"
+    "secrets:baseline": "node secretlint.js --write-baseline",
+    "api": "node apilint.js",
+    "api:update": "node apilint.js --update",
+    "api:baseline": "node apilint.js --write-baseline"
   },
   "dependencies": {
     "luaparse": "^0.3.1"

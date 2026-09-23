@@ -73,6 +73,46 @@ Der erste Lauf hat drei echte Fehler gefunden, alle drei behoben:
   folge gedreht. Dieselbe Funktion eine Datei weiter oben hatte es richtig, mit
   Kommentar; das ist genau die Sorte Fehler, die ein Mensch beim Lesen ueberliest.
 
+## API-Existenz: Regeln 1 und 7 als Pruefung
+
+**Eingebaut seit 2026-09-23.** `tools/apilint.js` laeuft in `check.js` als
+Abschnitt `== API existence (forever <sha>) ==` vor den Secret Values. Er liest
+Core/, UI/ und Modules/ mit luaparse (lokale Namen, Parameter und Upvalues
+zaehlen nicht als global) und meldet: globale Namen, `_G.X` und `_G["X"]`, die es
+auf 1.60.1 nicht gibt, unbekannte `C_`-Namespaces und -Funktionen, unbekannte
+`Enum.X.Y`, Eventnamen in `RegisterEvent`/`RegisterUnitEvent`/`UnregisterEvent`/
+eigenen `*Event*`-Aufrufen und in `event == "..."`, die nicht in `Events.lua`
+stehen, sowie `hooksecurefunc("Name")` auf fehlende Globale. Eigene Kategorien:
+`deprecated` (existiert nur ueber einen Deprecation-Shim, faellt mit
+`loadDeprecationFallbacks 0` weg) und `removed` (die Client-UI setzt es vor den
+Addons auf nil, z.B. `loadstring_untainted`).
+
+Datenbasis ist ein eingecheckter Schnappschuss `tools/forever-api.json`, auf je
+einen Commit gepinnt: Ketho `forever` (GlobalAPI, FrameXML, Frames, Mixins,
+LuaEnum, Events, GlobalStrings/enUS) plus die Globalen, die das FrameXML aus
+Gethe `forever` selbst anlegt (SlashCmdList, RAID_CLASS_COLORS, Minimap, ...).
+Dafuer werden die TOCs so aufgeloest wie der Client fuer `camelot`: Classic-
+Dateien, Glue-Dateien und die Lua-Seite der Secure-Environment-Addons zaehlen
+nicht. Der normale Lauf ist offline.
+
+Gelesene Stellen, die schon abgesichert sind (`if X then`, `X and ...`,
+`X or ...`, `type(X)`, `pcall(X)`, `if not X then return end`, `local f = X`
+mit spaeterem Test auf `f`), sind „guarded": sie werden gezaehlt, scheitern aber
+nie. Die Heuristik ist syntaktisch; ihre Grenzen stehen im Kopf von `apilint.js`.
+
+```bash
+node tools/apilint.js                   # nur Neues seit der Baseline
+node tools/apilint.js --all --guarded   # alles, auch die abgesicherten Stellen
+node tools/apilint.js --update          # neuer Build: Schnappschuss neu ziehen
+node tools/apilint.js --write-baseline  # den aktuellen Stand annehmen
+```
+
+`--update` holt beide Branch-Heads (oder `--sha=` / `--ui-sha=`) und gibt den
+Unterschied zum alten Schnappschuss aus: hinzugekommene und entfallene Globale,
+Namespace-Funktionen, Enums und Events — das API-Changelog zwischen zwei Builds.
+Die Baseline `tools/apilint-baseline.json` merkt sich Datei + Art + Name, keine
+Zeilen; sie ist leer und soll es bleiben.
+
 ## Laufzeit ausserhalb des Clients
 
 - `Meorawr/elune` — Lua 5.1 mit Blizzards Taint-Modell im Interpreter. Fremder

@@ -56,7 +56,8 @@ Media/     fonts, textures, icons
 Libs/      LibStub, CallbackHandler, LibSharedMedia, LibDataBroker, LibDeflate,
            LibEditModeOverride
 tools/     node check.js — syntax, locals cap, locale coverage, house rules, TOC,
-           secret-value lint (calls secretlint.js, baseline in secret-lint-baseline.json)
+           secret-value lint (calls secretlint.js, baseline in secret-lint-baseline.json),
+           API-existence lint (apilint.js, snapshot forever-api.json)
            node sv-seed.js — dev workaround for the beta's saved-variables bug
 Dev/       SavedSeed.lua: empty stub in git, generated copy of the saved files
            on a dev machine (never commit the generated one)

@@ -23,6 +23,9 @@
 //  10. TOC file lists: identical across flavors, nothing missing or orphaned
 //  11. CHANGELOG-release.md matches the newest CHANGELOG.md section (the
 //      packager falls back to the German git log silently when it is stale)
+//  12. API existence: every global, C_ function, Enum and event exists on
+//      this client (apilint.js, offline snapshot forever-api.json)
+//  13. secret-value lint (secretlint.js)
 //
 // Exit code 1 only on syntax errors or locals-cap violations; everything
 // else is a warning report for human judgment.
@@ -761,7 +764,26 @@ console.log('\n== release notes ==');
     }
 }
 
-// ---- 12: secret-value lint ---------------------------------------------------
+// ---- 12: API existence -------------------------------------------------------
+// Rules 1 and 7 of CLAUDE.md, enforced: every global, C_ namespace function,
+// Enum member and event name the addon uses must exist on the 1.60.1 client.
+// apilint.js checks against tools/forever-api.json, a pinned snapshot of the
+// generated API lists plus the globals the client's own FrameXML defines, so
+// this runs offline; `node tools/apilint.js --update` refreshes it for a new
+// build. Reads the code already guards (`if X then`, `X and`, `type(X)`) are
+// tolerated; only findings missing from apilint-baseline.json fail.
+{
+    const api = require('./apilint.js');
+    const r = api.lint();
+    console.log('\n== API existence (forever ' + (r.sha || '?').slice(0, 7) + ') ==');
+    if (api.report(r, { log: (l) => console.log(l) })) {
+        console.log('  new API-existence findings'
+            + ' (accept with: node tools/apilint.js --write-baseline)');
+        hardFail = true;
+    }
+}
+
+// ---- 13: secret-value lint ---------------------------------------------------
 // A second opinion on rule 2. secretlint.js drives wow-secret-lint, which
 // follows a value across a whole file -- through assignments, table fields and
 // returns -- which the passes above do not. Its rule table is generated from
