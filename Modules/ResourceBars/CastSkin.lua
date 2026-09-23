@@ -68,7 +68,7 @@ local function guard(key, fn, ...)
 end
 
 function Skin.Frame()
-    return _G.PlayerCastingBarFrame or _G.CastingBarFrame
+    return _G.PlayerCastingBarFrame
 end
 
 local function style()

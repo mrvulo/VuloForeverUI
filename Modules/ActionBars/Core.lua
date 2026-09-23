@@ -51,7 +51,7 @@ function AB.db() return mod.db end
 -- Every bar the client has, and the prefix its buttons are named with. The
 -- main bar is the one exception: its buttons are plain ActionButtonN.
 local BARS = {
-    { frame = "MainMenuBar",         prefix = "ActionButton" },
+    { frame = "MainActionBar",       prefix = "ActionButton" },
     { frame = "MultiBarBottomLeft",  prefix = "MultiBarBottomLeftButton" },
     { frame = "MultiBarBottomRight", prefix = "MultiBarBottomRightButton" },
     { frame = "MultiBarRight",       prefix = "MultiBarRightButton" },

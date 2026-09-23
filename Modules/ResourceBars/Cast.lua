@@ -42,7 +42,7 @@ local hookInstalled = false
 local hiddenBlizzard = false
 
 local function blizzardBar()
-    return _G.PlayerCastingBarFrame or _G.CastingBarFrame
+    return _G.PlayerCastingBarFrame
 end
 
 -- Which of the three the player chose. Everything below branches on this one

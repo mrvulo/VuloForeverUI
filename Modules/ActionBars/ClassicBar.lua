@@ -258,7 +258,7 @@ local function layoutButtons()
     -- around. A client that keeps its buttons somewhere other than
     -- bar.actionButtons falls back to the flat list, which at least places
     -- them even if their containers are not where we expect.
-    local bar = _G.MainMenuBar
+    local bar = _G.MainActionBar
     if bar and bar.actionButtons then
         layoutBarButtons(bar, 1, ROW_X, ROW_Y, BUTTON_PITCH, BUTTON_SIZE)
         return
@@ -275,7 +275,7 @@ end
 -- The page number and its two arrows, on the band's corner past the twelfth
 -- button, at the 32 pixels 1.x drew them.
 local function layoutPageArrows()
-    local bar = _G.MainMenuBar
+    local bar = _G.MainActionBar
     local pn = bar and bar.ActionBarPageNumber
     if not pn then return end
     anchor(pn, "CENTER", "TOPLEFT", PAGE_X, (PAGE_UP_Y + PAGE_DOWN_Y) / 2, 32, 76)
@@ -357,7 +357,7 @@ end
 -- was not written for. A frame's own textures are safe to fade -- the buttons
 -- are children, not regions, so nothing that answers a click is touched.
 local function hideModernArt(hide)
-    for _, name in ipairs({ "MainMenuBar", "MainMenuBarArtFrame", "StatusTrackingBarManager" }) do
+    for _, name in ipairs({ "MainActionBar", "StatusTrackingBarManager" }) do
         local frame = _G[name]
         if frame and frame.GetRegions then
             for _, region in ipairs({ frame:GetRegions() }) do
@@ -419,7 +419,7 @@ function Classic.Restore()
     end
     -- And the client is asked to lay its own bar out again, which is the only
     -- thing that puts its containers back the way it wants them.
-    local bar = _G.MainMenuBar
+    local bar = _G.MainActionBar
     if bar and type(bar.UpdateGridLayout) == "function" then
         pcall(bar.UpdateGridLayout, bar)
     end
@@ -439,7 +439,7 @@ function watch(self, elapsed)
     if self.wait < WATCH_EVERY then return end
     self.wait = 0
     if not applied or InCombatLockdown() or not AB.mod.active then return end
-    local bar = _G.MainMenuBar
+    local bar = _G.MainActionBar
     local first = bar and bar.actionButtons and bar.actionButtons[1]
     local container = first and first.container
     local row = art and art.rows and art.rows[1]
@@ -478,8 +478,8 @@ function Classic.Report()
         if not frame then return "-" end
         return ("%.3f"):format(frame:GetEffectiveScale() or 0)
     end
-    ns:Print("  scale  UIParent %s, MainMenuBar %s, ActionButton1 %s, band %s",
-        scaleOf(UIParent), scaleOf(_G.MainMenuBar), scaleOf(_G.ActionButton1), scaleOf(art))
+    ns:Print("  scale  UIParent %s, MainActionBar %s, ActionButton1 %s, band %s",
+        scaleOf(UIParent), scaleOf(_G.MainActionBar), scaleOf(_G.ActionButton1), scaleOf(art))
 
     local b = _G.ActionButton1
     if b then
@@ -501,13 +501,13 @@ function Classic.Report()
     -- Which of the client's own layout calls exist. One of these putting the
     -- buttons back is the likeliest reason a row we placed does not stay
     -- placed, and the fix is a hook on whichever one is really there.
-    local bar = _G.MainMenuBar
+    local bar = _G.MainActionBar
     if bar then
         local found = {}
         for _, name in ipairs({ "UpdateGridLayout", "UpdateShownButtons", "Layout",
             "ApplySystemAnchor", "UpdateSystemSettingIconSize", "MarkDirty" }) do
             if type(bar[name]) == "function" then found[#found + 1] = name end
         end
-        ns:Print("  MainMenuBar methods: %s", (#found > 0) and table.concat(found, ", ") or "none of the usual")
+        ns:Print("  MainActionBar methods: %s", (#found > 0) and table.concat(found, ", ") or "none of the usual")
     end
 end
