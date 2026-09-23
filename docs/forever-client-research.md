@@ -114,6 +114,87 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
 - A dependency on an addon that does not exist on Forever (e.g. Housing) makes an addon
   refuse to load **without any error**.
 
+### From other addon authors' public repos (collected 2026-09-23)
+Eight public Forever repos were read: a shared field guide
+([forever-addons](https://github.com/mparke/forever-addons),
+`docs/research/forever-addon-field-guide.md`), probe notes from an aura addon, a shipping
+action-bar addon, a shared library, two UI suites, a quest-API probe and a Classic addon
+ported to Forever. Same labels as above; **measured** = the author tested it in the client.
+Nothing here is repeated by us yet unless it says **ours**.
+- **A newer build is out: 1.60.1.69977** (measured, quest probe). The only UI-source change
+  in it is GlueXML (login and character select, gamepad) -- no FrameXML, API or secret
+  change. Re-run `/vfsecrets` on it anyway.
+- **SavedVariables, narrowed down** (several independent testers): per-character files
+  survive a `/reload` within one client run, account-wide ones do not; after a cold start
+  only `## SavedVariablesMachine` files load; every failed load is followed by a save that
+  writes defaults over the good file. Workarounds in use: a symlinked
+  `SavedVariablesLink.lua` listed first in the TOC, or a `!!`-named seed addon. Worth
+  testing against our dev seed.
+- **Restricted on Forever only** (source: documentation flags, not measured whether
+  enforced): `DeleteItem`, `ConfirmDeleteItem`, `ToggleSit`, `CancelAutoRepeatSpell`,
+  `CancelItemTempEnchantment`, `PlaceTargetingSpellAtCursor`,
+  `SetPreferredGamepadInteractTarget`. **ours:** none of them is called (checked 2026-09-23).
+- **Why `loadstring_untainted` is missing** (source): `Blizzard_EnvironmentCleanup.toc`
+  gates its dependency with `[AllowLoadGameType classic, standard]`, so on camelot the
+  cleanup runs before `RestrictedExecution` captures the global. Every 12.x deprecation
+  shim also returns early unless `loadDeprecationFallbacks` is set, and
+  `Blizzard_DeprecatedSpecialization` does not load for camelot -- `GetSpecialization` is nil.
+- **`ADDON_RESTRICTION_STATE_CHANGED(type, state)`** fires *before* a restriction activates
+  (state `Activating`) and again when it lifts -- the last moment to lay frames out before
+  combat. `Enum.AddOnRestrictionType` has six members; two more forcing CVars:
+  `addonChallengeModeRestrictionsForced`, `addonChatRestrictionsForced` (source).
+- **Never secret** (documentation): `auraInstanceID`; the aura fields `isHelpful`,
+  `isHarmful`, `isRaid`, `isNameplateOnly`, `isFromPlayerOrPlayerPet`;
+  `SpellCooldownInfo.isEnabled` / `isActive`; the player's own casts.
+- **Widgets and secrets** (source): `SetAlphaFromBoolean` / `SetVertexColorFromBoolean`
+  take secrets, `SetShown`, `Show`, `Hide`, `SetScale`, `SetFrameLevel` do not. A widget that
+  once took a secret returns secrets from its getters until `SetToDefaults()`. A curve that
+  ever held a secret point stays unusable. `StatusBar:SetValue(secret,
+  Enum.StatusBarInterpolation.ExponentialEaseOut)` animates the fill.
+- **Tooltips** (measured by a port): `GameTooltipTextLeftN:GetText()` returns secret
+  strings -- read `tooltip:GetTooltipData().lines[i].leftText`. Addon code run inline in
+  `TooltipDataProcessor.AddTooltipPostCall` taints the call and the feedback addon then
+  errors; defer with `C_Timer.After(0)`.
+- **Measured by a shared library:** `C_GuildInfo.GuildRoster()` raises the blocked-action
+  dialog even inside `pcall`. Closing the client's Settings panel from addon code
+  (`SettingsPanel:Close`, `HideUIPanel`, `ToggleGameMenu`) is `ADDON_ACTION_FORBIDDEN`. The
+  client re-applies saved positions *late* after a reload, Blizzard frames included --
+  they re-place at `PLAYER_LOGIN`, `PLAYER_ENTERING_WORLD` and again after 2 s. A whisper to
+  `Name-OwnRealm` fails; use the plain name. `C_PlayerInfo.ShouldDisplaySurname` exists.
+- **Action bars without secure snippets** (a shipping addon): `ActionBarButtonTemplate`
+  buttons with a fixed `actionpage` attribute; keys through a hidden
+  `SecureActionButtonTemplate` child with `SetOverrideBindingClick` and `useparent-*`;
+  `RegisterStateDriver(bar, "visibility", ...)` works. Writing
+  `frame.isShownExternal = nil` taints that key for Edit Mode. The micro menu throws a
+  `GetEdgeButton` error unless its hidden buttons are handled first. Extra stance buttons
+  come back at Blizzard's position after Edit Mode. `SetShowGrid` ignores insecure callers
+  (source, unmeasured): set the `showgrid` attribute out of combat instead.
+- **Aura containers** (measured in and out of combat): per-group
+  `candidateFilters = { includeSpellIDs | excludeSpellIDs }` sorts buffs into groups in
+  combat without reading them; `button:SetDurationText(fs)` has the client format the
+  timer; `SetCancelAuraButtons("RightButtonUp")`; `AddItemEnchantment` slots draw nothing
+  here -- weapon enchants come from `C_Item.GetWeaponEnchantInfo`, readable in combat. The
+  container's buttons refuse addon access while auras are secret: restyle out of combat.
+  `AddAuraGroup` threw `GetForbiddenObjectTable` in a loop on another addon's nameplates;
+  ours works, so it depends on context -- keep it behind `pcall`.
+- **Quests** (measured on 69977): absent are `WorldMapFrame:EnumeratePins`,
+  `QuestPOIGetIconInfo`, `C_TaskQuest.GetQuestsForPlayerByMapID`,
+  `C_QuestLog.IsQuestReadyForTurnIn` (use `info.isComplete`).
+  `C_SuperTrack.GetSuperTrackedQuestID` works. No waypoint or objective coordinates are
+  readable.
+- **Smaller ones:** Forever's `Camelot/UIErrorsFrameOverrides.lua` brings back the Classic
+  "Not enough energy" spam, muted per type with `UIErrorsFrame:SetMessageTypeEnabled`
+  (source). Edit Mode re-anchors `PlayerFrame` through `SetPointOverride`. The bank has 9
+  character and 9 account tabs (**ours:** the bag module collects 9 character tabs since
+  2026-09-23; account tabs are not shown). `DefaultPanelFlatTemplate` renders broken.
+  `ItemButton` is an intrinsic frame type; `ItemButtonTemplate` does not exist (source).
+  CurseForge's Forever flavour is game version type 88568.
+- **Disagreements, and who wins:** the wiki says only a secret *boolean* throws in a truth
+  test (strings, numbers, tables pass); we keep the stricter rule until `/vfsecrets` shows
+  it. The field guide still says the cooldown viewer categories are empty -- our 2026-09-20
+  measurement shows data. A ported addon claims aura data is refused to addons even out of
+  combat -- ours and the aura addon's measurements say it is readable.
+
 ### Beta bugs (Blizzard's, not ours)
 - **SavedVariables are written on logout and never read back.** Both repos proved it
   independently (pre-seeded file, global stays nil from main chunk to logout). **ours:**
@@ -170,6 +251,8 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
   raw `frame:RegisterEvent` calls in modules need the same.
 - **After 100 Lua errors per session the client stops delivering errors to any handler.**
   An error flood hides the real error -- fix floods first, `/reload` to reset.
+  (Single source; Blizzard's `ScriptErrorsFrame` itself caps at 1000 and only shows a
+  popup. The practical rule -- fix floods first -- holds either way.)
 - **Gates in combat (reported, matches ours where we measured):** auras, cooldowns, action
   cooldowns, unit stats, threat values -> secret. `ShouldUnitSpellCastBeSecret()` stays
   **false** (cast bars of other units work), threat **state** stays readable, unit identity
@@ -179,6 +262,9 @@ Channels `#forever`, `#forever-faq-temp` and the `bugs` forum (tags `forever-ptr
   next to the per-category `C_Secrets` gates.
 - `C_ChatInfo.AreOutgoingAddonChatMessagesRestricted()` is **true even out of combat** --
   no addon-message features (profile sharing over chat, version checks) for now.
+  **Contradicted 2026-09-23:** a shared library sends anyway, reads the returned
+  `Enum.SendAddonMessageResult` and retries an `AddOnMessageLockdown` refusal after the
+  restriction lifts; its guild sync works. Worth one real send test before ruling it out.
 - **Three refusal shapes:** a throw (auras), a secret that survives `tostring()` and
   detonates at the next index/compare (power, health), a plain nil (cast info, cooldown
   start). `tostring(secret)` is a secret string: test with `issecretvalue` before **and**
