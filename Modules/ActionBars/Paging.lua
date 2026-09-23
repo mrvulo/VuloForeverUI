@@ -31,6 +31,14 @@ local applied = false
 -- nil not asked yet, true it works, false this client will not have it.
 Paging.supported = nil
 
+-- The driver writes the attribute the moment it is registered, and taking the
+-- driver away leaves the value behind: the button would keep reading its own
+-- page before the bar's. So every release clears it as well.
+local function unpin(b)
+    pcall(_G.UnregisterAttributeDriver, b, "actionpage")
+    pcall(b.SetAttribute, b, "actionpage", nil)
+end
+
 local function buttons()
     local out = {}
     for i = 1, 12 do
@@ -60,7 +68,7 @@ function Paging.Probe()
         return false
     end
     local ok = pcall(register, b, "actionpage", PIN)
-    pcall(unregister, b, "actionpage")
+    unpin(b)
     Paging.supported = ok and true or false
     return Paging.supported
 end
@@ -70,6 +78,9 @@ function Paging.Apply()
     local want = db.keepPage and true or false
 
     if want and not Paging.Probe() then
+        -- not asked yet (in combat, or the bar is not built): no verdict, so
+        -- the setting stays and the next pass asks again
+        if Paging.supported == nil then return end
         -- Said once, and the setting turns itself off: a switch that cannot do
         -- what it says is worse than no switch.
         if not Paging.warned then
@@ -88,7 +99,7 @@ function Paging.Apply()
         if want then
             pcall(_G.RegisterAttributeDriver, b, "actionpage", PIN)
         else
-            pcall(_G.UnregisterAttributeDriver, b, "actionpage")
+            unpin(b)
         end
     end
 end
@@ -97,7 +108,5 @@ function Paging.Release()
     if not applied then return end
     if InCombatLockdown() then return end
     applied = false
-    for _, b in ipairs(buttons()) do
-        pcall(_G.UnregisterAttributeDriver, b, "actionpage")
-    end
+    for _, b in ipairs(buttons()) do unpin(b) end
 end

@@ -217,7 +217,9 @@ function Auras.Attach(plate)
     end
     plate.auras = bundle
     bundle.holder:Show()
-    Auras.Layout(plate)
+    -- a pooled bundle carries the counts and filters of its last settings
+    -- change; the plate's own ApplyAppearance ran before it had one
+    Auras.ApplyAppearance(plate)
     for _, kind in ipairs(KINDS) do
         local c = bundle[kind]
         if c then pcall(c.SetUnit, c, plate.unit) end

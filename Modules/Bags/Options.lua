@@ -24,7 +24,14 @@ mod.optionsGrid = true
 
 local function apply()
     if Bags.Window then Bags.Window.Refresh() end
-    if Bags.Bank then Bags.Bank.Refresh() end
+    if Bags.Bank then
+        -- bank takeover switched off: the client's own frame comes back
+        if not Bags.db().bank then
+            if Bags.Bank.IsShown() then Bags.Bank.Close() end
+            Bags.Bank.RestoreBlizzard()
+        end
+        Bags.Bank.Refresh()
+    end
 end
 
 local function db() return Bags.db() end

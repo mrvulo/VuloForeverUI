@@ -438,7 +438,7 @@ function watch(self, elapsed)
     self.wait = (self.wait or 0) + elapsed
     if self.wait < WATCH_EVERY then return end
     self.wait = 0
-    if not applied or InCombatLockdown() then return end
+    if not applied or InCombatLockdown() or not AB.mod.active then return end
     local bar = _G.MainMenuBar
     local first = bar and bar.actionButtons and bar.actionButtons[1]
     local container = first and first.container

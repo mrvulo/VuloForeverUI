@@ -133,7 +133,14 @@ end
 
 function mod:OnDisable()
     local oldStyle = mod.db.style
-    UF.DeactivateOwnFrames()
+    if ns:InCombat() then
+        -- UnregisterUnitWatch and Hide on a secure button are refused in combat
+        ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", function()
+            if not mod.active then UF.DeactivateOwnFrames() end
+        end)
+    else
+        UF.DeactivateOwnFrames()
+    end
     if UF.Extras then UF.Extras.Disable() end
     if UF.Classic then UF.Classic.Disable() end
     if needsReloadFrom(oldStyle) then

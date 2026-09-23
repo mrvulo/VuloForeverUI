@@ -204,6 +204,8 @@ Engine.MirrorScroll = mirrorScroll
 
 local SCROLL_METHODS = {
     "ScrollUp", "ScrollDown", "PageUp", "PageDown", "ScrollToTop", "ScrollToBottom",
+    -- the client's wheel handler and the scroll bar go through these two
+    "ScrollByAmount", "SetScrollOffset",
 }
 
 local function installScroll(cf)

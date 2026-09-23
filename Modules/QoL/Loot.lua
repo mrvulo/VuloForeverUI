@@ -97,8 +97,9 @@ local function bankOpen()
 end
 
 local function playerIsCasting()
-    return (UnitCastingInfo and UnitCastingInfo("player") ~= nil)
-        or (UnitChannelInfo and UnitChannelInfo("player") ~= nil)
+    -- type(), not ~= nil: the cast name can be secret
+    return (UnitCastingInfo and type(UnitCastingInfo("player")) ~= "nil")
+        or (UnitChannelInfo and type(UnitChannelInfo("player")) ~= "nil")
 end
 
 local function isOpenable(itemID, bag, slot)

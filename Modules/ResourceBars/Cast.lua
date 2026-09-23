@@ -102,6 +102,7 @@ function Cast.Apply()
             -- the rest of the session -- including under the two styles whose
             -- whole job is to show it.
             pcall(blizz.HookScript, blizz, "OnShow", function(self)
+                if not hiddenBlizzard or not RB.mod.active then return end
                 if styleOf() ~= "modern" then return end
                 local b = RB.Bar(KEY)
                 if b and b.enabled and b.hideBlizzard then pcall(self.Hide, self) end

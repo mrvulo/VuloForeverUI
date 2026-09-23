@@ -399,7 +399,6 @@ function Cast.Start(plate, isChannel)
     local unit = plate.unit
     if not unit then return end
     local db = NP.db()
-    plate.flashToken = (plate.flashToken or 0) + 1
 
     local name, _, texture, notInt, spellID, barID
     if isChannel ~= true then
@@ -417,6 +416,9 @@ function Cast.Start(plate, isChannel)
         return
     end
 
+    -- Only a real cast cancels a pending "Interrupted" flash: a refresh that
+    -- finds nothing must leave the flash's hide timer valid.
+    plate.flashToken = (plate.flashToken or 0) + 1
     plate.isCasting, plate.isChannel = true, isChannel
     plate.castNotInt = notInt
     plate.castBarID = ns.Num(barID, nil)

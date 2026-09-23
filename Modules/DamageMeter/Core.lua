@@ -558,7 +558,8 @@ local function combatEnded()
         DM.SpellHistory.OnCombatEnd(fought)
     end
     DM.RefreshAll()
-    if DM.Timer and DM.Timer.UpdateVisibility then DM.Timer.UpdateVisibility() end
+    -- the ticker path ends here too, after the regen handler already ran
+    DM.UpdateVisibilityAll()
 end
 
 local function tick()

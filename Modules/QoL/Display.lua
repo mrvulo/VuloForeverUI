@@ -516,4 +516,7 @@ function Display.Disable()
     ns:UnregisterEvent("PLAYER_REGEN_ENABLED", onCombatEdge)
     ns:UnregisterEvent("PLAYER_ENTERING_WORLD", onEnteringWorld)
     ns:UnregisterEvent("ADDON_LOADED", onAddOnLoaded)
+    -- the combat feed is not module-owned either: SyncEvent registers it on ns
+    ns:UnregisterEvent("COMBAT_TEXT_UPDATE", onCombatText)
+    if deathTicker then ns:CancelTicker(deathTicker); deathTicker = nil end
 end

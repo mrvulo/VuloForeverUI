@@ -270,7 +270,7 @@ end
 local function hookMethod(bar, method, key, fn)
     if type(bar[method]) ~= "function" then return end
     hooksecurefunc(bar, method, function(self, ...)
-        if style() ~= "classic" then return end
+        if style() ~= "classic" or not RB.mod.active then return end
         guard(key, fn, self)
     end)
 end

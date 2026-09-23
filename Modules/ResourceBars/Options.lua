@@ -27,6 +27,7 @@ local function rebuild(tabId)
 end
 
 local function apply()
+    if not RB.mod.active then return end
     RB.StyleAll()
     RB.Power.Rescan()
     -- Not in combat: this one reaches for Blizzard's own cast bar, a protected
@@ -266,7 +267,7 @@ end
 local hookedHide = false
 
 local function enterPreview()
-    if RB.optionsOpen then return end
+    if RB.optionsOpen or not RB.mod.active then return end
     RB.optionsOpen = true
     if not hookedHide then
         local f = UI.mainFrame
@@ -300,6 +301,7 @@ end
 function RB.LeavePreview()
     if not RB.optionsOpen then return end
     RB.optionsOpen = false
+    if not RB.mod.active then return end
     RB.UpdateAll()
 end
 

@@ -437,6 +437,10 @@ function CM.StyleFrame(frame, bar, list, owned)
             frame.icons[i] = icon
         end
         local entry = list[i]
+        -- the proc ring belongs to a spell, not to a slot: an icon that now
+        -- shows another spell drops it (only the event would ever clear it)
+        local id = entry and entry.id
+        if icon.procFor ~= id then CM.Glow.Clear(icon, "proc"); icon.procFor = id end
         place(frame, bar, icon, i, count, size)
         local shape = applyShape(icon, bar.iconShape or "square")
         icon.texture:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom)
@@ -917,6 +921,8 @@ function CM.UpdateVisibility(key)
     local frame = CM.frames[key]
     local bar = CM.Bar(key)
     if not frame or not bar then return end
+    -- a switched-off module keeps its frames, and nothing drives them
+    if not CM.mod.active and not CM.optionsOpen then frame:Hide(); return end
     if ns:IsEditModeActive() or CM.optionsOpen then
         frame:Show()
         frame:SetAlpha(bar.opacity or 1)

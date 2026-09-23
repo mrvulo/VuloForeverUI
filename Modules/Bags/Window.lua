@@ -428,6 +428,13 @@ function Window.LayoutTools(win)
             x = x + TOOL + 4
         else
             b:Hide()
+            -- a switched-off tool cannot leave its overlay on every slot:
+            -- the button that would end the mode is the one just hidden
+            if spec.mode and mode == spec.mode then
+                ns.NextFrame(function()
+                    if Bags.Slots.Mode() == spec.mode then Bags.Slots.SetMode(spec.mode) end
+                end)
+            end
         end
     end
     -- The title moves out of the tool row's way rather than sitting on top of

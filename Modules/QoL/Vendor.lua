@@ -384,7 +384,8 @@ function Vendor.Apply()
         stopSweep()
     end
 
-    local durOn = db.durability.enabled and true or false
+    -- the Display tab's "Repair" line works without the warning
+    local durOn = (db.durability.enabled or db.durability.line) and true or false
     for _, ev in ipairs(DUR_EVENTS) do
         QoL.SyncEvent(durOn, ev, onDurabilityEvent)
     end

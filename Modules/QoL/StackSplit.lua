@@ -130,11 +130,14 @@ local function ensureHooks()
     local f = frame()
     if not (f and f.OpenStackSplitFrame) then return end
     hooksecurefunc(f, "OpenStackSplitFrame", function()
+        if not QoL.mod.active then return end
         syncMaxButton()
         applySkin(db().skin)
     end)
     if f.UpdateStackSplitFrame then
-        hooksecurefunc(f, "UpdateStackSplitFrame", syncMaxButton)
+        hooksecurefunc(f, "UpdateStackSplitFrame", function()
+            if QoL.mod.active then syncMaxButton() end
+        end)
     end
     hooked = true
 end

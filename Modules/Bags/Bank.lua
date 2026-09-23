@@ -24,7 +24,9 @@ local parked = false
 
 local function park()
     local frame = _G.BankFrame
-    if not frame or parked then return end
+    -- Every time, not once: the frame is a UI panel, and the panel manager
+    -- puts it back into the left slot on each visit.
+    if not frame then return end
     parked = true
     -- Position first, then the rest: a protected frame refuses a move while a
     -- fight is on, and standing at a banker means there is none.

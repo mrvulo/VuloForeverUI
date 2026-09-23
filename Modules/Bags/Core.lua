@@ -140,7 +140,10 @@ function Bags.BankBags()
     local idx = Enum.BagIndex
 
     if idx then
-        for i = 1, 6 do
+        -- nine tabs on 1.60.1, not six
+        local tabs = Constants and Constants.InventoryConstants
+            and Constants.InventoryConstants.NumCharacterBankSlots or 9
+        for i = 1, tabs do
             local id = idx["CharacterBankTab_" .. i]
             if id then out[#out + 1] = id end
         end

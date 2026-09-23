@@ -338,8 +338,9 @@ local THREAT_COLOR = {
 }
 -- Shared with the Standard-style extras: one painter, two callers.
 function UF.PaintThreat(fs, glow, unit, mobUnit)
-    local status = mobUnit and UnitThreatSituation(unit, mobUnit) or UnitThreatSituation(unit)
-    if status == nil or not ns.CanRead(status) then
+    local status
+    if mobUnit then status = UnitThreatSituation(unit, mobUnit) else status = UnitThreatSituation(unit) end
+    if type(status) == "nil" or not ns.CanRead(status) then
         fs:SetText("")
         if glow then glow:Hide() end
         return

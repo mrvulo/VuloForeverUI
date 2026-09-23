@@ -162,6 +162,14 @@ ns.Slash.ACTIONBARS = function(msg)
 end
 
 function mod:OnDisable()
+    if ns:InCombat() then
+        -- both touch secure buttons and would refuse now; the module's own
+        -- regen handler is gone with it, so the restore books its own
+        ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", function()
+            if not mod.active then AB.Skin.RestoreAll(); AB.Paging.Release() end
+        end)
+        return
+    end
     AB.Skin.RestoreAll()
     AB.Paging.Release()
 end

@@ -117,9 +117,12 @@ local function applyThreshold(key, bar, frame, powerType)
 
     -- The colour that comes back may itself be secret. It goes straight into
     -- the setter; nothing looks at it.
-    local ok, color = pcall(UnitPowerPercent, "player", powerType, true, curve)
-    if ok and color and color.GetRGB then
-        frame.fill:SetStatusBarColor(color:GetRGB())
+    -- Its channels are read inside the pcall, as the unit frames do.
+    local ok, r, g, b = pcall(function()
+        return UnitPowerPercent("player", powerType, true, curve):GetRGB()
+    end)
+    if ok then
+        frame.fill:SetStatusBarColor(r, g, b)
         return true
     end
     return false

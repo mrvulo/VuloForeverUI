@@ -161,7 +161,8 @@ local function recapEntries(W, src)
         local isHeal = (evType == "SPELL_HEAL" or evType == "SPELL_PERIODIC_HEAL")
 
         local spellName = ev.spellName
-        if DM.Plain(spellName) and (type(spellName) ~= "string" or spellName == "") then
+        -- melee and environmental events carry no spell name at all
+        if type(spellName) == "nil" or (DM.Plain(spellName) and (type(spellName) ~= "string" or spellName == "")) then
             spellName = isHeal and L["Heal"] or (evType == "SWING_DAMAGE" and L["Melee"] or L["Unknown"])
         end
 
@@ -418,7 +419,8 @@ function DM.AttachBreakdown(W)
         local hr, hg, hb
         if d.hdrTextUseAccent then hr, hg, hb = DM.Accent() else hr, hg, hb = d.hdrTextColor.r, d.hdrTextColor.g, d.hdrTextColor.b end
         heading:SetTextColor(hr, hg, hb)
-        heading:SetFormattedText(L["%s — %s"], W.sourceName or "", W.sourceKind or "")
+        -- sourceName can be secret: no `or` on it; StripRealm never returns nil
+        heading:SetFormattedText(L["%s — %s"], W.sourceName, W.sourceKind or "")
 
         local dr, dg, db2
         if d.barColorUseAccent then dr, dg, db2 = DM.Accent() else dr, dg, db2 = d.barColor.r, d.barColor.g, d.barColor.b end
