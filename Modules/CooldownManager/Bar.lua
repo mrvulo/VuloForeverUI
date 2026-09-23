@@ -649,10 +649,6 @@ local function applyCooldown(icon, entry)
     local rid, rkind = CM.Resolve(entry)
     if rid and rkind ~= entry.kind then entry = { id = rid, kind = rkind } end
     if entry.kind == "item" then
-        if C_Item and C_Item.GetItemCooldownDuration then
-            local ok, duration = pcall(C_Item.GetItemCooldownDuration, entry.id)
-            if ok and type(duration) ~= "nil" then return duration, false end
-        end
         local getter = C_Item and C_Item.GetItemCooldown
         if getter then
             local ok, start, dur = pcall(getter, entry.id)

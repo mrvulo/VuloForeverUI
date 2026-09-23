@@ -65,9 +65,7 @@ local function statFrameTime()
 end
 
 local function statMemory()
-    local upd = (C_AddOns and C_AddOns.UpdateAddOnMemoryUsage) or _G.UpdateAddOnMemoryUsage
-    local get = (C_AddOns and C_AddOns.GetAddOnMemoryUsage)    or _G.GetAddOnMemoryUsage
-    if not (upd and get) then return nil end
+    local upd, get = UpdateAddOnMemoryUsage, GetAddOnMemoryUsage
     pcall(upd)
     local ok, kb = pcall(get, ns.NAME)
     if not ok or type(kb) ~= "number" or kb <= 0 then return nil end

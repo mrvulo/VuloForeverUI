@@ -190,7 +190,7 @@ end
 
 function Chat.Frames()
     local out = {}
-    for i = 1, (NUM_CHAT_WINDOWS or 10) do
+    for i = 1, Constants.ChatFrameConstants.MaxChatWindows do
         local cf = _G["ChatFrame" .. i]
         if cf then out[#out + 1] = cf end
     end

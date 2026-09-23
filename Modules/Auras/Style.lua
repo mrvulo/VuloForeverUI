@@ -76,10 +76,7 @@ end
 -- PreserveAsset means "keep the texture I gave you and only tint it"; the
 -- legacy build calls the same thing Color on another enum.
 local function dispelStyle()
-    local e = Enum and Enum.CustomAuraButtonDispelTypeTextureStyle
-    if e and e.PreserveAsset ~= nil then return e.PreserveAsset end
-    local legacy = (Enum and Enum.CustomAuraButtonBorderStyle) or _G.AuraButtonBorderStyle
-    return legacy and legacy.Color
+    return Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset
 end
 
 -- FOUR SOLID STRIPS, not one ring-shaped texture: the engine applies the

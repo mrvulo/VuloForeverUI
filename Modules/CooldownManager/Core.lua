@@ -141,7 +141,7 @@ function CM.db() return mod.db end
 -- wants a different row. The key is the spec index, or "0" while the client
 -- cannot answer, which keeps it a valid table key either way.
 function CM.SpecKey()
-    local idx = GetSpecialization and GetSpecialization()
+    local idx = C_SpecializationInfo.GetSpecialization()
     if type(idx) ~= "number" then return "0" end
     return tostring(idx)
 end
@@ -199,8 +199,8 @@ function CM.SpecValues(bar)
         seen[key] = true
         local name
         local idx = tonumber(key)
-        if idx and idx > 0 and GetSpecializationInfo then
-            local ok, _, n = pcall(GetSpecializationInfo, idx)
+        if idx and idx > 0 then
+            local ok, _, n = pcall(C_SpecializationInfo.GetSpecializationInfo, idx)
             if ok and type(n) == "string" and n ~= "" then name = n end
         end
         out[#out + 1] = { value = key, text = name or (L["Specialisation"] .. " " .. key) }

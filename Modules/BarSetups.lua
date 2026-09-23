@@ -47,12 +47,9 @@ end
 
 local MAX_SLOTS = 120
 
-local function accountMacroCap()
-    return _G.MAX_ACCOUNT_MACROS or 120
-end
-local function characterMacroCap()
-    return _G.MAX_CHARACTER_MACROS or 30
-end
+-- The client's caps; the macro UI's globals for them do not exist here.
+local function accountMacroCap() return 120 end
+local function characterMacroCap() return 30 end
 
 -- Blizzard's own macro UI never asks for an index by name, and the client does
 -- not document such a call, so the lookup is done here: cheap, and one less

@@ -44,9 +44,7 @@ end
 -- whatever the client calls it.
 local function zoneColor()
     if not db().zoneReactiveColor then return nil end
-    local pvpType = GetZonePVPInfo and GetZonePVPInfo() or nil
-    local c = pvpType and _G.ZONE_PVP_COLORS and _G.ZONE_PVP_COLORS[pvpType]
-    if c then return c end
+    local pvpType = C_PvP.GetZonePVPInfo()
     if pvpType == "sanctuary" then return { r = .41, g = .8, b = .94 } end
     if pvpType == "friendly" then return { r = .1, g = 1, b = .1 } end
     if pvpType == "hostile" then return { r = 1, g = .1, b = .1 } end

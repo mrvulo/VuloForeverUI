@@ -181,11 +181,11 @@ function UI:CreateMainFrame()
     local PROF = _G.C_AddOnProfiler
     local METRIC = _G.Enum and _G.Enum.AddOnProfilerMetric
 
-    -- API compat: newer clients moved these into the C_AddOns namespace
-    local _UpdateCPU  = (C_AddOns and C_AddOns.UpdateAddOnCPUUsage) or _G.UpdateAddOnCPUUsage
-    local _GetCPU     = (C_AddOns and C_AddOns.GetAddOnCPUUsage)    or _G.GetAddOnCPUUsage
-    local _GetNum     = (C_AddOns and C_AddOns.GetNumAddOns)        or _G.GetNumAddOns
-    local _IsLoaded   = (C_AddOns and C_AddOns.IsAddOnLoaded)       or _G.IsAddOnLoaded
+    -- CPU still lives in globals on this client; the add-on list in C_AddOns
+    local _UpdateCPU  = UpdateAddOnCPUUsage
+    local _GetCPU     = GetAddOnCPUUsage
+    local _GetNum     = C_AddOns.GetNumAddOns
+    local _IsLoaded   = C_AddOns.IsAddOnLoaded
 
     local function getTotalAddonCPU()
         if not _GetCPU or not _GetNum then return 0 end

@@ -684,9 +684,6 @@ ns.Slash.SECRETS = function(msg)
         local aura = C_UnitAuras.GetAuraDataByIndex("player", 1, "HELPFUL")
         return aura and state(aura.expirationTime) or "none active"
     end)
-    probe("player buff count", function()
-        return state(C_UnitAuras.GetUnitAuraCount and C_UnitAuras.GetUnitAuraCount("player", "HELPFUL") or 0)
-    end)
     probe("threat(player,target)", function()
         return hasTarget and state(UnitThreatSituation("player", "target") or 0) or "no target"
     end)

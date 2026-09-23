@@ -132,30 +132,13 @@ function Bags.CarriedBags()
     return out
 end
 
--- The bank's containers. This is the one place where the two client families
--- differ: the newer bank is a set of numbered TABS, the older one a container
--- plus bought bags. Both are probed, neither is assumed.
+-- The bank's containers: numbered character TABS, nine on 1.60.1.
 function Bags.BankBags()
     local out = {}
     local idx = Enum.BagIndex
-
-    if idx then
-        -- nine tabs on 1.60.1, not six
-        local tabs = Constants and Constants.InventoryConstants
-            and Constants.InventoryConstants.NumCharacterBankSlots or 9
-        for i = 1, tabs do
-            local id = idx["CharacterBankTab_" .. i]
-            if id then out[#out + 1] = id end
-        end
-    end
-    if #out == 0 then
-        local bank = (idx and idx.Bank) or _G.BANK_CONTAINER or -1
-        out[#out + 1] = bank
-        for i = 1, (NUM_BANKBAGSLOTS or 7) do
-            local id = idx and idx["BankBag_" .. i]
-            if not id then id = (NUM_BAG_SLOTS or 4) + i end
-            out[#out + 1] = id
-        end
+    for i = 1, Constants.InventoryConstants.NumCharacterBankSlots do
+        local id = idx["CharacterBankTab_" .. i]
+        if id then out[#out + 1] = id end
     end
 
     local usable = {}

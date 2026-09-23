@@ -74,7 +74,7 @@ local function placeEditBox(cf, db)
     local eb = cf.editBox or _G[cf:GetName() .. "EditBox"]
     if not eb then return end
     local index = cf.GetID and cf:GetID()
-    if type(index) ~= "number" or index > (NUM_CHAT_WINDOWS or 10) then return end
+    if type(index) ~= "number" or index > Constants.ChatFrameConstants.MaxChatWindows then return end
 
     local d = Chat.Data(cf)
     local want = db.inputOnTop and "TOP" or "BOTTOM"
@@ -111,7 +111,7 @@ local function styleEditBox(cf, db)
     local eb = cf.editBox or _G[cf:GetName() .. "EditBox"]
     if not eb then return end
     local index = cf.GetID and cf:GetID()
-    if type(index) ~= "number" or index > (NUM_CHAT_WINDOWS or 10) then return end
+    if type(index) ~= "number" or index > Constants.ChatFrameConstants.MaxChatWindows then return end
 
     local d = Chat.Data(cf)
     if d.editOldHeight == nil then
