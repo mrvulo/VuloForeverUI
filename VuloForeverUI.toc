@@ -2,7 +2,7 @@
 ## Title: |cff9b6cffVuloForeverUI|r
 ## Notes: Modular UI suite for World of Warcraft: Forever
 ## Author: Vulo
-## Version: 0.2.0
+## Version: 0.2.1
 ## SavedVariables: VuloForeverUIDB
 ## SavedVariablesPerCharacter: VuloForeverUICharDB
 ## IconTexture: Interface\AddOns\VuloForeverUI\Media\Icons\ui\vui4
