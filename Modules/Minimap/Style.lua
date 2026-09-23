@@ -113,19 +113,52 @@ local CALENDAR_ART  = "Interface\\Calendar\\UI-Calendar-Button"
 -- ---------------------------------------------------------------------------
 local saved = {}
 
-local function remember(frame, key)
+-- One getter, answered or not: a refused call is simply not recorded.
+local function ask(frame, method)
+    local fn = frame[method]
+    if type(fn) ~= "function" then return false end
+    return pcall(fn, frame)
+end
+
+-- Everything any look changes on a frame or a texture, so restore can put all
+-- of it back: a piece that was moved but not written down is a piece that
+-- stays classic after switching back. `opts.shown` records visibility too;
+-- `opts.keepPoints` leaves the anchors
+-- alone -- the cluster's belong to Edit Mode, and a snapshot of them taken at
+-- login would undo every move made there since.
+local function remember(frame, key, opts)
     if not frame or saved[key] then return end
-    local entry = { parent = frame:GetParent(), points = {} }
-    local ok, w, h = pcall(frame.GetSize, frame)
-    if ok then entry.w, entry.h = w, h end
-    -- Textures remember their file too: the classic look overwrites the zoom
-    -- and tracking faces, and without this they stayed classic after switching
-    -- back. A nil path is a real answer (the region had none) and is kept as
-    -- `false` so restore can tell it apart from "never recorded".
-    if frame.GetTexture then entry.tex = frame:GetTexture() or false end
-    for i = 1, (frame.GetNumPoints and frame:GetNumPoints() or 0) do
-        local p, rel, relP, x, y = frame:GetPoint(i)
-        entry.points[i] = { p, rel, relP, x, y }
+    local entry = { points = {}, keepPoints = opts and opts.keepPoints }
+    local ok, a, b, c, d
+    ok, a = ask(frame, "GetParent");      if ok then entry.parent = a or false end
+    ok, a, b = ask(frame, "GetSize");     if ok then entry.w, entry.h = a, b end
+    ok, a = ask(frame, "GetScale");       if ok then entry.scale = a end
+    ok, a = ask(frame, "GetAlpha");       if ok then entry.alpha = a end
+    -- shown only on request: most of these are shown and hidden by the
+    -- clutter switches and the visibility rules, which run after a restore
+    if opts and opts.shown then
+        ok, a = ask(frame, "IsShown"); if ok then entry.shown = a and true or false end
+    end
+    ok, a = ask(frame, "GetFrameLevel");  if ok then entry.level = a end
+    ok, a = ask(frame, "IsMouseEnabled"); if ok then entry.mouse = a and true or false end
+    ok, a, b, c, d = ask(frame, "GetHitRectInsets")
+    if ok and a then entry.insets = { a, b, c, d } end
+    -- Textures remember their art too: the classic look overwrites the zoom
+    -- and tracking faces. An atlas wins over the file, because SetAtlas also
+    -- brings its own coordinates back. A nil path is a real answer (the
+    -- region had none) and is kept as `false`.
+    ok, a = ask(frame, "GetAtlas")
+    if ok and type(a) == "string" and a ~= "" then entry.atlas = a end
+    ok, a = ask(frame, "GetTexture");     if ok then entry.tex = a or false end
+    if frame.GetTexCoord then entry.coords = { pcall(frame.GetTexCoord, frame) } end
+    ok, a, b = ask(frame, "GetDrawLayer"); if ok and a then entry.layer = { a, b or 0 } end
+    ok, a = ask(frame, "GetBlendMode");   if ok and a then entry.blend = a end
+    ok, a = ask(frame, "GetFontObject");  if ok and a then entry.font = a end
+    if not entry.keepPoints then
+        local okN, n = ask(frame, "GetNumPoints")
+        for i = 1, (okN and n or 0) do
+            entry.points[i] = { frame:GetPoint(i) }
+        end
     end
     saved[key] = entry
 end
@@ -133,15 +166,34 @@ end
 local function restore(frame, key)
     local entry = saved[key]
     if not (frame and entry) then return end
-    frame:ClearAllPoints()
-    for _, pt in ipairs(entry.points) do
-        pcall(frame.SetPoint, frame, pt[1], pt[2], pt[3], pt[4], pt[5])
-    end
-    if entry.w and entry.w > 0 then pcall(frame.SetSize, frame, entry.w, entry.h) end
-    if entry.tex ~= nil and frame.SetTexture then
-        pcall(frame.SetTexture, frame, entry.tex or nil)
-    end
     saved[key] = nil
+    local function set(method, ...)
+        if frame[method] then pcall(frame[method], frame, ...) end
+    end
+    -- the parent first: a new parent resets the frame level
+    if entry.parent ~= nil and frame.SetParent then set("SetParent", entry.parent or nil) end
+    if not entry.keepPoints then
+        frame:ClearAllPoints()
+        for _, pt in ipairs(entry.points) do set("SetPoint", unpack(pt)) end
+    end
+    if entry.w and entry.w > 0 then set("SetSize", entry.w, entry.h) end
+    if entry.scale and frame.SetScale then set("SetScale", entry.scale) end
+    if entry.alpha then set("SetAlpha", entry.alpha) end
+    if entry.level and frame.SetFrameLevel then set("SetFrameLevel", entry.level) end
+    if entry.mouse ~= nil and frame.EnableMouse then set("EnableMouse", entry.mouse) end
+    if entry.insets then set("SetHitRectInsets", unpack(entry.insets)) end
+    if entry.atlas and frame.SetAtlas then
+        set("SetAtlas", entry.atlas)
+    elseif entry.tex ~= nil and frame.SetTexture then
+        set("SetTexture", entry.tex or nil)
+        if entry.coords and entry.coords[1] and #entry.coords >= 9 then
+            set("SetTexCoord", select(2, unpack(entry.coords)))
+        end
+    end
+    if entry.layer then set("SetDrawLayer", entry.layer[1], entry.layer[2]) end
+    if entry.blend then set("SetBlendMode", entry.blend) end
+    if entry.font then set("SetFontObject", entry.font) end
+    if entry.shown ~= nil then set("SetShown", entry.shown) end
 end
 
 -- The button faces the classic look replaces, remembered per state so the
@@ -289,7 +341,11 @@ local function applyStandard()
     if cluster then
         hideOurs(cluster.Tracking)
         hideOurs(cluster.IndicatorFrame)
+        hideOurs(cluster.IndicatorFrame and cluster.IndicatorFrame.MailFrame)
     end
+    -- the stone plate and the rings the classic look hangs on these
+    hideOurs(_G.TimeManagerClockButton)
+    hideOurs(_G.QueueStatusButton)
     restoreButtonArt(Minimap.ZoomIn, "ZoomIn")
     restoreButtonArt(Minimap.ZoomOut, "ZoomOut")
     restore(cluster and cluster.Tracking and cluster.Tracking.Background, "trackbg")
@@ -302,8 +358,28 @@ local function applyStandard()
     restore(Minimap.ZoomOut, "zoomout")
     restore(cluster, "cluster")
     restore(cluster and cluster.Tracking, "tracking")
+    restore(cluster and cluster.Tracking and cluster.Tracking.Button, "trackbtn")
     restore(cluster and cluster.IndicatorFrame, "mail")
-    restore(_G.TimeManagerClockButton, "clock")
+    restore(cluster and cluster.DielFrame, "diel")
+    restore(cluster and cluster.InstanceDifficulty, "difficulty")
+    restore(MinimapBackdrop and MinimapBackdrop.StaticOverlayTexture, "staticoverlay")
+    restore(MinimapCompassTexture, "compass")
+    restore(MinimapCompassTextureUnderlay, "underlay")
+    restore(_G.QueueStatusButton, "queue")
+    restore(_G.ExpansionLandingPageMinimapButton, "landing")
+    restore(_G.AddonCompartmentFrame, "compartment")
+    restore(_G.TimeManagerClockTicker, "clockticker")
+    local clock = _G.TimeManagerClockButton
+    if clock then
+        for i, r in ipairs({ clock:GetRegions() }) do restore(r, "clockreg" .. i) end
+    end
+    restore(clock, "clock")
+    local cal = _G.GameTimeFrame
+    if cal then
+        restoreButtonArt(cal, "calendar")
+        for i, r in ipairs({ cal:GetRegions() }) do restore(r, "calreg" .. i) end
+        restore(cal:GetFontString(), "calfs")
+    end
     setShown(MinimapCompassTexture, true)
 
     -- The Camelot skin that owns this look lives in a local function we cannot
@@ -324,6 +400,8 @@ local function skinCalendar()
     local button = _G.GameTimeFrame
     if not button then return end
     rememberButtonArt(button, "calendar")
+    for i, r in ipairs({ button:GetRegions() }) do remember(r, "calreg" .. i) end
+    remember(button:GetFontString(), "calfs")
     pcall(button.SetNormalTexture, button, CALENDAR_ART)
     pcall(button.SetPushedTexture, button, CALENDAR_ART)
     pcall(button.SetHighlightTexture, button, ZOOM_HIGHLIGHT)
@@ -365,14 +443,27 @@ end
 local function applyClassic()
     local cluster, backdrop, map = MinimapCluster, MinimapBackdrop, Minimap
     if not (cluster and backdrop and map) then return end
-    for frame, key in pairs({ [cluster] = "cluster", [backdrop] = "backdrop", [map] = "map" }) do
-        remember(frame, key)
-    end
+    remember(cluster, "cluster", { keepPoints = true })
+    remember(backdrop, "backdrop")
+    remember(map, "map")
     remember(cluster.MinimapContainer, "container")
     remember(cluster.ZoneTextButton, "zonebtn")
     remember(cluster.Tracking, "tracking")
+    remember(cluster.Tracking and cluster.Tracking.Button, "trackbtn")
     remember(cluster.IndicatorFrame, "mail")
+    remember(cluster.DielFrame, "diel")
+    remember(cluster.InstanceDifficulty, "difficulty")
+    remember(backdrop.StaticOverlayTexture, "staticoverlay")
+    remember(MinimapCompassTexture, "compass")
+    remember(MinimapCompassTextureUnderlay, "underlay", { shown = true })
+    remember(_G.QueueStatusButton, "queue")
+    remember(_G.ExpansionLandingPageMinimapButton, "landing")
+    remember(_G.AddonCompartmentFrame, "compartment", { shown = true })
+    remember(_G.TimeManagerClockTicker, "clockticker")
     remember(_G.TimeManagerClockButton, "clock")
+    if _G.TimeManagerClockButton then
+        for i, r in ipairs({ _G.TimeManagerClockButton:GetRegions() }) do remember(r, "clockreg" .. i) end
+    end
 
     cluster:SetSize(CLASSIC_CLUSTER, CLASSIC_CLUSTER)
     setShown(cluster.BorderTop, false)
@@ -449,6 +540,7 @@ local function applyClassic()
     for _, e in ipairs({ { "ZoomIn", 72, -25 }, { "ZoomOut", 50, -43 } }) do
         local button = map[e[1]]
         if button then
+            remember(button, e[1]:lower())
             button:SetParent(backdrop)
             button:SetFrameLevel(above)
             button:SetSize(32, 32)
@@ -600,8 +692,10 @@ end
 local function applyModern()
     local cluster, backdrop = MinimapCluster, MinimapBackdrop
     if not cluster then return end
-    remember(cluster, "cluster")
+    remember(cluster, "cluster", { keepPoints = true })
     remember(Minimap, "map")
+    remember(backdrop, "backdrop")
+    remember(cluster.ZoneTextButton, "zonebtn")
     hideOurs(backdrop)
 
     applyShape(mod.db.shape == "round")
@@ -654,11 +748,28 @@ function mod:Apply()
         MM.Elements.ApplyVisibility()
     end)
     applying = false
+    -- The rim buttons measure the map when they place themselves, and they
+    -- load before this file: after a look changes its size they sit wrong.
+    for _, key in ipairs({ "minimap", "minimapcollector" }) do
+        local m = ns.modules[key]
+        if m and m.active and m.UpdatePosition then pcall(m.UpdatePosition) end
+    end
     if not ok then ns:Print(L["|cffff5555Minimap style failed:|r %s"], tostring(err)) end
 end
 
-local function onEnter() MM.Elements.SetHovered(true) end
-local function onLeave() MM.Elements.SetHovered(false) end
+-- Script hooks cannot be taken off again: each one asks the module first.
+local function onEnter()
+    if not mod.active then return end
+    MM.Elements.SetHovered(true)
+    -- the client shows its zoom buttons on every hover
+    if mod.db.hideZoom then
+        setShown(Minimap.ZoomIn, false)
+        setShown(Minimap.ZoomOut, false)
+    end
+end
+local function onLeave() if mod.active then MM.Elements.SetHovered(false) end end
+local mouseHooked = false
+local blizzWheel      -- the map's own zoom handler, put back on disable
 
 -- Zoom back out after a while, so a map left zoomed in does not stay that way.
 local zoomTimer
@@ -728,25 +839,28 @@ function mod:OnEnable()
         end)
     end
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function() self:Apply() end)
-    self:RegisterEvent("ZONE_CHANGED_NEW_AREA", updateCoords)
     -- the Camelot skin rebuilds itself when this CVar flips, undoing our work
     self:RegisterEvent("CVAR_UPDATE", function(_, name)
         if name == "rotateMinimap" then ns.NextFrame(function() self:Apply() end) end
     end)
-    Minimap:HookScript("OnEnter", onEnter)
-    Minimap:HookScript("OnLeave", onLeave)
+    if not mouseHooked then
+        mouseHooked = true
+        blizzWheel = Minimap:GetScript("OnMouseWheel")
+        Minimap:HookScript("OnEnter", onEnter)
+        Minimap:HookScript("OnLeave", onLeave)
+        Minimap:HookScript("OnMouseUp", function(_, button)
+            if mod.active and button == "MiddleButton" and mod.db.middleClickMenu then
+                if _G.MainMenuMicroButton and _G.ToggleFrame then
+                    pcall(_G.ToggleFrame, _G.MicroMenuContainer)
+                end
+            end
+        end)
+    end
     Minimap:EnableMouseWheel(true)
     Minimap:SetScript("OnMouseWheel", function(_, delta)
         if not mod.db.scrollZoom then return end
         if delta > 0 then Minimap.ZoomIn:Click() else Minimap.ZoomOut:Click() end
         scheduleZoomReset()
-    end)
-    Minimap:HookScript("OnMouseUp", function(_, button)
-        if button == "MiddleButton" and mod.db.middleClickMenu then
-            if _G.MainMenuMicroButton and _G.ToggleFrame then
-                pcall(_G.ToggleFrame, _G.MicroMenuContainer)
-            end
-        end
     end)
     -- what the map is allowed to be seen for
     for _, event in ipairs({ "PLAYER_TARGET_CHANGED", "PLAYER_MOUNT_DISPLAY_CHANGED",
@@ -759,7 +873,7 @@ end
 function mod:OnDisable()
     MM.Elements.HideAll()
     if MinimapCluster then MinimapCluster:Show() end
-    Minimap:SetScript("OnMouseWheel", nil)
+    Minimap:SetScript("OnMouseWheel", blizzWheel)
     applyStandard()
     applyClutter()
 end

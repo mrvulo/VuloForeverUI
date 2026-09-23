@@ -191,7 +191,9 @@ function mod:ShowDropdown(anchor)
 
     for _, key in ipairs(ns.moduleOrder) do
         local m = ns.modules[key]
-        if m and m.db then
+        -- not this module itself: it has nothing to undo, so switching it off
+        -- from its own menu would leave the button until the next reload
+        if m and m.db and key ~= "minimap" then
             local capturedKey, capturedMod = key, m
             table.insert(entries, {
                 text     = L[capturedMod.name],  -- raw key → translate live
