@@ -165,3 +165,35 @@ Iterieren der Auren-Nutzlast. Der dort vorgeschlagene Ausweg, alles in `pcall`
 zu wickeln, ist nur die halbe Wahrheit: Secret-Fehler sind echte Lua-Fehler und
 werden gefangen, ein geblockter geschuetzter Aufruf loest dagegen gar keinen
 Fehler aus und `pcall` meldet Erfolg.
+
+## Nachschlagen im Netz
+
+Keine dieser Quellen kennt Forever als eigenen Client. Sie beschreiben Retail
+(oder Classic); wo sie von der Client-Quelle, dem API-Pruefer oder `/vfsecrets`
+abweichen, gewinnen diese. Stand 2026-09-24.
+
+- [Warcraft Wiki](https://warcraft.wiki.gg/wiki/Warcraft_Wiki:Interface_customization)
+  -- das beste Nachschlagewerk fuer die Retail-API, zu der Forever gehoert.
+  Besonders die Seiten zu Secret Values und zu den API-Aenderungen je Patch.
+  Beschreibt 12.x, nicht 1.60.1.
+- [Townlong-Yak FrameXML](https://www.townlong-yak.com/framexml/live) -- Viewer und
+  Differ fuer FrameXML. Fuehrt Retail, Classic und Anniversary, **keinen
+  Forever-Build** (geprueft 2026-09-24). Gut fuer "wie sieht das in Retail aus",
+  fuer Forever-Code bleibt Gethe `forever` die Quelle.
+- [Blizzard API Documentation](https://townlong-yak.com/bad/) -- die generierte
+  Doku, durchsuchbar, fuer Retail. Dieselben Dateien aus dem Forever-Build liegen
+  bei Gethe unter `Blizzard_APIDocumentationGenerated/`.
+- [WoWUIBugs](https://github.com/Stanzilla/WoWUIBugs/issues/) -- der Bug-Tracker
+  der Szene, Blizzard liest mit. Vor langer Fehlersuche nachsehen, ob es ein
+  Client-Fehler ist. Fuer Forever-eigene Fehler ist der WoWUIDev-Discord
+  schneller (siehe die Recherche).
+- [wago.tools](https://wago.tools/) -- Datei-IDs, Listfiles, DB2-Tabellen: ob eine
+  Textur oder ein Atlas im Client liegt, bevor Code darauf baut.
+- [UI Add-On Development Policy](https://us.forums.blizzard.com/en/wow/t/ui-add-on-development-policy/24534)
+  -- was Addons duerfen. Vor Automatik-Funktionen (Verkaufen, Annehmen, Posten)
+  lesen.
+
+Bewusst nicht aufgenommen: WoWProgramming (API ueber zehn Jahre alt), Townlong-Yak
+Globe (prueft gegen Retail oder Classic; `tools/apilint.js` prueft gegen Forever),
+die Packager-Anleitung (umgesetzt in `release.yml` und `.pkgmeta`), Lua-Grundlagen
+(der Client laeuft Lua 5.1, die Online-Fassung von PIL beschreibt 5.0).
