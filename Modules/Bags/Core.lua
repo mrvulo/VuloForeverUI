@@ -192,11 +192,14 @@ end
 -- ---------------------------------------------------------------- lifecycle --
 
 function mod:OnEnable()
-    -- The two physical views were renamed; a view saved under the old names
-    -- is carried over instead of falling back to the categories.
-    local renamed = { onebag = "allbags", multibag = "perbag" }
+    -- A saved view that no longer exists (a renamed view, a category that was
+    -- dropped) would open the window on an empty filter; it goes back to all.
     local db = Bags.db()
-    if renamed[db.defaultView] then db.defaultView = renamed[db.defaultView] end
+    local known = false
+    for _, v in ipairs(Bags.Categories.ViewValues()) do
+        if v.value == db.defaultView then known = true; break end
+    end
+    if not known then db.defaultView = "all" end
 
     -- What changed the SHAPE of the bags gets a full layout.
     self:RegisterEvent("BAG_UPDATE_DELAYED", function()
