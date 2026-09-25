@@ -190,10 +190,12 @@ function Style.Initializer(kind, db)
             end
         end
 
-        -- Engine buttons take mouse clicks. Both calls are refused on a
-        -- restricted button, and this callback is the one moment when it is
-        -- not restricted yet.
+        -- Clicks off, hover on. The engine shows the aura's tooltip from its
+        -- own OnEnter (Blizzard_AuraButton.lua:80), in and out of combat, so
+        -- mouse motion is all it needs; a click still falls through to the
+        -- world. Both calls are refused on a restricted button, and this
+        -- callback is the one moment when it is not restricted yet.
         pcall(button.SetMouseClickEnabled, button, false)
-        pcall(button.EnableMouse, button, false)
+        pcall(button.SetMouseMotionEnabled, button, true)
     end
 end
