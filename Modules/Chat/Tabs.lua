@@ -282,7 +282,7 @@ end
 -- nothing of ours is parented into it either: the host is a UIParent frame,
 -- and the labels are only anchored to the buttons.
 local QUICK_BAR, QUICK_BUTTON = "CombatLogQuickButtonFrame_Custom", "CombatLogQuickButtonFrameButton"
-local quick = { labels = {} }
+local quick = { labels = {}, fontOf = {} }
 
 local function quickHost()
     if quick.host then return quick.host end
@@ -329,7 +329,9 @@ function Tabs.StyleQuickBar()
             used = i
             local active = b:GetID() == current
             if active then lit = label end
-            applyFont({ text = label }, db)
+            -- one wrapper per label, made once: this runs four times a second
+            quick.fontOf[label] = quick.fontOf[label] or { text = label }
+            applyFont(quick.fontOf[label], db)
             local c = active and db.tabTextColorActive or db.tabTextColor
             label:SetTextColor(c.r, c.g, c.b)
             label:SetText(text)

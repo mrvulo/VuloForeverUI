@@ -96,6 +96,28 @@ local function placeText(fs, cfg, button)
     fs:SetPoint(a[1], button, a[1], a[2] + cfg.x, a[3] + cfg.y)
 end
 
+-- One physical pixel in the units a button will have ON A PLATE. The engine
+-- builds the buttons while their container still hangs under UIParent, so
+-- measuring the button itself would use the interface scale -- at 0.64 that
+-- made a "1 pixel" border about one and a half, blurred and uneven. A plate
+-- that is not the target (the target may be scaled up) is the reference; with
+-- no plate out yet, the world frame the plates hang from.
+local function platePixel()
+    local es
+    for _, plate in pairs(NP.plates or {}) do
+        if not plate.isTarget then
+            es = ns.Num(plate:GetEffectiveScale(), nil)
+            if es and es > 0 then break end
+        end
+    end
+    if not (es and es > 0) then es = ns.Num(WorldFrame:GetEffectiveScale(), nil) end
+    if not (es and es > 0) then es = UIParent:GetEffectiveScale() end
+    local _, physH = GetPhysicalScreenSize()
+    if not physH or physH <= 0 then physH = 1080 end
+    return (768 / physH) / es
+end
+Style.PlatePixel = platePixel
+
 -- One kind's border: its size (0 when switched off) and colour. The preview
 -- asks the same function, so it draws what the plates will.
 function Style.Border(a)
@@ -139,7 +161,7 @@ function Style.Initializer(kind, size)
         local bSize, bc = Style.Border(a)
         if bSize > 0 and bc then
             local edges = ns.MakeEdges(button, "OVERLAY")
-            ns.LayoutEdges(edges, button, bSize, bc.r, bc.g, bc.b, bc.a or 1)
+            ns.LayoutEdgesAt(edges, button, bSize * platePixel(), bc.r, bc.g, bc.b, bc.a or 1)
         end
 
         -- Fonts BEFORE the engine is told about the strings: an unstyled

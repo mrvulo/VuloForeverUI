@@ -104,8 +104,17 @@ end
 function ns.LayoutEdges(edges, anchor, n, r, g, b, a, pad)
     if not edges then return end
     if n <= 0 then for _, t in pairs(edges) do t:Hide() end; return end
-    local th  = ns:Pixel(anchor, n)
-    local off = ns:Pixel(anchor, pad or 0)
+    ns.LayoutEdgesAt(edges, anchor, ns:Pixel(anchor, n), r, g, b, a, ns:Pixel(anchor, pad or 0))
+end
+
+-- The same four edges at a thickness (and offset) already in the anchor's own
+-- units. For a frame that is built in one scale and shown in another -- the
+-- nameplate aura buttons are made under UIParent and then moved onto a plate
+-- -- where ns:Pixel at build time would measure the wrong parent.
+function ns.LayoutEdgesAt(edges, anchor, th, r, g, b, a, off)
+    if not edges then return end
+    if th <= 0 then for _, t in pairs(edges) do t:Hide() end; return end
+    off = off or 0
     local top, bot, lft, rgt = edges.top, edges.bot, edges.lft, edges.rgt
     for _, t in pairs(edges) do t:SetColorTexture(r, g, b, a or 1); t:Show() end
     top:ClearAllPoints(); top:SetPoint("BOTTOMLEFT", anchor, "TOPLEFT", -th - off, off); top:SetPoint("BOTTOMRIGHT", anchor, "TOPRIGHT", th + off, off); top:SetHeight(th)

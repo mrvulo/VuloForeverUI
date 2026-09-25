@@ -846,6 +846,47 @@ local function dressBag(b)
     if b.icon and b.SquareMask then pcall(b.icon.RemoveMaskTexture, b.icon, b.SquareMask) end
 end
 
+-- The free bag slots on the backpack, in the 1.x place (bottom right). The
+-- client writes the same number into the backpack's own Count, but on the
+-- band that string ended up out of sight under the ring; a font string of
+-- ours on a frame ABOVE the button is on top whatever the client's layers do.
+-- The backpack is a plain button, so a child frame of ours on it is allowed.
+local freeHost, freeText
+local freeEvents = CreateFrame("Frame")
+
+local function paintFree()
+    if not freeText then return end
+    local on = applied and AB.db().backpackFreeSlots ~= false
+    freeHost:SetShown(on)
+    local own = _G.MainMenuBarBackpackButton and _G.MainMenuBarBackpackButton.Count
+    if own then pcall(own.SetAlpha, own, on and 0 or 1) end
+    if not on then return end
+    local free = C_Container.CalculateTotalNumberOfFreeBagSlots()
+    freeText:SetText(type(free) == "number" and tostring(free) or "")
+end
+
+freeEvents:SetScript("OnEvent", paintFree)
+
+local function dressFreeSlots(on)
+    local b = _G.MainMenuBarBackpackButton
+    if not b then return end
+    if on and not freeHost then
+        freeHost = CreateFrame("Frame", nil, b)
+        freeHost:SetAllPoints(b)
+        freeHost:SetFrameLevel(b:GetFrameLevel() + 5)
+        freeText = freeHost:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+        freeText:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -3, 3)
+        freeText:SetJustifyH("RIGHT")
+    end
+    if on then
+        freeEvents:RegisterEvent("BAG_UPDATE_DELAYED")
+        freeEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
+    else
+        freeEvents:UnregisterAllEvents()
+    end
+    paintFree()
+end
+
 local function dressBags(on)
     for _, b in ipairs(bagButtons()) do
         if on then
@@ -912,6 +953,7 @@ local function dress(on)
         dressArrow(pn.DownButton, ARROW_ART.down, on)
     end
     dressBags(on)
+    dressFreeSlots(on)
     if not on then unskipMicro() end
 end
 

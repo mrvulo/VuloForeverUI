@@ -35,6 +35,7 @@ local mod = ns:RegisterModule("actionbars", {
         -- the client's buttons put back in their old places on it. Switched
         -- off, the Classic style is the old BUTTONS on the client's own bar.
         classicBar  = true,
+        backpackFreeSlots = true,   -- the classic band: free bag slots on the backpack
         skinPetStance = true,
         borderColor = { r = 0, g = 0, b = 0, a = 1 },
 

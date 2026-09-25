@@ -47,6 +47,8 @@ function mod:GetOptions()
         toggle("skin", L["Skin the action bars"]),
         toggle("classicBar", L["Classic: the whole old bar"],
             L["The stone band with its gryphons, and the buttons, page arrows, micro menu and bags put back in their 1.x places on it. Switched off, only the buttons change."]),
+        toggle("backpackFreeSlots", L["Free bag slots on the backpack"],
+            L["The classic bar writes how many bag slots are still free on the backpack button."]),
         toggle("skinPetStance", L["Skin the pet and stance buttons too"]),
         color("borderColor", L["Border color"]),
 

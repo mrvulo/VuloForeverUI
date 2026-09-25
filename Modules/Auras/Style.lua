@@ -146,9 +146,16 @@ function Style.Initializer(kind, db)
         icon:SetAllPoints(button)
         icon:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom)
 
+        -- The swipe: "reverse" (the default -- the dark part is the time
+        -- already gone), "normal" (the dark part is the time left) or "none".
+        -- The engine still drives the cooldown either way; "none" only stops
+        -- the swipe from being drawn, the duration text is untouched.
+        local swipe = db.swipeStyle or "reverse"
         local cd = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
         cd:SetAllPoints(button)
-        cd:SetReverse(true)
+        cd:SetReverse(swipe == "reverse")
+        cd:SetDrawSwipe(swipe ~= "none")
+        cd:SetDrawEdge(false)
         cd:SetHideCountdownNumbers(true)
 
         if bSize > 0 then

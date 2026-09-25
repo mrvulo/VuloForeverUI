@@ -227,6 +227,11 @@ local function castPage()
         page[#page + 1] = { type = "desc", text = L["|cffaaaaaaThe client's own bar, exactly as it comes. Everything below is added beside it and changes nothing about the bar itself.|r"] }
     end
 
+    page[#page + 1] = { type = "toggle", label = L["Hide the border"], subKey = "castHideBorder",
+        tooltip = L["Hides the frame the client draws around its cast bar."],
+        get = function() return RB.Bar("cast").hideBorder end,
+        set = function(_, v) RB.Bar("cast").hideBorder = v; apply() end }
+
     page[#page + 1] = { type = "header", text = L["The spell icon"] }
     page[#page + 1] = { type = "toggle", label = L["Show the spell icon"], subKey = "castAttachIcon",
         get = function() return RB.Bar("cast").attachIcon end,

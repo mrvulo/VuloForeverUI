@@ -40,6 +40,7 @@ local mod = ns:RegisterModule("auras", {
         -- a border in the art that a small crop takes away.
         buffZoom   = 6,
         debuffZoom = 6,
+        swipeStyle = "reverse",   -- reverse | normal | none (Style.lua)
         buffBorderSize    = 1,
         debuffBorderSize  = 1,
         buffBorderColor   = { r = 0, g = 0, b = 0 },
@@ -288,6 +289,11 @@ function mod:GetOptions()
         num("buffZoom", L["Buff icon crop"], 0, 20, 1,
             L["Per cent cut off each side of the icon art. A small crop takes away the border the client's icons carry."]),
         num("debuffZoom", L["Debuff icon crop"], 0, 20, 1),
+        choice("swipeStyle", L["Cooldown swipe"], {
+            { value = "reverse", text = L["Reversed"] },
+            { value = "normal",  text = L["Normal"] },
+            { value = "none",    text = L["Off"] },
+        }),
     } }
 
     items[#items + 1] = { type = "section", title = L["Buffs"], items = {

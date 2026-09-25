@@ -271,10 +271,13 @@ function Panel.SyncShown(cf)
     local ok, shown = pcall(cf.IsShown, cf)
     if not (ok and ns.CanRead(shown)) then return false end
     shown = shown and d.placed and true or false
+    -- The two frames one by one, not through a table literal: this runs for
+    -- every chat window on every frame (the tab watcher), and `{ d.bg, d.host }`
+    -- was hundreds of throwaway tables a second.
     local changed = false
-    for _, f in ipairs({ d.bg, d.host }) do
-        if f and f:IsShown() ~= shown then f:SetShown(shown); changed = true end
-    end
+    local bg, host = d.bg, d.host
+    if bg and bg:IsShown() ~= shown then bg:SetShown(shown); changed = true end
+    if host and host:IsShown() ~= shown then host:SetShown(shown); changed = true end
     return changed
 end
 

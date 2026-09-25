@@ -487,6 +487,23 @@ local function hookMethod(bar, method, key, fn)
     end)
 end
 
+-- The frame around the client's bar (its Border region), switched off on
+-- request, in the standard and the classic style alike. Alpha on a texture,
+-- which a fight does not refuse. Touched only when asked, or to give back what
+-- we took: a style that promises to change nothing about the bar must not
+-- write its border on every settings change.
+local borderHidden = false
+
+function Skin.ApplyBorder()
+    local bar = Skin.Frame()
+    if not (bar and bar.Border) then return end
+    local cfg = RB.Bar(KEY)
+    local want = (RB.mod.active and style() ~= "modern" and cfg and cfg.hideBorder) and true or false
+    if want == borderHidden then return end
+    borderHidden = want
+    bar.Border:SetAlpha(want and 0 or 1)
+end
+
 local installed = false
 
 function Skin.Apply()
@@ -511,6 +528,7 @@ function Skin.Apply()
 
     if style() == "classic" then guard("cast.dress", dress, bar) end
     Skin.LayoutExtras()
+    guard("cast.border", Skin.ApplyBorder)
 end
 
 -- Switching away from classic.

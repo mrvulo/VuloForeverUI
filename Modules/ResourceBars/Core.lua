@@ -113,6 +113,7 @@ RB.EXTRA_DEFAULTS = {
         -- do to itself does not apply to them -- what they get instead is the
         -- pair below, an icon and a cast time placed by hand.
         castStyle      = "standard",
+        hideBorder     = false,     -- standard/classic: the client's frame around the bar
         attachIcon     = false,
         attachIconSize = 20,
         attachIconX    = -6,
@@ -281,6 +282,8 @@ end
 
 function mod:OnDisable()
     RB.Cast.Release()
+    -- the client's cast bar frame gets its border back
+    if RB.CastSkin and RB.CastSkin.ApplyBorder then RB.CastSkin.ApplyBorder() end
     for _, frame in pairs(RB.frames or {}) do frame:Hide() end
 end
 

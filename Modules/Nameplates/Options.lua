@@ -253,6 +253,21 @@ local function auraKindRows(kind, label)
                     },
                     get = function() return cfg().grow or "auto" end,
                     set = function(_, v) cfg().grow = v; NP.Bump() end },
+                -- The size belongs to the SLOT the group sits in (Positions);
+                -- offered here too, where one looks for it.
+                { type = "slider", label = L["Icon size"], min = 10, max = 50, step = 1,
+                  disabled = function() return NP.SlotOfAura(kind) == "none" end,
+                  get = function()
+                      local slot = NP.SlotOfAura(kind)
+                      return slot ~= "none" and db().iconSlots[slot].size or 24
+                  end,
+                  set = function(_, v)
+                      local slot = NP.SlotOfAura(kind)
+                      if slot == "none" then return end
+                      db().iconSlots[slot].size = v
+                      NP.Bump()
+                      NP.Auras.Rebuild()
+                  end },
                 num("max", L["Max Icons"], 1, 10),
                 num("spacing", L["Spacing"], -5, 20),
                 flag("crop", L["Cropped Icons"], restyleAuras),
