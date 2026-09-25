@@ -95,7 +95,7 @@ local function ensureRegions()
         end
     end
 
-    -- Classic: the target's icon is a badge on the portrait's rim, 22 px in a
+    -- Classic: the target's icon is a badge on the portrait's rim, 20 px in a
     -- gold ring. The ring file's hole is 20 px wide with its centre at
     -- (15.5, -14.5) of 53 x 53, so the ring's centre sits (11, -12) off the
     -- icon's. Native size on purpose (seen 2026-09-19): at 58 px the class
@@ -106,7 +106,11 @@ local function ensureRegions()
         local ring = icon:GetParent():CreateTexture(nil, "OVERLAY", nil, 2)
         ring:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
         ring:SetSize(53, 53)
-        ring:SetPoint("CENTER", icon, "CENTER", 11, -12)
+        -- (10, -10) rather than the hole's exact (11, -12): the icon sits 1 px
+        -- right and 2 px lower in the hole -- the class circles are drawn a
+        -- little up and left of their cells, and centred by the numbers they
+        -- looked off (seen 2026-09-25)
+        ring:SetPoint("CENTER", icon, "CENTER", 10, -10)
         ring:Hide()
         classRings.target = ring
     end
@@ -116,7 +120,10 @@ end
 -- plain 16 px icon on both frames, Classic the ringed badge on the target.
 local function iconWanted(unit)
     if mod.db.style == "classic" then
-        return mod.db.classicClassIcon and unit == "target", 22, true, -6, 6
+        -- 20 px, the size of the ring's hole (22 overran it, 18 read small).
+        -- Icon centre 6, -7 off the portrait; the ring (anchored to it, see
+        -- above) keeps its centre at 16, -17 where it always was.
+        return mod.db.classicClassIcon and unit == "target", 20, true, -4, 3
     end
     return mod.db.classIcon, 16, false, -2, 2
 end

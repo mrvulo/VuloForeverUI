@@ -112,14 +112,53 @@ local function setGlow(plate, on, c, alpha)
     plate.glow:Show()
 end
 
+-- "Don't tint (keep bar's own colour)": the texture takes the health bar's
+-- CURRENT colour, so the plate keeps the colour it was given and only gains
+-- the texture's pattern. It used to draw the texture white, which washed a
+-- red enemy out to pink the moment it was targeted. The bar colour can be a
+-- secret (another player's class colour): it is then handed to the setter as
+-- it is, never looked at.
+local function barColor(plate)
+    if plate.lastR then return plate.lastR, plate.lastG, plate.lastB end
+    return plate.health:GetStatusBarColor()
+end
+
+local function tintOverlay(plate)
+    local o = plate.overlayState
+    if not o then return end
+    local r, g, b
+    if o.followBar then r, g, b = barColor(plate) else r, g, b = o.r, o.g, o.b end
+    plate.overlayFill:SetVertexColor(r, g, b, o.alpha)
+    plate.overlayEmpty:SetVertexColor(r, g, b, o.emptyAlpha)
+end
+
 local function setOverlay(plate, texture, color, alpha, fullEmpty, noTint)
     local fill, empty = plate.overlayFill, plate.overlayEmpty
-    if not texture or texture == "none" then fill:Hide(); empty:Hide(); return end
+    -- a name that is not (or no longer) registered would fall back to a
+    -- solid white fill over the bar: treated as no overlay
+    if texture and texture ~= "none" and ns.MediaStatusbarValid and not ns.MediaStatusbarValid(texture) then
+        texture = nil
+    end
+    if not texture or texture == "none" then
+        plate.overlayState = nil
+        fill:Hide(); empty:Hide(); return
+    end
     local path = ns.MediaStatusbar(texture, WHITE)
-    local r, g, b = 1, 1, 1
-    if not noTint then r, g, b = color.r, color.g, color.b end
-    fill:SetTexture(path);  fill:SetVertexColor(r, g, b, alpha);  fill:Show()
-    empty:SetTexture(path); empty:SetVertexColor(r, g, b, fullEmpty and alpha or alpha * 0.35); empty:Show()
+    plate.overlayState = {
+        followBar = noTint and true or false,
+        r = color.r, g = color.g, b = color.b,
+        alpha = alpha, emptyAlpha = fullEmpty and alpha or alpha * 0.35,
+    }
+    fill:SetTexture(path);  fill:Show()
+    empty:SetTexture(path); empty:Show()
+    tintOverlay(plate)
+end
+
+-- The bar changed colour (threat, a tap, combat): an overlay that follows it
+-- follows it. Called from Colors.lua after every colour it sets.
+function Target.RetintOverlay(plate)
+    local o = plate.overlayState
+    if o and o.followBar then tintOverlay(plate) end
 end
 
 local function playerClassColor()

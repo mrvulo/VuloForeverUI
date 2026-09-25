@@ -41,7 +41,7 @@ local mod = ns:RegisterModule("bags", {
         spacing  = 4,
         scale    = 1,
 
-        bgColor     = { r = 0.05, g = 0.05, b = 0.06, a = 0.92 },
+        bgColor     = { r = 0.05, g = 0.05, b = 0.06, a = 0.97 },
         borderColor = { r = 1, g = 1, b = 1, a = 0.12 },
         borderSize  = 1,
 
@@ -58,6 +58,7 @@ local mod = ns:RegisterModule("bags", {
         itemLevelSize = 11,
         itemLevelColor = { r = 0.95, g = 0.85, b = 0.4 },
         dimJunk       = true,
+        markJunk      = true,
 
         -- display
         iconZoom          = 0,
@@ -73,7 +74,6 @@ local mod = ns:RegisterModule("bags", {
         -- gear
         splitEquipmentSets = false,
         groupArmoryBySlot  = false,
-        groupByExpansion   = false,
         showSetNames   = false,
         setNameSize    = 10,
         setNameLetters = 3,
@@ -87,6 +87,7 @@ local mod = ns:RegisterModule("bags", {
         showSortButton = true,
         showPinned     = true,
         showRecent     = true,
+        showBagBar     = false,
         recentColor    = { r = 0.3, g = 0.8, b = 1 },
         pinnedTips     = true,
         goldTracking   = true,
@@ -98,7 +99,6 @@ local mod = ns:RegisterModule("bags", {
         -- the bank, which groups and filters on its own switches
         bank = true,
         bankGroupByCategory = true,
-        bankGroupByExpansion = false,
         bankSidebar = false,
         bankHideTabsInSidebar = false,
         bankHideEmptyWhenGrouped = false,
@@ -192,6 +192,12 @@ end
 -- ---------------------------------------------------------------- lifecycle --
 
 function mod:OnEnable()
+    -- The two physical views were renamed; a view saved under the old names
+    -- is carried over instead of falling back to the categories.
+    local renamed = { onebag = "allbags", multibag = "perbag" }
+    local db = Bags.db()
+    if renamed[db.defaultView] then db.defaultView = renamed[db.defaultView] end
+
     -- What changed the SHAPE of the bags gets a full layout.
     self:RegisterEvent("BAG_UPDATE_DELAYED", function()
         -- The snapshot first: "what is new" is the difference between this
@@ -225,6 +231,7 @@ function mod:OnEnable()
     end)
     self:RegisterEvent("BANKFRAME_CLOSED", function()
         if Bags.Bank then Bags.Bank.Close() end
+    if Bags.BankView then Bags.BankView.Release() end
     end)
 
     -- The pool is grown while it is safe to grow it. A fight that starts with
@@ -236,9 +243,11 @@ function mod:OnEnable()
         -- refused while a fight is on and says nothing about it, so a window
         -- opened mid-fight sits on top of theirs until here.
         if Bags.db().replaceBlizzard and Bags.Window.IsShown() then Bags.HideBlizzard() end
+        Bags.ParkBlizzard()
         Bags.Refresh()
     end)
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function()
+        Bags.Marks.Quiet(5)
         Bags.Slots.Warm()
         Bags.HookBlizzard()
         if Bags.Bank then Bags.Bank.Hook() end
@@ -251,6 +260,12 @@ function mod:OnEnable()
     end
     Bags.Marks.Scan()
     Bags.Gold.Record()
+
+    -- The windows' boxes in our edit mode. Built now, hidden, so they exist
+    -- before the edit mode takes its snapshot (Window.AttachMover).
+    if Bags.Window then Bags.Window.EnsureMover() end
+    if Bags.Bank then Bags.Bank.EnsureMover() end
+    if Bags.BankView then Bags.BankView.EnsureMover() end
 
     ns:RegisterSlash({ key = "BAGS", commands = { "/vfbags" },
         desc = "Open the bag window.",
@@ -267,6 +282,7 @@ function mod:OnDisable()
     -- What we took from the client is given back -- the bank frame above all,
     -- which we only ever dimmed and parked.
     if Bags.Bank then Bags.Bank.RestoreBlizzard() end
+    Bags.UnparkBlizzard()
 end
 
 -- ---------------------------------------------------------------- takeover --
@@ -280,89 +296,165 @@ end
 -- top, a single early call -- before the client had built these frames -- used
 -- to mark the whole takeover as done and leave the session with no takeover at
 -- all, silently.
+-- Every bag frame the client owns: one per container, and the combined
+-- backpack that is the one a player actually sees.
+local function blizzardFrames()
+    local out = {}
+    for i = 1, (NUM_CONTAINER_FRAMES or 13) do
+        local frame = _G["ContainerFrame" .. i]
+        if frame then out[#out + 1] = frame end
+    end
+    if _G.ContainerFrameCombinedBags then out[#out + 1] = _G.ContainerFrameCombinedBags end
+    return out
+end
+
 function Bags.HookBlizzard()
-    if Bags.hooked then return end
+    if Bags.hooked then Bags.ParkBlizzard(); return end
 
     -- THE TOGGLE IS OURS, and it has to be.
     --
-    -- The client's own toggle decides from whether ITS windows are shown --
-    -- and we hide those behind its back, so it takes the "open" branch every
-    -- single time. Hooked naively, the bag key opened our window and could
-    -- never close it again. So the key press is read as "toggle", and what is
-    -- toggled is our window.
+    -- The client's own toggles decide from whether ITS windows are shown --
+    -- and we hide those behind its back, so they take the "open" branch every
+    -- time. Worse, one click is several calls: a bag button calls ToggleBag,
+    -- which calls ToggleBackpack_Combined, which calls OpenBackpack. Answered
+    -- call by call, the Open inside the toggle reopened what the toggle meant
+    -- to close, and a bag button could open the bags but never close them.
     --
-    -- The second guard is the double call: the client's Toggle calls its own
-    -- Open, so one key press arrives here twice. Two full layouts of every
-    -- slot per press is not what a key press should cost.
-    local lastToggle = 0
-    local function takeOver()
+    -- So every call in one frame is only NOTED, together with whether our
+    -- window was up when the first one arrived, and the next frame decides
+    -- once: any toggle flips that remembered state; otherwise a close wins
+    -- over nothing, and an open over a close (a vendor opening the bags).
+    local wasShown, wantToggle, wantOpen, wantClose, queued
+    local function resolve()
+        queued = false
+        local toggle, open, close = wantToggle, wantOpen, wantClose
+        wantToggle, wantOpen, wantClose = nil, nil, nil
         if not (mod.active and Bags.db().replaceBlizzard) then return end
-        local now = GetTime()
-        if now - lastToggle < 0.05 then return end
-        lastToggle = now
-        if Bags.Window.IsShown() then
-            Bags.Window.Close()
-        else
-            Bags.HideBlizzard()
+        -- Re-asserted on every toggle: the client can hand its frames back to
+        -- UIParent (its full-screen frame handling), and then they flash again.
+        Bags.ParkBlizzard()
+        -- The client's frames go in every branch, the closing one included:
+        -- its own toggle saw its frames hidden and OPENED them, so the second
+        -- click on a bag button left its combined backpack standing where
+        -- ours had just closed.
+        Bags.HideBlizzard()
+        if toggle then
+            if wasShown then Bags.Window.Close() else Bags.Window.Open() end
+        elseif open then
             Bags.Window.Open()
+        elseif close then
+            Bags.Window.Close()
         end
+    end
+    local function request(kind)
+        if not (mod.active and Bags.db().replaceBlizzard) then return end
+        if not queued then
+            queued = true
+            wasShown = Bags.Window.IsShown()
+            ns.NextFrame(resolve)
+        end
+        if kind == "toggle" then wantToggle = true
+        elseif kind == "open" then wantOpen = true
+        else wantClose = true end
     end
 
     local installed = 0
-    for _, name in ipairs({ "ToggleAllBags", "ToggleBackpack" }) do
-        if type(_G[name]) == "function" then
-            hooksecurefunc(name, takeOver)
-            installed = installed + 1
+    local function hookAll(names, kind)
+        for _, name in ipairs(names) do
+            if type(_G[name]) == "function" then
+                hooksecurefunc(name, function() request(kind) end)
+                installed = installed + 1
+            end
         end
+    end
+    hookAll({ "ToggleAllBags", "ToggleBackpack" }, "toggle")
+    -- ToggleBag is what the bag buttons on the action bar call. The keyring
+    -- goes through it as well and is not one of our bags.
+    if type(_G.ToggleBag) == "function" then
+        hooksecurefunc("ToggleBag", function(id)
+            if id ~= nil and id == _G.KEYRING_CONTAINER then return end
+            request("toggle")
+        end)
+        installed = installed + 1
     end
     -- The plain Open functions are not a toggle and must not be read as one:
     -- a loot window or a vendor asks for the bags to be OPEN.
-    for _, name in ipairs({ "OpenAllBags", "OpenBackpack" }) do
-        if type(_G[name]) == "function" then
-            hooksecurefunc(name, function()
-                if not (mod.active and Bags.db().replaceBlizzard) then return end
-                Bags.HideBlizzard()
-                Bags.Window.Open()
-            end)
-            installed = installed + 1
-        end
-    end
-    for _, name in ipairs({ "CloseAllBags", "CloseBackpack" }) do
-        if type(_G[name]) == "function" then
-            hooksecurefunc(name, function()
-                if mod.active and Bags.db().replaceBlizzard then Bags.Window.Close() end
-            end)
-            installed = installed + 1
-        end
-    end
+    hookAll({ "OpenAllBags", "OpenBackpack" }, "open")
+    hookAll({ "CloseAllBags", "CloseBackpack" }, "close")
 
     -- A container frame that shows itself anyway -- a bag opened from the
     -- keyring, a loot window pushing one open -- is closed again on the next
-    -- frame rather than inside the client's own show pass.
-    for i = 1, (NUM_CONTAINER_FRAMES or 13) do
-        local frame = _G["ContainerFrame" .. i]
-        if frame then
-            frame:HookScript("OnShow", function(self)
-                if not (mod.active and Bags.db().replaceBlizzard) then return end
-                ns.NextFrame(function() pcall(self.Hide, self) end)
-            end)
-            installed = installed + 1
-        end
+    -- frame rather than inside the client's own show pass. Parked (below), a
+    -- frame never becomes visible and this never fires; it is the fallback
+    -- for the moment before the park, a login in the middle of a fight.
+    for _, frame in ipairs(blizzardFrames()) do
+        frame:HookScript("OnShow", function(self)
+            if not (mod.active and Bags.db().replaceBlizzard) then return end
+            ns.NextFrame(function() pcall(self.Hide, self) end)
+        end)
+        installed = installed + 1
     end
 
     Bags.hooked = installed > 0
+    Bags.ParkBlizzard()
 end
 
 function Bags.HideBlizzard()
     -- In combat a protected frame refuses to be hidden and says nothing about
     -- it, so the attempt is wrapped and simply left for the next try.
-    for i = 1, (NUM_CONTAINER_FRAMES or 13) do
-        local frame = _G["ContainerFrame" .. i]
-        if frame then pcall(frame.Hide, frame) end
+    for _, frame in ipairs(blizzardFrames()) do pcall(frame.Hide, frame) end
+end
+
+-- The client's bag frames, PARKED under a frame of ours that is never shown.
+--
+-- Hiding them after they open was always a frame late: the client drew its
+-- combined backpack once, and then it went -- a flash on every open. Under a
+-- hidden parent the client may open them as often as it likes and none of it
+-- reaches the screen. SetParent is a method call, it writes no field on the
+-- frame, and it is refused in a fight, so a park asked for then waits for
+-- PLAYER_REGEN_ENABLED.
+local park = CreateFrame("Frame")
+park:Hide()
+local parkedFrom = {}   -- frame -> the parent it had before
+
+-- An unpark asked for in a fight (the takeover switched off, the module
+-- disabled) waits for the fight to end on a frame of its own: the module's
+-- event registry is already gone when the module is being switched off, and a
+-- lost unpark left the client's bags invisible until a reload.
+local unparkRetry = CreateFrame("Frame")
+unparkRetry:SetScript("OnEvent", function(self)
+    self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+    Bags.UnparkBlizzard()
+end)
+
+function Bags.ParkBlizzard()
+    if not (mod.active and Bags.db().replaceBlizzard) then return end
+    if InCombatLockdown() then return end
+    unparkRetry:UnregisterEvent("PLAYER_REGEN_ENABLED")   -- a pending unpark is void
+    for _, frame in ipairs(blizzardFrames()) do
+        local parent = frame:GetParent()
+        if parent ~= park then
+            parkedFrom[frame] = parent or UIParent
+            frame:SetParent(park)
+        end
     end
-    if _G.ContainerFrameCombinedBags then
-        pcall(_G.ContainerFrameCombinedBags.Hide, _G.ContainerFrameCombinedBags)
+end
+
+function Bags.UnparkBlizzard()
+    if InCombatLockdown() then
+        unparkRetry:RegisterEvent("PLAYER_REGEN_ENABLED")
+        return
     end
+    unparkRetry:UnregisterEvent("PLAYER_REGEN_ENABLED")
+    for frame, parent in pairs(parkedFrom) do
+        if frame:GetParent() == park then
+            -- Shown under the park means "open" to the client, and would
+            -- turn up the moment it is back: it comes back closed.
+            pcall(frame.Hide, frame)
+            frame:SetParent(parent)
+        end
+    end
+    wipe(parkedFrom)
 end
 
 -- The label of a category or a window, built lazily: a locale key read while

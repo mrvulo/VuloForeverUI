@@ -372,6 +372,10 @@ local function createGroupHeader(parent, groupName)
     return h
 end
 
+-- Groups whose rows are listed by name rather than in load order: the long
+-- one, where a new module would otherwise land wherever its file sits.
+local ALPHABETICAL = { HUD = true }
+
 local function rebuildBuckets()
     UI.sidebarGroupBuckets = {}
     local origIndex = {}   -- registration order: stable-sort tiebreaker
@@ -387,11 +391,19 @@ local function rebuildBuckets()
         end
     end
 
-    for _, bucket in pairs(UI.sidebarGroupBuckets) do
+    for group, bucket in pairs(UI.sidebarGroupBuckets) do
+        local byName = ALPHABETICAL[group]
         table.sort(bucket, function(a, b)
             local oa = ns.modules[a].sidebarOrder or 0
             local ob = ns.modules[b].sidebarOrder or 0
             if oa ~= ob then return oa < ob end
+            if byName then
+                -- The name as the row shows it, so the order follows the
+                -- language the sidebar is in.
+                local na = (L[ns.modules[a].name] or a):lower()
+                local nb = (L[ns.modules[b].name] or b):lower()
+                if na ~= nb then return na < nb end
+            end
             return origIndex[a] < origIndex[b]
         end)
     end

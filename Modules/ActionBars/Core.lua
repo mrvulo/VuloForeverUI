@@ -88,6 +88,14 @@ function AB.Buttons(includeExtra)
     return out
 end
 
+-- Action bar 1: the twelve buttons on the client's main bar.
+local MAIN_BAR = {}
+for i = 1, 12 do MAIN_BAR["ActionButton" .. i] = true end
+
+function AB.IsMainBarButton(button)
+    return MAIN_BAR[button:GetName() or ""] == true
+end
+
 function AB.BarFrames()
     local out = {}
     for _, bar in ipairs(BARS) do

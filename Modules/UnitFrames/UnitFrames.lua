@@ -61,7 +61,7 @@ local mod = ns:RegisterModule("unitframes", {
         playerElite = true,
         classicClassColor = false,     -- Classic: Blizzard's green unless asked
         classicStatusText = true,      -- Classic: Blizzard's bar text, always on, percent + value
-        classicClassIcon  = false,     -- Classic: ringed class badge on the target portrait
+        classicClassIcon  = true,      -- Classic: ringed class badge on the target portrait
         player      = { x = -260, y = -180, scale = 1, modern = modernDefaults("player") },
         target      = { x =  260, y = -180, scale = 1, modern = modernDefaults("target") },
     },

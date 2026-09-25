@@ -15,12 +15,24 @@ local UI = ns.UI
 local Timer = {}
 DM.Timer = Timer
 
-local frame, text
+local frame, text, mover
 local decimalTicker
 local lastWhole, anchor = nil, 0
 local previewing = false
 
 local function tdb() return DM.db().timer end
+
+-- Pinned to a window, the timer's place is the window's business.
+local function pinned() return (tdb().anchor or "free") ~= "free" end
+
+-- The edit mode's position table, beside the timer's own settings.
+local function moverDB()
+    local t = tdb()
+    if type(t.mover) ~= "table" then t.mover = {} end
+    return t.mover
+end
+
+local applyPosition, setCenter
 
 local function build()
     if frame then return frame end
@@ -54,11 +66,62 @@ local function build()
         UI:ShowTooltip(self, { title = L["Combat timer"], lines = { L["Hold Shift and drag to move it."] } })
     end)
     frame:SetScript("OnLeave", function() UI:HideTooltip() end)
+
+    -- A box in our edit mode for the FREE timer. A pinned one follows its
+    -- window, whose own box moves it; a second box would only fight the pin,
+    -- so it is parked (see Timer.Apply), and a pinned timer that is moved
+    -- anyway is put straight back on its pin.
+    mover = ns:CreateMover(frame, {
+        key    = "dm_timer",
+        label  = L["Combat timer"],
+        db     = moverDB(),
+        module = "damagemeter",
+        width  = 90, height = 30,
+        applyPos = function()
+            if pinned() then applyPosition(); Timer.SyncMover(); return end
+            if ns._inMoverReset then
+                -- Reset: back to the default place above window 1.
+                tdb().pos = false
+                applyPosition(); Timer.SyncMover()
+                return
+            end
+            setCenter(mover.opts.db.x, mover.opts.db.y)
+        end,
+        onMove = function(x, y)
+            if pinned() then applyPosition(); Timer.SyncMover(); return end
+            setCenter(x, y)
+        end,
+        editPreview = function(on)
+            if on and pinned() then ns:SetMoverTempHidden(mover, true) end
+            -- The timer may sit in a strata above the boxes; its own mouse
+            -- would then swallow the drag meant for its box.
+            frame:EnableMouse(not on and not tdb().locked)
+            if DM.mod.active then Timer.UpdateVisibility() end
+        end,
+    })
+    -- CreateMover turns clamping off; the shift-drag relies on it.
+    frame:SetClampedToScreen(true)
     return frame
 end
 
+-- The edit mode's copy of the place, read off the rect: a pinned timer, or a
+-- free one that was never moved, hangs off a window.
+function Timer.SyncMover()
+    if mover and frame then DM.SyncMoverFromRect(mover, frame) end
+end
+
+-- A place from the edit mode, saved the way the shift-drag saves it.
+function setCenter(x, y)
+    local t = tdb()
+    local left, top = DM.TopLeftFromCenter(frame, x or 0, y or 0, frame:GetWidth(), frame:GetHeight())
+    t.anchor = "free"
+    t.pos = { x = left, y = top }
+    applyPosition()
+    Timer.SyncMover()
+end
+
 -- Free, or pinned to a corner of the topmost or bottommost visible window.
-local function applyPosition()
+function applyPosition()
     local t = tdb()
     frame:ClearAllPoints()
     local mode = t.anchor or "free"
@@ -174,8 +237,14 @@ function Timer.Apply()
     local probe = t.decimal and "99:99.9" or "99:99"
     text:SetText(probe)
     frame:SetSize(math.max(40, (text:GetStringWidth() or 60) + 10), (t.size or 26) + 6)
-    frame:EnableMouse(not t.locked)
+    frame:EnableMouse(not t.locked and not ns:IsEditModeActive())
+    -- A profile switch re-points the settings; the box follows them.
+    mover.opts.db = moverDB()
+    mover.opts.width, mover.opts.height = frame:GetWidth(), frame:GetHeight()
     applyPosition()
+    Timer.SyncMover()
+    -- Parked while pinned, back as soon as it is free again.
+    ns:SetMoverTempHidden(mover, pinned())
     Timer.UpdateVisibility()
 end
 

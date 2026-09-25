@@ -48,6 +48,88 @@ end
 
 -- ---------------------------------------------------------------- pool --
 
+-- The flat look, laid over the client's template once per button.
+--
+-- The template brings its own art: a bevelled frame (NormalTexture) that sits
+-- on every slot, full or empty, a quality ring (IconBorder), a rounded mask on
+-- the icon, and the new-item and shop glows. All of it goes by the regions'
+-- own methods -- alpha, texture, anchors -- and never by a field written on
+-- the button, which would taint the secure click it carries. In its place: a
+-- dark ground on OUR parent frame, and a one-pixel border inside the slot in
+-- the item's quality colour, drawn on a frame of ours above the button.
+local function skinButton(slot)
+    local button, parent = slot.button, slot.frame
+
+    for _, key in ipairs({ "NormalTexture", "IconBorder", "NewItemTexture",
+        "BattlepayItemTexture", "flash" }) do
+        local r = button[key]
+        if r and r.SetAlpha then r:SetAlpha(0) end
+    end
+    local normal = button.GetNormalTexture and button:GetNormalTexture()
+    if normal then normal:SetAlpha(0) end
+    if button.newitemglowAnim and button.newitemglowAnim.Stop then button.newitemglowAnim:Stop() end
+
+    -- The icon fills the slot edge to edge, square: the client's mask rounds
+    -- its corners, and the border below would show the gap.
+    local icon = button.icon or button.Icon
+    if icon then
+        icon:ClearAllPoints()
+        icon:SetAllPoints(button)
+        local mask = button.IconMask
+        if mask and icon.RemoveMaskTexture then
+            pcall(icon.RemoveMaskTexture, icon, mask)
+            mask:Hide()
+        end
+    end
+
+    -- Hover and press as a flat wash over the whole slot, instead of the
+    -- template's glossy squares sized for its old frame.
+    local hl = button.GetHighlightTexture and button:GetHighlightTexture()
+    if hl then
+        hl:ClearAllPoints(); hl:SetAllPoints(button)
+        hl:SetColorTexture(1, 1, 1, 0.10)
+    end
+    local pushed = button.GetPushedTexture and button:GetPushedTexture()
+    if pushed then
+        pushed:ClearAllPoints(); pushed:SetAllPoints(button)
+        pushed:SetColorTexture(1, 1, 1, 0.18)
+    end
+
+    -- The ground an empty slot shows, on our own frame behind the button.
+    local ground = parent:CreateTexture(nil, "BACKGROUND")
+    ground:SetAllPoints(parent)
+    ground:SetColorTexture(1, 1, 1, 1)
+    slot.ground = ground
+
+    -- The border has to draw over the icon, and a region of our parent frame
+    -- draws under the button whatever its layer. So: a mouse-dead frame of our
+    -- own, one step above the button, carrying four edge textures.
+    local ring = CreateFrame("Frame", nil, parent)
+    ring:SetAllPoints(parent)
+    ring:SetFrameLevel(button:GetFrameLevel() + 1)
+    ring:EnableMouse(false)
+    slot.ring = ring
+    slot.edges = {}
+    for _, side in ipairs({ "top", "bot", "lft", "rgt" }) do
+        local t = ring:CreateTexture(nil, "OVERLAY")
+        t:SetTexture("Interface\\Buttons\\WHITE8X8")
+        slot.edges[side] = t
+    end
+end
+
+-- The inside border, one physical pixel wide. Laid out at paint time, when the
+-- slot is on screen and its scale is the real one.
+local function layoutRing(slot, r, g, b, a)
+    local e, ring = slot.edges, slot.ring
+    local px = ns:Pixel(ring, 1)
+    if not (px and px > 0) then px = 1 end
+    e.top:ClearAllPoints(); e.top:SetPoint("TOPLEFT", ring, "TOPLEFT"); e.top:SetPoint("TOPRIGHT", ring, "TOPRIGHT"); e.top:SetHeight(px)
+    e.bot:ClearAllPoints(); e.bot:SetPoint("BOTTOMLEFT", ring, "BOTTOMLEFT"); e.bot:SetPoint("BOTTOMRIGHT", ring, "BOTTOMRIGHT"); e.bot:SetHeight(px)
+    e.lft:ClearAllPoints(); e.lft:SetPoint("TOPLEFT", ring, "TOPLEFT"); e.lft:SetPoint("BOTTOMLEFT", ring, "BOTTOMLEFT"); e.lft:SetWidth(px)
+    e.rgt:ClearAllPoints(); e.rgt:SetPoint("TOPRIGHT", ring, "TOPRIGHT"); e.rgt:SetPoint("BOTTOMRIGHT", ring, "BOTTOMRIGHT"); e.rgt:SetWidth(px)
+    for _, t in pairs(e) do t:SetVertexColor(r, g, b, a) end
+end
+
 local function makeSlot(owner)
     if InCombatLockdown() then return nil end
     local parent = CreateFrame("Frame", nil, ensureHost())
@@ -63,6 +145,7 @@ local function makeSlot(owner)
     button:Show()
 
     local slot = { frame = parent, button = button }
+    skinButton(slot)
 
     -- One font string, and nothing else: the quality border comes from the
     -- client's own setter further down, and the four edge textures an earlier
@@ -83,6 +166,11 @@ local function makeSlot(owner)
     setName:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -2, 2)
     setName:SetJustifyH("RIGHT")
     slot.setName = setName
+
+    -- The vendor-junk mark, bottom right. Our own font string on the button,
+    -- like the item level; it steps left of the stack count when both show.
+    local junk = button:CreateFontString(nil, "OVERLAY")
+    slot.junk = junk
 
     local pin = button:CreateTexture(nil, "OVERLAY")
     pin:SetAtlas("PetJournal-FavoritesIcon")
@@ -272,12 +360,50 @@ function Slots.Paint(slot, bagID, slotID, info)
         ns.UI.FontFor("bags", count, db.countSize or 11, "OUTLINE")
     end
 
-    -- The quality border: the client's own setter knows every item type there
-    -- is, including the ones a guess would miss.
-    if db.qualityBorder ~= false and info then
+    -- The client's quality setter still runs: besides its ring it drives the
+    -- profession-quality and other overlays, which know item types a guess
+    -- would miss. Its ring itself stays at alpha zero (set once, in the skin);
+    -- the colour goes on our own inside border instead.
+    if info then
         callSetter(button, "SetItemButtonQuality", info.quality, info.hyperlink, false, false)
     else
         callSetter(button, "SetItemButtonQuality", nil)
+    end
+    if button.IconBorder then button.IconBorder:SetAlpha(0) end
+
+    -- Empty slots are a dark square with a faint edge; full ones sit on the
+    -- same ground and carry their quality colour, or a neutral grey when the
+    -- setting is off or the item is plain.
+    if info then
+        slot.ground:SetVertexColor(0.02, 0.02, 0.03, 0.9)
+        local r, g, b = 0.25, 0.25, 0.27
+        local q = info.quality
+        if db.qualityBorder ~= false and type(q) == "number" and q >= 2 and C_Item.GetItemQualityColor then
+            local ok, qr, qg, qb = pcall(C_Item.GetItemQualityColor, q)
+            if ok and type(qr) == "number" then r, g, b = qr, qg, qb end
+        end
+        layoutRing(slot, r, g, b, 1)
+    else
+        slot.ground:SetVertexColor(0.08, 0.08, 0.09, 0.55)
+        layoutRing(slot, 0, 0, 0, 0.45)
+    end
+
+    -- The C on vendor junk: the same test the sort uses to put it last.
+    if db.markJunk ~= false and Bags.Sort.IsVendorJunk(info) then
+        ns.UI.FontFor("bags", slot.junk, math.max(9, (db.countSize or 11)), "OUTLINE")
+        slot.junk:SetTextColor(0.93, 0.64, 0.35)
+        slot.junk:SetText("C")
+        slot.junk:ClearAllPoints()
+        local count = button.Count or button.count
+        local stacked = info and (tonumber(slot.mergedCount or info.stackCount) or 1) > 1 and db.showCount ~= false
+        if count and stacked then
+            slot.junk:SetPoint("BOTTOMRIGHT", count, "BOTTOMLEFT", -1, 0)
+        else
+            slot.junk:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -2, 2)
+        end
+        slot.junk:Show()
+    else
+        slot.junk:Hide()
     end
 
     -- Grey items go quiet so the rest of the bag can be read.
@@ -391,7 +517,10 @@ local mode = nil
 function Slots.Mode() return mode end
 
 function Slots.SetMode(new)
-    mode = (mode == new) and nil or new
+    -- An if, not "(mode == new) and nil or new": an and/or with nil in the
+    -- middle always falls through to the right-hand side, so the second click
+    -- on a tool switched its mode on again instead of off.
+    if mode == new then mode = nil else mode = new end
     Bags.Refresh()
     return mode
 end

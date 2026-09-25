@@ -2,7 +2,7 @@
 ## Title: |cff9b6cffVuloForeverUI|r
 ## Notes: Modular UI suite for World of Warcraft: Forever
 ## Author: Vulo
-## Version: 0.2.1
+## Version: 0.3.0
 ## SavedVariables: VuloForeverUIDB
 ## SavedVariablesPerCharacter: VuloForeverUICharDB
 ## IconTexture: Interface\AddOns\VuloForeverUI\Media\Icons\ui\vui4
@@ -17,7 +17,6 @@ Libs\LibDeflate\LibDeflate.lua
 Libs\LibEditModeOverride\LibEditModeOverride.xml
 
 Core\Namespace.lua
-Dev\SavedSeed.lua
 Core\Locale.lua
 Locales\deDE.lua
 Core\Utils.lua
@@ -30,7 +29,9 @@ Core\Events.lua
 Core\Schedule.lua
 Core\Profiler.lua
 Core\MediaRegistry.lua
+Core\ForeignProfile.lua
 Core\Mover.lua
+Core\EditModeMover.lua
 Core\PopupMenu.lua
 
 UI\Tooltip.lua
@@ -43,6 +44,7 @@ UI\Sidebar.lua
 UI\Dashboard.lua
 UI\OptionsBuilder.lua
 UI\EditMode.lua
+UI\GameMenuButton.lua
 
 Modules\GlobalSettings.lua
 Modules\Locales\Core.lua
@@ -79,13 +81,18 @@ Modules\Nameplates\Friendly.lua
 Modules\Nameplates\Extras.lua
 Modules\Nameplates\Plate.lua
 Modules\Nameplates\Preview.lua
+Modules\Nameplates\Import.lua
+Modules\Nameplates\FlashProbe.lua
 Modules\Nameplates\Options.lua
 
 Modules\DamageMeter\Core.lua
+Modules\DamageMeter\Classic.lua
 Modules\DamageMeter\Window.lua
 Modules\DamageMeter\Breakdown.lua
 Modules\DamageMeter\Timer.lua
 Modules\DamageMeter\SpellHistory.lua
+Modules\DamageMeter\Threat.lua
+Modules\DamageMeter\Import.lua
 Modules\DamageMeter\Options.lua
 
 Modules\CooldownManager\Core.lua
@@ -118,10 +125,13 @@ Modules\Bags\Items.lua
 Modules\Bags\Marks.lua
 Modules\Bags\Gold.lua
 Modules\Bags\Categories.lua
+Modules\Bags\Sort.lua
 Modules\Bags\Slots.lua
 Modules\Bags\Sidebar.lua
+Modules\Bags\BagBar.lua
 Modules\Bags\Window.lua
 Modules\Bags\Bank.lua
+Modules\Bags\BankView.lua
 Modules\Bags\Options.lua
 
 Modules\QoL\Core.lua
@@ -133,12 +143,14 @@ Modules\QoL\Mail.lua
 Modules\QoL\Vendor.lua
 Modules\QoL\Loot.lua
 Modules\QoL\Display.lua
+Modules\QoL\Trinkets.lua
 Modules\QoL\Options.lua
 
 Modules\ActionBars\Core.lua
 Modules\ActionBars\Skin.lua
 Modules\ActionBars\ClassicBar.lua
 Modules\ActionBars\Paging.lua
+Modules\ActionBars\Preview.lua
 Modules\ActionBars\Options.lua
 
 Core\Init.lua

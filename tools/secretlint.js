@@ -29,8 +29,8 @@ const BASELINE = path.join(__dirname, "secret-lint-baseline.json");
 const SECRET_GUARDS = "IsSecret,ns.IsSecret";
 const ACCESS_GUARDS = "CanRead,ns.CanRead,Num,ns.Num";
 
-// Libs are third-party and Dev/SavedSeed.lua is a generated dev stub.
-const SKIP = [/^Libs[\/]/i, /^Dev[\/]/i];
+// Libs are third-party.
+const SKIP = [/^Libs[\/]/i];
 
 function tocFiles() {
     return fs.readFileSync(TOC, "utf8")

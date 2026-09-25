@@ -358,7 +358,9 @@ function DM.AttachBreakdown(W)
         if panel then return end
         panel = CreateFrame("Button", nil, frame)
         panel:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, 0)
-        panel:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+        -- The row area's corner, not the frame's: on Classic that sits inside
+        -- the box's rim, which the panel would otherwise cover.
+        panel:SetPoint("BOTTOMRIGHT", W.viewport, "BOTTOMRIGHT", 0, 0)
         panel:SetFrameLevel(frame:GetFrameLevel() + 20)
         panel:RegisterForClicks("AnyUp")
         panel:Hide()

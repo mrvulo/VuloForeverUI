@@ -49,6 +49,9 @@ local mod = ns:RegisterModule("damagemeter", {
         toggleIncludeSpellHistory = false,
         disableBlizzardMeter      = true,   -- the stock meter is switched off while this runs
 
+        -- "classic" is the 1.x box (Classic.lua), the default; "modern" the flat look
+        style = "classic",
+
         -- window
         bgColor = { r = 0, g = 0, b = 0 }, bgAlpha = 0.75,
         windowBorderTexture = "solid", windowBorderSize = 0,
@@ -94,6 +97,22 @@ local mod = ns:RegisterModule("damagemeter", {
             color = { r = 1, g = 1, b = 1 }, anchor = "free", strata = "HIGH",
             showOOC = false, desatOOC = false, locked = false, alignLeft = false,
             outline = "INHERIT", pos = false,
+        },
+
+        -- threat meter (Threat.lua)
+        threat = {
+            enabled = false, visibility = "always",
+            width = 220, barHeight = 18, spacing = 1, maxBars = 10,
+            growUp = false, showHeader = true, ignorePets = false,
+            texture = "", barOpacity = 100, bgAlpha = 0.6,
+            borderSize = 1, borderColor = { r = 0, g = 0, b = 0 },
+            textSize = 12, outline = "INHERIT",
+            showValue = true, showPercent = true,
+            playerColorOn = false, playerColor = { r = 0.8, g = 0.1, b = 0.1 },
+            tankColorOn = false, tankColor = { r = 0.1, g = 0.6, b = 0.1 },
+            pullBar = true, pullColor = { r = 0.0, g = 0.55, b = 0.0 },
+            warnSound = false, warnSoundKey = "None", warnAt = 80, warnSkipTank = true,
+            mover = { x = 400, y = -100 },
         },
 
         -- cast history
@@ -308,6 +327,12 @@ function DM.Accent()
     return c.r, c.g, c.b
 end
 
+-- The colour table itself, for a caller that wants r/g/b as fields.
+function DM.ClassColorTable(classFile)
+    if type(classFile) ~= "string" or classFile == "" then return nil end
+    return (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[classFile]
+end
+
 function DM.ClassColor(classFile)
     if type(classFile) ~= "string" or classFile == "" then return nil end
     local c = RAID_CLASS_COLORS[classFile]
@@ -464,6 +489,7 @@ function DM.RestyleAll()
     DM.ForEach(function(W) W.Restyle() end)
     if DM.Timer and DM.Timer.Apply then DM.Timer.Apply() end
     if DM.SpellHistory and DM.SpellHistory.Apply then DM.SpellHistory.Apply() end
+    if DM.Threat and DM.Threat.ApplyStyle then DM.Threat.ApplyStyle() end
 end
 
 function DM.UpdateVisibilityAll()
@@ -710,6 +736,9 @@ function mod:OnEnable()
         return
     end
     if DM.db().disableBlizzardMeter then setStockMeter(false) end
+    -- A profile that is on Classic without ever having switched to it -- a
+    -- new one, since Classic is the default -- gets the Classic seed once.
+    if DM.IsClassic() then DM.SeedClassic() end
 
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function()
         -- Re-derive the combat state: a reload mid-fight starts with the
@@ -786,6 +815,7 @@ function mod:OnEnable()
     if not DM.profileHooked then
         DM.profileHooked = true
         hooksecurefunc(ns, "LoadProfile", function()
+            if DM.IsClassic() then DM.SeedClassic() end
             if mod.active then DM.Rebuild() end
         end)
     end
@@ -798,6 +828,7 @@ function mod:OnEnable()
     DM.ApplyKeybinds()
     if DM.Timer and DM.Timer.Apply then DM.Timer.Apply() end
     if DM.SpellHistory and DM.SpellHistory.Apply then DM.SpellHistory.Apply() end
+    if DM.Threat and DM.Threat.Apply then DM.Threat.Apply() end
 
     ns:RegisterSlash({ key = "METER", commands = { "/vfmeter" },
         desc = "Show or hide the damage meter windows; 'reset' clears the data.",
@@ -820,6 +851,7 @@ function mod:OnDisable()
     DM.ForEach(function(W) W.frame:Hide() end)
     if DM.Timer and DM.Timer.Hide then DM.Timer.Hide() end
     if DM.SpellHistory and DM.SpellHistory.Disable then DM.SpellHistory.Disable() end
+    if DM.Threat and DM.Threat.Disable then DM.Threat.Disable() end
     setStockMeter(true)
 end
 
@@ -830,6 +862,8 @@ function DM.Rebuild()
     DM.ForEach(function(W)
         if W.hoverTicker then ns:CancelTicker(W.hoverTicker); W.hoverTicker = nil end
         if W.moTicker then ns:CancelTicker(W.moTicker); W.moTicker = nil end
+        -- The new windows register their boxes under the same keys.
+        DM.RetireMover(W.mover)
         W.frame:Hide()
         W.frame:SetParent(nil)
     end)
@@ -839,4 +873,5 @@ function DM.Rebuild()
     DM.ApplyKeybinds()
     if DM.Timer and DM.Timer.Apply then DM.Timer.Apply() end
     if DM.SpellHistory and DM.SpellHistory.Apply then DM.SpellHistory.Apply() end
+    if DM.Threat and DM.Threat.Apply then DM.Threat.Apply() end
 end

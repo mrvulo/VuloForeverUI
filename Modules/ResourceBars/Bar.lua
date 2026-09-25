@@ -68,12 +68,19 @@ function RB.BuildBar(key)
     shield:SetAlpha(0)
     frame.shield = shield
 
-    local left = frame:CreateFontString(nil, "OVERLAY")
+    -- The texts on a frame of their own. The fill is a child frame, and a
+    -- child draws over every layer of its parent: text written on the bar
+    -- itself sat UNDER the fill. This frame's level decides which it is.
+    local textHolder = CreateFrame("Frame", nil, frame)
+    textHolder:SetAllPoints(frame)
+    frame.textHolder = textHolder
+
+    local left = textHolder:CreateFontString(nil, "OVERLAY")
     left:SetPoint("LEFT", frame, "LEFT", 4, 0)
     left:SetJustifyH("LEFT")
     frame.left = left
 
-    local right = frame:CreateFontString(nil, "OVERLAY")
+    local right = textHolder:CreateFontString(nil, "OVERLAY")
     right:SetPoint("RIGHT", frame, "RIGHT", -4, 0)
     right:SetJustifyH("RIGHT")
     frame.right = right
@@ -167,6 +174,10 @@ function RB.StyleBar(key)
     frame.spark:ClearAllPoints()
     frame.spark:SetPoint("CENTER", frame.fill:GetStatusBarTexture(), "RIGHT", 0, 0)
     frame.spark:SetShown(bar.showSpark ~= false)
+
+    -- Over the fill (the default) or under it, as the bar's setting says.
+    local fillLevel = frame.fill:GetFrameLevel()
+    frame.textHolder:SetFrameLevel(bar.textLayer == "under" and math.max(0, fillLevel - 1) or fillLevel + 2)
 
     UI.FontFor("resourcebars", frame.left, bar.fontSize or 11, "OUTLINE")
     UI.FontFor("resourcebars", frame.right, bar.fontSize or 11, "OUTLINE")

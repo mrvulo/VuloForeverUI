@@ -658,6 +658,27 @@ end
 --
 -- Deriving again costs nothing when there is no link -- ApplyMoverLink says so
 -- and we fall through to the old path unchanged.
+-- Take a mover out of edit mode for good: for a frame that is destroyed and
+-- rebuilt (a closed meter window, a profile switch). There is no other way
+-- off the lists, and a mover left on them would show twice in the link
+-- picker and keep writing into a db that belongs to the profile just left.
+function ns:RemoveMover(m)
+    if not m or m.retired then return end
+    m.retired = true
+    if ns._draggingMover == m and ns.AbortMoverDrag then ns:AbortMoverDrag(m) end
+    if ns.IsSelected and ns:IsSelected(m) and ns.DeselectMover then ns:DeselectMover() end
+    m:Hide()
+    local list = ns._movers
+    for i = #list, 1, -1 do
+        if list[i] == m then table.remove(list, i) end
+    end
+    if m.key and ns._moversByKey[m.key] == m then ns._moversByKey[m.key] = nil end
+    m.key = nil
+    m.opts.db = {}
+    m.opts.applyPos = function() end
+    m.opts.onMove, m.opts.editPreview = nil, nil
+end
+
 function ns:ApplyMover(mover)
     if not mover then return end
     local ok, linked = pcall(ns.ApplyMoverLink, ns, mover)

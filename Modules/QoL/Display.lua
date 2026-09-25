@@ -330,38 +330,75 @@ end
 -- ----------------------------------------------------------- crosshair --
 
 local crossFrame
+local crossEditing = false   -- our edit mode is open: shown whatever the visibility says
+local applyCrosshair
 
-local function applyCrosshair()
+-- WHERE IT SITS: the two sliders (xOffset / yOffset) stay the saved truth, a
+-- centre offset from the middle of the screen. The mover's db.x / db.y are the
+-- very same number -- the frame is a plain child of UIParent at scale 1 -- so
+-- they are only a mirror: copied from the sliders before every placement, and
+-- copied back into the sliders by onMove after a drag, a nudge, the edit
+-- panel's X/Y, a reset (0, 0 = the middle of the screen, the default) or a
+-- discard. Either side can move it and both always agree.
+local function createCrosshair(db)
+    crossFrame = CreateFrame("Frame", "VuloForeverUICrosshair", UIParent)
+    crossFrame:SetFrameStrata("BACKGROUND")
+    crossFrame:EnableMouse(false)
+    crossFrame:SetSize(1, 1)
+    local function bar(layer)
+        local t = crossFrame:CreateTexture(nil, layer)
+        if t.SetSnapToPixelGrid then
+            t:SetSnapToPixelGrid(false)
+            t:SetTexelSnappingBias(0)
+        end
+        t:SetPoint("CENTER")
+        return t
+    end
+    -- The borders sit below, so the arms are drawn on top of them.
+    crossFrame.hEdge, crossFrame.vEdge = bar("ARTWORK"), bar("ARTWORK")
+    crossFrame.h, crossFrame.v = bar("OVERLAY"), bar("OVERLAY")
+
+    db.x, db.y = db.xOffset or 0, db.yOffset or 0
+    crossFrame.mover = ns:CreateMover(crossFrame, {
+        key    = "qol_crosshair",
+        label  = L["Crosshair"],
+        db     = db,
+        module = "qol",
+        width  = 40,
+        height = 40,
+        onMove = function(x, y)
+            local d = QoL.db().crosshair
+            d.xOffset, d.yOffset = x, y
+        end,
+        -- Bound to combat or to instances it is usually hidden, and its box
+        -- with it: while our edit mode is open it stays on screen to be dragged.
+        editPreview = function(on)
+            crossEditing = on and true or false
+            if QoL.mod.active then applyCrosshair() end
+        end,
+    })
+    crossEditing = ns:IsMoverEditMode()
+end
+
+function applyCrosshair()
     local db = QoL.db().crosshair
     if not db.enabled then
         if crossFrame then crossFrame:Hide() end
         return
     end
 
-    if not crossFrame then
-        crossFrame = CreateFrame("Frame", "VuloForeverUICrosshair", UIParent)
-        crossFrame:SetFrameStrata("BACKGROUND")
-        crossFrame:EnableMouse(false)
-        crossFrame:SetSize(1, 1)
-        local function bar(layer)
-            local t = crossFrame:CreateTexture(nil, layer)
-            if t.SetSnapToPixelGrid then
-                t:SetSnapToPixelGrid(false)
-                t:SetTexelSnappingBias(0)
-            end
-            t:SetPoint("CENTER")
-            return t
-        end
-        -- The borders sit below, so the arms are drawn on top of them.
-        crossFrame.hEdge, crossFrame.vEdge = bar("ARTWORK"), bar("ARTWORK")
-        crossFrame.h, crossFrame.v = bar("OVERLAY"), bar("OVERLAY")
-    end
+    if not crossFrame then createCrosshair(db) end
 
-    crossFrame:ClearAllPoints()
-    crossFrame:SetPoint("CENTER", UIParent, "CENTER", db.xOffset, db.yOffset)
+    -- The sliders are the truth; the mover's copy follows them (see above).
+    -- opts.db is re-pointed as well, for a profile switch.
+    crossFrame.mover.opts.db = db
+    db.x, db.y = db.xOffset or 0, db.yOffset or 0
+    ns:ApplyMover(crossFrame.mover)
 
     local len = ns:Pixel(crossFrame, db.length)
     local thick = ns:Pixel(crossFrame, db.thickness)
+    -- The frame is as big as the cross, so the edit box covers what it moves.
+    crossFrame:SetSize(len, len)
     local c, bc = db.color, db.borderColor
     crossFrame.h:SetSize(len, thick)
     crossFrame.h:SetColorTexture(c.r, c.g, c.b, c.a)
@@ -385,7 +422,7 @@ local function applyCrosshair()
     elseif db.visibility == "instances" then
         show = IsInInstance()
     end
-    if show then crossFrame:Show() else crossFrame:Hide() end
+    if show or crossEditing then crossFrame:Show() else crossFrame:Hide() end
 end
 Display.ApplyCrosshair = applyCrosshair
 

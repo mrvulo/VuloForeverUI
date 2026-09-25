@@ -47,6 +47,18 @@ local function dropdown(sub, key, label, values, width)
         set = function(_, v) tbl(sub)[key] = v; apply() end }
 end
 
+-- Where the flight bar's two texts can sit (Flight.lua, TEXT_POS).
+local function flightTextPositions()
+    return {
+        { value = "left",       text = L["Left"] },
+        { value = "center",     text = L["Centre"] },
+        { value = "right",      text = L["Right"] },
+        { value = "aboveLeft",  text = L["Above left"] },
+        { value = "aboveRight", text = L["Above right"] },
+        { value = "none",       text = L["None"] },
+    }
+end
+
 local function editbox(sub, key, label, width)
     return { type = "editbox", label = label, width = width or 240, editWidth = 140,
         get = function() return tbl(sub)[key] end,
@@ -96,6 +108,20 @@ local function generalPage()
         slider("flight", "width", L["Bar width"], 120, 480, 5),
         slider("flight", "height", L["Bar height"], 8, 40, 1),
         dropdown("flight", "texture", L["Bar texture"], ns.MediaStatusbarValues(), 220),
+        slider("flight", "borderSize", L["Border size"], 0, 4, 1),
+        color("flight", "borderColor", L["Border color"]),
+        dropdown("flight", "font", L["Font"], (function()
+            local v = { { value = "", text = L["Module font"] } }
+            for _, e in ipairs(ns.MediaFontValues()) do v[#v + 1] = e end
+            return v
+        end)(), 220),
+        slider("flight", "fontSize", L["Size"], 0, 24, 1, L["0 follows the bar height."]),
+        dropdown("flight", "labelPos", L["Label position"], flightTextPositions()),
+        slider("flight", "labelX", L["X Offset"], -100, 100, 1),
+        slider("flight", "labelY", L["Y Offset"], -50, 50, 1),
+        dropdown("flight", "timePos", L["Time position"], flightTextPositions()),
+        slider("flight", "timeX", L["X Offset"], -100, 100, 1),
+        slider("flight", "timeY", L["Y Offset"], -50, 50, 1),
         { type = "group", layout = "row", gap = 8, items = {
             { type = "button", label = L["Show it once"], width = 150,
               onClick = function() QoL.Flight.Preview() end },
@@ -236,9 +262,118 @@ local function displayPage()
     }
 end
 
+-- ---------------------------------------------------------------- trinkets --
+
+-- The entry picked in a slot's order list, per slot, for the move buttons.
+-- Page state, not a setting: it only lives while the page is open.
+local picked = { top = 1, bottom = 1 }
+
+-- On the next frame: a dropdown writes its own label AFTER its setter
+-- returns, and a page rebuilt inside the setter has already handed that
+-- dropdown to another row -- which then showed the wrong trinket's name.
+local function rebuild()
+    C_Timer.After(0, function()
+        local UI = ns.UI
+        if UI.currentModule == "qol" and UI.BuildOptionsPage then
+            UI:BuildOptionsPage(UI.currentModule, UI.currentTab)
+        end
+    end)
+end
+
+local function queueRows(key, title)
+    local T = QoL.Trinkets
+    local q = T.Queue(key)
+    local list = q.list
+    if picked[key] > #list then picked[key] = #list end
+
+    local order = {}
+    for i, id in ipairs(list) do
+        order[#order + 1] = { value = i, text = ("%d. %s"):format(i, T.ItemName(id)), draggable = true }
+    end
+
+    local adds = {}
+    local listed = {}
+    for _, id in ipairs(list) do listed[id] = true end
+    for _, id in ipairs(T.Owned()) do
+        if not listed[id] then adds[#adds + 1] = { value = id, text = T.ItemName(id) } end
+    end
+    if #adds == 0 then adds[1] = { value = 0, text = L["No trinket left to add."], separator = true } end
+
+    local function move(delta)
+        local i = picked[key]
+        local j = i + delta
+        if j < 1 or j > #list then return end
+        list[i], list[j] = list[j], list[i]
+        picked[key] = j
+        T.QueueChanged()
+        rebuild()
+    end
+
+    return {
+        { type = "header", text = title },
+        { type = "toggle", label = L["Auto-queue for this slot"],
+          tooltip = L["Puts the next ready trinket of the list on once the one in the slot is spent. Out of combat only."],
+          get = function() return T.Queue(key).enabled end,
+          set = function(_, v) T.Queue(key).enabled = v and true or false; T.QueueChanged() end },
+        { type = "dropdown", label = L["Order"], width = 240, values = order,
+          get = function() return picked[key] end,
+          set = function(_, v) picked[key] = v end,
+          reorder = function(from, to)
+              local id = table.remove(list, from)
+              table.insert(list, to, id)
+              picked[key] = to
+              T.QueueChanged()
+              rebuild()
+          end },
+        { type = "dropdown", label = L["Add a trinket"], width = 240, values = adds,
+          get = function() return nil end,
+          set = function(_, id)
+              if not id or id == 0 then return end
+              -- above the stop marker, so it takes part at once
+              local at = #list
+              for i, v in ipairs(list) do if v == 0 then at = i; break end end
+              table.insert(list, at, id)
+              picked[key] = at
+              T.QueueChanged()
+              rebuild()
+          end },
+        { type = "group", layout = "row", gap = 8, items = {
+            { type = "button", label = L["Move up"], width = 120, onClick = function() move(-1) end },
+            { type = "button", label = L["Move down"], width = 120, onClick = function() move(1) end },
+            { type = "button", label = L["Remove"], width = 120, onClick = function()
+                local i = picked[key]
+                if list[i] == nil or list[i] == 0 then return end   -- the marker stays
+                table.remove(list, i)
+                T.QueueChanged()
+                rebuild()
+            end },
+        } },
+    }
+end
+
+local function trinketsPage()
+    local items = {
+        { type = "header", text = L["Trinkets"] },
+        { type = "desc", text = L["|cffaaaaaaTwo trinket slots on screen with their cooldowns. Left click uses the trinket, right click picks another, alt-click switches that slot's auto-queue. Trinkets can only be changed out of combat.|r"] },
+        toggle("trinkets", "enabled", L["Show the trinket window"]),
+        { type = "toggle", label = L["Unlock to move"],
+          tooltip = L["Drag the window where you want it, then switch this off to lock it again. Not in combat."],
+          get = function() return QoL.db().trinkets.freeMove end,
+          set = function(_, v) QoL.Trinkets.SetUnlocked(v) end },
+        toggle("trinkets", "vertical", L["Stack the slots vertically"]),
+        toggle("trinkets", "tooltips", L["Show tooltips"]),
+        slider("trinkets", "scale", L["Size"], 0.5, 2, 0.05),
+    }
+    for _, spec in ipairs({ { "top", L["Auto-queue: upper slot"] }, { "bottom", L["Auto-queue: lower slot"] } }) do
+        for _, row in ipairs(queueRows(spec[1], spec[2])) do items[#items + 1] = row end
+    end
+    return items
+end
+
 function mod:GetOptions(tabId)
     if tabId == "vendor"  then return vendorPage() end
     if tabId == "loot"    then return lootPage() end
     if tabId == "display" then return displayPage() end
+    if tabId == "trinkets" then return trinketsPage() end
     return generalPage()
 end

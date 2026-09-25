@@ -70,6 +70,22 @@ function Sidebar.CopyText()
     return table.concat(out, "\n")
 end
 
+-- ---------------------------------------------------------------- friends --
+
+-- Friends online right now: Battle.net friends plus character friends. Each
+-- count is asked on its own and read through CanRead, so an answer this
+-- client keeps from us costs that half of the number, not the whole button.
+local function friendsOnline()
+    local n = 0
+    local ok, _, bnOnline = pcall(BNGetNumFriends)
+    if ok and ns.CanRead(bnOnline) and type(bnOnline) == "number" then n = n + bnOnline end
+    if C_FriendList and C_FriendList.GetNumOnlineFriends then
+        local okW, wow = pcall(C_FriendList.GetNumOnlineFriends)
+        if okW and ns.CanRead(wow) and type(wow) == "number" then n = n + wow end
+    end
+    return n
+end
+
 -- ---------------------------------------------------------------- buttons --
 
 local BUTTONS = {
@@ -81,15 +97,19 @@ local BUTTONS = {
         if text == "" then
             ns:Print(ns.L["There is nothing in this window to copy."])
         else
-            ns.UI:ShowProfileExportDialog(text)
+            ns.UI:ShowCopyDialog(ns.L["Copy the chat"], text)
         end
     end },
-    { key = "showFriends",  icon = "friends.tga",  action = function()
+    { key = "showFriends",  icon = "friends.tga",  count = friendsOnline, action = function()
         if _G.ToggleFriendsFrame then pcall(_G.ToggleFriendsFrame) end
     end },
     { key = "showGuild",    icon = "landmark.tga",    action = function()
         if _G.ToggleGuildFrame then pcall(_G.ToggleGuildFrame) end
     end },
+    -- No action of its own: the click lands on a secure button laid over this
+    -- one (see the new-window section below), because opening a chat window
+    -- from addon code is exactly what taints the dock.
+    { key = "showNewWindow", icon = "plus.tga", secure = true, action = function() end },
     { key = "showSettings", icon = "gear.tga", action = function()
         ns.Slash.CHAT()
     end },
@@ -106,6 +126,7 @@ local function tooltipFor(key)
         showCopy     = L["Copy the chat"],
         showFriends  = L["Friends"],
         showGuild    = L["Guild"],
+        showNewWindow = L["New chat window"],
         showSettings = L["Chat settings"],
         showScroll   = L["Jump to the newest line"],
     }
@@ -139,6 +160,13 @@ local function makeButton(parent, def)
     tex:SetTexture(ICON .. def.icon)
     tex:SetDesaturated(true)
     b.tex = tex
+
+    -- The number under an icon (friends online). Every pooled button has one
+    -- and only a button whose job has a count shows it.
+    b.count = b:CreateFontString(nil, "OVERLAY")
+    ns.UI.FontFor("chat", b.count, 9, "OUTLINE")
+    b.count:SetPoint("TOP", b, "BOTTOM", 0, -1)
+    b.count:Hide()
 
     -- Dragging is armed per refresh; the scripts are set once here so the
     -- pooled button does not collect a new closure on every pass.
@@ -182,7 +210,11 @@ local function makeButton(parent, def)
         -- and outlive any number of settings changes.
         if Chat.db().hideTooltipOnHover then return end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText((self.def and tooltipFor(self.def.key)) or "", 1, 1, 1, true)
+        -- Through the client's own title helper, not SetText with a colour:
+        -- this client refused both the classic r, g, b form and a colour
+        -- object in SetText's second slot. The helper picks the white title
+        -- colour itself and is what the client's own tooltips use.
+        GameTooltip_SetTitle(GameTooltip, (self.def and tooltipFor(self.def.key)) or "", nil, true)
         GameTooltip:Show()
     end)
     b:SetScript("OnLeave", function()
@@ -194,7 +226,20 @@ local function makeButton(parent, def)
     return b
 end
 
+-- The client's own friends button over the chat (the quick-join button with
+-- its online count). Ours does the same job in the column, so the client's is
+-- taken away while the module runs: alpha and mouse only, the way every other
+-- client widget here is quieted, and given back on release. Its toasts animate
+-- the button's children, not the button's own alpha, so the zero holds.
+local function clientFriends(hidden)
+    local b = _G.QuickJoinToastButton
+    if not b then return end
+    pcall(b.SetAlpha, b, hidden and 0 or 1)
+    pcall(b.EnableMouse, b, not hidden)
+end
+
 function Sidebar.Refresh()
+    clientFriends(Chat.mod.active)
     local db = Chat.db()
     local cf = _G.ChatFrame1
     local d = cf and Chat.Data(cf)
@@ -264,7 +309,9 @@ function Sidebar.Refresh()
     local col = iconColor(db)
     local free = db.freeMoveIcons and true or false
 
-    local shown, last = 0, nil
+    local shown, last, height = 0, nil, 0
+    local countSize = math.max(7, math.floor(9 * scale + 0.5))
+    Sidebar.newSlot = nil
     for _, def in ipairs(BUTTONS) do
         -- The scroll button can be sent to the chat panel instead, where it
         -- sits in the corner the client keeps its own in. It then leaves the
@@ -286,28 +333,151 @@ function Sidebar.Refresh()
             b:SetClampedToScreen(free)
             b:ClearAllPoints()
 
+            -- The count sits under its icon, so the next icon hangs from the
+            -- count rather than from the icon, or the two would overlap.
+            local tail = b
+            if def.count then
+                ns.UI.FontFor("chat", b.count, countSize, "OUTLINE")
+                b.count:SetText(def.count())
+                b.count:SetTextColor(col.r, col.g, col.b)
+                b.count:Show()
+                tail = b.count
+            else
+                b.count:Hide()
+            end
+            if def.secure then Sidebar.newSlot = b end
+
+            -- The + button is never freely placed: its click belongs to the
+            -- secure button laid over it, which takes the mouse -- a drag on
+            -- it would never reach this one.
             local px, py = savedPos(db, def.key)
-            if free and px then
+            if free and px and not def.secure then
                 b:SetPoint("TOPLEFT", bar, "TOPLEFT", px, py)
                 -- Deliberately NOT the new `last`: a button that was dragged
                 -- out of the column must not become the anchor the rest of the
                 -- column hangs from, or moving one icon drags the stack below
                 -- it along.
-            elseif last then
-                b:SetPoint("TOP", last, "BOTTOM", 0, -spacing)
-                last = b
             else
-                b:SetPoint("TOP", bar, "TOP", 0, 0)
-                last = b
+                if last then
+                    b:SetPoint("TOP", last, "BOTTOM", 0, -spacing)
+                    height = height + spacing
+                else
+                    b:SetPoint("TOP", bar, "TOP", 0, 0)
+                end
+                height = height + size + (def.count and (countSize + 1) or 0)
+                last = tail
             end
             b:Show()
         end
     end
     for i = shown + 1, #bar.buttons do bar.buttons[i]:Hide() end
 
-    bar:SetSize(width, math.max(size, shown * size + math.max(0, shown - 1) * spacing))
+    bar:SetSize(width, math.max(size, height))
     bar:SetShown(shown > 0)
     if Chat.Fade then Chat.Fade.Poke() end
+    -- Next frame: the rect the secure button copies is only resolved once
+    -- the anchors set above have been laid out.
+    C_Timer.After(0, Sidebar.SyncNewWindow)
+end
+
+-- Friends online, on the events that change it. Only the label is written,
+-- and only on the button that currently shows the friends count.
+function Sidebar.UpdateCounts()
+    if not bar then return end
+    for _, b in ipairs(bar.buttons) do
+        if b:IsShown() and b.def and b.def.count then b.count:SetText(b.def.count()) end
+    end
+end
+
+local countEvents = CreateFrame("Frame")
+for _, e in ipairs({ "BN_FRIEND_ACCOUNT_ONLINE", "BN_FRIEND_ACCOUNT_OFFLINE",
+    "BN_FRIEND_LIST_SIZE_CHANGED", "BN_CONNECTED", "BN_DISCONNECTED",
+    "FRIENDLIST_UPDATE", "PLAYER_ENTERING_WORLD" }) do
+    countEvents:RegisterEvent(e)
+end
+countEvents:RegisterEvent("PLAYER_REGEN_ENABLED")
+countEvents:SetScript("OnEvent", function(_, event)
+    -- The secure + button is only placed out of combat; the end of a fight is
+    -- where it catches up, and where a release made in combat hides it.
+    if event == "PLAYER_REGEN_ENABLED" then Sidebar.SyncNewWindow(); return end
+    if Chat.mod.active then Sidebar.UpdateCounts() end
+end)
+
+-- ---------------------------------------------------------------- new window --
+--
+-- The + button. Opening a chat window from addon code is off the table: the
+-- client's FCF_ window functions write the dock's bookkeeping, and written
+-- from our execution that bookkeeping stays tainted for the session -- the
+-- whisper windows and the tab menu then die on secret values later on.
+--
+-- So the button is a SECURE action button of type "click" that right-clicks
+-- the main chat tab. The client itself opens its own tab menu, from a clean
+-- execution, and its "New Window" entry creates the window exactly as if the
+-- player had right-clicked the tab. Not one line of ours runs in that chain.
+--
+-- The left click is turned into the right click the tab menu needs by the
+-- template's own remap: with the unit set to the player, "helpbutton1" maps
+-- button 1 onto whatever button it names.
+--
+-- A protected button anchored to our column would make the whole column --
+-- and the panel it hangs from -- protected in combat. So it is anchored to
+-- UIParent at the numbers the visible + button sits at, copied out of combat
+-- and only when they changed.
+local newWin
+
+local function ensureNewWindow()
+    if newWin then return newWin end
+    if InCombatLockdown() or not _G.ChatFrame1Tab then return nil end
+    local b = CreateFrame("Button", nil, UIParent, "SecureActionButtonTemplate")
+    b:RegisterForClicks("AnyUp", "AnyDown")
+    b:SetAttribute("type", "click")
+    b:SetAttribute("clickbutton", _G.ChatFrame1Tab)
+    b:SetAttribute("unit", "player")
+    b:SetAttribute("helpbutton1", "RightButton")
+    b:SetFrameStrata("MEDIUM")
+    -- Hover belongs to the visible button underneath: its tooltip, its colour,
+    -- and the fade that brings the column back.
+    b:SetScript("OnEnter", function()
+        local slot = Sidebar.newSlot
+        local fn = slot and slot:GetScript("OnEnter")
+        if fn then fn(slot) end
+    end)
+    b:SetScript("OnLeave", function()
+        local slot = Sidebar.newSlot
+        local fn = slot and slot:GetScript("OnLeave")
+        if fn then fn(slot) end
+    end)
+    b:Hide()
+    newWin = b
+    return b
+end
+
+function Sidebar.SyncNewWindow()
+    if InCombatLockdown() then return end
+    local slot = Chat.mod.active and Sidebar.newSlot
+    local b = slot and ensureNewWindow() or newWin
+    if not b then return end
+    if not (slot and slot:IsVisible()) then
+        if b:IsShown() then b:Hide() end
+        return
+    end
+    local l, bt, w, h = slot:GetRect()
+    if not (type(l) == "number" and type(bt) == "number" and type(w) == "number" and type(h) == "number") then
+        return
+    end
+    local s = slot:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    l, bt, w, h = l * s, bt * s, w * s, h * s
+    local r = b.rect
+    if r and math.abs(r[1] - l) < 0.05 and math.abs(r[2] - bt) < 0.05
+        and math.abs(r[3] - w) < 0.05 and math.abs(r[4] - h) < 0.05 and b:IsShown() then
+        return
+    end
+    b.rect = { l, bt, w, h }
+    b:ClearAllPoints()
+    b:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", l, bt)
+    b:SetSize(w, h)
+    b:SetFrameLevel(slot:GetFrameLevel() + 5)
+    b:Show()
 end
 
 -- The jump-to-newest button, parked on the chat panel.
@@ -366,6 +536,11 @@ function Sidebar.Bar()
 end
 
 function Sidebar.Release()
+    clientFriends(false)
     if bar then bar:Hide() end
     if chatScroll then chatScroll:Hide() end
+    Sidebar.newSlot = nil
+    -- Out of combat only; a release in combat is caught up at the end of the
+    -- fight by the regen event above.
+    if newWin and not InCombatLockdown() then newWin:Hide() end
 end

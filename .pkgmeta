@@ -18,8 +18,7 @@ manual-changelog:
   filename: CHANGELOG-release.md
   markup-type: markdown
 
-# Everything that only serves development. Dev/ is NOT in here: the TOC loads
-# Dev/SavedSeed.lua, and the committed copy is an empty stub.
+# Everything that only serves development.
 ignore:
   - tools
   - docs

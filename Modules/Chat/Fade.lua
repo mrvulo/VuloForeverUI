@@ -36,13 +36,19 @@ local function surfaces()
     local out = {}
     for _, cf in ipairs(Chat.Frames()) do
         local d = Chat.Data(cf)
-        if d.bridged then
+        if Chat.Owned(cf) then
             if d.bg then out[#out + 1] = { f = d.bg, max = 1 } end
             if d.host then out[#out + 1] = { f = d.host, max = 1 } end
+            -- The combat log's text is the client's own, drawn on the window
+            -- itself, so the window is what fades. The client's own hover
+            -- fades write its art and scroll bar, never the window's alpha.
+            if d.native then out[#out + 1] = { f = cf, max = 1 } end
         end
     end
     local strip = Chat.Tabs and Chat.Tabs.Strip and Chat.Tabs.Strip()
     if strip then out[#out + 1] = { f = strip, max = 1 } end
+    local quickHost = Chat.Tabs and Chat.Tabs.QuickHost and Chat.Tabs.QuickHost()
+    if quickHost then out[#out + 1] = { f = quickHost, max = 1 } end
     local bar = Chat.Sidebar and Chat.Sidebar.Bar and Chat.Sidebar.Bar()
     if bar then
         out[#out + 1] = { f = bar, max = Chat.Sidebar.AlphaCeiling() }
@@ -167,7 +173,7 @@ end
 function Fade.Install()
     for _, cf in ipairs(Chat.Frames()) do
         local d = Chat.Data(cf)
-        if d.bridged and not d.fadeHooked then
+        if Chat.Owned(cf) and not d.fadeHooked then
             d.fadeHooked = true
             pcall(cf.HookScript, cf, "OnEnter", function() Fade.SetMouseOver(true) end)
             pcall(cf.HookScript, cf, "OnLeave", function() Fade.SetMouseOver(false) end)

@@ -18,6 +18,7 @@ Bags.Marks = Marks
 local seen = {}        -- itemID -> count at the last scan
 local fresh = {}       -- itemID -> when it appeared
 local primed = false   -- the first scan only fills `seen`
+local quietUntil = 0   -- scans before this only fill `seen`, too
 
 -- ---------------------------------------------------------------- pinned --
 
@@ -81,7 +82,12 @@ function Marks.Scan()
         end
     end
 
-    if primed then
+    -- An empty scan (at login, or bags reporting nothing for a moment) marks
+    -- nothing and keeps the old snapshot: replacing it would make the next
+    -- full scan mark everything the player owns.
+    if next(counts) == nil then return end
+
+    if primed and now >= quietUntil then
         for id, count in pairs(counts) do
             if count > (seen[id] or 0) then fresh[id] = now end
         end
@@ -91,7 +97,16 @@ function Marks.Scan()
     end
 
     seen = counts
+    -- An empty scan primes nothing: at a fresh login the addon loads before
+    -- the client has filled the bags, and a snapshot of nothing made every
+    -- item the player owns "just picked up" at the first bag update.
     primed = true
+end
+
+-- The bags fill bag by bag after a loading screen, over several updates. For
+-- a moment after one, a scan only learns what is there.
+function Marks.Quiet(seconds)
+    quietUntil = GetTime() + (seconds or 5)
 end
 
 function Marks.ClearRecent()

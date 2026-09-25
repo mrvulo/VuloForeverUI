@@ -223,6 +223,36 @@ function Plate:ApplyAppearance()
         fs.element = element
     end
 
+    -- A name on one side of the bar and a text on the other: the name ends
+    -- where the other text begins, so it is cut with "..." instead of running
+    -- under the health readout. Anchored, not measured -- the other text may
+    -- be a secret string, and its width follows it without being read.
+    local left, right, center = self.texts.Left, self.texts.Right, self.texts.Center
+    local gap = 4
+    local leftUsed = left and left.element ~= "none"
+    local rightUsed = right and right.element ~= "none"
+    if leftUsed and rightUsed and NAME_FAMILY[left.element] then
+        left:SetPoint("RIGHT", right, "LEFT", -gap, 0)
+    elseif leftUsed and rightUsed and NAME_FAMILY[right.element] then
+        right:SetPoint("LEFT", left, "RIGHT", gap, 0)
+    end
+    -- A name in the middle spans the room between the side texts (or the bar's
+    -- edges where a side is empty), centred in it and cut where it runs out.
+    if center and NAME_FAMILY[center.element] and (leftUsed or rightUsed) then
+        local cfg = db.textSlots.Center
+        center:ClearAllPoints()
+        if leftUsed then
+            center:SetPoint("LEFT", left, "RIGHT", gap, cfg.y)
+        else
+            center:SetPoint("LEFT", self.health, "LEFT", 3, cfg.y)
+        end
+        if rightUsed then
+            center:SetPoint("RIGHT", right, "LEFT", -gap, cfg.y)
+        else
+            center:SetPoint("RIGHT", self.health, "RIGHT", -3, cfg.y)
+        end
+    end
+
     -- icon slots
     placeIcon(self, self.icons.raidMarker, db.raidMarkerPos, db)
     placeIcon(self, self.icons.classification, db.classificationSlot, db)

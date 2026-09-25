@@ -15,21 +15,59 @@ local Window = {}
 Bags.WindowFactory = Window
 
 local PAD, HEADER_H = 10, 28
-local TOOL = 18          -- edge length of a tool button
+local TOOL = 20          -- edge length of a tool button
 
 -- ---------------------------------------------------------------- chrome --
 
 -- One tool button: an icon, a tooltip, and a click. They live in a row under
 -- the title and each one is shown only while its setting is on, so a player
 -- who wants none of them gets a header with nothing in it.
-local function toolButton(f, atlas, tooltip, onClick)
+--
+-- Dressed the way the client dresses its own icons, so the row reads as part
+-- of the game rather than of us: the art on a dark ground, the action bar's
+-- icon frame over it, and that frame's own hover and pressed states. The art
+-- is an atlas name, or an Interface\Icons path; `style`:
+--   "icon"   -- a full square icon, masked to the frame's shape
+--   "glyph"  -- a symbol with a transparent edge, drawn over the dark ground
+local function toolButton(f, art, style, tooltip, onClick)
     local b = CreateFrame("Button", nil, f)
     b:SetSize(TOOL, TOOL)
+
+    local ground = b:CreateTexture(nil, "BACKGROUND")
+    ground:SetAllPoints(b)
+    ground:SetColorTexture(0, 0, 0, 0.75)
+
     local icon = b:CreateTexture(nil, "ARTWORK")
-    icon:SetAllPoints(b)
-    icon:SetAtlas(atlas)
+    if art:find("\\", 1, true) then
+        icon:SetTexture(art)
+        -- the icon files carry a baked-in border of their own
+        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    else
+        icon:SetAtlas(art)
+    end
+    icon:SetPoint("TOPLEFT", b, "TOPLEFT", 1, -1)
+    icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -1, 1)
     b.icon = icon
-    b.edges = ns.MakeEdges(b, "OVERLAY")
+    if style == "icon" then
+        local mask = b:CreateMaskTexture()
+        mask:SetAtlas("UI-HUD-ActionBar-IconFrame-Mask")
+        mask:SetAllPoints(icon)
+        icon:AddMaskTexture(mask)
+    end
+
+    -- The frame sits a little outside the button, as it does on the action
+    -- bar, so the icon inside keeps its full size.
+    local border = b:CreateTexture(nil, "OVERLAY")
+    border:SetAtlas("UI-HUD-ActionBar-IconFrame")
+    border:SetPoint("TOPLEFT", b, "TOPLEFT", -2, 2)
+    border:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", 2, -2)
+    b.border = border
+    b:SetHighlightAtlas("UI-HUD-ActionBar-IconFrame-Mouseover", "ADD")
+    b:SetPushedAtlas("UI-HUD-ActionBar-IconFrame-Down")
+    for _, t in ipairs({ b:GetHighlightTexture(), b:GetPushedTexture() }) do
+        t:ClearAllPoints()
+        t:SetAllPoints(border)
+    end
     b:SetScript("OnEnter", function(self)
         ns.UI:ShowTooltip(self, self.vfTip)
     end)
@@ -89,16 +127,43 @@ local function build(win)
 
     -- The tool row. Sorting is the client's own call; the other two switch a
     -- MODE on, because a click on a slot belongs to the client (Slots.lua).
-    f.sort = toolButton(f, "bags-button-autosort-up", L["Sort"], function()
-        local fn = (win.key == "bank") and C_Container.SortBankBags or C_Container.SortBags
+    -- The bags use our own order (Sort.lua: vendor junk last); the bank keeps
+    -- the client's, which is the only one that can reach its tabs.
+    f.sort = toolButton(f, "bags-button-autosort-up", "icon", L["Sort"], function()
+        if win.key == "bags" then Bags.Sort.Run(); return end
+        local fn = C_Container.SortBankBags
         if type(fn) == "function" then pcall(fn) end
     end)
-    f.pin = toolButton(f, "PetJournal-FavoritesIcon", L["Pin items"], function()
+    f.pin = toolButton(f, "PetJournal-FavoritesIcon", "glyph", L["Pin items"], function()
         Bags.Slots.SetMode("pin")
     end)
-    f.split = toolButton(f, "bags-greenarrow", L["Split a stack"], function()
+    f.split = toolButton(f, "bags-greenarrow", "glyph", L["Split a stack"], function()
         Bags.Slots.SetMode("split")
     end)
+    -- The bags themselves, one button each, in a row of their own (BagBar.lua).
+    f.bagBar = toolButton(f, "bag-main", "icon", L["Show the bags"], function()
+        win.showBagBar = not win.showBagBar
+        Bags.db().showBagBar = win.showBagBar
+        win.Refresh()
+    end)
+    -- The bank as it was at the last visit, from anywhere (BankView.lua).
+    f.bankView = toolButton(f, "Interface\\Icons\\INV_Misc_Coin_02", "icon", L["Show the bank"], function() Bags.BankView.Toggle() end)
+    -- The bag settings, one click away from the bags themselves. Always shown:
+    -- it is the way back to every switch that hides the other tools. A second
+    -- click closes them again -- but only when it is the bags' page that is
+    -- up; the settings open on anything else are switched over instead.
+    f.options = toolButton(f, "Interface\\Icons\\Trade_Engineering", "icon",
+        L["Bag settings"], function()
+            local open = ns.UI.mainFrame
+            if open and open:IsShown() and ns.UI.currentModule == "bags" then
+                open:Hide()
+                return
+            end
+            local main = ns.UI:CreateMainFrame()
+            main:Show()
+            ns.UI:PopulateSidebar()
+            ns.UI:ShowModulePage("bags")
+        end)
 
     local search = CreateFrame("EditBox", nil, f)
     search:SetAutoFocus(false)
@@ -133,6 +198,8 @@ local function build(win)
         local store = Bags.db()[win.key .. "Pos"] or {}
         store.point, store.relPoint, store.x, store.y = point, relPoint, dx, dy
         Bags.db()[win.key .. "Pos"] = store
+        -- the edit-mode box reads the same place (Window.AttachMover)
+        if win.moverEntry then win.moverEntry.sync() end
     end)
 
     win.sections = {}
@@ -149,7 +216,166 @@ local function placeWindow(win)
     else
         win.frame:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -40, 120)
     end
+    if win.moverEntry then win.moverEntry.sync() end
 end
+
+-- ------------------------------------------------------------------ mover --
+--
+-- A box in our own edit mode for each of the windows. The saved place stays
+-- what it always was -- a point of the window pinned to the same point of
+-- UIParent ({ point, relPoint, x, y }) -- so a position saved by a shift-drag
+-- before this existed is read unchanged and nothing jumps. The mover's own
+-- table (x/y as a CENTRE offset, which is what the edit mode works in) is only
+-- a view of that place, kept in step every time the window is placed.
+--
+-- A drop keeps the point the window already had: a bag window pinned by its
+-- bottom-right corner goes on growing up and to the left from wherever it was
+-- put, and does not start growing from its middle.
+
+-- Offsets that pin `f` by `point` to the same point of UIParent, without
+-- moving it. In f's own units, the units SetPoint takes.
+function Window.AnchorOffsets(f, point)
+    local l, b, w, h = f:GetLeft(), f:GetBottom(), f:GetWidth(), f:GetHeight()
+    local ul, ub, uw, uh = UIParent:GetLeft(), UIParent:GetBottom(), UIParent:GetWidth(), UIParent:GetHeight()
+    if not (l and b and w and h and ul and ub and uw and uh) then return nil end
+    local r = ns:GetScaleRatio(f)
+    ul, ub, uw, uh = ul / r, ub / r, uw / r, uh / r
+    local function at(pl, pb, pw, ph)
+        local x = point:find("LEFT", 1, true) and pl or (point:find("RIGHT", 1, true) and pl + pw) or (pl + pw / 2)
+        local y = point:find("BOTTOM", 1, true) and pb or (point:find("TOP", 1, true) and pb + ph) or (pb + ph / 2)
+        return x, y
+    end
+    local fx, fy = at(l, b, w, h)
+    local ux, uy = at(ul, ub, uw, uh)
+    return fx - ux, fy - uy
+end
+
+-- A window holding item buttons may count as protected; its anchors are then
+-- not ours to write while a fight is on.
+local function locked(f)
+    if not InCombatLockdown() then return false end
+    local ok, prot = pcall(f.IsProtected, f)
+    return (not ok) or (prot and true or false)
+end
+Window.Locked = locked
+
+local afterCombat
+function Window.AfterCombat(fn)
+    if not afterCombat then
+        afterCombat = CreateFrame("Frame")
+        afterCombat.queue = {}
+        afterCombat:SetScript("OnEvent", function(self)
+            self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+            local q = self.queue
+            self.queue = {}
+            for _, f in ipairs(q) do pcall(f) end
+        end)
+    end
+    afterCombat.queue[#afterCombat.queue + 1] = fn
+    afterCombat:RegisterEvent("PLAYER_REGEN_ENABLED")
+end
+
+local attached = {}
+
+-- spec: key, label, storeKey, defaultPoint, place() (from the store, or the
+-- default), preview(on).
+function Window.AttachMover(f, spec)
+    local mdb = {}
+    local entry = { spec = spec, frame = f, mdb = mdb }
+
+    function entry.sync()
+        local x, y = ns:GetCenterOffsets(f)
+        if x then mdb.x, mdb.y = x, y end
+    end
+
+    -- The window sits where it should: write that place in the saved model.
+    local function commit()
+        local all = Bags.db()
+        local store = all[spec.storeKey]
+        local point = (type(store) == "table" and type(store.point) == "string" and store.point)
+            or spec.defaultPoint
+        local x, y = Window.AnchorOffsets(f, point)
+        if not x then return end
+        all[spec.storeKey] = { point = point, relPoint = point, x = x, y = y }
+        f:ClearAllPoints()
+        f:SetPoint(point, UIParent, point, x, y)
+        entry.sync()
+    end
+
+    f.mover = ns:CreateMover(f, {
+        key    = spec.key,
+        label  = spec.label,
+        db     = mdb,
+        module = "bags",
+        width  = 240,
+        height = 120,
+        -- Nudge, reset, re-apply. A reset hands the window its default place
+        -- back; anything else re-places from the store and only commits when
+        -- the box was really moved, so a re-apply never rewrites the save.
+        applyPos = function()
+            if locked(f) then return end
+            if ns._inMoverReset then
+                Bags.db()[spec.storeKey] = nil
+                spec.place()
+                entry.sync()
+                return
+            end
+            local wx, wy = mdb.x, mdb.y
+            spec.place()
+            local x, y = ns:GetCenterOffsets(f)
+            if wx and wy and x and (math.abs(x - wx) > 0.5 or math.abs(y - wy) > 0.5) then
+                f:ClearAllPoints()
+                f:SetPoint("CENTER", UIParent, "CENTER", wx, wy)
+                commit()
+            else
+                entry.sync()
+            end
+        end,
+        -- A drop, a discard, a link: the core has put the window's centre
+        -- there already.
+        onMove = function() commit() end,
+        editPreview = spec.preview,
+    })
+    -- CreateMover unclamps its target; these windows have always been clamped.
+    f:SetClampedToScreen(true)
+    entry.sync()
+    attached[#attached + 1] = entry
+    return entry
+end
+
+-- Discard. The core restores every box by its CENTRE, which is only right if
+-- the window still has the size it had when the edit mode opened -- and a bag
+-- window that was closed then and is open now does not. So the saved places
+-- themselves are copied at the snapshot and put back after the core's restore.
+local editSaved
+
+hooksecurefunc(ns, "SnapshotEditState", function()
+    local all = Bags.db and Bags.db()
+    if type(all) ~= "table" then return end
+    editSaved = {}
+    for _, e in ipairs(attached) do
+        local s = all[e.spec.storeKey]
+        editSaved[e.spec.storeKey] = type(s) == "table" and CopyTable(s) or false
+    end
+end)
+
+hooksecurefunc(ns, "RestoreEditState", function()
+    local all = Bags.db and Bags.db()
+    if not (editSaved and type(all) == "table") then return end
+    for _, e in ipairs(attached) do
+        local s = editSaved[e.spec.storeKey]
+        if s ~= nil then
+            all[e.spec.storeKey] = s and CopyTable(s) or nil
+            if locked(e.frame) then
+                Window.AfterCombat(e.spec.place)
+            else
+                e.spec.place()
+            end
+        end
+    end
+end)
+
+hooksecurefunc(ns, "ClearEditSnapshot", function() editSaved = nil end)
 
 -- A section heading, pooled per window.
 local function section(win, index)
@@ -244,6 +470,17 @@ local function headerText(win, bagIDs, db)
     return table.concat(parts, "   ")
 end
 
+-- The heading of a physical block: the whole bag set, or one bag by the name
+-- of the bag that is equipped there.
+function Window.BagLabel(key)
+    if key == "allbags" then return L["Bags"] end
+    local bag = tonumber(key:match("^bagsec:(%-?%d+)$"))
+    if bag == 0 then return L["Backpack"] end
+    local name = bag and C_Container.GetBagName and C_Container.GetBagName(bag)
+    if type(name) == "string" and name ~= "" then return name end
+    return (L["Bag %d"]):format(bag or 0)
+end
+
 function Window.Layout(win)
     local db = Bags.db()
     local f = win.frame
@@ -253,6 +490,9 @@ function Window.Layout(win)
     local grouped = Bags.Categories.Grouped(rules)
     local bagIDs = win.bags()
     local items, empty = collect(bagIDs)
+    -- The physical views need every stack in its own slot, so they take the
+    -- list before any merging.
+    local rawItems = items
     if db.mergeDuplicates then items = merge(items) end
 
     -- The view. A bank tab view ("bag:6") is a filter on the CONTAINER and is
@@ -300,10 +540,36 @@ function Window.Layout(win)
         order = only
     end
 
+    -- All bags and per bag: the bags as they physically are, item and empty
+    -- slot side by side in bag and slot order, no shelves -- one block for all
+    -- bags, or one block per bag. The categories above are still worked out,
+    -- because the side bar lists them for switching back.
+    local physical = (view == "allbags" or view == "perbag") and win.key == "bags"
+    if physical then
+        local all = {}
+        for _, e in ipairs(rawItems) do all[#all + 1] = e end
+        for _, e in ipairs(empty) do all[#all + 1] = e end
+        table.sort(all, function(a, b)
+            if a.bag ~= b.bag then return a.bag < b.bag end
+            return a.slot < b.slot
+        end)
+        buckets, order = {}, {}
+        if view == "allbags" then
+            buckets.allbags = all
+            order[1] = "allbags"
+        else
+            for _, e in ipairs(all) do
+                local key = "bagsec:" .. e.bag
+                if not buckets[key] then buckets[key] = {}; order[#order + 1] = key end
+                table.insert(buckets[key], e)
+            end
+        end
+    end
+
     -- The free slots. They are what a player drops things into, so they stay
     -- whatever the view is -- except on a grouped window that asked for them
     -- to go, which is what "hide empty slots when grouped" means.
-    if #empty > 0 and not (grouped and rules.hideEmpty) then
+    if not physical and #empty > 0 and not (grouped and rules.hideEmpty) then
         buckets.free = empty
         order[#order + 1] = "free"
     end
@@ -321,7 +587,12 @@ function Window.Layout(win)
     Bags.Slots.Begin(win.key)
     win.placed = win.placed or {}
     wipe(win.placed)
-    local y = PAD + HEADER_H + (db.search and 22 or 0)
+    -- The second header row carries the search field and the tool buttons, so
+    -- it is reserved while either is on. Asked the same way the field itself
+    -- is shown (search ~= false): a nil setting meant a field on screen with no
+    -- room made for it, drawn over the tools and eating their clicks.
+    local y = PAD + HEADER_H + (Window.HasToolRow(db) and 22 or 0)
+    y = y + Bags.BagBar.Layout(win, left, y)
     local sectionIndex = 0
     local missing, refused = false, false
 
@@ -335,6 +606,10 @@ function Window.Layout(win)
         head:SetPoint("TOPLEFT", f, "TOPLEFT", left, -y)
         if key == "free" then
             head:SetFormattedText("%s (%d)", L["Free"], #list)
+        elseif key == "allbags" or key:match("^bagsec:") then
+            local used = 0
+            for _, e in ipairs(list) do if e.info then used = used + 1 end end
+            head:SetFormattedText("%s (%d / %d)", Window.BagLabel(key), used, #list)
         elseif key == "all" then
             head:SetText("")
         else
@@ -361,8 +636,9 @@ function Window.Layout(win)
             slot.mergedCount = entry.merged
             Bags.Slots.Paint(slot, entry.bag, entry.slot, entry.info)
             Bags.Slots.ApplyMode(slot, entry.bag, entry.slot, entry.info)
-            Bags.Slots.SetFiltered(slot, not matches(entry, win.filter))
-            win.placed[#win.placed + 1] = { slot = slot, bag = entry.bag, slotID = entry.slot }
+            local filtered = not matches(entry, win.filter)
+            Bags.Slots.SetFiltered(slot, filtered)
+            win.placed[#win.placed + 1] = { slot = slot, bag = entry.bag, slotID = entry.slot, filtered = filtered }
 
             column = column + 1
             if column >= columns then
@@ -407,25 +683,43 @@ end
 
 -- The tool row: whichever tools are switched on, laid out left to right under
 -- the title, with the active mode lit.
+function Window.HasToolRow(db)
+    -- The settings button is always there, so the row always is.
+    return true
+end
+
+-- The tool buttons sit at the right end of the search row, and the search
+-- field stops short of the first of them. They used to share the field's
+-- height at the left, underneath it -- the field was made after them and lay
+-- on top, so it took every click meant for a tool: a mode switched on could
+-- not be switched off again.
 function Window.LayoutTools(win)
     local db = Bags.db()
     local f = win.frame
     local mode = Bags.Slots.Mode()
-    local x = PAD
-    for _, spec in ipairs({
+    local rowY = -PAD - HEADER_H + 4
+    local right = -PAD
+    local specs = {
         { button = f.sort,  on = db.showSortButton },
         { button = f.pin,   on = db.showPinned,    mode = "pin" },
         { button = f.split, on = db.stackSplitter, mode = "split" },
-    }) do
+        { button = f.bagBar, on = win.key == "bags", lit = win.showBagBar },
+        { button = f.bankView, on = win.key == "bags" },
+        { button = f.options, on = true },
+    }
+    for i = #specs, 1, -1 do
+        local spec = specs[i]
         local b = spec.button
         if spec.on then
             b:ClearAllPoints()
-            b:SetPoint("TOPLEFT", f, "TOPLEFT", x, -PAD - 15)
-            local lit = spec.mode and mode == spec.mode
-            ns.LayoutEdges(b.edges, b, lit and 1 or 0, 0.9, 0.75, 0.3, 1, 1)
-            b.icon:SetAlpha(lit and 1 or 0.7)
+            b:SetPoint("TOPRIGHT", f, "TOPRIGHT", right, rowY)
+            b:SetFrameLevel(f.search:GetFrameLevel() + 2)
+            local lit = spec.lit or (spec.mode and mode == spec.mode)
+            -- On: the client's frame turns gold.
+            if lit then b.border:SetVertexColor(1, 0.82, 0.3) else b.border:SetVertexColor(1, 1, 1) end
+            b.icon:SetAlpha(lit and 1 or 0.85)
             b:Show()
-            x = x + TOOL + 4
+            right = right - TOOL - 8
         else
             b:Hide()
             -- a switched-off tool cannot leave its overlay on every slot:
@@ -437,11 +731,11 @@ function Window.LayoutTools(win)
             end
         end
     end
-    -- The title moves out of the tool row's way rather than sitting on top of
-    -- it: the row is under the title, and with three tools on it the title
-    -- would otherwise overlap the first one on a narrow window.
+    f.search:ClearAllPoints()
+    f.search:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, rowY)
+    f.search:SetPoint("TOPRIGHT", f, "TOPRIGHT", right - 2, rowY)
     f.title:ClearAllPoints()
-    f.title:SetPoint("TOPLEFT", f, "TOPLEFT", (x > PAD) and x or PAD, -PAD)
+    f.title:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, -PAD)
 end
 
 -- The cheap pass: the same slots, in the same places, painted again. This is
@@ -469,9 +763,12 @@ function Window.New(key, bagsFn)
         -- filtered to one shelf would hide the rest of a player's belongings
         -- behind a setting made for something else.
         win.view = (win.key == "bags") and (Bags.db().defaultView or "all") or "all"
+        win.showBagBar = win.key == "bags" and Bags.db().showBagBar == true
         placeWindow(win)
         Window.Layout(win)
         win.frame:Show()
+        -- a real open: the edit mode's preview no longer owns this window
+        win.previewing, win.previewClose = nil, nil
     end
 
     function win.Close()
@@ -497,6 +794,68 @@ function Window.New(key, bagsFn)
 
     function win.IsShown()
         return win.frame and win.frame:IsShown()
+    end
+
+    -- While our edit mode is open the window has to be on screen, or its box
+    -- (a child of it) is not. The bags open for real; the bank away from a
+    -- banker has nothing to show, so it stands in at the size it last had.
+    local function preview(on)
+        local f = win.frame
+        if not f then return end
+        if on then
+            win.previewClose = nil
+            if f:IsShown() or not (Bags.mod and Bags.mod.active) then return end
+            if locked(f) then return end
+            if win.key == "bags" then
+                win.Open()
+            else
+                local db = Bags.db()
+                -- scale first: the saved offsets are in the window's own units
+                f:SetScale(db.scale or 1)
+                if (f:GetWidth() or 0) < 50 or (f:GetHeight() or 0) < 50 then
+                    local cols = math.max(1, db.columns or 12)
+                    local size, gap = db.slotSize or 37, db.spacing or 4
+                    f:SetSize(cols * (size + gap) - gap + PAD * 2, 320)
+                    f.bg:SetColorTexture(db.bgColor.r, db.bgColor.g, db.bgColor.b, db.bgColor.a or 0.92)
+                end
+                placeWindow(win)
+                f:Show()
+            end
+            win.previewing = true
+        elseif win.previewing then
+            win.previewing = nil
+            if not f:IsShown() then return end
+            -- A fight that ended the edit mode: the window goes after it,
+            -- unless it has been opened for real in the meantime.
+            if locked(f) then
+                win.previewClose = true
+                Window.AfterCombat(function()
+                    if win.previewClose then
+                        win.previewClose = nil
+                        win.Close()
+                    end
+                end)
+            else
+                win.Close()
+            end
+        end
+    end
+
+    -- Built up front (hidden) so the box exists before the edit mode's
+    -- snapshot is taken; called from the module's OnEnable.
+    function win.EnsureMover()
+        if win.moverEntry then return end
+        if not win.frame then build(win) end
+        win.frame:SetScale(Bags.db().scale or 1)
+        placeWindow(win)
+        win.moverEntry = Window.AttachMover(win.frame, {
+            key          = "bags_" .. win.key,
+            label        = (win.key == "bank") and L["Bank"] or L["Bags"],
+            storeKey     = win.key .. "Pos",
+            defaultPoint = (win.key == "bank") and "CENTER" or "BOTTOMRIGHT",
+            place        = function() placeWindow(win) end,
+            preview      = preview,
+        })
     end
 
     return win

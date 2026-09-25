@@ -93,11 +93,6 @@ across locales, the TOC file list against what is on disk, release notes, and la
 secret-value lint (`tools/secretlint.js`, baseline in `tools/secret-lint-baseline.json`),
 which follows a value across a whole file and fails on anything new.
 
-**Beta bug worth knowing:** the 1.60.1 client writes SavedVariables and never reads them
-back, so settings are gone at every login. While testing, keep `node tools/sv-seed.js
---watch` running; a login line starting `dev seed:` says whether the seed was used or the
-client has started loading the files itself.
-
 Adding a module: one call to `ns:RegisterModule`, an `OnEnable`/`OnDisable` pair and a
 `GetOptions`; a module of several files gets its own folder under `Modules/`. The file
 then goes into `VuloForeverUI.toc` — the checker verifies that list against disk.

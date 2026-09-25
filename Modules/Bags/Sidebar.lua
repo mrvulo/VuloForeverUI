@@ -28,6 +28,8 @@ Sidebar.WIDTH = BUTTON + 8
 -- empty square.
 local ICON = {
     all         = "bags-icon-multiple",
+    allbags      = "bag-main",
+    perbag    = "bag-main-highlight",
     equipment   = "bags-icon-equipment",
     consumable  = "bags-icon-consumables",
     tradegoods  = "bags-icon-tradegoods",
@@ -205,6 +207,11 @@ function Sidebar.Layout(win, keys)
     end
 
     local rows = { { view = "all", key = "all", label = L["All items"] } }
+    -- The physical views, bags window only: the bank has its own tabs.
+    if win.key == "bags" then
+        rows[#rows + 1] = { view = "allbags", key = "allbags", label = L["All bags"] }
+        rows[#rows + 1] = { view = "perbag", key = "perbag", label = L["Per bag"] }
+    end
 
     if win.key == "bank" and not db.bankHideTabsInSidebar then
         for _, tab in ipairs(Sidebar.Tabs()) do

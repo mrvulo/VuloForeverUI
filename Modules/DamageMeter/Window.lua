@@ -12,6 +12,47 @@ local UI = ns.UI
 
 local WHITE = DM.WHITE
 
+-- ---------------------------------------------------------------- movers --
+--
+-- Our edit mode keeps a place as a CENTRE offset from UIParent's centre; every
+-- frame of this module saves the TOPLEFT from the screen's bottom-left and
+-- keeps doing so. The saved TOPLEFT stays the truth: the mover's x/y is a
+-- mirror of it, refreshed on every own move, and a mover move is translated
+-- back into it. Both in the frame's own units, for a box of the given size.
+function DM.CenterFromTopLeft(frame, left, top, w, h)
+    local r = ns:GetScaleRatio(frame)
+    return left + w / 2 - UIParent:GetWidth() / r / 2, top - h / 2 - UIParent:GetHeight() / r / 2
+end
+
+function DM.TopLeftFromCenter(frame, x, y, w, h)
+    local r = ns:GetScaleRatio(frame)
+    return UIParent:GetWidth() / r / 2 + x - w / 2, UIParent:GetHeight() / r / 2 + y + h / 2
+end
+
+-- Mirror a frame's place into its mover from the frame's own rect, for
+-- frames anchored to something else (a window) whose TOPLEFT is not known
+-- without asking. A rect not laid out yet is asked again one frame later.
+function DM.SyncMoverFromRect(mover, frame, retried)
+    local db = mover and not mover.retired and mover.opts and mover.opts.db
+    if not (db and frame) then return end
+    local left, top = frame:GetLeft(), frame:GetTop()
+    if not (left and top) then
+        if not retried then ns.NextFrame(function() DM.SyncMoverFromRect(mover, frame, true) end) end
+        return
+    end
+    db.x, db.y = DM.CenterFromTopLeft(frame, left, top, frame:GetWidth(), frame:GetHeight())
+end
+
+-- A mover lives as long as its target, and the meter windows do not: a profile
+-- switch rebuilds them and closing one re-numbers the rest. There is no way to
+-- unregister a mover, so a window's mover is retired by hand: out of the edit
+-- mode's lists (or it would show up twice in the link and size pickers), its
+-- position table cut loose (or a reset would write into a profile that was
+-- left), its callbacks made inert.
+function DM.RetireMover(m)
+    ns:RemoveMover(m)
+end
+
 -- ---------------------------------------------------------------- icons --
 
 local ICON_STYLES = {
@@ -237,12 +278,23 @@ function DM.CreateWindow(idx)
         t:SetTexture(icon)
         b.icon = t
         b:SetAlpha(DM.ICON_ALPHA)
+        b._glyph = icon
         b:SetScript("OnEnter", function(self)
-            self:SetAlpha(DM.ICON_HOVER)
+            if DM.IsClassic() then
+                local k = DM.CLASSIC.HOVER
+                self.icon:SetVertexColor(k, k, k, 1)
+            else
+                self:SetAlpha(DM.ICON_HOVER)
+            end
             UI:ShowTooltip(self, { title = tip(), lines = self._lines })
         end)
         b:SetScript("OnLeave", function(self)
-            self:SetAlpha(self._dim and DM.ICON_ALPHA * 0.5 or DM.ICON_ALPHA)
+            if DM.IsClassic() then
+                local k = DM.CLASSIC.IDLE
+                self.icon:SetVertexColor(k, k, k, 1)
+            else
+                self:SetAlpha(self._dim and DM.ICON_ALPHA * 0.5 or DM.ICON_ALPHA)
+            end
             UI:HideTooltip()
         end)
         b:SetScript("OnClick", onClick)
@@ -336,6 +388,7 @@ function DM.CreateWindow(idx)
             DM.AddWindow(W)
         end)
         W.buttons.action._lines = { L["Opens another meter window above this one."] }
+        W.buttons.action._art = "open"
     else
         makeButton("action", DM.ICON .. "power", function()
             return wdb.locked and L["Unlock the window to close it"] or L["Close window"]
@@ -343,6 +396,7 @@ function DM.CreateWindow(idx)
             if wdb.locked then return end
             DM.RemoveWindow(W)
         end)
+        W.buttons.action._art = "close"
     end
 
     -- Bars ------------------------------------------------------------------
@@ -415,7 +469,8 @@ function DM.CreateWindow(idx)
     local function paintLock()
         lt:SetTexture(DM.ICON .. (wdb.locked and "lock" or "lock_open"))
         W.buttons.action._dim = (idx ~= 1 and wdb.locked) or nil
-        W.buttons.action:SetAlpha(W.buttons.action._dim and DM.ICON_ALPHA * 0.5 or DM.ICON_ALPHA)
+        local full = DM.IsClassic() and 1 or DM.ICON_ALPHA
+        W.buttons.action:SetAlpha(W.buttons.action._dim and full * 0.5 or full)
     end
     lock:SetScript("OnClick", function()
         wdb.locked = not wdb.locked
@@ -517,11 +572,9 @@ function DM.CreateWindow(idx)
     function W.SetType(t)
         W.dmType = t
         wdb.dmType = t
-        W.buttons.mode.icon:SetTexture(DM.TYPE_ICONS[t])
-        -- The new picture arrives in full colour; put the sidebar treatment
-        -- back on it so the icon row stays one row.
-        W.buttons.mode.icon:SetDesaturated(true)
-        W.buttons.mode.icon:SetTexCoord(0.10, 0.90, 0.10, 0.90)
+        W.PaintButtonIcon(W.buttons.mode)
+        title:SetText(DM.TypeName(t))
+        W.FitTitle()
         W.CloseSource()
         W.HideHome()
         W.styleKey = nil
@@ -534,24 +587,88 @@ function DM.CreateWindow(idx)
         frame:SetSize(wdb.width, wdb.height)
         W.RecalcScroll()
         W.Paint(W.lastSession)
+        -- The TOPLEFT stays, so the centre the edit mode keeps has moved.
+        if W.mover then W.mover.opts.width, W.mover.opts.height = wdb.width, wdb.height end
+        W.SyncMover()
     end
 
     function W.SavePosition()
         wdb.pos = { x = frame:GetLeft(), y = frame:GetTop() }
+        W.SyncMover()
     end
 
     -- Saved as TOPLEFT from the screen's bottom-left; the default cascades the
     -- windows up from the bottom-right corner.
-    function W.ApplyPosition()
-        frame:ClearAllPoints()
+    local function topLeft()
         local p = wdb.pos
-        if type(p) == "table" and p.x and p.y then
-            frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", p.x, p.y)
-        else
-            local sw = UIParent:GetWidth()
-            frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT",
-                sw - 20 - wdb.width - (idx - 1) * 20, 20 + wdb.height + (idx - 1) * 20)
+        if type(p) == "table" and p.x and p.y then return p.x, p.y end
+        return UIParent:GetWidth() - 20 - wdb.width - (W.idx - 1) * 20, 20 + wdb.height + (W.idx - 1) * 20
+    end
+
+    function W.ApplyPosition()
+        local left, top = topLeft()
+        frame:ClearAllPoints()
+        frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+        W.SyncMover()
+    end
+
+    -- The edit mode's copy of the place, worked out from the saved TOPLEFT
+    -- rather than read off the rect, which may not be laid out yet.
+    function W.SyncMover()
+        local m = W.mover
+        if m and not m.retired then
+            local left, top = topLeft()
+            m.opts.db.x, m.opts.db.y = DM.CenterFromTopLeft(frame, left, top, frame:GetWidth(), frame:GetHeight())
         end
+        -- A timer pinned to a window (or following window 1) moved with it.
+        if DM.Timer and DM.Timer.SyncMover then DM.Timer.SyncMover() end
+    end
+
+    -- A place from the edit mode, turned back into the window's own format.
+    function W.SetCenter(x, y)
+        local left, top = DM.TopLeftFromCenter(frame, x or 0, y or 0, frame:GetWidth(), frame:GetHeight())
+        wdb.pos = { x = left, y = top }
+        W.ApplyPosition()
+    end
+
+    -- One box per window in our edit mode, keyed by the window's number. A
+    -- window that changed its number (one before it was closed) gets a new
+    -- box under the new key; the old one is retired.
+    function W.AttachMover()
+        local key = "dm_window" .. W.idx
+        if W.mover and not W.mover.retired and W.mover.key == key then return end
+        DM.RetireMover(W.mover)
+        if type(wdb.mover) ~= "table" then wdb.mover = {} end
+        local opts
+        opts = {
+            key    = key,
+            label  = L["Meter window %d"]:format(W.idx),
+            db     = wdb.mover,
+            module = "damagemeter",
+            width  = wdb.width, height = wdb.height,
+            -- Reset puts the window back on its default place in the cascade
+            -- rather than stacking every window on the screen's centre.
+            applyPos = function()
+                if ns._inMoverReset then
+                    wdb.pos = nil
+                    W.ApplyPosition()
+                    return
+                end
+                W.SetCenter(opts.db.x, opts.db.y)
+            end,
+            -- A drop, a discard, a link: the mover already placed the frame
+            -- by its centre; this writes that back as the saved TOPLEFT.
+            onMove = function(x, y) W.SetCenter(x, y) end,
+            -- The window may be hidden by its visibility rules; the edit mode
+            -- shows it, and closing the edit mode hands it back to them.
+            editPreview = function()
+                if DM.mod.active then W.UpdateVisibility() end
+            end,
+        }
+        W.mover = ns:CreateMover(frame, opts)
+        -- CreateMover turns clamping off; the window's own drag relies on it.
+        frame:SetClampedToScreen(true)
+        W.SyncMover()
     end
 
     -- The header buttons hide until the header is hovered, when asked to.
@@ -569,10 +686,11 @@ function DM.CreateWindow(idx)
     function W.FitTitle()
         local db2 = DM.db()
         local hh = db2.hdrHeight or 22
-        local size = math.min(db2.hdrIconSize or 22, math.max(12, hh - 2))
+        local size = W.iconHit or math.min(db2.hdrIconSize or 22, math.max(12, hh - 2))
+        local gap = DM.IsClassic() and DM.CLASSIC.ICON_PAD or 1
         local used = 0
         for _, b in pairs(W.buttons) do
-            if b:IsShown() then used = used + size + 1 end
+            if b:IsShown() then used = used + size + gap end
         end
         local offX, offY = db2.hdrTextOffX or 0, db2.hdrTextOffY or 0
 
@@ -594,15 +712,69 @@ function DM.CreateWindow(idx)
         end
     end
 
+    -- One header button's picture: the 1.x art on Classic, the tinted glyph
+    -- (the meter type's icon desaturated, like the sidebar's) on Modern.
+    function W.PaintButtonIcon(b)
+        local d = DM.db()
+        local size = W.iconHit or math.min(d.hdrIconSize or 22, math.max(12, (d.hdrHeight or 22) - 2))
+        local isMode = b == W.buttons.mode
+        if DM.IsClassic() then
+            local art = DM.ClassicArt(isMode and "mode" or (b._art or b._key), W.dmType)
+            if art then
+                DM.PaintClassicArt(b.icon, art, size)
+                b:SetAlpha(b._dim and 0.5 or 1)
+                return
+            end
+        end
+        local glyph = math.max(9, size - 8)
+        b.icon:ClearAllPoints()
+        b.icon:SetPoint("CENTER", b, "CENTER", 0, 0)
+        b.icon:SetSize(glyph, glyph)
+        if isMode then
+            b.icon:SetTexture(DM.TYPE_ICONS[W.dmType])
+            b.icon:SetDesaturated(true)
+            b.icon:SetTexCoord(0.10, 0.90, 0.10, 0.90)
+        else
+            b.icon:SetTexture(b._glyph)
+            b.icon:SetDesaturated(false)
+            b.icon:SetTexCoord(0, 1, 0, 1)
+        end
+        local ir, ig, ib
+        if d.iconColorUseAccent then ir, ig, ib = DM.Accent() else ir, ig, ib = d.iconColor.r, d.iconColor.g, d.iconColor.b end
+        b.icon:SetVertexColor(ir, ig, ib)
+        b:SetAlpha(b._dim and DM.ICON_ALPHA * 0.5 or DM.ICON_ALPHA)
+    end
+
     -- Everything the settings decide once: fonts, colours, sizes, borders.
     function W.Restyle()
         local d = DM.db()
         local hh = d.hdrHeight or 22
+        local classic = DM.IsClassic()
+        -- Classic: the header and the rows sit inside the box's rim and bevel.
+        local inset = classic and DM.CLASSIC.INSET or 0
         header:SetHeight(hh)
+        header:ClearAllPoints()
+        header:SetPoint("TOPLEFT", frame, "TOPLEFT", inset, -inset)
+        header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -inset, -inset)
+        viewport:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -inset, inset)
+        catcher:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -inset, inset)
         bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -hh)
-        bg:SetColorTexture(d.bgColor.r, d.bgColor.g, d.bgColor.b, d.bgAlpha or 0.75)
-        hbg:SetColorTexture(d.hdrBgColor.r, d.hdrBgColor.g, d.hdrBgColor.b, d.hdrBgAlpha or 1)
-        if (d.hdrBottomBorderSize or 0) > 0 then
+        DM.ClassicBox(frame, classic, d.bgColor.r, d.bgColor.g, d.bgColor.b, d.bgAlpha or 0.75)
+        if classic then
+            bg:SetColorTexture(0, 0, 0, 0)
+            DM.ClassicHeaderTint(hbg, d.bgColor.r, d.bgColor.g, d.bgColor.b, d.hdrBgAlpha or 1)
+        else
+            bg:SetColorTexture(d.bgColor.r, d.bgColor.g, d.bgColor.b, d.bgAlpha or 0.75)
+            DM.ClassicUntint(hbg)
+            hbg:SetColorTexture(d.hdrBgColor.r, d.hdrBgColor.g, d.hdrBgColor.b, d.hdrBgAlpha or 1)
+        end
+        if classic then
+            -- One hairline in the rim's grey, whatever the header line says.
+            local g = DM.CLASSIC.LINE
+            hline:SetHeight(ns:Pixel(frame, 1))
+            hline:SetColorTexture(g, g, g, 1)
+            hline:Show()
+        elseif (d.hdrBottomBorderSize or 0) > 0 then
             hline:SetHeight(ns:Pixel(frame, d.hdrBottomBorderSize))
             hline:SetColorTexture(d.hdrBottomBorderColor.r, d.hdrBottomBorderColor.g, d.hdrBottomBorderColor.b, d.hdrBottomBorderAlpha or 1)
             hline:Show()
@@ -622,9 +794,12 @@ function DM.CreateWindow(idx)
         -- header they sit in. The glyph is drawn inset inside its button so
         -- the row keeps some air; the button itself stays the hit area.
         local hitSize = math.min(d.hdrIconSize or 22, math.max(12, hh - 2))
-        local glyph = math.max(9, hitSize - 8)
-        local ir, ig, ib
-        if d.iconColorUseAccent then ir, ig, ib = DM.Accent() else ir, ig, ib = d.iconColor.r, d.iconColor.g, d.iconColor.b end
+        local gap = 1
+        if classic then
+            hitSize = math.floor(hitSize * DM.CLASSIC.ICON_SCALE + 0.5)
+            gap = DM.CLASSIC.ICON_PAD
+        end
+        W.iconHit = hitSize
         local x = -3
         for _, key in ipairs({ "settings", "segment", "mode", "reset", "action" }) do
             local b = W.buttons[key]
@@ -634,9 +809,8 @@ function DM.CreateWindow(idx)
                 b:SetSize(hitSize, hitSize)
                 b:ClearAllPoints()
                 b:SetPoint("RIGHT", header, "RIGHT", x, 0)
-                x = x - hitSize - 1
-                b.icon:SetSize(glyph, glyph)
-                b.icon:SetVertexColor(ir, ig, ib)
+                x = x - hitSize - gap
+                W.PaintButtonIcon(b)
                 b:SetShown(not d.hdrMouseoverIcons)
             end
         end
@@ -645,12 +819,14 @@ function DM.CreateWindow(idx)
         -- Frame border: with or without the header, behind or over the bars.
         local anchor = d.windowBorderIncludeHeader and frame or bg
         borderHolder:SetFrameLevel(frame:GetFrameLevel() + (d.windowBorderBehind and 0 or 12))
-        DM.PaintBorder(borderHolder, anchor, d.windowBorderTexture, d.windowBorderSize, d.windowBorderColor,
+        DM.PaintBorder(borderHolder, anchor, d.windowBorderTexture, classic and 0 or d.windowBorderSize, d.windowBorderColor,
             d.windowBorderAlpha, d.windowBorderOffsetX or 0, d.windowBorderOffsetY or 0, borderHolder:GetFrameLevel())
 
         for i = 1, DM.BAR_POOL do DM.StyleRow(W, W.rows[i]) end
         DM.StyleRow(W, W.sticky)
         grip.icon = gt
+        local ir, ig, ib
+        if d.iconColorUseAccent then ir, ig, ib = DM.Accent() else ir, ig, ib = d.iconColor.r, d.iconColor.g, d.iconColor.b end
         gt:SetVertexColor(ir, ig, ib)
         lt:SetVertexColor(ir, ig, ib)
         W.RecalcScroll()
@@ -757,8 +933,8 @@ function DM.CreateWindow(idx)
                         W.stickySep:SetPoint("TOPLEFT", st.row, "BOTTOMLEFT", 0, 0)
                         W.stickySep:SetPoint("TOPRIGHT", st.row, "BOTTOMRIGHT", 0, 0)
                     else
-                        st.row:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-                        st.row:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+                        st.row:SetPoint("BOTTOMLEFT", viewport, "BOTTOMLEFT", 0, 0)
+                        st.row:SetPoint("BOTTOMRIGHT", viewport, "BOTTOMRIGHT", 0, 0)
                         W.stickySep:SetPoint("BOTTOMLEFT", st.row, "TOPLEFT", 0, 0)
                         W.stickySep:SetPoint("BOTTOMRIGHT", st.row, "TOPRIGHT", 0, 0)
                     end
@@ -820,6 +996,7 @@ function DM.CreateWindow(idx)
     DM.AttachBreakdown(W)
 
     W.ApplyPosition()
+    W.AttachMover()
     W.Restyle()
     if not wdb.dmType then W.ShowHome() end
     return W
@@ -870,6 +1047,7 @@ function DM.RemoveWindow(W)
     if W.moTicker then ns:CancelTicker(W.moTicker); W.moTicker = nil end
     if W.sourceOpen then W.CloseSource() end
     DM.HidePreview()
+    DM.RetireMover(W.mover)
     W.frame:Hide()
     W.frame:SetParent(nil)
     table.remove(DM.windows, idx)
@@ -877,6 +1055,8 @@ function DM.RemoveWindow(W)
     for i = idx, #DM.windows do
         DM.windows[i].idx = i
         DM.windows[i].wdb = db.windows[i]
+        -- Its box is keyed by the old number; it moves to the new one.
+        DM.windows[i].AttachMover()
     end
     db.windowCount = #DM.windows
     -- The timer may have been pinned to the window that just went away.
@@ -1034,7 +1214,8 @@ function DM.StyleRow(W, bar)
         anchor = bar.fill:GetStatusBarTexture()
         if d.borderFollowFillIcon then anchor = bar.fill end
     end
-    DM.PaintBorder(bar.border, anchor, d.borderFollowFill and "solid" or d.borderTexture, d.borderSize or 0,
+    DM.PaintBorder(bar.border, anchor, d.borderFollowFill and "solid" or d.borderTexture,
+        DM.IsClassic() and 0 or (d.borderSize or 0),
         d.borderColor, d.borderAlpha, 0, 0, bar.row:GetFrameLevel() + 3)
     if d.borderFollowFill and d.borderFollowFillIcon then
         -- With the icon: strips from the icon's left edge to the fill's end.
@@ -1265,7 +1446,8 @@ function DM.AttachHome(W)
         if not home then
             home = CreateFrame("Frame", nil, frame)
             home:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, 0)
-            home:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+            -- The row area's corner: on Classic it sits inside the box's rim.
+            home:SetPoint("BOTTOMRIGHT", W.viewport, "BOTTOMRIGHT", 0, 0)
             home:SetFrameLevel(frame:GetFrameLevel() + 25)
             home:EnableMouse(true)
             local hb = home:CreateTexture(nil, "BACKGROUND")

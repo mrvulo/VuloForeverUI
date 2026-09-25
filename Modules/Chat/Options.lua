@@ -253,8 +253,28 @@ local function tabsPage()
         { type = "desc", text = L["|cffaaaaaaThe tabs you see are drawn by us, but the tab you CLICK is the client's own underneath -- selecting a window from addon code is what breaks whispers, so it is left to the client.|r"] },
 
         { type = "header", text = L["Layout"] },
-        slider("tabPaddingX", L["Inner padding"], 0, 40, 1),
-        { type = "desc", text = L["|cffaaaaaaHeight, spacing and alignment are not here on purpose: a tab of ours is drawn exactly on the client's tab, and moving the drawing off the thing that takes the click means clicking a label and selecting the window next to it.|r"] },
+        { type = "dropdown", label = L["Tab text alignment"], width = 200, values = {
+                { value = "CENTER", text = L["Centre"] },
+                { value = "LEFT",   text = L["Left"] },
+            },
+          get = function() return Chat.db().tabAlign end,
+          set = function(_, v)
+              Chat.db().tabAlign = v
+              apply()
+              -- the padding row below is only live for "left"; its greyed
+              -- state is read when the page is built, so the page is rebuilt
+              C_Timer.After(0, function()
+                  local UI = ns.UI
+                  if UI.currentModule == "chat" and UI.BuildOptionsPage then
+                      UI:BuildOptionsPage(UI.currentModule, UI.currentTab)
+                  end
+              end)
+          end },
+        { type = "slider", label = L["Inner padding"], min = 0, max = 40, step = 1,
+            disabled = function() return Chat.db().tabAlign ~= "LEFT" end,
+            get = function() return Chat.db().tabPaddingX end,
+            set = function(_, v) Chat.db().tabPaddingX = v; apply() end },
+        { type = "desc", text = L["|cffaaaaaaHeight, width and spacing are not here on purpose: a tab of ours is drawn exactly on the client's tab, and moving the drawing off the thing that takes the click means clicking a label and selecting the window next to it.|r"] },
 
         { type = "header", text = L["Typography"] },
         dropdown("tabFont", L["Tab font"], tabFontValues(), 220),
@@ -382,7 +402,7 @@ local function sidebarPage()
           } },
         slider("sidebarScale", L["Icon size"], 0.6, 2, 0.05),
         slider("sidebarSpacing", L["Space between them"], 2, 30, 1),
-        -- One box over five keys. The order the menu lists them in is the
+        -- One box over six keys. The order the menu lists them in is the
         -- order the column draws them in, which is the order Sidebar.lua's own
         -- button table has -- a second list here would be a second thing to
         -- keep in step.
@@ -392,6 +412,7 @@ local function sidebarPage()
               { value = "showCopy",     text = L["Copy the chat"] },
               { value = "showFriends",  text = L["Friends"] },
               { value = "showGuild",    text = L["Guild"] },
+              { value = "showNewWindow", text = L["New chat window"] },
               { value = "showSettings", text = L["Chat settings"] },
               { value = "showScroll",   text = L["Jump to the newest line"] },
           },

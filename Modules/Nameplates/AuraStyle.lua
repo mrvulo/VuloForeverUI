@@ -96,6 +96,16 @@ local function placeText(fs, cfg, button)
     fs:SetPoint(a[1], button, a[1], a[2] + cfg.x, a[3] + cfg.y)
 end
 
+-- One kind's border: its size (0 when switched off) and colour. The preview
+-- asks the same function, so it draws what the plates will.
+function Style.Border(a)
+    if a.hideBorder then return 0, nil end
+    local size = tonumber(a.borderSize) or 1
+    local c = a.borderColor
+    if type(c) ~= "table" then c = { r = 0, g = 0, b = 0 } end
+    return math.max(0, size), c
+end
+
 -- Every engine call is wrapped: a refusal must cost us that one feature, not
 -- the whole batch of buttons the engine is building.
 local function register(button, method, ...)
@@ -126,9 +136,10 @@ function Style.Initializer(kind, size)
         cd:SetReverse(true)
         cd:SetHideCountdownNumbers(true)
 
-        if not a.hideBorder then
+        local bSize, bc = Style.Border(a)
+        if bSize > 0 and bc then
             local edges = ns.MakeEdges(button, "OVERLAY")
-            ns.LayoutEdges(edges, button, 1, 0, 0, 0, 1)
+            ns.LayoutEdges(edges, button, bSize, bc.r, bc.g, bc.b, bc.a or 1)
         end
 
         -- Fonts BEFORE the engine is told about the strings: an unstyled

@@ -1,7 +1,0 @@
--- VuloForeverUI / Dev / SavedSeed
--- DEV ONLY. The 1.60.1 beta client writes SavedVariables at logout and never
--- reads them back (docs/forever-client-research.md), so every login starts from
--- defaults. `node tools/sv-seed.js` overwrites this file with a copy of the
--- saved files from WTF; ns:InitDB uses it only while the client delivers
--- nothing itself. This committed version is the empty stub -- it carries no
--- data and does nothing.

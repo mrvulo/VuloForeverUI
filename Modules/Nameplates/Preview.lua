@@ -246,10 +246,10 @@ local function layoutRow(kind, db)
     local host  = (slot == "bottom") and plate.cast or plate.health
     local x0    = anc[3] * 2 + cfg.x
     local y0    = anc[4] * gap + cfg.y
-    -- A row above or below the bar is centred on it; a column beside the bar
-    -- grows away from the name line, downward only under the cast bar.
-    local column = (slot == "left" or slot == "right")
-    local grow   = (slot == "topleft") and -1 or 1
+    -- The same direction and pin as the real plates (Auras.GrowOf). A row
+    -- left on "auto" above or below the bar is centred on it.
+    local grow, point = NP.Auras.GrowOf(a.grow, slot, anc[1])
+    local centred = (a.grow == nil or a.grow == "auto") and (slot == "top" or slot == "bottom")
     local width  = count * size + (count - 1) * a.spacing
     local font   = ns.ModuleFontPath("nameplates")
     local durCfg, stackCfg = db.auraText.duration, db.auraText.stacks
@@ -261,18 +261,23 @@ local function layoutRow(kind, db)
         f:SetSize(size, size)
         f:ClearAllPoints()
         local dx, dy = x0, y0
-        if column then
-            dy = y0 + (i - 1) * step                     -- beside the bar: upward
-        elseif slot == "top" or slot == "bottom" then
-            dx = x0 - width / 2 + size / 2 + (i - 1) * step   -- centred on the bar
-        else
-            dx = x0 + grow * (i - 1) * step              -- from the corner outward
-        end
-        f:SetPoint(anc[1], host, anc[2], dx, dy)
+        local n = (i - 1) * step
+        if centred then
+            dx = x0 - width / 2 + size / 2 + n            -- centred on the bar
+        elseif grow == "up" then dy = y0 + n
+        elseif grow == "down" then dy = y0 - n
+        elseif grow == "left" then dx = x0 - n
+        else dx = x0 + n end
+        f:SetPoint(point, host, anc[2], dx, dy)
         local crop = a.crop and (a.cropPct / 100) or 0
         f.tex:SetTexture(SAMPLE_ICONS[((i - 1) % #SAMPLE_ICONS) + 1])
         f.tex:SetTexCoord(crop, 1 - crop, crop, 1 - crop)
-        ns.LayoutEdges(f.edges, f, a.hideBorder and 0 or 1, 0, 0, 0, 1)
+        local bSize, bc = NP.AuraStyle.Border(a)
+        if bc then
+            ns.LayoutEdges(f.edges, f, bSize, bc.r, bc.g, bc.b, bc.a or 1)
+        else
+            ns.LayoutEdges(f.edges, f, 0, 0, 0, 0, 1)
+        end
 
         f.dur:SetFont(font, durCfg.size, "OUTLINE")
         f.dur:SetTextColor(durCfg.color.r, durCfg.color.g, durCfg.color.b)
@@ -291,13 +296,11 @@ local function layoutRow(kind, db)
     for i = count + 1, #row do row[i]:Hide() end
 
     -- One click target over the whole row. Which icon is the top left corner
-    -- and which the bottom right depends on the direction the row grew: a
-    -- column grows upward, a row to the right -- except topleft, which does not.
+    -- and which the bottom right depends on the direction the row grew.
     local b = spot("aura" .. kind, first, L[KIND_LABEL[kind]], L["Auras"], 2)
     if b and last and last ~= first then
         local tl, br = first, last
-        if column then tl, br = last, first
-        elseif grow < 0 then tl, br = last, first end
+        if grow == "up" or grow == "left" then tl, br = last, first end
         b:ClearAllPoints()
         b:SetPoint("TOPLEFT", tl, "TOPLEFT", -2, 2)
         b:SetPoint("BOTTOMRIGHT", br, "BOTTOMRIGHT", 2, -2)

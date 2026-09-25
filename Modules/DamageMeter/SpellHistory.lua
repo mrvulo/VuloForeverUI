@@ -32,6 +32,8 @@ local eventFrame, animFrame, fadeTicker
 local registered = false
 local strip, stripIcons = nil, {}
 local barWin, barRows = nil, {}
+local stripMover, barMover
+local applyStripPos, applyBarPos
 
 -- ---------------------------------------------------------------- tracking --
 
@@ -235,6 +237,92 @@ local function forced()
     return DM.optionsOpen or ns:IsEditModeActive()
 end
 
+-- ---------------------------------------------------------------- movers --
+--
+-- Both displays save their TOPLEFT and change size as casts come and go; the
+-- edit mode keeps a CENTRE. A centre measured on a changing size would drift
+-- the saved corner, so the centre is always taken on the FULL size -- the size
+-- both displays have while the edit mode is open (forced() fills them), which
+-- is exactly when the mover measures them.
+
+local STRIP_DEFAULT = { x = 0, y = -180 }      -- centre-anchored defaults,
+local BAR_DEFAULT   = { x = -300, y = -180 }   -- see applyStripPos/applyBarPos
+
+local function moverDB(key)
+    local d = db()
+    if type(d[key]) ~= "table" then d[key] = {} end
+    return d[key]
+end
+
+local function stripFullSize()
+    local d = db()
+    local size, gap, n = d.iconSize or 36, d.iconSpacing or 1, d.iconCount or 5
+    local span = math.max(size, n * size + math.max(0, n - 1) * gap)
+    local dir = d.growDirection
+    if dir == "UP" or dir == "DOWN" then return size, span end
+    return span, size
+end
+
+local function barFullSize()
+    local d = db()
+    local h = ns:PixelSnap(d.barHeight or 18, barWin)
+    local hdrH = d.hideTopBar and 0 or 18
+    return d.barWidth or 300, hdrH + (d.maxBars or 5) * (h + 1) + 2
+end
+
+-- The saved corner (or the default centre) into the mover's x/y.
+local function syncMover(m, frame, pos, default, w, h)
+    if not m or m.retired then return end
+    local mdb = m.opts.db
+    if type(pos) == "table" and pos.x and pos.y then
+        mdb.x, mdb.y = DM.CenterFromTopLeft(frame, pos.x, pos.y, w, h)
+    else
+        mdb.x, mdb.y = default.x, default.y
+    end
+end
+
+local function syncStrip()
+    if strip then syncMover(stripMover, strip, db().iconPos, STRIP_DEFAULT, stripFullSize()) end
+end
+
+local function syncBar()
+    if barWin then syncMover(barMover, barWin, db().barPos, BAR_DEFAULT, barFullSize()) end
+end
+
+-- One mover's callbacks for a display: reset returns it to its default
+-- place, anything else becomes the saved corner the display's own drag
+-- writes too.
+local function moverOpts(key, dbKey, label, posKey, target, fullSize, apply)
+    local opts
+    local function setCenter(x, y)
+        local w, h = fullSize()
+        local left, top = DM.TopLeftFromCenter(target, x or 0, y or 0, w, h)
+        db()[posKey] = { x = left, y = top }
+        apply()
+    end
+    opts = {
+        key    = key,
+        label  = label,
+        db     = moverDB(dbKey),
+        module = "damagemeter",
+        applyPos = function()
+            if ns._inMoverReset then
+                db()[posKey] = false
+                apply()
+                return
+            end
+            setCenter(opts.db.x, opts.db.y)
+        end,
+        onMove = function(x, y) setCenter(x, y) end,
+        -- Shown (with stand-in spells) while the edit mode is open, back to
+        -- their own rules once it closes.
+        editPreview = function()
+            if DM.mod.active then SH.UpdateVisibility() end
+        end,
+    }
+    return opts
+end
+
 local function entryColor(e)
     local d = db()
     if e.status == "failed" or e.status == "interrupted" then return 0.859, 0.255, 0.255 end
@@ -305,6 +393,7 @@ local function buildStrip()
         self.moving = false
         self:StopMovingOrSizing()
         db().iconPos = { x = self:GetLeft(), y = self:GetTop() }
+        syncStrip()
     end)
     -- Click-through unless shift is held, so it never eats a click in a fight.
     local mods = CreateFrame("Frame")
@@ -314,6 +403,10 @@ local function buildStrip()
         local on = IsShiftKeyDown() and true or false
         strip:EnableMouse(on)
     end)
+    stripMover = ns:CreateMover(strip, moverOpts("dm_casticons", "iconMover", L["Icon Strip"],
+        "iconPos", strip, stripFullSize, function() applyStripPos() end))
+    -- CreateMover turns clamping off; the shift-drag relies on it.
+    strip:SetClampedToScreen(true)
     return strip
 end
 
@@ -524,7 +617,11 @@ local function buildBarWindow()
         barWin.moving = false
         barWin:StopMovingOrSizing()
         db().barPos = { x = barWin:GetLeft(), y = barWin:GetTop() }
+        syncBar()
     end)
+    barMover = ns:CreateMover(barWin, moverOpts("dm_casthistory", "barMover", L["Cast History"],
+        "barPos", barWin, barFullSize, function() applyBarPos() end))
+    barWin:SetClampedToScreen(true)
     return barWin
 end
 
@@ -633,7 +730,11 @@ local function refreshBars()
             end
         end
     end
-    barWin:SetSize(d.barWidth or 300, hdrH + n * (h + 1) + 2)
+    -- Forced (options page, edit mode): the full height, even when there
+    -- are not enough stand-in spells to fill it -- the edit mode measures
+    -- the window at this size (see barFullSize).
+    local tall = forced() and (d.maxBars or 5) or n
+    barWin:SetSize(d.barWidth or 300, hdrH + tall * (h + 1) + 2)
     barWin.header:SetShown(not d.hideTopBar)
 end
 
@@ -672,26 +773,42 @@ function SH.UpdateVisibility()
     SH.Refresh()
 end
 
+function applyStripPos()
+    if not strip then return end
+    strip:ClearAllPoints()
+    local p = db().iconPos
+    if type(p) == "table" and p.x and p.y then
+        strip:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", p.x, p.y)
+    else
+        strip:SetPoint("CENTER", UIParent, "CENTER", STRIP_DEFAULT.x, STRIP_DEFAULT.y)
+    end
+    syncStrip()
+end
+
+function applyBarPos()
+    if not barWin then return end
+    barWin:ClearAllPoints()
+    local p = db().barPos
+    if type(p) == "table" and p.x and p.y then
+        barWin:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", p.x, p.y)
+    else
+        barWin:SetPoint("CENTER", UIParent, "CENTER", BAR_DEFAULT.x, BAR_DEFAULT.y)
+    end
+    syncBar()
+end
+
 local function applyPositions()
-    local d = db()
-    if strip then
-        strip:ClearAllPoints()
-        local p = d.iconPos
-        if type(p) == "table" and p.x and p.y then
-            strip:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", p.x, p.y)
-        else
-            strip:SetPoint("CENTER", UIParent, "CENTER", 0, -180)
-        end
+    -- A profile switch re-points the settings; the boxes follow them.
+    if stripMover then
+        stripMover.opts.db = moverDB("iconMover")
+        stripMover.opts.width, stripMover.opts.height = stripFullSize()
     end
-    if barWin then
-        barWin:ClearAllPoints()
-        local p = d.barPos
-        if type(p) == "table" and p.x and p.y then
-            barWin:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", p.x, p.y)
-        else
-            barWin:SetPoint("CENTER", UIParent, "CENTER", -300, -180)
-        end
+    if barMover then
+        barMover.opts.db = moverDB("barMover")
+        barMover.opts.width, barMover.opts.height = barFullSize()
     end
+    applyStripPos()
+    applyBarPos()
 end
 
 function SH.Apply()

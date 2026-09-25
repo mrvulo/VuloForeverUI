@@ -39,31 +39,96 @@ Chat.Engine = Engine
 -- The client's visuals, taken down to nothing. Alpha only, and once per frame:
 -- nothing in Blizzard's own code writes these alphas back, while reparenting
 -- any of it would taint the next secure pass that touches the frame.
+-- The pieces of the client's scroll bar. Their OWN alpha is ours to write:
+-- the client's hover fade animates the bar itself (FCF_FadeInScrollbar), never
+-- its children, so alpha 0 on the arrows and the track holds where alpha 0 on
+-- the bar is undone by the first mouse-over.
+local function barParts(sb)
+    return sb.Back, sb.Forward, sb.Track
+end
+
+local function setMouse(f, on)
+    if not f then return end
+    if f.SetMouseClickEnabled then pcall(f.SetMouseClickEnabled, f, on) end
+    if f.SetMouseMotionEnabled then pcall(f.SetMouseMotionEnabled, f, on) end
+end
+
+-- The client's window art: background, border and the button frame's border,
+-- by the names the client itself keeps in CHAT_FRAME_TEXTURES. Its hover fade
+-- rewrites the ALPHA of every one of these on each mouse-over, so an alpha of
+-- ours cannot hold -- the file is taken away instead, which nothing of the
+-- client's ever puts back, and the fade then animates an empty texture. What
+-- was there is remembered so switching the module off gives it back.
+local function stripArt(cf, d)
+    local name = cf:GetName()
+    local list = _G.CHAT_FRAME_TEXTURES
+    if not name or type(list) ~= "table" then return end
+    d.art = d.art or {}
+    for _, key in ipairs(list) do
+        local t = _G[name .. key]
+        if t and t.GetObjectType and t:GetObjectType() == "Texture" then
+            if d.art[t] == nil then
+                local okA, atlas = pcall(t.GetAtlas, t)
+                local okF, file = pcall(t.GetTexture, t)
+                d.art[t] = {
+                    atlas = okA and ns.CanRead(atlas) and type(atlas) == "string" and atlas ~= "" and atlas or nil,
+                    file  = okF and ns.CanRead(file) and file or nil,
+                }
+            end
+            pcall(t.SetTexture, t, "")
+        end
+    end
+end
+
+local function restoreArt(d)
+    if not d.art then return end
+    for t, was in pairs(d.art) do
+        if was.atlas then
+            pcall(t.SetAtlas, t, was.atlas)
+        elseif was.file then
+            pcall(t.SetTexture, t, was.file)
+        end
+    end
+    d.art = nil
+end
+
 function Engine.Suppress(cf)
     local d = Chat.Data(cf)
     if d.suppressed then return end
     d.suppressed = true
 
-    if cf.FontStringContainer then
+    -- A native window (the combat log) keeps the client's text: that text is
+    -- the only copy there is.
+    if cf.FontStringContainer and not d.native then
         d.hadContainerAlpha = true
         cf.FontStringContainer:SetAlpha(0)
     end
+    stripArt(cf, d)
     -- The scrollbar: ours is drawn on the panel, so the client's goes quiet.
     -- GetAlpha on these widgets can answer with a secret while chat is
     -- restricted, so it is never read back -- only written.
     local sb = cf.ScrollBar
     if sb then
-        if sb.Track then sb.Track:SetAlpha(0) end
-        pcall(sb.SetAlpha, sb, 0)
-        pcall(sb.EnableMouse, sb, false)
+        for _, part in ipairs({ barParts(sb) }) do
+            pcall(part.SetAlpha, part, 0)
+            setMouse(part, false)
+        end
+        if sb.Track and sb.Track.Thumb then setMouse(sb.Track.Thumb, false) end
+        setMouse(sb, false)
     end
-    if cf.ScrollToBottomButton then
+    local stb = cf.ScrollToBottomButton
+    if stb then
         -- Its alpha is animated by the client, so no alpha of ours can win an
-        -- argument with it; hiding it on every show is the version that holds.
-        pcall(cf.ScrollToBottomButton.SetAlpha, cf.ScrollToBottomButton, 0)
-        pcall(cf.ScrollToBottomButton.HookScript, cf.ScrollToBottomButton, "OnShow", function(self)
-            if Chat.mod.active then pcall(self.Hide, self) end
-        end)
+        -- argument with it. Hidden holds: hidden now, and hidden again in the
+        -- same execution whenever the client shows it. Hooked once -- a hook
+        -- cannot come off, so re-enabling the module must not stack another.
+        if not d.stbHooked then
+            d.stbHooked = true
+            pcall(stb.HookScript, stb, "OnShow", function(self)
+                if Chat.mod.active then pcall(self.Hide, self) end
+            end)
+        end
+        pcall(stb.Hide, stb)
     end
     if cf.buttonFrame then pcall(cf.buttonFrame.SetAlpha, cf.buttonFrame, 0) end
 end
@@ -73,15 +138,20 @@ function Engine.Unsuppress(cf)
     if not d.suppressed then return end
     d.suppressed = false
     if cf.FontStringContainer then cf.FontStringContainer:SetAlpha(1) end
+    restoreArt(d)
     local sb = cf.ScrollBar
     if sb then
-        if sb.Track then sb.Track:SetAlpha(1) end
-        pcall(sb.SetAlpha, sb, 1)
-        pcall(sb.EnableMouse, sb, true)
+        for _, part in ipairs({ barParts(sb) }) do
+            pcall(part.SetAlpha, part, 1)
+            setMouse(part, true)
+        end
+        if sb.Track and sb.Track.Thumb then setMouse(sb.Track.Thumb, true) end
+        setMouse(sb, true)
     end
     if cf.buttonFrame then pcall(cf.buttonFrame.SetAlpha, cf.buttonFrame, 1) end
     if cf.ScrollToBottomButton then
         pcall(cf.ScrollToBottomButton.SetAlpha, cf.ScrollToBottomButton, 1)
+        pcall(cf.ScrollToBottomButton.Show, cf.ScrollToBottomButton)
     end
     -- The font we wrote is given back too, or the client's chat keeps our
     -- typeface and our size after the module is switched off.
@@ -130,12 +200,67 @@ function Engine.Surface(cf)
     return smf
 end
 
+-- The outline setting as SetFont wants it: "" for none, never nil.
+function Engine.FontFlags(db)
+    local o = db.fontOutline
+    if type(o) ~= "string" or o == "NONE" then return "" end
+    return o
+end
+
+-- One font family per window. A plain SetFont binds ONE file, and a Latin
+-- face has no CJK glyphs; the client's own chat font is a family per
+-- alphabet, and CreateFontFamily lets us build the same thing. Created once
+-- per window and re-driven in place on every font change. nil when the API
+-- is missing or refused -- the caller then falls back to a plain SetFont.
+local CJK_FILES = {
+    korean             = "Fonts\\2002.ttf",
+    simplifiedchinese  = "Fonts\\ARKai_T.ttf",
+    traditionalchinese = "Fonts\\blei00d.TTF",
+}
+-- On a CJK client every line is that alphabet, so it takes the size as set;
+-- CJK dropped into a Western chat reads small at Latin sizes and gets +2.
+local CLIENT_CJK = ({ koKR = "korean", zhCN = "simplifiedchinese", zhTW = "traditionalchinese" })[GetLocale()]
+local families = {}
+
+function Engine.FontFamily(id, path, size, flags)
+    if type(id) ~= "number" then return nil end
+    local fam = families[id]
+    if fam == false then return nil end
+    local function members()
+        local list = {
+            { alphabet = "roman",   file = path, height = size, flags = flags },
+            { alphabet = "russian", file = path, height = size, flags = flags },
+        }
+        for alphabet, file in pairs(CJK_FILES) do
+            local own = alphabet == CLIENT_CJK
+            list[#list + 1] = { alphabet = alphabet, file = own and path or file,
+                height = own and size or size + 2, flags = flags }
+        end
+        return list
+    end
+    if not fam then
+        if type(_G.CreateFontFamily) ~= "function" then families[id] = false; return nil end
+        local ok, made = pcall(_G.CreateFontFamily, "VuloForeverUIChatFont" .. id, members())
+        if not (ok and made) then families[id] = false; return nil end
+        families[id] = made
+        fam = made
+    end
+    local ok = pcall(function()
+        for _, m in ipairs(members()) do
+            local fo = fam:GetFontObjectForAlphabet(m.alphabet)
+            fo:SetFont(m.file, m.height, m.flags)
+            fo:SetJustifyH("LEFT")
+        end
+    end)
+    return ok and fam or nil
+end
+
 -- The font, set on BOTH surfaces from one place. A different font on the two
 -- is the bug where a link clicks several characters away from where it looks.
 function Engine.ApplyFont(cf)
     local db = Chat.db()
     local d = Chat.Data(cf)
-    if not d.smf then return end
+    if not (d.smf or d.native) then return end
 
     -- Once, before our first write: what the client had. Read through CanRead,
     -- because a font query can answer with a secret while chat is restricted,
@@ -151,14 +276,65 @@ function Engine.ApplyFont(cf)
 
     local path = ns.ModuleFontPath and ns.ModuleFontPath("chat") or ns.UI.FONT_PATH
     local size = db.fontSize or 12
-    local flags = (db.fontOutline ~= "NONE") and db.fontOutline or nil
+    -- A string, never nil: on this client the flags argument of SetFont is
+    -- mandatory, and a nil there raised inside the pcall below -- our message
+    -- frame was left with no font at all, and a message frame without a font
+    -- drops every line it is handed. That was the whole "empty chat".
+    local flags = Engine.FontFlags(db)
 
-    if path then
-        pcall(d.smf.SetFont, d.smf, path, size, flags)
-        -- The client's copy has to match glyph for glyph, or its hit zones no
-        -- longer sit under our letters.
-        pcall(cf.SetFont, cf, path, size, flags)
+    -- A font family first, so Chinese, Korean and Taiwanese lines render
+    -- instead of turning into boxes: our face carries the Latin and Cyrillic
+    -- alphabets, the client's own CJK files the rest. The same object goes
+    -- on both surfaces, which keeps the hit zones under our letters.
+    local fam = Engine.FontFamily(cf:GetID(), path, size, flags)
+    -- Native: the client draws the text, so the client's frame is the only
+    -- surface to dress. No alignment to keep -- there is no second copy.
+    -- A font object carries its own alignment and a frame takes it over with
+    -- the object; the family's default is CENTER, which centred every combat
+    -- log line. Put back to LEFT on every surface after the object lands --
+    -- on the bridged windows too, where the client's invisible copy has to
+    -- sit exactly where ours does or its link zones slide sideways.
+    if d.native then
+        if fam then
+            pcall(cf.SetFontObject, cf, fam)
+        else
+            pcall(cf.SetFont, cf, path, size, flags)
+        end
+        pcall(cf.SetJustifyH, cf, "LEFT")
+        return
     end
+    if fam then
+        pcall(d.smf.SetFontObject, d.smf, fam)
+        pcall(cf.SetFontObject, cf, fam)
+        pcall(d.smf.SetJustifyH, d.smf, "LEFT")
+        pcall(cf.SetJustifyH, cf, "LEFT")
+        pcall(d.smf.SetShadowOffset, d.smf, 1, -1)
+        pcall(d.smf.SetShadowColor, d.smf, 0, 0, 0, 0.8)
+        pcall(cf.SetIndentedWordWrap, cf, true)
+        return
+    end
+
+    -- SetFont answers false for a file that does not resolve (a shared-media
+    -- font whose addon is gone) and leaves the widget fontless, so the shipped
+    -- font is the fallback and the client's chat font object the last resort.
+    local ok, set = pcall(d.smf.SetFont, d.smf, path, size, flags)
+    if not (ok and set) then
+        path = ns.UI.FONT_PATH
+        ok, set = pcall(d.smf.SetFont, d.smf, path, size, flags)
+        if not (ok and set) and _G.ChatFontNormal then
+            path = nil
+            d.smf:SetFontObject(_G.ChatFontNormal)
+        end
+    end
+    -- The client's copy has to match glyph for glyph, or its hit zones no
+    -- longer sit under our letters.
+    if path then
+        pcall(cf.SetFont, cf, path, size, flags)
+    elseif _G.ChatFontNormal then
+        pcall(cf.SetFontObject, cf, _G.ChatFontNormal)
+    end
+    pcall(d.smf.SetShadowOffset, d.smf, 1, -1)
+    pcall(d.smf.SetShadowColor, d.smf, 0, 0, 0, 0.8)
     -- Re-asserted here rather than once at setup: the client resets it on its
     -- own font and dock passes.
     pcall(cf.SetIndentedWordWrap, cf, true)
@@ -187,6 +363,29 @@ function Engine.ApplyNameColors()
         pcall(toggle, want, group)
     end
     return true
+end
+
+-- ---------------------------------------------------------------- stamps --
+
+-- The client stamps player chat itself when its own timestamp option is on,
+-- and ours stamps every line -- together that was two times on one line. While
+-- ours is on, the client's goes off; what the player had is kept in the
+-- profile (the CVar survives a reload, so memory alone would forget it) and
+-- given back the moment ours is switched off or the module is.
+function Engine.ApplyClientStamps()
+    if not (C_CVar and C_CVar.GetCVar) then return end
+    local db = Chat.db()
+    local cur = C_CVar.GetCVar("showTimestamps")
+    if type(cur) ~= "string" then return end
+    if Chat.mod.active and db.timestamps then
+        if cur ~= "none" then
+            db.clientStamps = cur
+            C_CVar.SetCVar("showTimestamps", "none")
+        end
+    elseif db.clientStamps then
+        if cur == "none" then C_CVar.SetCVar("showTimestamps", db.clientStamps) end
+        db.clientStamps = nil
+    end
 end
 
 -- ---------------------------------------------------------------- scroll --
@@ -327,8 +526,32 @@ end
 
 -- Take one window in. Once per frame per session: a hook cannot be removed,
 -- so the guard is what keeps a second pass from doubling every line.
+-- The combat log is left to the client whole: its quick buttons, filters and
+-- refill machinery are its own, and a second copy of it drawn by us only ever
+-- lay on top of whatever window was really selected.
+local function isCombatLog(cf)
+    if type(_G.IsCombatLog) ~= "function" then return false end
+    local ok, yes = pcall(_G.IsCombatLog, cf)
+    return ok and ns.CanRead(yes) and yes and true or false
+end
+Engine.IsCombatLog = isCombatLog
+
+-- The combat log on our panel, with the client still drawing its text: its
+-- art and scroll bar go, our background goes behind it, the font becomes ours
+-- and the wheel scrolls it. No hook on its AddMessage and no copy of its
+-- lines, so there is nothing of ours in its filter and refill machinery.
+function Engine.Adopt(cf)
+    if not Chat.IsOpen(cf) then return false end
+    local d = Chat.Data(cf)
+    d.native = true
+    installScroll(cf)
+    Engine.ApplyFont(cf)
+    return true
+end
+
 function Engine.Integrate(cf)
     if not Chat.IsOpen(cf) then return false end
+    if isCombatLog(cf) then return Engine.Adopt(cf) end
     local d = Chat.Data(cf)
 
     Engine.Surface(cf)
@@ -354,6 +577,7 @@ function Engine.IntegrateAll()
     for _, cf in ipairs(Chat.Frames()) do
         Engine.Integrate(cf)
     end
+    Engine.ApplyClientStamps()
 end
 
 -- Give the client its own chat back. The hooks stay -- they cannot be taken
@@ -366,4 +590,7 @@ function Engine.Release()
         if d.host then d.host:Hide() end
         d.extraLines = nil
     end
+    -- mod.active is already false here, so this hands the client its own
+    -- timestamps back.
+    Engine.ApplyClientStamps()
 end

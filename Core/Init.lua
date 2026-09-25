@@ -38,10 +38,6 @@ initFrame:SetScript("OnEvent", function(_, event, addonName)
         if ns.RestrictionsForced and ns.RestrictionsForced() then
             ns:Print("simulated combat restrictions are still ON -- '/vfsecrets force' switches them off.")
         end
-        if ns._svSeedNote then
-            ns:Print("dev seed: %s", ns._svSeedNote)
-            ns._svSeedNote = nil
-        end
         -- The first-time setup (UI/Setup.lua) no longer opens by itself: it
         -- relies on "this database is new", and a client that fails to load
         -- saved variables (seen client-wide on the beta, 2026-09-18) makes every

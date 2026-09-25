@@ -90,6 +90,7 @@ local mod = ns:RegisterModule("chat", {
         tabBgColorActive   = { r = 0.03, g = 0.045, b = 0.05, a = 0 },
         tabTexture         = "",
         tabPaddingX        = 0,
+        tabAlign           = "CENTER",
 
         activeUnderline = true,
         underlineSize   = 2,
@@ -147,6 +148,7 @@ local mod = ns:RegisterModule("chat", {
         showCopy     = true,
         showFriends  = true,
         showGuild    = false,
+        showNewWindow = true,
         showSettings = true,
         showScroll   = true,
         hideTooltipOnHover = false,
@@ -186,6 +188,15 @@ function Chat.Data(cf)
     local d = data[cf]
     if not d then d = {}; data[cf] = d end
     return d
+end
+
+-- Is this window one of ours to dress? Either we draw its text (bridged), or
+-- the client draws it and we only put it on our panel (native: the combat
+-- log). Everything that styles a window asks this; only the text engine
+-- itself asks about `bridged`.
+function Chat.Owned(cf)
+    local d = data[cf]
+    return d ~= nil and (d.bridged or d.native) and true or false
 end
 
 function Chat.Frames()
@@ -291,6 +302,9 @@ function mod:OnEnable()
         if mod.active then Chat.Refresh() end
     end) end
 
+    -- The whole chat group's box in our edit mode (Panel.lua, "mover").
+    Chat.Panel.InstallMover()
+
     ns:RegisterSlash({ key = "CHAT", commands = { "/vfchat" },
         desc = "Open the chat settings.",
     })
@@ -310,6 +324,7 @@ end
 function mod:OnDisable()
     Chat.Engine.Release()
     Chat.Panel.Release()
+    Chat.Panel.ReleaseMover()
     if Chat.Tabs then Chat.Tabs.Release() end
     if Chat.Sidebar then Chat.Sidebar.Release() end
     if Chat.Fade then Chat.Fade.Release() end

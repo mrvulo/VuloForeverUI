@@ -79,9 +79,12 @@ local M = ns:RegisterModule("nameplates", {
         -- auras: the engine shows them, we only say where and how many
         debuffSlot = "top", buffSlot = "left", ccSlot = "right",
         auras = {
-            debuffs = { max = 5, spacing = 2, crop = false, cropPct = 10, hideBorder = false },
-            buffs   = { max = 4, spacing = 2, crop = false, cropPct = 10, hideBorder = false },
-            cc      = { max = 2, spacing = 2, crop = false, cropPct = 10, hideBorder = false },
+            debuffs = { max = 5, spacing = 2, crop = false, cropPct = 10, hideBorder = false, grow = "auto",
+                        borderSize = 1, borderColor = c(0, 0, 0) },
+            buffs   = { max = 4, spacing = 2, crop = false, cropPct = 10, hideBorder = false, grow = "auto",
+                        borderSize = 1, borderColor = c(0, 0, 0) },
+            cc      = { max = 2, spacing = 2, crop = false, cropPct = 10, hideBorder = false, grow = "auto",
+                        borderSize = 1, borderColor = c(0, 0, 0) },
         },
         auraText = {
             duration = { position = "topleft",     size = 11, color = c(1, 1, 1), x = 0, y = 0 },

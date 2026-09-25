@@ -35,7 +35,7 @@ const luaparse = require('luaparse');
 
 const ROOT = path.resolve(__dirname, '..');
 const SCAN_DIRS = ['Core', 'Modules', 'UI', 'Locales', 'Trinkets'];
-const SYNTAX_ONLY_DIRS = ['Libs', 'Dev'];   // vendor code and the generated dev seed: syntax/locals checks only
+const SYNTAX_ONLY_DIRS = ['Libs'];   // vendor code: syntax/locals checks only
 const DEDE = path.join(ROOT, 'Locales', 'deDE.lua');
 // "doom_?cooldownpulse" joined 2026-08-04: it sat in the Cooldown Pulse module's
 // DESCRIPTION -- on screen in the options, and translated into all nine locale

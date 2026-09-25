@@ -30,7 +30,7 @@ local mod = ns:RegisterModule("auras", {
         shortDurations = true,
 
         iconSize = 32,
-        growthX  = "right",
+        growthX  = "left",     -- from the top-right corner inward, like the client's own row
         growthY  = "down",
 
         perRowBuffs    = 11, rowsBuffs   = 3, maxBuffs   = 32, paddingBuffs   = 5,

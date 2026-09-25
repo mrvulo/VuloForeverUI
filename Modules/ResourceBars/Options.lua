@@ -85,6 +85,13 @@ local function lookRows(key)
         { type = "header", text = L["Text"] },
         slider(key, "fontSize", L["Text size"], 6, 24, 1),
         color(key, "textColor", L["Text color"]),
+        { type = "dropdown", label = L["Text layer"], width = 220,
+          values = {
+              { value = "top",   text = L["Over the bar"] },
+              { value = "under", text = L["Under the bar"] },
+          },
+          get = function() return RB.Bar(key).textLayer or "top" end,
+          set = function(_, v) RB.Bar(key).textLayer = v; apply() end },
         dropdown(key, "leftText", L["Left text"], {
             { value = "none",  text = L["Nothing"] },
             { value = "name",  text = L["The name"] },

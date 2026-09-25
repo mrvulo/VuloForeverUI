@@ -176,45 +176,8 @@ function ns:GetClassProfileName(classKey)
     return (eng and L[eng]) or classKey
 end
 
--- DEV ONLY: the 1.60.1 beta client writes SavedVariables and never reads them
--- back (docs/forever-client-research.md). Dev/SavedSeed.lua holds a copy made by
--- tools/sv-seed.js, and it stands in only while the client delivers nothing: a
--- client that loads the account file again wins, and says the seed can go.
-local function applyDevSeed()
-    local seed = ns._svSeed
-    ns._svSeed = nil
-    if type(seed) ~= "table" or type(seed.account) ~= "table" then return end
-    if VuloForeverUIDB ~= nil then
-        ns._svSeedNote = "the client loaded the saved settings itself -- the dev seed is no longer needed."
-        return
-    end
-    VuloForeverUIDB = seed.account
-    if VuloForeverUICharDB == nil then
-        -- Keyed by the WTF folder name. Forever has no realms: a character is
-        -- "Main Secondary", UnitName("player") returns that as ONE string and
-        -- the folder spells it "Main-Secondary". Blizzard has said the return
-        -- shape may still change, so the two-value and realm forms are tried
-        -- too; everything is compared without spaces and hyphens.
-        local function flat(s) return (tostring(s):gsub("[%s%-]", "")):lower() end
-        local name, second = UnitName("player")
-        local wanted = {
-            [flat(name)] = true,
-            [flat(name) .. flat(second or "")] = true,
-            [flat(name) .. flat(GetRealmName() or "")] = true,
-        }
-        for key, data in pairs(seed.chars or {}) do
-            if type(data) == "table" and wanted[flat(key)] then
-                VuloForeverUICharDB = data
-            end
-        end
-    end
-    ns._svSeedNote = ("settings restored from the dev seed of %s (character file: %s)."):format(
-        tostring(seed.stamp), VuloForeverUICharDB and "found" or "none")
-end
-
 -- Runs on ADDON_LOADED, once SavedVariables exist.
 function ns:InitDB()
-    applyDevSeed()
     local freshInstall  = (VuloForeverUIDB == nil)
     local charWasNil    = (VuloForeverUICharDB == nil)
     VuloForeverUIDB     = VuloForeverUIDB     or {}

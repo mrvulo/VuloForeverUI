@@ -10,6 +10,7 @@ local mod = AB.mod
 
 local function apply()
     AB.Apply()
+    AB.RefreshPreview()
 end
 
 local function toggle(key, label, tooltip)
@@ -31,6 +32,7 @@ end
 function mod:GetOptions()
     local db = AB.db()
     local page = {
+        AB.PreviewItem(),
         { type = "desc", text = L["|cffaaaaaaThe client's own action bars stay. They keep their clicks, their keys and their paging -- everything below dresses them.|r"] },
 
         { type = "header", text = L["Bar style"] },

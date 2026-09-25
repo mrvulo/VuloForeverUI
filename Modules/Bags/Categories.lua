@@ -9,8 +9,8 @@
 --
 -- On top of the seven fixed shelves there are shelves that only exist while
 -- the bag holds something for them: one per equipment set, one per armour
--- slot, one per expansion, plus the two the player drives (pinned, recent).
--- They are KEYS WITH A PREFIX ("set:Tank", "slot:INVTYPE_HEAD", "exp:3"), not
+-- slot, plus the two the player drives (pinned, recent).
+-- They are KEYS WITH A PREFIX ("set:Tank", "slot:INVTYPE_HEAD"), not
 -- entries in a list somebody has to keep in step with the bags.
 local _, ns = ...
 local L = ns.L
@@ -55,7 +55,6 @@ function Categories.Label(key)
     local kind, rest = tostring(key):match("^(%a+):(.+)$")
     if kind == "set"  then return rest end
     if kind == "slot" then return Bags.Items.EquipLocLabel(rest) end
-    if kind == "exp"  then return Bags.Items.ExpansionLabel(rest) end
     return key
 end
 
@@ -96,6 +95,7 @@ local function classOf(info)
     if type(classID) ~= "number" then return "misc" end
     return BY_CLASS[classID] or "misc"
 end
+Categories.ClassOf = classOf
 
 -- ---------------------------------------------------------------- bucket --
 
@@ -108,13 +108,11 @@ function Categories.Rules(winKey)
     if winKey == "bank" then
         return {
             categories = db.bankGroupByCategory,
-            expansion  = db.bankGroupByExpansion,
             hideEmpty  = db.bankHideEmptyWhenGrouped,
         }
     end
     return {
         categories = db.categories,
-        expansion  = db.groupByExpansion,
         armory     = db.groupArmoryBySlot,
         sets       = db.splitEquipmentSets,
         pinned     = db.showPinned,
@@ -126,7 +124,7 @@ end
 -- this, and so does the sidebar: an ungrouped window has one shelf and a bar
 -- with one button on it would be furniture.
 function Categories.Grouped(rules)
-    return (rules.categories or rules.expansion or rules.armory or rules.sets) and true or false
+    return (rules.categories or rules.armory or rules.sets) and true or false
 end
 
 -- THE ORDER OF THE QUESTIONS IS THE FEATURE. A pinned item is pinned whatever
@@ -157,15 +155,10 @@ function Categories.For(entry, rules)
         end
     end
 
-    if rules.expansion then
-        local expac = Bags.Items.Expansion(info)
-        if expac then return "exp:" .. expac end
-    end
-
     -- Neither grouping is on: one shelf, no heading. The gear groupings above
     -- may still have answered -- somebody can split sets out without wanting
     -- the rest of the bag sorted at all.
-    if not rules.categories and not rules.expansion then return "all" end
+    if not rules.categories then return "all" end
     if not Categories.Enabled(class) then return "misc" end
     return class
 end
@@ -173,8 +166,8 @@ end
 -- ---------------------------------------------------------------- order --
 
 -- Where a shelf sits. The fixed ones keep their place in ORDER; a grouping
--- shelf takes the place of the shelf it replaced, so turning "group by
--- expansion" on does not shuffle the window into a new shape every draw.
+-- shelf takes the place of the shelf it replaced, so turning "group armoury
+-- by slot" on does not shuffle the window into a new shape every draw.
 local RANK = { pinned = -20, recent = -19, free = 100 }
 for i, key in ipairs(Categories.ORDER) do RANK[key] = i end
 
@@ -196,12 +189,10 @@ local function rankOf(key)
     local fixed = RANK[key]
     if fixed then return fixed, 0, key end
     local kind, rest = tostring(key):match("^(%a+):(.+)$")
-    -- All three groupings sit where "equipment" sits, in the order that makes
-    -- them readable: sets first (a player made those), then armour slots, then
-    -- expansions by number.
+    -- Both gear groupings sit where "equipment" sits, sets first (a player
+    -- made those), then armour slots in character-sheet order.
     if kind == "set"  then return RANK.equipment or 1, -1, rest end
     if kind == "slot" then return RANK.equipment or 1, SLOT_RANK[rest] or 99, rest end
-    if kind == "exp"  then return RANK.equipment or 1, tonumber(rest) or 99, rest end
     return 50, 0, tostring(key)
 end
 
@@ -231,7 +222,11 @@ end
 -- The dropdown behind "default bag type" and the side bar: the shelves a
 -- player can ask for by name, all items first.
 function Categories.ViewValues()
-    local values = { { value = "all", text = L["All items"] } }
+    local values = {
+        { value = "all", text = L["All items"] },
+        { value = "allbags", text = L["All bags"] },
+        { value = "perbag", text = L["Per bag"] },
+    }
     for _, key in ipairs(Categories.ORDER) do
         values[#values + 1] = { value = key, text = Categories.Label(key) }
     end

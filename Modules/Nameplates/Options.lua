@@ -244,11 +244,30 @@ local function auraKindRows(kind, label)
         end,
         inline = {
             resize(label, {
+                { type = "dropdown", label = L["Grow direction"], values = {
+                        { value = "auto",  text = L["Automatic"] },
+                        { value = "up",    text = L["Up"] },
+                        { value = "down",  text = L["Down"] },
+                        { value = "left",  text = L["Left"] },
+                        { value = "right", text = L["Right"] },
+                    },
+                    get = function() return cfg().grow or "auto" end,
+                    set = function(_, v) cfg().grow = v; NP.Bump() end },
                 num("max", L["Max Icons"], 1, 10),
                 num("spacing", L["Spacing"], -5, 20),
                 flag("crop", L["Cropped Icons"], restyleAuras),
                 num("cropPct", L["Adjust Crop"], 5, 25, restyleAuras),
                 flag("hideBorder", L["Hide Border"], restyleAuras),
+                num("borderSize", L["Border size"], 0, 4, restyleAuras),
+                { type = "color", label = L["Border color"],
+                    disabled = function() return cfg().hideBorder end,
+                    get = function() return cfg().borderColor end,
+                    set = function(r, g, b)
+                        local c = cfg().borderColor
+                        if type(c) ~= "table" then c = {}; cfg().borderColor = c end
+                        c.r, c.g, c.b = r, g, b
+                        restyleAuras()
+                    end },
             }),
         } }
 end
@@ -631,7 +650,22 @@ local function generalPage()
                 if not InCombatLockdown() then pcall(C_CVar.SetCVar, "nameplateOccludedAlphaMult", tostring(v)) end
             end }
     end
-    return { NP.Preview.Item(), friendlySection(), spacing, targetFocus, section(L["Extras"], extras) }
+    -- Settings out of another suite's profile string (Import.lua).
+    local import = section(L["Import"], {
+        { type = "desc", text = L["|cffaaaaaaPaste a profile string from another UI suite. Every nameplate setting it carries that exists here is taken over; the rest stays as it is.|r"] },
+        { type = "button", label = L["Import nameplate settings"], width = 220, onClick = function()
+            ns.UI:ShowStringImportDialog(L["Import nameplate settings"], function(text)
+                local taken, err = NP.ImportForeignString(text)
+                if not taken then return err end
+                ns:Print(L["Nameplates: %d settings taken over."], taken)
+                local UI = ns.UI
+                if UI.currentModule == "nameplates" and UI.BuildOptionsPage then
+                    UI:BuildOptionsPage(UI.currentModule, UI.currentTab)
+                end
+            end)
+        end },
+    })
+    return { NP.Preview.Item(), friendlySection(), spacing, targetFocus, section(L["Extras"], extras), import }
 end
 
 function M:GetOptions(tabId)

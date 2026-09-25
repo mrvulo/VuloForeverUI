@@ -123,10 +123,17 @@ end
 -- ---------------------------------------------------------------------------
 -- Apply
 -- ---------------------------------------------------------------------------
+-- A target/focus/hover texture set to keep the bar's own colour follows
+-- every colour the bar gets (Target.lua).
+local function retint(plate)
+    if NP.Target and NP.Target.RetintOverlay then NP.Target.RetintOverlay(plate) end
+end
+
 local function setPlain(plate, r, g, b)
     if plate.lastR == r and plate.lastG == g and plate.lastB == b then return end
     plate.lastR, plate.lastG, plate.lastB = r, g, b
     plate.health:SetStatusBarColor(r, g, b)
+    retint(plate)
 end
 
 function Colors.Apply(plate)
@@ -143,6 +150,7 @@ function Colors.Apply(plate)
         if secret then
             plate.lastR = nil
             plate.health:SetStatusBarColor(r, g, b)
+            retint(plate)
         else
             setPlain(plate, r, g, b)
         end
@@ -190,6 +198,7 @@ function Colors.Apply(plate)
             if ns.Exists(r) then
                 plate.lastR = nil
                 plate.health:SetStatusBarColor(r, g, b)
+                retint(plate)
                 return
             end
         end

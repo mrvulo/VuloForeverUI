@@ -49,6 +49,22 @@ local function hideAgain(region)
     if uf and owned[uf] then region:Hide() end
 end
 
+-- Hidden is not enough on its own: the highlight IGNORES its parent's alpha
+-- (it is drawn over the target on a frame we keep at alpha 0), so any way the
+-- client shows it that is not Show/SetShown puts a white wash over our target
+-- plate. Its own alpha is held at 0 as well, for as long as the frame is ours.
+local SEL_ALPHA = 0.25      -- the template's own value, for NP.Restore
+local zeroing
+local function zeroAgain(region)
+    if zeroing then return end
+    local uf = highlightOwner[region]
+    if uf and owned[uf] then
+        zeroing = true
+        region:SetAlpha(0)
+        zeroing = false
+    end
+end
+
 local function hookOnce(uf)
     if hooked[uf] then return end
     hooked[uf] = true
@@ -59,6 +75,7 @@ local function hookOnce(uf)
         highlightOwner[sel] = uf
         hooksecurefunc(sel, "Show", hideAgain)
         hooksecurefunc(sel, "SetShown", hideAgain)
+        hooksecurefunc(sel, "SetAlpha", zeroAgain)
     end
 end
 
@@ -73,7 +90,10 @@ function NP.Suppress(nameplate)
     -- Unconditional. Whether the unit is attackable was decided by the caller;
     -- asking again here can be wrong on the unit's first frame.
     uf:SetAlpha(0)
-    if uf.selectionHighlight then uf.selectionHighlight:Hide() end
+    if uf.selectionHighlight then
+        uf.selectionHighlight:Hide()
+        zeroAgain(uf.selectionHighlight)
+    end
 
     -- Children follow the unit frame's alpha unless they opted out of it.
     -- Blizzard reaches them through parent keys (self.AurasFrame, ...), never
@@ -105,6 +125,7 @@ function NP.Restore(uf)
             parked[child] = nil
         end
     end
+    if uf.selectionHighlight then uf.selectionHighlight:SetAlpha(SEL_ALPHA) end
     uf:SetAlpha(1)
 end
 

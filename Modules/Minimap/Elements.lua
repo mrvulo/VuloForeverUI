@@ -107,7 +107,17 @@ local DEFS = {
       ox = "diffOffsetX", oy = "diffOffsetY", scale = "diffScale" },
 }
 
+local ticker, sinceLast = nil, {}
+
+-- Per readout: a small frame of ours on the map (the thing our edit mode drags)
+-- with the text inside it. frames[key] is that frame, frames[key].text the text.
 local frames = {}
+
+-- An example for our edit mode, for a readout that has nothing to say right now
+-- (the difficulty outside an instance, the coordinates where there are none).
+local SAMPLE = { coords = "45, 62", zone = "Zone", clock = "12:00", fps = "60 fps", diff = "5H" }
+
+local editing = false
 
 local function want(def)
     local d = db()
@@ -120,51 +130,241 @@ local function want(def)
     return true
 end
 
+-- The little nudge each mode adds on top of the offsets: "edge" hangs the text
+-- just outside the map, "inside" lays it on top.
+local function modeNudge(def)
+    local d = db()
+    local point = d[def.pos] or "BOTTOM"
+    if d[def.mode] == "edge" then
+        if point:find("TOP") then return 14 elseif point:find("BOTTOM") then return -14 end
+    else
+        if point:find("TOP") then return -4 elseif point:find("BOTTOM") then return 4 end
+    end
+    return 0
+end
+
 local function positionOf(def)
     local d = db()
     local point = d[def.pos] or "BOTTOM"
-    local x, y = d[def.ox] or 0, d[def.oy] or 0
-    -- "edge" hangs the text just outside the map, "inside" lays it on top
-    if d[def.mode] == "edge" then
-        if point:find("TOP") then y = y + 14 elseif point:find("BOTTOM") then y = y - 14 end
+    return point, d[def.ox] or 0, (d[def.oy] or 0) + modeNudge(def)
+end
+
+-- ---------------------------------------------------------------------------
+-- Moving them in our edit mode
+--
+-- One mover per readout: each already has its own corner, offset, size and
+-- scale, and they are switched on one by one, so one box for a group would
+-- have to carry readouts that are not even there.
+--
+-- THE POSITION MODEL. The saved truth stays what the options write: a corner
+-- of the map (coordsPosition, ...) and an offset from it (coordsOffsetX/Y, in
+-- the readout's own scaled units). So a readout keeps following the map
+-- wherever the map goes, and the corner choice keeps its meaning: a drag only
+-- changes the offset from the corner that is chosen, it never picks another.
+--
+-- The mover wants a centre offset from the middle of the screen instead. It
+-- gets a table of its own that is never saved (POS[key]) holding the absolute
+-- centre those settings work out to; a drop, a nudge, the edit panel's X/Y or
+-- a discard write it, and it is turned back into the offset from the corner.
+-- A reset puts the offset back to 0, 0 -- the chosen corner itself.
+-- ---------------------------------------------------------------------------
+local POS, SYNCED, OPEN = {}, {}, {}
+for _, def in ipairs(DEFS) do POS[def.key] = {} end
+
+-- x / y of a named point on a frame, in that frame's own units
+local function pointX(frame, point)
+    local l, w = frame:GetLeft(), frame:GetWidth()
+    if not (l and w) then return nil end
+    if point:find("LEFT") then return l elseif point:find("RIGHT") then return l + w end
+    return l + w / 2
+end
+
+local function pointY(frame, point)
+    local b, h = frame:GetBottom(), frame:GetHeight()
+    if not (b and h) then return nil end
+    if point:find("BOTTOM") then return b elseif point:find("TOP") then return b + h end
+    return b + h / 2
+end
+
+-- The map's corner and UIParent's centre, both carried into the box's units,
+-- and the step from the box's own corner to its centre. nil without rects.
+local function geometry(def, box)
+    local point = db()[def.pos] or "BOTTOM"
+    local es = box:GetEffectiveScale() or 1
+    if es == 0 then return nil end
+    local ms = (Minimap:GetEffectiveScale() or 1) / es
+    local us = (UIParent:GetEffectiveScale() or 1) / es
+    local mx, my = pointX(Minimap, point), pointY(Minimap, point)
+    local ux, uy = UIParent:GetCenter()
+    if not (mx and my and ux and uy) then return nil end
+    local w, h = box:GetWidth() or 0, box:GetHeight() or 0
+    local cx = point:find("LEFT") and w / 2 or (point:find("RIGHT") and -w / 2 or 0)
+    local cy = point:find("BOTTOM") and h / 2 or (point:find("TOP") and -h / 2 or 0)
+    return mx * ms, my * ms, ux * us, uy * us, cx, cy
+end
+
+local function place(def)
+    local box = frames[def.key]
+    if not box then return end
+    local point, x, y = positionOf(def)
+    box:ClearAllPoints()
+    box:SetPoint(point, Minimap, point, x, y)
+    -- the mover's copy of where that is
+    local mx, my, ux, uy, cx, cy = geometry(def, box)
+    local pos = POS[def.key]
+    if mx then
+        pos.x, pos.y = mx + x + cx - ux, my + y + cy - uy
+        SYNCED[def.key] = { pos.x, pos.y }
     else
-        if point:find("TOP") then y = y - 4 elseif point:find("BOTTOM") then y = y + 4 end
+        SYNCED[def.key] = nil
     end
-    return point, x, y
+end
+
+-- the mover's centre -> the offset from the chosen corner
+local function fromMover(def, x, y)
+    local box = frames[def.key]
+    if not box then return end
+    local d, pos, o = db(), POS[def.key], OPEN[def.key]
+    if ns._inMoverReset then
+        d[def.ox], d[def.oy] = 0, 0
+    elseif o and pos.x == o.x and pos.y == o.y then
+        -- A discard handing back the pair read when the editor opened (the
+        -- editor's snapshot is taken just before editPreview, from POS, which
+        -- may be stale if the map moved since): the offsets from that moment,
+        -- not a conversion against a map that may have moved.
+        d[def.ox], d[def.oy] = o.ox, o.oy
+    else
+        local mx, my, ux, uy, cx, cy = geometry(def, box)
+        if mx then
+            d[def.ox] = (ux + x - cx) - mx
+            d[def.oy] = (uy + y - cy) - my - modeNudge(def)
+        end
+    end
+    place(def)
+end
+
+-- applyPos: ApplyMover, a nudge, a reset. A stored centre that still matches
+-- what the offsets produced means nothing moved it; one that differs was
+-- nudged and is read back. Never measured (no rect yet): the offsets win.
+local function placeFromMover(def)
+    local pos, sy = POS[def.key], SYNCED[def.key]
+    if ns._inMoverReset then
+        fromMover(def, 0, 0)
+    elseif sy and pos.x and pos.y and (sy[1] ~= pos.x or sy[2] ~= pos.y) then
+        fromMover(def, pos.x, pos.y)
+    else
+        place(def)
+    end
+end
+
+local function moverLabel(key)
+    local name
+    if key == "coords" then name = L["Coordinates"]
+    elseif key == "zone" then name = L["Zone Name"]
+    elseif key == "clock" then name = L["Clock"]
+    elseif key == "fps" then name = L["Framerate"]
+    else name = L["Instance Difficulty"] end
+    return L["Minimap: %s"]:format(name)
+end
+
+-- The box follows the text, so the edit box covers what it moves.
+local function fitBox(box)
+    local w, h = box.text:GetStringWidth() or 0, box.text:GetStringHeight() or 0
+    box:SetSize(math.max(w, 16), math.max(h, 10))
+end
+
+local editPreview   -- below; the movers need it
+
+local function create(def)
+    local box = CreateFrame("Frame", nil, Minimap)
+    box:SetFrameLevel((Minimap:GetFrameLevel() or 1) + 20)
+    box:EnableMouse(false)
+    box:SetSize(40, 14)
+    box.text = box:CreateFontString(nil, "OVERLAY")
+    frames[def.key] = box
+
+    box.mover = ns:CreateMover(box, {
+        key      = "minimap_" .. def.key,
+        label    = moverLabel(def.key),
+        db       = POS[def.key],
+        module   = "minimapstyle",
+        width    = 60,
+        height   = 16,
+        applyPos = function() placeFromMover(def) end,
+        onMove   = function(x, y) fromMover(def, x, y) end,
+        -- A mouseover readout is hidden most of the time, and the difficulty
+        -- is empty outside an instance: while our edit mode is open every
+        -- readout that is switched on shows, with an example if it is empty.
+        editPreview = function(on) editPreview(on) end,
+    })
+    return box
 end
 
 local function apply(def)
     local d = db()
-    local fs = frames[def.key]
+    local box = frames[def.key]
     if not want(def) then
-        if fs then fs:Hide() end
+        if box then box:Hide() end
         return
     end
-    if not fs then
-        fs = Minimap:CreateFontString(nil, "OVERLAY")
-        frames[def.key] = fs
-    end
+    if not box then box = create(def) end
+    local fs = box.text
     fs:SetFont(ns.ModuleFontPath("minimapstyle"), d[def.size] or 11, "OUTLINE")
-    fs:SetScale(d[def.scale] or 1)
+    box:SetScale(d[def.scale] or 1)
+    -- The text sits on the same corner of the box as the box on the map, so
+    -- it lands exactly where it sat when it was anchored to the map itself.
+    local point = d[def.pos] or "BOTTOM"
     fs:ClearAllPoints()
-    local point, x, y = positionOf(def)
-    fs:SetPoint(point, Minimap, point, x, y)
+    fs:SetPoint(point, box, point, 0, 0)
+    local text = fs:GetText()
+    if editing and (type(text) ~= "string" or text == "") then fs:SetText(SAMPLE[def.key]) end
+    fitBox(box)
+    ns:ApplyMover(box.mover)
     local c = def.colour and def.colour()
     if c then fs:SetTextColor(c.r, c.g, c.b) else fs:SetTextColor(1, 1, 1) end
-    fs:SetShown(d[def.mode] ~= "hover" or Elements.hovered)
+    box:SetShown(d[def.mode] ~= "hover" or Elements.hovered or editing)
 end
 
-local ticker, sinceLast = nil, {}
+function editPreview(on)
+    on = (on and MM.mod.active) and true or false
+    if on and not editing then
+        local d = db()
+        for _, def in ipairs(DEFS) do
+            local pos = POS[def.key]
+            OPEN[def.key] = { x = pos.x, y = pos.y, ox = d[def.ox], oy = d[def.oy] }
+        end
+    elseif not on then
+        wipe(OPEN)
+    end
+    editing = on
+    if not MM.mod.active then return end
+    for _, def in ipairs(DEFS) do
+        apply(def)
+        -- the example goes again: the real text straight away, not on the
+        -- next tick, which for some readouts is seconds off
+        local box = frames[def.key]
+        if not on and box and box:IsShown() then
+            local ok, text = pcall(def.provider)
+            box.text:SetText((ok and text) or "")
+            fitBox(box)
+        end
+    end
+end
+
 
 local function tick(_, elapsed)
     for _, def in ipairs(DEFS) do
-        local fs = frames[def.key]
-        if fs and fs:IsShown() then
+        local box = frames[def.key]
+        if box and box:IsShown() then
             sinceLast[def.key] = (sinceLast[def.key] or 0) + 0.2
             if sinceLast[def.key] >= def.interval then
                 sinceLast[def.key] = 0
+                local fs = box.text
                 local ok, text = pcall(def.provider)
-                fs:SetText((ok and text) or "")
+                text = (ok and text) or ""
+                if editing and text == "" then text = SAMPLE[def.key] end
+                fs:SetText(text)
+                fitBox(box)
                 local c = def.colour and def.colour()
                 if c then fs:SetTextColor(c.r, c.g, c.b) end
             end
@@ -193,14 +393,14 @@ function Elements.SetHovered(on)
     Elements.hovered = on and true or false
     local d = db()
     for _, def in ipairs(DEFS) do
-        local fs = frames[def.key]
-        if fs and d[def.mode] == "hover" then fs:SetShown(Elements.hovered) end
+        local box = frames[def.key]
+        if box and d[def.mode] == "hover" then box:SetShown(Elements.hovered or editing) end
     end
     if Elements.hovered then tick() end
 end
 
 function Elements.HideAll()
-    for _, fs in pairs(frames) do fs:Hide() end
+    for _, box in pairs(frames) do box:Hide() end
     if ticker then ns:CancelTicker(ticker); ticker = nil end
 end
 

@@ -107,6 +107,11 @@ local mod = ns:RegisterModule("qol", {
             width   = 240,
             height  = 18,
             texture = "Matte",
+            -- the texts: "" / 0 follow the module font and the bar height
+            font = "", fontSize = 0,
+            labelPos = "left",  labelX = 0, labelY = 0,
+            timePos  = "right", timeX  = 0, timeY  = 0,
+            borderSize = 1, borderColor = { r = 0, g = 0, b = 0, a = 0.8 },
             x = 0, y = -180, scale = 1,
         },
 
@@ -174,6 +179,17 @@ local mod = ns:RegisterModule("qol", {
         },
 
         mapCoords     = false,
+
+        -- --------------------------------------------------------- trinkets
+        -- The window's look. The queues name items one character carries and
+        -- live per character (Trinkets.lua, VuloForeverUICharDB).
+        trinkets = {
+            enabled  = false,
+            vertical = false,
+            tooltips = true,
+            freeMove = false,     -- moved without Edit Mode while on
+            x = 0, y = -120, scale = 1,
+        },
         mapCoordsSize = 12,
     },
 })
@@ -208,6 +224,7 @@ mod.tabs = {
     { id = "vendor",  label = "Vendor" },
     { id = "loot",    label = "Loot" },
     { id = "display", label = "Display" },
+    { id = "trinkets", label = "Trinkets" },
 }
 
 -- Re-runs every part. Options call this after a write: a part decides for

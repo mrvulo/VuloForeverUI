@@ -20,6 +20,7 @@ mod.tabs = {
     { id = "text",      label = "Text" },
     { id = "timer",     label = "Combat Timer" },
     { id = "history",   label = "Cast History" },
+    { id = "threat",    label = "Threat Meter" },
 }
 
 local function d() return DM.db() end
@@ -115,6 +116,19 @@ local function generalOptions()
         { type = "header", text = L["Damage Meter"] },
         { type = "desc", text = L["|cffaaaaaaDamage, healing, interrupts, dispels and deaths come from the client's own combat tracking — there is no combat log on this client. Click a row for the breakdown, right-click for the list of meter types.|r"] },
 
+        { type = "dropdown", label = L["Style"], width = 220,
+          values = {
+              { value = "modern",  text = L["Modern"] },
+              { value = "classic", text = L["Classic"] },
+          },
+          tooltip = L["Classic draws the windows in 1.x art: the tooltip background inside the old chat tab border, a lighter header band and the 1.x buttons. The first switch also sets a near-black window, the game's own bar fill and a dark track behind the bars; after that those settings are yours again."],
+          get = function() return d().style end,
+          set = function(_, v)
+              d().style = v
+              if v == "classic" then DM.SeedClassic() end
+              restyle()
+          end },
+
         { type = "dropdown", label = L["Visibility"], width = 220, values = ns.VisibilityValues(),
           get = function() return d().visibility end,
           set = function(_, v) d().visibility = v; visibility() end },
@@ -169,6 +183,21 @@ local function generalOptions()
               d().disableBlizzardMeter = v
               if C_CVar and C_CVar.SetCVar then pcall(C_CVar.SetCVar, "damageMeterEnabled", v and "0" or "1") end
           end },
+
+        -- Settings out of another suite's profile string (Import.lua).
+        { type = "spacer", height = 6 },
+        { type = "header", text = L["Import"] },
+        { type = "desc", text = L["|cffaaaaaaPaste a profile string from another UI suite. Every damage meter setting it carries that exists here is taken over; window places and sizes stay yours.|r"] },
+        { type = "button", label = L["Import damage meter settings"], width = 240, onClick = function()
+            ns.UI:ShowStringImportDialog(L["Import damage meter settings"], function(text)
+                local taken, err = DM.ImportForeignString(text)
+                if not taken then return err end
+                ns:Print(L["Damage meter: %d settings taken over."], taken)
+                if UI.currentModule == "damagemeter" and UI.BuildOptionsPage then
+                    UI:BuildOptionsPage(UI.currentModule, UI.currentTab)
+                end
+            end)
+        end },
     }
 end
 
@@ -460,6 +489,85 @@ function DM.LeavePreview()
     DM.UpdateVisibilityAll()
 end
 
+-- ---------------------------------------------------------------- threat --
+
+local function threatTbl() return DM.db().threat end
+
+local function soundValues()
+    local v = {}
+    local names = ns.LSM and ns.LSM:List("sound") or { "None" }
+    for _, n in ipairs(names) do v[#v + 1] = { value = n, text = n } end
+    return v
+end
+
+local function threatOptions()
+    local t = threatTbl()
+    local apply = function() DM.Threat.ApplyStyle(); DM.Threat.Preview() end
+    local items = {
+        { type = "header", text = L["Threat Meter"] },
+        { type = "desc", text = L["|cffaaaaaaThe threat on your target for everyone in your group, one bar each, sorted. Targeting a friend, it shows the enemy that friend is fighting. It can add a bar for the point where you pull aggro, and warn you with a sound.|r"] },
+        { type = "toggle", label = L["Show the threat meter"],
+          get = function() return threatTbl().enabled end,
+          set = function(_, v)
+              threatTbl().enabled = v
+              DM.Threat.Apply()
+              if v then DM.Threat.Preview() end
+              UI:BuildOptionsPage("damagemeter", "threat")
+          end },
+    }
+    if not t.enabled then return items end
+
+    items[#items + 1] = subDropdown(threatTbl, L["Visibility"], "visibility", {
+        { value = "always",    text = L["Always shown"] },
+        { value = "combat",    text = L["In combat"] },
+        { value = "noncombat", text = L["Out of combat"] },
+    }, apply)
+    items[#items + 1] = { type = "header", text = L["Layout"] }
+    items[#items + 1] = subSlider(threatTbl, L["Width"], "width", 80, 500, 1, function() DM.Threat.Apply(); DM.Threat.Preview() end)
+    items[#items + 1] = subSlider(threatTbl, L["Bar height"], "barHeight", 8, 40, 1, apply)
+    items[#items + 1] = subSlider(threatTbl, L["Bar spacing"], "spacing", 0, 10, 1, apply)
+    items[#items + 1] = subSlider(threatTbl, L["Bars shown"], "maxBars", 1, 40, 1, apply)
+    items[#items + 1] = subToggle(threatTbl, L["Grow upwards"], "growUp", nil, apply)
+    items[#items + 1] = subToggle(threatTbl, L["Show the header"], "showHeader", nil, apply)
+    items[#items + 1] = subToggle(threatTbl, L["Leave out pets"], "ignorePets", nil, apply)
+
+    items[#items + 1] = { type = "header", text = L["Look"] }
+    items[#items + 1] = subDropdown(threatTbl, L["Bar texture"], "texture", ns.MediaStatusbarValues(), apply, 220)
+    items[#items + 1] = subSlider(threatTbl, L["Bar opacity"], "barOpacity", 0, 100, 1, apply)
+    items[#items + 1] = subSlider(threatTbl, L["Background opacity"], "bgAlpha", 0, 1, 0.05, apply)
+    items[#items + 1] = subSlider(threatTbl, L["Border size"], "borderSize", 0, 4, 1, apply)
+    items[#items + 1] = subColor(threatTbl, L["Border color"], "borderColor", apply)
+
+    items[#items + 1] = { type = "header", text = L["Text"] }
+    items[#items + 1] = subSlider(threatTbl, L["Text size"], "textSize", 6, 24, 1, apply)
+    items[#items + 1] = subDropdown(threatTbl, L["Outline"], "outline", {
+        { value = "INHERIT",      text = L["From the font settings"] },
+        { value = "NONE",         text = L["None"] },
+        { value = "OUTLINE",      text = L["Outline"] },
+        { value = "THICKOUTLINE", text = L["Thick outline"] },
+    }, apply)
+    items[#items + 1] = subToggle(threatTbl, L["Show the threat value"], "showValue", nil, apply)
+    items[#items + 1] = subToggle(threatTbl, L["Show the percentage"], "showPercent", nil, apply)
+
+    items[#items + 1] = { type = "header", text = L["Colors"] }
+    items[#items + 1] = subToggle(threatTbl, L["Own color for you"], "playerColorOn", nil, apply)
+    items[#items + 1] = subColor(threatTbl, L["Your color"], "playerColor", apply)
+    items[#items + 1] = subToggle(threatTbl, L["Own color for the tank"], "tankColorOn", nil, apply)
+    items[#items + 1] = subColor(threatTbl, L["Tank color"], "tankColor", apply)
+    items[#items + 1] = subToggle(threatTbl, L["Show where you pull aggro"], "pullBar", nil, apply)
+    items[#items + 1] = subColor(threatTbl, L["Pull aggro color"], "pullColor", apply)
+
+    items[#items + 1] = { type = "header", text = L["Warning"] }
+    items[#items + 1] = subToggle(threatTbl, L["Warn with a sound"], "warnSound", nil, apply)
+    items[#items + 1] = { type = "dropdown", label = L["Sound"], width = 220, values = soundValues(),
+        get = function() return threatTbl().warnSoundKey end,
+        set = function(_, v) threatTbl().warnSoundKey = v; DM.Threat.PlayWarning() end }
+    items[#items + 1] = subSlider(threatTbl, L["Warn at threat %"], "warnAt", 50, 100, 1, apply)
+    items[#items + 1] = subToggle(threatTbl, L["Not while you tank"], "warnSkipTank",
+        L["Tank role, Bear or Dire Bear Form, or Defensive Stance."], apply)
+    return items
+end
+
 function mod:GetOptions(tabId)
     if mod.active then enterPreview() end
     if tabId == "window"  then return windowOptions() end
@@ -467,5 +575,6 @@ function mod:GetOptions(tabId)
     if tabId == "text"    then return textOptions() end
     if tabId == "timer"   then return timerOptions() end
     if tabId == "history" then return historyOptions() end
+    if tabId == "threat"  then return threatOptions() end
     return generalOptions()
 end

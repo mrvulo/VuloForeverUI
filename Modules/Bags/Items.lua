@@ -68,20 +68,6 @@ function Items.BindTag(info)
     return nil
 end
 
--- The expansion an item is from, and its name. EXPANSION_NAME<n> is a client
--- string, so it arrives translated; an expansion this client has no name for
--- falls back to the number, which is still a stable group.
-function Items.Expansion(info)
-    local f = Items.Facts(info)
-    return f and f.expac or nil
-end
-
-function Items.ExpansionLabel(n)
-    local name = _G["EXPANSION_NAME" .. tostring(n)]
-    if type(name) == "string" and name ~= "" then return name end
-    return tostring(n)
-end
-
 -- Where a piece of gear is worn. INVTYPE_HEAD and its siblings are client
 -- strings as well, so the armoury groups come out in the player's language.
 function Items.EquipLoc(info)

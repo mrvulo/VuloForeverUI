@@ -1,6 +1,7 @@
 -- VuloForeverUI / UI / StringDialog: the modal for profile strings.
 --
--- Export shows the string pre-selected, so Ctrl+C is the only step left.
+-- Export shows the string pre-selected, so Ctrl+C is the only step left. The
+-- copy dialog (chat) shows the same box with nothing selected.
 -- Import is a two-step flow: a paste box that ABSORBS the string instead of
 -- displaying it (a 40 KB string in a live EditBox stalls the whole client for
 -- seconds -- the box is capped and the characters are collected off-screen),
@@ -97,6 +98,11 @@ local function makeScrollBox(parent)
     eb:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     sf:SetScrollChild(eb)
     UI.StyleScrollbar(sf)
+    -- An empty multi-line box is one line high, so a click into the empty
+    -- area below it hit the scroll frame and the box never got the keyboard
+    -- back -- Ctrl+V then went nowhere. The whole area hands it over.
+    sf:EnableMouse(true)
+    sf:SetScript("OnMouseDown", function() eb:SetFocus() end)
     return sf, eb
 end
 
@@ -116,7 +122,7 @@ local function ensureExportPanel()
     UI.Font(hint, 12)
     hint:SetPoint("TOPLEFT", exportPanel, "TOPLEFT", PAD, -40)
     hint:SetTextColor(0.75, 0.75, 0.8)
-    hint:SetText(L["The string is selected - press Ctrl+C to copy it."])
+    w.exportHint = hint
 
     local sf, eb = makeScrollBox(exportPanel)
     sf:SetPoint("TOPLEFT", exportPanel, "TOPLEFT", PAD + 2, -64)
@@ -124,15 +130,22 @@ local function ensureExportPanel()
     w.exportEB = eb
 
     -- read-only that survives keystrokes: any user change snaps the text
-    -- back and re-selects it, so a stray key never breaks the Ctrl+C flow
+    -- back and re-selects it, so a stray key never breaks the Ctrl+C flow.
+    -- In free mode (the chat copy) the player picks the part to copy, so
+    -- nothing is selected for them and a click only places the cursor.
     eb:SetScript("OnTextChanged", function(self, userInput)
         if userInput and self._locked and self:GetText() ~= self._locked then
             self:SetText(self._locked)
-            self:HighlightText()
+            if not w.exportFree then self:HighlightText() end
         end
     end)
-    eb:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
-    eb:SetScript("OnMouseUp", function(self) self:SetFocus(); self:HighlightText() end)
+    eb:SetScript("OnEditFocusGained", function(self)
+        if not w.exportFree then self:HighlightText() end
+    end)
+    eb:SetScript("OnMouseUp", function(self)
+        if w.exportFree then return end
+        self:SetFocus(); self:HighlightText()
+    end)
 
     w.exportCount = exportPanel:CreateFontString(nil, "OVERLAY")
     UI.Font(w.exportCount, 11)
@@ -146,18 +159,77 @@ local function ensureExportPanel()
     close:SetPoint("BOTTOMRIGHT", exportPanel, "BOTTOMRIGHT", -PAD, 14)
 end
 
-function ns.UI:ShowProfileExportDialog(str)
-    openShell(L["Export as string"])
+-- The copy box's font: a FAMILY, one file per alphabet, like the client's own
+-- chat font. Our face has Latin glyphs only; a Chinese name or a Russian line
+-- copied out of the chat was a row of boxes. Latin keeps our face, the rest
+-- take the files the client itself uses for its chat. The family is made once
+-- and re-driven on every open, so a font change in the settings reaches it.
+local COPY_SIZE = 11
+local COPY_ALPHABETS = {
+    { alphabet = "russian",            file = "Fonts\\ARIALN.TTF",   extra = 1 },
+    { alphabet = "korean",             file = "Fonts\\2002.ttf",     extra = 2 },
+    { alphabet = "simplifiedchinese",  file = "Fonts\\ARKai_T.ttf",  extra = 2 },
+    { alphabet = "traditionalchinese", file = "Fonts\\blei00d.TTF",  extra = 2 },
+}
+local copyFamily
+
+local function copyFont()
+    local members = { { alphabet = "roman", file = ns.UI.FONT_PATH, height = COPY_SIZE, flags = "" } }
+    for _, a in ipairs(COPY_ALPHABETS) do
+        members[#members + 1] = { alphabet = a.alphabet, file = a.file, height = COPY_SIZE + a.extra, flags = "" }
+    end
+    if copyFamily == nil then
+        copyFamily = false
+        if type(_G.CreateFontFamily) == "function" then
+            local ok, made = pcall(_G.CreateFontFamily, "VuloForeverUICopyFont", members)
+            if ok and made then copyFamily = made end
+        end
+    end
+    if not copyFamily then return nil end
+    local ok = pcall(function()
+        for _, m in ipairs(members) do
+            copyFamily:GetFontObjectForAlphabet(m.alphabet):SetFont(m.file, m.height, m.flags)
+        end
+    end)
+    return ok and copyFamily or nil
+end
+
+local function showExport(title, str, free)
+    openShell(title)
     ensureExportPanel()
+    w.exportFree = free
+    w.exportHint:SetText(free
+        and L["Select what you want and press Ctrl+C to copy it. Ctrl+A selects everything."]
+        or  L["The string is selected - press Ctrl+C to copy it."])
     exportPanel:Show()
     local eb = w.exportEB
+    -- The copy box reads every alphabet; the profile strings are plain ASCII
+    -- and keep the single face.
+    local family = free and copyFont()
+    if family then eb:SetFontObject(family) else ns.UI.Font(eb, COPY_SIZE) end
+    eb:SetTextColor(0.85, 0.85, 0.9)
     eb._locked = nil
     eb:SetWidth(DIALOG_W - 2 * PAD - 26)
     eb:SetText(str)
     eb._locked = str
     w.exportCount:SetText(string.format(L["%d characters"], #str))
     eb:SetFocus()
-    eb:HighlightText()
+    if free then
+        -- the newest lines are at the bottom, and that is where the reading starts
+        eb:HighlightText(0, 0)
+        eb:SetCursorPosition(#str)
+    else
+        eb:HighlightText()
+    end
+end
+
+function ns.UI:ShowProfileExportDialog(str)
+    showExport(L["Export as string"], str, false)
+end
+
+-- A read-only text to copy FROM: nothing pre-selected, the cursor at the end.
+function ns.UI:ShowCopyDialog(title, str)
+    showExport(title, str, true)
 end
 
 -- ---------------------------------------------------------------------------
@@ -185,8 +257,16 @@ local function ensurePastePanel()
     -- flat while OnChar still sees every pasted character. They are collected
     -- here and the paste counts as finished on the first frame that brings
     -- no new ones.
-    eb:SetMaxBytes(2048)
+    --
+    -- A paste that does NOT come through OnChar lands in the box itself, so
+    -- the box's own text is watched as well and the longer of the two wins.
+    -- If that text filled the box to its cap, part of it was cut off: the cap
+    -- is lifted and the player asked to paste once more, which then lands
+    -- whole (slower, but complete).
+    local CAP = 2048
+    eb:SetMaxBytes(CAP)
     local buf, lastCount = {}, -1
+    local capped = true
     local watcher = CreateFrame("Frame", nil, pastePanel)
     watcher:Hide()
 
@@ -197,45 +277,66 @@ local function ensurePastePanel()
     end
     w.resetPaste = function()
         resetPaste()
+        if not capped then w.pasteEB:SetMaxBytes(CAP); capped = true end
         w.pasteEB:SetText("")
         w.pasteError:SetText("")
+    end
+
+    local function handle(text)
+        -- A session may bring its OWN reader; the bar setups do. It answers
+        -- with an error line or with nothing, and owns whatever happens
+        -- afterwards -- there is no profile preview to show it.
+        if session and session.onText then
+            local err = session.onText(text)
+            if err then
+                w.pasteEB:SetText("")
+                w.pasteError:SetText("|cffff5555" .. tostring(err) .. "|r")
+                return
+            end
+            w.pasteEB:SetText(string.format(L["String captured - %d characters."], #text))
+            w.pasteEB:ClearFocus()
+            w.pasteError:SetText("")
+            host:Hide()
+            return
+        end
+        local payload, summaryOrErr = ns:DecodeProfileString(text)
+        if not payload then
+            w.pasteEB:SetText("")
+            w.pasteError:SetText("|cffff5555" .. tostring(summaryOrErr) .. "|r")
+            return
+        end
+        w.pasteEB:SetText(string.format(L["String captured - %d characters."], #text))
+        w.pasteEB:ClearFocus()
+        w.pasteError:SetText("")
+        ns.UI:ShowImportPreview(payload, summaryOrErr)
     end
 
     eb:SetScript("OnChar", function(_, c)
         buf[#buf + 1] = c
         watcher:Show()
     end)
+    eb:SetScript("OnTextChanged", function(_, userInput)
+        -- our own SetText calls arrive with userInput false
+        if userInput then watcher:Show() end
+    end)
     watcher:SetScript("OnUpdate", function()
-        local n = #buf
+        local box = w.pasteEB:GetText() or ""
+        local n = #buf + #box
         if n > 0 and n == lastCount then
-            local text = table.concat(buf)
+            local text = (#buf >= #box) and table.concat(buf) or box
+            -- a little below the cap: the box can stop a few bytes short of it
+            -- (a terminator, a multibyte character at the edge)
+            local cut = capped and #buf < #box and #box >= CAP - 8
             resetPaste()
-            -- A session may bring its OWN reader; the bar setups do. It answers
-            -- with an error line or with nothing, and owns whatever happens
-            -- afterwards -- there is no profile preview to show it.
-            if session and session.onText then
-                local err = session.onText(text)
-                if err then
-                    w.pasteEB:SetText("")
-                    w.pasteError:SetText("|cffff5555" .. tostring(err) .. "|r")
-                    return
-                end
-                w.pasteEB:SetText(string.format(L["String captured - %d characters."], #text))
-                w.pasteEB:ClearFocus()
-                w.pasteError:SetText("")
-                host:Hide()
-                return
-            end
-            local payload, summaryOrErr = ns:DecodeProfileString(text)
-            if not payload then
+            if cut then
+                w.pasteEB:SetMaxBytes(0)
+                capped = false
                 w.pasteEB:SetText("")
-                w.pasteError:SetText("|cffff5555" .. tostring(summaryOrErr) .. "|r")
-                return
+                w.pasteError:SetText("|cffffcc55" .. L["The string was cut off. Paste it once more."] .. "|r")
+            else
+                text = text:gsub("^%s+", ""):gsub("%s+$", "")
+                if text ~= "" then handle(text) end
             end
-            w.pasteEB:SetText(string.format(L["String captured - %d characters."], #text))
-            w.pasteEB:ClearFocus()
-            w.pasteError:SetText("")
-            ns.UI:ShowImportPreview(payload, summaryOrErr)
         else
             lastCount = n
         end

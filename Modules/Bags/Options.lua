@@ -24,6 +24,8 @@ mod.optionsGrid = true
 
 local function apply()
     if Bags.Window then Bags.Window.Refresh() end
+    -- The client's bag frames follow the takeover switch both ways.
+    if Bags.db().replaceBlizzard then Bags.ParkBlizzard() else Bags.UnparkBlizzard() end
     if Bags.Bank then
         -- bank takeover switched off: the client's own frame comes back
         if not Bags.db().bank then
@@ -156,6 +158,8 @@ local function bagsPage()
         toggle("mergeDuplicates", L["Merge duplicate items"],
             L["One icon per item, with the total underneath. The click still belongs to the stack that is drawn."]),
         toggle("dimJunk", L["Desaturate junk items"]),
+        toggle("markJunk", L["Mark vendor junk with a C"],
+            L["Grey items a vendor pays for get a C in the corner. Sorting puts them at the very end."]),
 
         toggle("splitEquipmentSets", L["Split set gear by set"]),
         toggle("showSetNames", L["Show set names on gear"], nil, { inline = {
@@ -166,8 +170,6 @@ local function bagsPage()
             }, function() return not d.showSetNames end),
         } }),
 
-        dropdown("defaultView", L["Default bag type"], Bags.Categories.ViewValues(),
-            { tooltip = L["Which shelf the window opens on."] }),
         toggle("showBindTags", L["Show BoE / warbound"], nil, { inline = {
             swatch("bindTagColor", L["BoE color"], function() return not d.showBindTags end),
             gear(L["BoE / warbound"], {
@@ -206,7 +208,6 @@ local function bagsPage()
             L["The window says when a fight stopped it from building more slots. This silences that."]),
 
         toggle("moveWithoutShift", L["Move bags without shift"]),
-        toggle("groupByExpansion", L["Group by expansion"]),
 
         toggle("groupArmoryBySlot", L["Group armoury by slot"],
             L["Gear is shelved by where it is worn instead of by category."]),
@@ -237,8 +238,17 @@ local function bagsPage()
         end },
     })
 
+    -- The view first, on its own: which way the window lays the bags out is the
+    -- first thing anyone looks for, and inside the display list it was lost
+    -- between the gear switches.
+    local view = section(L["Bag view"], {
+        dropdown("defaultView", L["Bag view"], Bags.Categories.ViewValues(),
+            { tooltip = L["All items sorted into categories, all bags as one block, or one block per bag. The window opens on this; its side bar switches between them."] }),
+    })
+
     return {
         { type = "desc", text = L["|cffaaaaaaHold shift and drag to move the bag window. Clicking an item in the window uses it, exactly as it does in the client's own bags -- the pin and split tools sit in the window's own tool row because of that.|r"] },
+        view,
         display,
         extras,
     }
@@ -255,7 +265,7 @@ end
 local function bankPage()
     local d = db()
     local ungrouped = function()
-        return not (d.bankGroupByCategory or d.bankGroupByExpansion)
+        return not d.bankGroupByCategory
     end
 
     return {
@@ -272,7 +282,6 @@ local function bankPage()
         }),
 
         section(L["Grouping"], {
-            toggle("bankGroupByExpansion", L["Group by expansion"]),
             toggle("bankGroupByCategory", L["Group by category"]),
         }),
 

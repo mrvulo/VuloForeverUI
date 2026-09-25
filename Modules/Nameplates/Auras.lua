@@ -148,28 +148,60 @@ local SLOT_ANCHOR = {
     topright = { "BOTTOMRIGHT", "TOPRIGHT", 0, 1 },
 }
 
+-- Which way a slot's icons run when the setting says "auto": a single column
+-- beside the bar, a row above or below it, the top-left row leftwards.
+function Auras.AutoGrow(slot)
+    if slot == "left" or slot == "right" then return "up" end
+    if slot == "topleft" then return "left" end
+    return "right"
+end
+
+-- The container's own anchor point for a grow direction: the slot's point,
+-- with the edge ALONG the growth replaced by the one it grows away from. A
+-- column set beside the bar by its middle would grow up and down at once;
+-- pinned by its bottom edge it only grows up.
+function Auras.ContainerPoint(slotPoint, grow)
+    local v = slotPoint:match("^TOP") or slotPoint:match("^BOTTOM") or ""
+    local h = slotPoint:match("LEFT$") or slotPoint:match("RIGHT$") or ""
+    if grow == "up" then v = "BOTTOM" elseif grow == "down" then v = "TOP"
+    elseif grow == "right" then h = "LEFT" elseif grow == "left" then h = "RIGHT" end
+    local p = v .. h
+    return p ~= "" and p or "CENTER"
+end
+
+-- The direction a kind's icons run and the point its container is pinned by.
+-- "auto" keeps the slot's own point, so a row above the bar stays centred on
+-- it as it always was. The settings preview asks the same function.
+function Auras.GrowOf(setting, slot, slotPoint)
+    if setting == "up" or setting == "down" or setting == "left" or setting == "right" then
+        return setting, Auras.ContainerPoint(slotPoint, setting)
+    end
+    return Auras.AutoGrow(slot), slotPoint
+end
+
 -- FlowDirection is Left/Right/Up/Down, and the padding setter wants all four
 -- sides as numbers -- a single argument would throw.
-local function applyLayout(container, slot, size, spacing, count)
+local function applyLayout(container, slot, grow, size, spacing, count)
     local dir = AnchorUtil and AnchorUtil.FlowDirection
+    local column = grow == "up" or grow == "down"
+    -- A row wraps downwards under the bar and upwards everywhere else.
+    local down = grow == "down" or (not column and slot == "bottom")
     if container.SetFlowLayoutPadding then
         pcall(container.SetFlowLayoutPadding, container, 0, 0, 0, 0)
     end
     if dir and container.SetFlowLayoutGrowthDirection then
-        local horizontal = (slot == "topleft") and dir.Left or dir.Right
-        local vertical = (slot == "bottom") and dir.Down or dir.Up
+        local horizontal = (grow == "left") and dir.Left or dir.Right
+        local vertical = down and dir.Down or dir.Up
         pcall(container.SetFlowLayoutGrowthDirection, container, horizontal, vertical)
     end
     if container.SetFlowLayoutAnchorPoint then
         -- a CORNER: anchoring elements to a mid-edge starts the row at the
         -- container's centre instead of filling it
-        local corner = (slot == "topleft") and "BOTTOMRIGHT" or "BOTTOMLEFT"
-        if slot == "bottom" then corner = "TOPLEFT" end
+        local corner = (down and "TOP" or "BOTTOM") .. ((grow == "left") and "RIGHT" or "LEFT")
         pcall(container.SetFlowLayoutAnchorPoint, container, corner)
     end
     if container.SetFlowLayoutMaximumLineSize then
-        -- a single column beside the bar, a full row above or below it
-        local perLine = (slot == "left" or slot == "right") and 1 or count
+        local perLine = column and 1 or count
         pcall(container.SetFlowLayoutMaximumLineSize, container, perLine * (size + spacing))
     end
 end
@@ -196,9 +228,11 @@ function Auras.Layout(plate)
             local gap = 2
             if anc[4] > 0 and top.element ~= "none" then gap = top.size + 4 end
             local anchorTo = (slot == "bottom") and plate.cast or plate.health
-            container:SetPoint(anc[1], anchorTo, anc[2],
+            local a = db.auras[kind]
+            local grow, point = Auras.GrowOf(a.grow, slot, anc[1])
+            container:SetPoint(point, anchorTo, anc[2],
                 anc[3] * 2 + cfg.x, anc[4] * gap + cfg.y)
-            applyLayout(container, slot, sizeFor(kind), db.auras[kind].spacing, db.auras[kind].max)
+            applyLayout(container, slot, grow, sizeFor(kind), a.spacing, a.max)
             container:Show()
         end
     end

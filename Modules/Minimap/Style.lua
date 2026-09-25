@@ -868,9 +868,25 @@ function mod:OnEnable()
         self:RegisterEvent(event, function() MM.Elements.ApplyVisibility() end)
     end
     self:Apply()
+    -- A box in our edit mode for the whole minimap cluster. The cluster is
+    -- one of the client's Edit Mode systems, so it is moved the careful way
+    -- (Core/EditModeMover.lua); its place is saved here, in the profile.
+    if MinimapCluster then
+        self.editMover = ns:AttachEditModeMover(MinimapCluster, {
+            key      = "minimap",
+            label    = L["Minimap"],
+            module   = "minimapstyle",
+            isActive = function() return mod.active end,
+            getPos   = function() return mod.db.clusterPos end,
+            setPos   = function(p) mod.db.clusterPos = p end,
+            onPlaced = function() if mod.active then mod:Apply() end end,
+        })
+        self.editMover.Apply()
+    end
 end
 
 function mod:OnDisable()
+    if self.editMover then self.editMover.Release() end
     MM.Elements.HideAll()
     if MinimapCluster then MinimapCluster:Show() end
     Minimap:SetScript("OnMouseWheel", blizzWheel)

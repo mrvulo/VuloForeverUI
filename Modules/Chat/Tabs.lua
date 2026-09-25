@@ -78,24 +78,42 @@ local function ghost(index)
     -- The tab's own ground, behind everything else in the ghost. It fills the
     -- ghost, which is the real tab's rectangle to the pixel -- so a coloured
     -- tab is coloured exactly where the player will click.
+    -- Transparent until the first paint: a ghost whose refresh stopped short
+    -- must not be left as a solid white block over the tab.
     g.bg = g:CreateTexture(nil, "BACKGROUND")
     g.bg:SetAllPoints(g)
-    g.bg:SetTexture("Interface\\Buttons\\WHITE8X8")
+    g.bg:SetColorTexture(0, 0, 0, 0)
 
     g.edges = ns.MakeEdges(g, "BORDER")
+    for _, t in pairs(g.edges) do t:Hide() end
 
+    -- A font before anything else touches it: SetText on a font string that
+    -- has none raises, and the pass that raised left the ghost half-built.
     g.text = g:CreateFontString(nil, "OVERLAY")
+    ns.UI.Font(g.text, 11, "")
     -- Anchored by its left edge and never measured: a whisper tab's label can
     -- be secret, and measuring a secret string is as forbidden as comparing
     -- one.
     g.text:SetPoint("LEFT", g, "LEFT", 0, 0)
 
+    -- The active tab's mark: a bar as wide as the label (plus a little air),
+    -- and a soft glow in the same colour rising from it. Both hang off the
+    -- label's own edges, never a measurement -- a font string with a single
+    -- anchor is exactly as wide as its text, and a whisper tab's text may be
+    -- secret.
     g.underline = g:CreateTexture(nil, "ARTWORK")
     g.underline:SetTexture("Interface\\Buttons\\WHITE8X8")
-    g.underline:SetPoint("BOTTOMLEFT", g, "BOTTOMLEFT", 0, 0)
-    g.underline:SetPoint("BOTTOMRIGHT", g, "BOTTOMRIGHT", 0, 0)
+    g.underline:SetPoint("BOTTOM", g, "BOTTOM", 0, 0)
+    g.underline:SetPoint("LEFT", g.text, "LEFT", -4, 0)
+    g.underline:SetPoint("RIGHT", g.text, "RIGHT", 4, 0)
     g.underline:SetHeight(2)
     g.underline:Hide()
+
+    g.glow = g:CreateTexture(nil, "BORDER")
+    g.glow:SetPoint("BOTTOMLEFT", g.underline, "TOPLEFT", 0, 0)
+    g.glow:SetPoint("BOTTOMRIGHT", g.underline, "TOPRIGHT", 0, 0)
+    g.glow:SetHeight(8)
+    g.glow:Hide()
 
     s.ghosts[index] = g
     return g
@@ -124,9 +142,9 @@ local function applyFont(g, db)
     local path = type(own) == "string" and ns.MediaFontValid and ns.MediaFontValid(own)
         and ns.MediaFont(own)
     if path then
-        g.text:SetFont(path, db.tabFontSize or 11, "NONE")
+        if not g.text:SetFont(path, db.tabFontSize or 11, "") then ns.UI.FontFor("chat", g.text, db.tabFontSize or 11, "") end
     else
-        ns.UI.FontFor("chat", g.text, db.tabFontSize or 11, "NONE")
+        ns.UI.FontFor("chat", g.text, db.tabFontSize or 11, "")
     end
 end
 
@@ -194,7 +212,10 @@ function Tabs.Refresh()
     for _, cf in ipairs(Chat.Frames()) do
         local d = Chat.Data(cf)
         local tab = cf.GetName and _G[cf:GetName() .. "Tab"]
-        if d.bridged and tab and Chat.IsOpen(cf) then
+        -- Every open window's tab, not only the ones we draw text for: the
+        -- client's strip is invisible, so a window we leave to the client
+        -- (the combat log) still needs a ghost or its tab is simply gone.
+        if tab and Chat.IsOpen(cf) and (d.bridged or cf.isDocked) then
             shown = shown + 1
             local g = ghost(shown)
 
@@ -206,8 +227,16 @@ function Tabs.Refresh()
             g:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 0, 0)
 
             applyFont(g, db)
+            -- Centred by default. The client gives a window the player made
+            -- (not General, not the combat log) a fixed width of 60 to 90
+            -- pixels whatever its name is, so a short name set at the left
+            -- edge left a hole after it as wide as the tab.
             g.text:ClearAllPoints()
-            g.text:SetPoint("LEFT", g, "LEFT", db.tabPaddingX or 0, 0)
+            if db.tabAlign == "LEFT" then
+                g.text:SetPoint("LEFT", g, "LEFT", db.tabPaddingX or 0, 0)
+            else
+                g.text:SetPoint("CENTER", g, "CENTER", 0, 0)
+            end
 
             local label = tabLabel(tab)
             if type(label) ~= "nil" then g.text:SetText(label) end
@@ -223,14 +252,194 @@ function Tabs.Refresh()
                 g.underline:SetHeight(math.max(1, db.underlineSize or 2))
                 g.underline:SetColorTexture(u.r, u.g, u.b, u.a or 0.9)
                 g.underline:Show()
+                -- Bottom colour first: strongest on the bar, gone a few pixels
+                -- up, so it reads as light on the tab rather than a box.
+                ns.UI.SetGradient(g.glow, "VERTICAL", u.r, u.g, u.b, 0.22, u.r, u.g, u.b, 0)
+                g.glow:Show()
             else
                 g.underline:Hide()
+                g.glow:Hide()
             end
             g:Show()
         end
     end
     for i = shown + 1, #s.ghosts do s.ghosts[i]:Hide() end
     s:Show()
+    Tabs.StyleQuickBar()
+    Tabs.Watch()
+end
+
+-- ------------------------------------------------------ combat log filters --
+--
+-- The combat log's quick filter row ("My actions", "What happened to me?")
+-- in the tabs' own dress: their font and colours, the accent underline under
+-- the filter in use, and no black bar behind it.
+--
+-- Ghosts again, like the tabs. The buttons stay the client's and keep their
+-- clicks; only their own text goes to alpha zero, and our labels are drawn on
+-- a frame of ours over them. Giving the buttons font objects of ours instead
+-- left them drawing nothing at all. The row lives in the chat frame tree, so
+-- nothing of ours is parented into it either: the host is a UIParent frame,
+-- and the labels are only anchored to the buttons.
+local QUICK_BAR, QUICK_BUTTON = "CombatLogQuickButtonFrame_Custom", "CombatLogQuickButtonFrameButton"
+local quick = { labels = {} }
+
+local function quickHost()
+    if quick.host then return quick.host end
+    local h = CreateFrame("Frame", nil, UIParent)
+    h:SetFrameStrata("MEDIUM")
+    h:SetAllPoints(UIParent)
+    h:EnableMouse(false)
+    local line = h:CreateTexture(nil, "OVERLAY")
+    line:Hide()
+    h.line = line
+    quick.host = h
+    return h
+end
+
+-- The watcher calls this four times a second. Our own frame is the only
+-- thing written after the first pass; the client's buttons only have their
+-- text faded once each.
+function Tabs.StyleQuickBar()
+    local bar = _G[QUICK_BAR]
+    if not (Chat.mod.active and bar) then return end
+    local db = Chat.db()
+    local host = quickHost()
+    local visible = bar:IsVisible()
+    host:SetShown(visible)
+    if not visible then return end
+
+    local ground = _G[QUICK_BAR .. "Texture"]
+    if ground then ground:SetAlpha(0) end
+
+    local current = _G.Blizzard_CombatLog_Filters and _G.Blizzard_CombatLog_Filters.currentFilter
+    local lit, used = nil, 0
+    for i = 1, 20 do
+        local b = _G[QUICK_BUTTON .. i]
+        if not b then break end
+        local own = b:GetFontString()
+        if own then own:SetAlpha(0) end
+        local label = quick.labels[i]
+        if not label then
+            label = host:CreateFontString(nil, "OVERLAY")
+            quick.labels[i] = label
+        end
+        local text = b:GetText()
+        if b:IsShown() and type(text) == "string" and ns.CanRead(text) then
+            used = i
+            local active = b:GetID() == current
+            if active then lit = label end
+            applyFont({ text = label }, db)
+            local c = active and db.tabTextColorActive or db.tabTextColor
+            label:SetTextColor(c.r, c.g, c.b)
+            label:SetText(text)
+            label:ClearAllPoints()
+            label:SetPoint("CENTER", b, "CENTER", 0, 0)
+            label:Show()
+        else
+            label:Hide()
+        end
+    end
+    for i = used + 1, #quick.labels do quick.labels[i]:Hide() end
+
+    local line = host.line
+    if lit and db.activeUnderline ~= false then
+        local u = underlineColor(db)
+        line:ClearAllPoints()
+        line:SetPoint("TOPLEFT", lit, "BOTTOMLEFT", -4, -3)
+        line:SetPoint("TOPRIGHT", lit, "BOTTOMRIGHT", 4, -3)
+        line:SetHeight(math.max(1, db.underlineSize or 2))
+        line:SetColorTexture(u.r, u.g, u.b, u.a or 0.9)
+        line:Show()
+    else
+        line:Hide()
+    end
+end
+
+function Tabs.ReleaseQuickBar()
+    if quick.host then quick.host:Hide() end
+    local ground = _G[QUICK_BAR .. "Texture"]
+    if ground then ground:SetAlpha(1) end
+    for i = 1, 20 do
+        local b = _G[QUICK_BUTTON .. i]
+        if not b then break end
+        local own = b:GetFontString()
+        if own then own:SetAlpha(1) end
+    end
+end
+
+-- ---------------------------------------------------------------- watcher --
+--
+-- A tab click is a click on the client's own tab, and nothing of ours may be
+-- hooked into it (see the top of this file). So the result is WATCHED instead:
+-- which window is selected, and which windows are shown. Reads only, writes
+-- only on a change, and all of it in our own frame script -- never inside the
+-- client's dock pass.
+--
+-- In two speeds. What a tab click changes -- the selection, which window is
+-- shown -- is read EVERY frame: at four reads a second a click left our text
+-- on the old window for up to a quarter of a second, which is what made
+-- switching tabs feel sticky. It is a handful of reads per frame. Everything
+-- else stays at four times a second.
+local lastSelected
+local lastShown = {}
+-- The numbered chat frames all exist from the start, so the list is taken
+-- once rather than built again every frame.
+local frames
+
+local function watchFast()
+    if not Chat.mod.active then return end
+    frames = frames or Chat.Frames()
+    local ok, sel = pcall(FCFDock_GetSelectedWindow, _G.GENERAL_CHAT_DOCK)
+    if not ok then sel = nil end
+    local changed = sel ~= lastSelected
+    lastSelected = sel
+    for _, cf in ipairs(frames) do
+        local okS, shown = pcall(cf.IsShown, cf)
+        if okS and ns.CanRead(shown) then
+            shown = shown and true or false
+            if lastShown[cf] ~= shown then lastShown[cf] = shown; changed = true end
+        end
+        if Chat.Owned(cf) and Chat.Panel.SyncShown(cf) then changed = true end
+    end
+    if changed then
+        -- The tabs and the combat log's filter row now, in this frame; the
+        -- panels (heavier, and only needed if a window moved while it was
+        -- hidden) on the next.
+        Tabs.Refresh()      -- restyles the filter row as well
+        Chat.Queue("chat.panels", function() Chat.Panel.ApplyAll() end)
+    end
+end
+
+local function watchSlow()
+    if not Chat.mod.active then return end
+    -- A window made from the tab menu announces itself with no event we get,
+    -- so it stayed the client's -- its text, its bordered input line -- until
+    -- the next reload. An open window that is not ours yet gets the full pass.
+    local unowned = false
+    for _, cf in ipairs(Chat.Frames()) do
+        local okS, shown = pcall(cf.IsShown, cf)
+        if okS and ns.CanRead(shown) and shown and not Chat.Owned(cf) and Chat.IsOpen(cf) then
+            unowned = true
+        end
+    end
+    -- A window moved without resizing (Edit Mode, a drag) fires no event;
+    -- the panel follows it here. Write-free unless the rectangle changed.
+    Chat.Panel.FollowAll()
+    -- The combat log's filter row: new buttons and where the underline goes.
+    Tabs.StyleQuickBar()
+    -- The secure + button copies the column's position; write-free unless
+    -- the chat moved.
+    if Chat.Sidebar and Chat.Sidebar.SyncNewWindow then Chat.Sidebar.SyncNewWindow() end
+    if unowned then Chat.Refresh() end
+end
+
+function Tabs.Watch()
+    if Tabs.ticker or not FCFDock_GetSelectedWindow then return end
+    Tabs.ticker = C_Timer.NewTicker(0.25, watchSlow)
+    Tabs.fast = Tabs.fast or CreateFrame("Frame")
+    Tabs.fast:SetScript("OnUpdate", watchFast)
+    Tabs.fast:Show()
 end
 
 -- A line arrived in a window. The client owns the flashing of its own tab; all
@@ -247,7 +456,18 @@ function Tabs.Strip()
     return strip
 end
 
+-- The combat log's filter labels, for the fade: their host is a UIParent
+-- frame of its own, so like the strip it has to be handed over.
+function Tabs.QuickHost()
+    return quick.host
+end
+
 function Tabs.Release()
+    if Tabs.ticker then Tabs.ticker:Cancel(); Tabs.ticker = nil end
+    if Tabs.fast then Tabs.fast:Hide() end
+    lastSelected = nil
+    wipe(lastShown)
     restoreDock()
+    Tabs.ReleaseQuickBar()
     if strip then strip:Hide() end
 end
