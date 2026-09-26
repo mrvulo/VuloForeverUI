@@ -111,6 +111,12 @@ function ns.AurasRestricted()
     return pred("ShouldAurasBeSecret")
 end
 
+-- One spell's aura can be secret while the aura system as a whole is not;
+-- reading it then throws just the same.
+function ns.SpellAuraRestricted(spellID)
+    return pred("ShouldSpellAuraBeSecret", spellID)
+end
+
 -- Per-index version, for loops that stop at the first secret aura instead of
 -- refusing the whole list.
 function ns.UnitAuraIndexRestricted(unit, index, filter)
