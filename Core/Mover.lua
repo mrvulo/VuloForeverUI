@@ -725,18 +725,141 @@ function ns:RestoreFreeMovers()
     if ns.RefreshMoverStyles then ns:RefreshMoverStyles() end
 end
 
--- Layout snapshot: key -> {x,y,scale,anchor}. Movers with a custom opts.applyPos
--- opt out — a flat x/y snapshot cannot represent their richer position model.
+-- ---------------------------------------------------------------------------
+-- Transparency by situation: db.fade = { combat = 0..1, ooc = 0..1,
+-- mouseover = bool }. Absent, or both at 1 = the frame is left alone; this
+-- code only ever writes alpha to a frame someone faded.
+--
+-- SetAlpha is not a protected call, so this also runs in a fight, on secure
+-- frames too. The frame that fades is opts.fadeTarget (the real Blizzard
+-- frame behind a proxy box) or the target. opts.noFade = the module fades
+-- that frame itself (chat, cooldown bars), and two writers would fight.
+--
+-- In edit mode every frame is at full strength: the boxes are children of
+-- their targets and would fade with them.
+local fadeInCombat = false
+local fadeHover = {}
+local fadeDriver, fadePolling
+
+local function fadeTarget(m) return m.opts.fadeTarget or m.target end
+
+function ns:MoverCanFade(m)
+    return m ~= nil and m.opts ~= nil and m.opts.db ~= nil and not m.opts.noFade
+end
+
+function ns:GetMoverFade(m, state)
+    local f = m and m.opts and m.opts.db and m.opts.db.fade
+    if state == "mouseover" then return not f or f.mouseover ~= false end
+    return (f and f[state]) or 1
+end
+
+local function isFaded(m)
+    local f = m.opts.db and m.opts.db.fade
+    return type(f) == "table" and ((f.combat or 1) < 1 or (f.ooc or 1) < 1)
+end
+
+local function wantAlpha(m)
+    if moverShouldEdit(m) then return 1 end
+    local f = m.opts.db.fade
+    if f.mouseover ~= false and fadeHover[m] then return 1 end
+    if fadeInCombat then return f.combat or 1 end
+    return f.ooc or 1
+end
+
+local function setAlpha(t, a)
+    local cur = t:GetAlpha()
+    if not (ns.CanRead(cur) and math.abs(cur - a) < 0.01) then t:SetAlpha(a) end
+end
+
+-- The poll runs only while some frame is faded: mouseover has no event, and
+-- a module that rebuilds its frame puts the alpha back to 1 on its own.
+local function fadePass()
+    local any = false
+    for _, m in ipairs(ns._movers) do
+        if ns:MoverCanFade(m) then
+            local t = fadeTarget(m)
+            if isFaded(m) then
+                any = true
+                local over = t:IsVisible() and t:IsMouseOver()
+                fadeHover[m] = ns.CanRead(over) and over == true or nil
+                setAlpha(t, wantAlpha(m))
+                m._faded = true
+            elseif m._faded then
+                -- switched back to full strength: hand the alpha back once
+                m._faded, fadeHover[m] = nil, nil
+                t:SetAlpha(1)
+            end
+        end
+    end
+    return any
+end
+
+function ns:ApplyMoverFades()
+    if not fadeDriver then
+        fadeDriver = CreateFrame("Frame")
+        fadeDriver:RegisterEvent("PLAYER_REGEN_DISABLED")
+        fadeDriver:RegisterEvent("PLAYER_REGEN_ENABLED")
+        fadeDriver:RegisterEvent("PLAYER_ENTERING_WORLD")
+        fadeDriver:SetScript("OnEvent", function(_, event)
+            if event == "PLAYER_ENTERING_WORLD" then
+                -- the modules build their frames around this event; a moment
+                -- later every mover exists and gets its saved fade
+                fadeInCombat = InCombatLockdown()
+                C_Timer.After(1, function() ns:ApplyMoverFades() end)
+                return
+            end
+            fadeInCombat = event == "PLAYER_REGEN_DISABLED"
+            ns:ApplyMoverFades()
+        end)
+        fadeInCombat = InCombatLockdown()
+    end
+    local any = fadePass()
+    if any and not fadePolling then
+        fadePolling = true
+        local acc = 0
+        fadeDriver:SetScript("OnUpdate", function(self, elapsed)
+            acc = acc + elapsed
+            if acc < 0.1 then return end
+            acc = 0
+            if not fadePass() then
+                self:SetScript("OnUpdate", nil)
+                fadePolling = false
+            end
+        end)
+    end
+end
+
+-- Built at load, so the login event reaches it.
+ns:ApplyMoverFades()
+
+function ns:SetMoverFade(m, state, value)
+    if not ns:MoverCanFade(m) then return end
+    local db = m.opts.db
+    if type(db.fade) ~= "table" then db.fade = {} end
+    db.fade[state] = value
+    ns:ApplyMoverFades()
+end
+
+-- Layout snapshot: key -> {x,y,scale,anchor}.
+--
+-- Movers with their own opts.applyPos (chat, minimap parts, the classic bar
+-- rows, the meter windows, frames moved through a proxy) are in it too, with
+-- their POSITION only: each of them treats db.x/db.y as the centre it is told
+-- to go to and re-derives its own anchor model from there -- the same contract
+-- "Reset" relies on when it writes 0,0 and calls applyPos. Scale and anchor
+-- stay theirs; a flat snapshot cannot say what those mean for them.
 function ns:CaptureLayout()
     local snap = {}
     for _, mover in ipairs(ns._movers) do
         local k  = mover.key
         local o  = mover.opts
         local db = o and o.db
-        if k and db and not o.applyPos then
+        if k and db then
             local e = { x = db.x or 0, y = db.y or 0 }
-            if o.scalable  and db.scale  then e.scale  = db.scale  end
-            if o.anchorable and db.anchor then e.anchor = db.anchor end
+            if not o.applyPos then
+                if o.scalable  and db.scale  then e.scale  = db.scale  end
+                if o.anchorable and db.anchor then e.anchor = db.anchor end
+            end
             snap[k] = e
         end
     end
@@ -752,18 +875,18 @@ function ns:ApplyLayout(snap)
         local k  = mover.key
         local e  = k and snap[k]
         local db = o and o.db
-        if e and db and not o.applyPos then
+        if e and db then
             db.x, db.y = tonumber(e.x) or 0, tonumber(e.y) or 0
-            if o.scalable   then db.scale  = tonumber(e.scale) or db.scale end
-            if o.anchorable then db.anchor = e.anchor or db.anchor end
-            pcall(applyPos, mover)
+            if not o.applyPos then
+                if o.scalable   then db.scale  = tonumber(e.scale) or db.scale end
+                if o.anchorable then db.anchor = e.anchor or db.anchor end
+            end
+            -- through the combat queue: a protected target cannot be placed mid-fight
+            if o.applyPos then pcall(applyPos, mover) else pcall(commitPos, mover) end
             n = n + 1
         end
     end
     ns:ApplyAllMoverLinks()
-    -- On the Edit-Mode client (TBC) the Blizzard follow link is a static snapshot,
-    -- so moving the anchor alone doesn't move the frame; re-establish the links.
-    if ns.PrepareBlizzMovers then ns:PrepareBlizzMovers() end
     return n
 end
 
@@ -1347,6 +1470,7 @@ function ns:SetMoversEditMode(state, scope)
     end
     ns:SortMoverLevels()
     if ns.RefreshMoverStyles then ns:RefreshMoverStyles() end
+    ns:ApplyMoverFades()
 end
 
 function ns:IsMoverEditMode(scope)

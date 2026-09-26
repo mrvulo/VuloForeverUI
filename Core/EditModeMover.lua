@@ -26,6 +26,16 @@
 -- The box sits on a proxy of ours over the frame's rectangle, because the
 -- mover core writes anchors on its target directly -- which on the client
 -- frame would be exactly the overrides above. The size stays the client's.
+--
+-- Two variations, through opts:
+--   corner = "TOPLEFT"  the frame is pinned by its top-left corner instead of
+--                       the bottom-left one, for a frame that grows downwards
+--                       (the quest tracker); the saved y is then its top.
+--   A frame that is NOT an Edit Mode system (target-of-target: a child of the
+--   target frame that Blizzard anchors once, in its template) has no layout
+--   place to hand back to. Its own anchors are read when the box is made and
+--   are what a reset puts back. Such a frame is moved with plain SetPoint --
+--   there is no mixin override to avoid.
 local _, ns = ...
 
 local instances = {}
@@ -62,6 +72,13 @@ end
 local function new(frame, opts)
     local I = { frame = frame, opts = opts, moveDB = {} }
     local proxy, mover, pending, liveMoved, clientAnchor, placedByUs
+    local corner = opts.corner == "TOPLEFT" and "TOPLEFT" or "BOTTOMLEFT"
+
+    -- The proxy's edge the saved y refers to.
+    local function proxyY(f)
+        if corner == "TOPLEFT" then return f:GetTop() end
+        return f:GetBottom()
+    end
 
     local function savedPos()
         local p = opts.getPos()
@@ -77,7 +94,7 @@ local function new(frame, opts)
         local s = ns:GetScaleRatio(frame)
         local ok = pcall(function()
             clear(frame)
-            setPoint(frame, "BOTTOMLEFT", UIParent, "BOTTOMLEFT", left / s, bottom / s)
+            setPoint(frame, corner, UIParent, "BOTTOMLEFT", left / s, bottom / s)
         end)
         if ok then placedByUs = true end
         return ok
@@ -90,10 +107,36 @@ local function new(frame, opts)
         return info.anchorInfo, info.anchorInfo2
     end
 
+    -- A frame outside the Edit Mode systems: its own anchors, read once, while
+    -- they are still Blizzard's. A secret or unresolved point leaves the list
+    -- empty, and such a frame simply keeps the place it was given last.
+    local ownPoints
+    if not anchorInfo() then
+        ownPoints = {}
+        local ok, n = pcall(frame.GetNumPoints, frame)
+        for i = 1, (ok and readable(n)) and n or 0 do
+            local okp, p, rel, rp, x, y = pcall(frame.GetPoint, frame, i)
+            if okp and type(p) == "string" and readable(x) and readable(y) then
+                ownPoints[#ownPoints + 1] = { p, rel, rp, x, y }
+            end
+        end
+    end
+
+    local function handBackOwn()
+        if not (ownPoints and ownPoints[1]) then return false end
+        if InCombatLockdown() then pending = "handback"; return false end
+        local ok = pcall(function()
+            frame:ClearAllPoints()
+            for _, pt in ipairs(ownPoints) do frame:SetPoint(pt[1], pt[2], pt[3], pt[4], pt[5]) end
+        end)
+        if ok then placedByUs = nil end
+        return ok
+    end
+
     -- Back to the place the layout names, the way ApplySystemAnchor puts it.
     local function handBack()
         local a, a2 = anchorInfo()
-        if not a then return false end
+        if not a then return handBackOwn() end
         if InCombatLockdown() then pending = "handback"; return false end
         local clear = baseMethod(frame, "ClearAllPointsBase", "ClearAllPoints")
         local setPoint = baseMethod(frame, "SetPointBase", "SetPoint")
@@ -143,7 +186,7 @@ local function new(frame, opts)
     end
 
     local function commitProxy()
-        local l, b = proxy:GetLeft(), proxy:GetBottom()
+        local l, b = proxy:GetLeft(), proxyY(proxy)
         if not (l and b) then return end
         opts.setPos({ x = l, y = b })
         liveMoved = nil
@@ -219,7 +262,7 @@ local function new(frame, opts)
         if mover and ns._draggingMover == mover then
             -- the frame rides along with the box while it is dragged
             if InCombatLockdown() then return end
-            local l, b = self:GetLeft(), self:GetBottom()
+            local l, b = self:GetLeft(), proxyY(self)
             if l and b and place(l, b) then liveMoved = true end
             return
         end
@@ -234,6 +277,7 @@ local function new(frame, opts)
         label  = opts.label,
         db     = I.moveDB,
         module = opts.module,
+        fadeTarget = frame,     -- the box is a stand-in; the real frame is what fades
         width  = 200, height = 40,
         applyPos = function()
             if ns._inMoverReset then

@@ -22,8 +22,22 @@ local mod = ns:RegisterModule("editmode", {
     defaults    = { enabled = true },
 })
 
--- No lifecycle of its own; the session is built on demand by UI/EditMode.lua.
-function mod:OnEnable() end
+-- The session itself is built on demand by UI/EditMode.lua. What lives here is
+-- the box for the quest tracker: a Blizzard frame no module of ours owns.
+-- Pinned by its TOP-left corner, because the list grows downwards.
+function mod:OnEnable()
+    local tracker = _G.ObjectiveTrackerFrame
+    if not tracker or self.questMover then return end
+    self.questMover = ns:AttachEditModeMover(tracker, {
+        key      = "blizz_quests",
+        label    = L["Quest Tracker"],
+        module   = "editmode",
+        corner   = "TOPLEFT",
+        isActive = function() return true end,
+        getPos   = function() return mod.db.questPos end,
+        setPos   = function(p) mod.db.questPos = p end,
+    })
+end
 
 local function editState()
     return ns.EditState and ns.EditState() or {}

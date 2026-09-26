@@ -791,6 +791,7 @@ function Panel.InstallMover()
     chatMover = ns:CreateMover(proxy, {
         key    = "chat",
         label  = L["Chat"],
+        noFade = true,          -- the chat has its own fade (Fade.lua)
         db     = moveDB,
         module = "chat",
         width  = 200,

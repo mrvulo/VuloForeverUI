@@ -67,8 +67,26 @@ end
 
 -- ------------------------------------------------------------ general --
 
+-- The trusted names, each with a way out, and a field to add one.
+local function trustedRows()
+    local rows = {}
+    for _, name in ipairs(QoL.Mail.Trusted()) do
+        rows[#rows + 1] = { type = "button", label = L["Remove %s"]:format(name), width = 240,
+            onClick = function() QoL.Mail.RemoveTrusted(name); ns.UI:BuildOptionsPage("qol", "general") end }
+    end
+    rows[#rows + 1] = { type = "editbox", label = L["Add a trusted character"], width = 240, editWidth = 140,
+        tooltip = L["They then sit in the recipient list on every character of this account."],
+        get = function() return "" end,
+        set = function(_, v)
+            if QoL.Mail.AddTrusted(v) then
+                C_Timer.After(0, function() ns.UI:BuildOptionsPage("qol", "general") end)
+            end
+        end }
+    return rows
+end
+
 local function generalPage()
-    return {
+    local page = {
         { type = "header", text = L["Character"] },
         toggle("character", "acceptQuests", L["Accept quests automatically"],
             L["Hold shift while talking to a quest giver to read the quest as usual."]),
@@ -99,7 +117,8 @@ local function generalPage()
 
         { type = "header", text = L["Mail"] },
         toggle("mail", "recipients", L["A recipient list in the send tab"],
-            L["A button beside the name field, holding the last dozen names you sent mail to. They are remembered when the mail actually goes out, not while you type."]),
+            L["An arrow beside the name field: your own characters on this realm, the characters you trust, and the last dozen names you sent mail to. Those are remembered when the mail actually goes out, not while you type."]),
+        "TRUSTED",
 
         { type = "header", text = L["Flight time"] },
         toggle("flight", "showBar", L["Show a flight time bar"],
@@ -135,6 +154,15 @@ local function generalPage()
             L["|cffaaaaaa%d routes learned. Placing the bar is Edit Mode's job: /vedit.|r"],
             QoL.Flight.LearnedCount()) },
     }
+    -- the trusted rows go where the marker sits, under the mail switch
+    for i, item in ipairs(page) do
+        if item == "TRUSTED" then
+            table.remove(page, i)
+            for j, row in ipairs(trustedRows()) do table.insert(page, i + j - 1, row) end
+            break
+        end
+    end
+    return page
 end
 
 -- ------------------------------------------------------------- vendor --

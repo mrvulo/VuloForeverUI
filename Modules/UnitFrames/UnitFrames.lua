@@ -64,6 +64,7 @@ local mod = ns:RegisterModule("unitframes", {
         classicClassIcon  = true,      -- Classic: ringed class badge on the target portrait
         player      = { x = -260, y = -180, scale = 1, modern = modernDefaults("player") },
         target      = { x =  260, y = -180, scale = 1, modern = modernDefaults("target") },
+        blizzPos    = {},       -- where our edit mode put Blizzard's frames, per frame key
     },
 })
 
@@ -115,6 +116,7 @@ local function applyStyle(oldStyle)
         if UF.Classic then UF.Classic.Disable() end
         if UF.Extras  then UF.Extras.Enable(mod) end
     end
+    if UF.ApplyBlizzMovers then UF.ApplyBlizzMovers(mod) end
     if oldStyle and oldStyle ~= style and needsReloadFrom(oldStyle) then
         StaticPopup_Show("VFUI_UNITFRAMES_RELOAD")
     end
@@ -143,6 +145,7 @@ function mod:OnDisable()
     end
     if UF.Extras then UF.Extras.Disable() end
     if UF.Classic then UF.Classic.Disable() end
+    if UF.ApplyBlizzMovers then UF.ApplyBlizzMovers(mod) end
     if needsReloadFrom(oldStyle) then
         StaticPopup_Show("VFUI_UNITFRAMES_RELOAD")
     end

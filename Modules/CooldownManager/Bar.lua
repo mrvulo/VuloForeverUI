@@ -264,6 +264,7 @@ function CM.BuildBar(key)
 
     frame.mover = ns:CreateMover(frame, {
         key      = "cooldownbar_" .. key,
+        noFade   = true,        -- the bar has its own opacity and out-of-combat fade
         label    = bar.name,
         db       = bar,
         module   = "cooldownmanager",

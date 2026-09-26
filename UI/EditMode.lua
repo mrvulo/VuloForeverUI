@@ -400,7 +400,6 @@ function ns:SetEditMode(state, opts)
         -- a drag left over from a session that ended abnormally must not resume
         if ns.AbortMoverDrag then ns:AbortMoverDrag() end
         if not ns._editSnapshot and ns.SnapshotEditState then ns:SnapshotEditState() end
-        if ns.PrepareBlizzMovers then ns:PrepareBlizzMovers() end
         -- The options window sits exactly on top of the boxes it just
         -- unlocked; entering the editor closes it, the same way the client's
         -- own editor closes the settings panel (user report with screenshot,
@@ -950,6 +949,43 @@ local function buildPanel()
     })
     panel.freeToggle:SetSize(44, 22)
 
+    -- Opacity by situation. Percent on the slider, 0..1 in the db. The frame
+    -- stays at full strength while the editor is open (its box would fade
+    -- with it), so the change shows once Edit Mode is closed.
+    panel.fadeCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    UI.Font(panel.fadeCap, 10)
+    panel.fadeCap:SetText(L["OPACITY"])
+    panel.fadeCap:SetTextColor(0.55, 0.55, 0.62)
+
+    local function fadeSlider(state, label)
+        return UI:CreateSlider(panel, {
+            label = label, min = 0, max = 100, step = 5, width = 264,
+            tooltip = L["Shows once Edit Mode is closed; while it is open every window is at full strength."],
+            get = function()
+                local m = ns._selectedMover
+                return math.floor(ns:GetMoverFade(m, state) * 100 + 0.5)
+            end,
+            set = function(_, v)
+                local m = ns._selectedMover
+                if m then ns:SetMoverFade(m, state, v / 100) end
+            end,
+        })
+    end
+    panel.fadeOoc    = fadeSlider("ooc", L["Out of combat"])
+    panel.fadeCombat = fadeSlider("combat", L["In combat"])
+
+    panel.hoverCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    UI.Font(panel.hoverCap, 10)
+    panel.hoverCap:SetText(L["FULL ON MOUSEOVER"])
+    panel.hoverCap:SetTextColor(0.55, 0.55, 0.62)
+    panel.hoverToggle = UI:CreateToggle(panel, {
+        label   = "",
+        tooltip = L["A faded window comes back to full strength while the mouse is over it."],
+        get = function() local m = ns._selectedMover; return m and ns:GetMoverFade(m, "mouseover") end,
+        set = function(_, v) local m = ns._selectedMover; if m then ns:SetMoverFade(m, "mouseover", v and true or false) end end,
+    })
+    panel.hoverToggle:SetSize(44, 22)
+
     panel.reset = UI:CreateButton(panel, {
         label   = L["Reset this frame"],
         width   = 264,
@@ -1073,6 +1109,26 @@ local function layoutPanel(m)
     panel.freeToggle:SetPoint("RIGHT", panel, "TOPRIGHT", -18, y - 13)
     y = y - 34
 
+    if m and ns:MoverCanFade(m) then
+        panel.fadeCap:Show(); panel.fadeOoc:Show(); panel.fadeCombat:Show()
+        panel.hoverCap:Show(); panel.hoverToggle:Show()
+        panel.fadeCap:ClearAllPoints()
+        panel.fadeCap:SetPoint("TOPLEFT", panel, "TOPLEFT", 18, y - 4)
+        panel.fadeOoc:ClearAllPoints()
+        panel.fadeOoc:SetPoint("TOPLEFT", panel, "TOPLEFT", 20, y - 22)
+        panel.fadeCombat:ClearAllPoints()
+        panel.fadeCombat:SetPoint("TOPLEFT", panel, "TOPLEFT", 20, y - 66)
+        y = y - 110
+        panel.hoverCap:ClearAllPoints()
+        panel.hoverCap:SetPoint("LEFT", panel, "TOPLEFT", 18, y - 13)
+        panel.hoverToggle:ClearAllPoints()
+        panel.hoverToggle:SetPoint("RIGHT", panel, "TOPRIGHT", -18, y - 13)
+        y = y - 34
+    else
+        panel.fadeCap:Hide(); panel.fadeOoc:Hide(); panel.fadeCombat:Hide()
+        panel.hoverCap:Hide(); panel.hoverToggle:Hide()
+    end
+
     panel.reset:ClearAllPoints()
     panel.reset:SetPoint("TOPLEFT", panel, "TOPLEFT", 18, y - 8)
     panel:SetHeight(-(y - 8) + 92)
@@ -1146,6 +1202,12 @@ local function refreshCaps(m)
         if dd and dd._button and dd._button._refresh then dd._button._refresh() end
     end
     if panel.freeToggle._refresh then panel.freeToggle._refresh() end
+    if m and ns:MoverCanFade(m) then
+        for _, s in ipairs({ panel.fadeOoc, panel.fadeCombat }) do
+            if s._vcSetup then s._vcSetup(s, s._vcConfig) end
+        end
+        if panel.hoverToggle._refresh then panel.hoverToggle._refresh() end
+    end
 end
 
 function ns:OnAnchorToggled()
