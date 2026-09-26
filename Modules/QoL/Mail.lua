@@ -13,9 +13,10 @@
 --
 -- WHERE THE NAMES COME FROM
 --
---   Your characters: every login writes the character into an account-wide
---     roster (name, realm, faction, class). The menu offers the ones on this
---     realm and of this faction -- mail goes nowhere else.
+--   Your characters: the client's autocomplete knows every character of the
+--     account; the menu offers the ones on this realm. Every login also writes
+--     the character into an account-wide roster (name, realm, faction, class),
+--     which adds the class colour and keeps the other faction out.
 --   Trusted: a list you keep yourself -- from the menu ("Trust the name in the
 --     field") or on the options page.
 --   Recent: `SendMail(name, subject, body)` is hooked, not called: the hook sees
@@ -100,32 +101,75 @@ function Mail.RemoveTrusted(name)
     if i then table.remove(t, i) end
 end
 
+-- Early in a login UnitName answers with the placeholder ("Unknown", in the
+-- client's language) -- a name that is no character at all.
+local function realName(name)
+    return type(name) == "string" and name ~= "" and name ~= _G.UNKNOWNOBJECT
+end
+
 -- This character, into the roster. The class token and the faction are what
 -- the menu needs: the colour, and whether mail can reach it at all.
 local function recordMe()
-    local name = UnitName("player")
-    if type(name) ~= "string" or name == "" then return end
-    local _, classFile = UnitClass("player")
-    local faction = UnitFactionGroup("player")
     local realm = realmName()
     local r = roster()
     r[realm] = type(r[realm]) == "table" and r[realm] or {}
-    r[realm][name] = { class = classFile, faction = faction }
+    -- a placeholder written by an earlier build goes again
+    if _G.UNKNOWNOBJECT then r[realm][_G.UNKNOWNOBJECT] = nil end
+    local name = UnitName("player")
+    if not realName(name) then return end
+    local _, classFile = UnitClass("player")
+    r[realm][name] = { class = classFile, faction = UnitFactionGroup("player") }
 end
 
--- The other characters mail from this one can reach, sorted by name.
-local function myCharacters()
-    local out = {}
-    local here = roster()[realmName()]
-    if type(here) ~= "table" then return out end
-    local me = UnitName("player")
-    local faction = UnitFactionGroup("player")
-    for name, info in pairs(here) do
-        if name ~= me and type(info) == "table" and info.faction == faction then
-            out[#out + 1] = { name = name, class = info.class }
+-- The client knows every character of the account, logged in with the suite or
+-- not: the mail field's own autocomplete offers them. Its answers are prefix
+-- matches, so it is asked once per first letter; the priority marks the ones on
+-- this realm, and those are the only ones mail reaches.
+local LETTERS = {
+    "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+    "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+    "ä", "ö", "ü", "å", "æ", "ø", "é", "è", "á", "à", "í", "ó", "ú", "ñ", "ç",
+}
+
+local function accountCharacters()
+    local found = {}
+    local ac = _G.C_AutoComplete
+    local flag = Enum.AutoCompleteEntryFlag and Enum.AutoCompleteEntryFlag.AccountCharacter
+    local sameRealm = Enum.AutoCompletePriority and Enum.AutoCompletePriority.AccountCharacterSameRealm
+    if not (ac and ac.GetAutoCompleteResults and flag and sameRealm) then return found end
+    for _, letter in ipairs(LETTERS) do
+        local ok, results = pcall(ac.GetAutoCompleteResults, letter, 50, 1, true, flag, 0)
+        if ok and type(results) == "table" then
+            for _, res in ipairs(results) do
+                local name = res.name
+                if res.priority == sameRealm and realName(name) then
+                    found[(name:match("^[^-]+"))] = true
+                end
+            end
         end
     end
-    table.sort(out, function(a, b) return a.name < b.name end)
+    return found
+end
+
+-- The other characters mail from this one can reach, sorted by name: the
+-- account's characters on this realm, plus the roster's. A character the roster
+-- knows to be of the other faction stays out; one it does not know stays in.
+local function myCharacters()
+    local here = roster()[realmName()]
+    if type(here) ~= "table" then here = {} end
+    local names = accountCharacters()
+    for name in pairs(here) do names[name] = true end
+
+    local out = {}
+    local me = UnitName("player")
+    local faction = UnitFactionGroup("player")
+    for name in pairs(names) do
+        local info = type(here[name]) == "table" and here[name] or nil
+        if realName(name) and not same(name, me) and not (info and info.faction ~= faction) then
+            out[#out + 1] = { name = name, class = info and info.class }
+        end
+    end
+    table.sort(out, function(a, b) return a.name:lower() < b.name:lower() end)
     return out
 end
 
