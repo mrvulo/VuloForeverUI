@@ -136,6 +136,14 @@ local function setPlain(plate, r, g, b)
     retint(plate)
 end
 
+-- Another player's tag usually lands with their first hit, so the health event
+-- is the earliest word of it; UNIT_FLAGS comes on its own time. One flag
+-- compared per event, and the colour chain only runs when it flipped.
+function Colors.CheckTap(plate)
+    if plate.friendly or not plate.unit then return end
+    if plainTrue(UnitIsTapDenied(plate.unit)) ~= plate.tapDenied then Colors.Apply(plate) end
+end
+
 function Colors.Apply(plate)
     local unit = plate.unit
     if not unit then return end
@@ -157,7 +165,8 @@ function Colors.Apply(plate)
         return
     end
 
-    if plainTrue(UnitIsTapDenied(unit)) then
+    plate.tapDenied = plainTrue(UnitIsTapDenied(unit))
+    if plate.tapDenied then
         local c = db.tapped
         return setPlain(plate, c.r, c.g, c.b)
     end

@@ -335,6 +335,9 @@ local function recheck(_, unit)
             plate.friendly = not isEnemy(unit)
             NP.Colors.Apply(plate)
             NP.Extras.Update(plate)
+        else
+            -- same side, other flags: a tag by another player is one of them
+            NP.Colors.Apply(plate)
         end
     end
 end

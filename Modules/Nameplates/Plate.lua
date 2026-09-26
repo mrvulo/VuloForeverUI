@@ -78,7 +78,10 @@ local function onEvent(self, event, ...)
     if not self.unit then return end
     if CAST_EVENT[event] then
         NP.Cast.OnEvent(self, event, ...)
-    elseif event == "UNIT_HEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED" then
+    elseif event == "UNIT_HEALTH" then
+        NP.Health.MarkDirty(self)
+        NP.Colors.CheckTap(self)
+    elseif event == "UNIT_ABSORB_AMOUNT_CHANGED" then
         NP.Health.MarkDirty(self)
     elseif event == "UNIT_MAXHEALTH" then
         self.maxValid = false
