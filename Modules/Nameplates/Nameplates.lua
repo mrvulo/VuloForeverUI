@@ -158,7 +158,7 @@ local M = ns:RegisterModule("nameplates", {
         castCombineNameTarget = false,
         castTargetSide = "right", castTargetSize = 10, castTargetColor = c(1, 1, 1),
         castTargetClassColor = true, castTargetOffsetX = 0, castTargetOffsetY = 0,
-        castTargetWidthPct = 42, castTargetWrap = false,
+        castTargetWidthPct = 42, castTargetWrap = false, castTargetFirstName = false,
         showCastTimer = true, castTimerSide = "right", castTimerSize = 10,
         castTimerColor = c(1, 1, 1), castTimerOffsetX = 0, castTimerOffsetY = 0,
         hideEnemyNameWhileCasting = false,

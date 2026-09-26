@@ -183,6 +183,8 @@ ns:RegisterLocale("deDE", {
     ["Combine Spell Name and Target"] = "Zaubername und Ziel zusammenfassen",
     ["Spell Target"] = "Zauberziel",
     ["Class color"] = "Klassenfarbe",
+    ["Spell Target: first name only"] = "Zauberziel: nur Vorname",
+    ["\"Vulo Hunt\" is shown as \"Vulo\". A name the client hides in combat stays whole."] = "Aus \"Vulo Hunt\" wird \"Vulo\". Ein Name, den der Client im Kampf verbirgt, bleibt ganz.",
     ["Enemy Colors"] = "Gegnerfarben",
     ["Enemies"] = "Gegner",
     ["Spell Casters"] = "Zauberwirker",

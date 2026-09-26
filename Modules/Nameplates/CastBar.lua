@@ -126,12 +126,13 @@ function Cast.Build(plate)
     plate.castShield:SetAtlas("nameplates-InterruptShield")
     plate.castShield:SetAlpha(0)
     local font = ns.ModuleFontPath("nameplates")
-    for _, key in ipairs({ "castName", "castTarget", "castTimer" }) do
+    for _, key in ipairs({ "castName", "castTarget", "castTargetMe", "castTimer" }) do
         local fs = top:CreateFontString(nil, "OVERLAY")
         fs:SetFont(font, 10, "OUTLINE")
         fs:SetWordWrap(false)
         plate[key] = fs
     end
+    plate.castTargetMe:SetAlpha(0)
 end
 
 -- ---------------------------------------------------------------------------
@@ -227,9 +228,11 @@ function Cast.ApplyAppearance(plate)
     local font = ns.ModuleFontPath("nameplates")
     placeText(plate.castName, cast, db.castNameSide, db.castNameSize, db.castNameColor,
         db.castNameOffsetX, db.castNameOffsetY, castW * db.castNameWidthPct / 100, db.castNameWrap, font)
-    placeText(plate.castTarget, cast, db.castCombineNameTarget and "none" or db.castTargetSide,
-        db.castTargetSize, db.castTargetColor, db.castTargetOffsetX, db.castTargetOffsetY,
-        castW * db.castTargetWidthPct / 100, db.castTargetWrap, font)
+    for _, fs in ipairs({ plate.castTarget, plate.castTargetMe }) do
+        placeText(fs, cast, db.castCombineNameTarget and "none" or db.castTargetSide,
+            db.castTargetSize, db.castTargetColor, db.castTargetOffsetX, db.castTargetOffsetY,
+            castW * db.castTargetWidthPct / 100, db.castTargetWrap, font)
+    end
     placeText(plate.castTimer, cast, db.showCastTimer and db.castTimerSide or "none",
         db.castTimerSize, db.castTimerColor, db.castTimerOffsetX, db.castTimerOffsetY, 0, false, font)
 end
@@ -467,11 +470,44 @@ function Cast.Start(plate, isChannel)
     xpcall(tickPlate, onError, plate)
 end
 
+-- "Vulo Hunt" -> "Vulo": a Forever name is "main second" in one string, and
+-- this is the main one. Only a name the client lets us read can be cut.
+local function firstName(name)
+    if not ns.CanRead(name) then return name end
+    return name:match("^[^%s%-]+") or name
+end
+
+-- The player's own class colour: readable, it is ours.
+local function ownClassRGB(r, g, b)
+    local _, class = UnitClass("player")
+    local c = class and C_ClassColor and C_ClassColor.GetClassColor(class)
+    if c then return c:GetRGB() end
+    return r, g, b
+end
+
+-- In a fight the target's name is secret and cannot be cut. The common case --
+-- the mob casting at US -- is covered anyway: our own short name sits on a
+-- second text in the same place, and the client, from its own secret "is the
+-- target the player", shows one of the two. Our code never learns which.
+local function showOwnName(plate, unit, db)
+    local fs, me = plate.castTarget, plate.castTargetMe
+    local isMe = PlayerIsSpellTarget and PlayerIsSpellTarget(unit)
+    if not ns.Exists(isMe) then return end
+    local r, g, b = db.castTargetColor.r, db.castTargetColor.g, db.castTargetColor.b
+    if db.castTargetClassColor then r, g, b = ownClassRGB(r, g, b) end
+    me:SetTextColor(r, g, b)
+    me:SetText(firstName(UnitName("player")))
+    ns.AlphaFromBool(me, isMe, 1, 0)
+    ns.AlphaFromBool(fs, isMe, 0, 1)
+end
+
 -- Who the cast is aimed at. All three values may be secret; the class colour
 -- is looked up by the client and only its numbers are handed on.
 function Cast.UpdateTarget(plate, spellName)
     local unit, db = plate.unit, NP.db()
     local fs = plate.castTarget
+    fs:SetAlpha(1)
+    plate.castTargetMe:SetAlpha(0)
     local show = UnitShouldDisplaySpellTargetName and UnitShouldDisplaySpellTargetName(unit)
     local target = UnitSpellTargetName and UnitSpellTargetName(unit)
     if not (ns.CanRead(show) and show and ns.Exists(target)) then
@@ -484,6 +520,13 @@ function Cast.UpdateTarget(plate, spellName)
         if ns.Exists(class) then
             local ok, color = pcall(C_ClassColor.GetClassColor, class)
             if ok and ns.Exists(color) then r, g, b = color:GetRGB() end
+        end
+    end
+    if db.castTargetFirstName then
+        if ns.CanRead(target) then
+            target = firstName(target)
+        elseif not db.castCombineNameTarget then
+            showOwnName(plate, unit, db)
         end
     end
     if db.castCombineNameTarget then
@@ -512,6 +555,7 @@ local function flash(plate, interruptedBy)
     cast:SetStatusBarColor(c.r, c.g, c.b)
     plate.castTimer:SetText("")
     plate.castTarget:SetText("")
+    plate.castTargetMe:SetAlpha(0)
 
     -- GUID -> unit token -> name; the GUID may be secret and is only handed on.
     -- `who` may be a secret string, so whether there is one is kept apart.

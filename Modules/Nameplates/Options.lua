@@ -513,6 +513,10 @@ local function displayPage()
                     toggle("castTargetClassColor", L["Class color"]),
                 }),
             } }),
+        -- A row of its own, not in the popup: it counts in the combined mode
+        -- too, where the row above is locked.
+        toggle("castTargetFirstName", L["Spell Target: first name only"],
+            L["\"Vulo Hunt\" is shown as \"Vulo\". A name the client hides in combat stays whole."]),
     })
 
     return { NP.Preview.Item(), style, positions, texts, aurasSection(), bars, castColors, effects, castText }
