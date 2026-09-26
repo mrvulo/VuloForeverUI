@@ -176,6 +176,16 @@ function Bags.Refresh()
     ns.NextFrame(function()
         pending = false
         if not mod.active then return end
+        -- A sort changes the bags a few hundred times in a few seconds: stacks
+        -- merge, the free count and every shelf's row count move with them,
+        -- and a window laid out anew each time grows and shrinks under the
+        -- player's eyes. While it runs the slots stay where they are and only
+        -- show what is in them now; Sort.Finish asks for the one real layout.
+        if Bags.Sort and Bags.Sort.Running() then
+            if Bags.Window then Bags.Window.Repaint() end
+            if Bags.Bank then Bags.Bank.Repaint() end
+            return
+        end
         if Bags.Window then Bags.Window.Refresh() end
         if Bags.Bank then Bags.Bank.Refresh() end
     end)
