@@ -195,6 +195,14 @@ local function bagsPage()
 
     local extras = section(L["Extras"], {
         toggle("showSortButton", L["Show the sort button"]),
+        dropdown("sortMethod", L["Sort order"], {
+            { value = "type",      text = L["By type"] },
+            { value = "quality",   text = L["By quality"] },
+            { value = "name",      text = L["By name"] },
+            { value = "itemlevel", text = L["By item level"] },
+        }, { tooltip = L["How the sort button lays out the bags and the bank. Stacks are combined first, the hearthstone always comes first and vendor junk always goes to the far end."] }),
+        toggle("sortFromBottom", L["Sort from the bottom"],
+            L["Fills the bags from the last slot upwards, with vendor junk at the top instead."]),
         toggle("goldTracking", L["Gold tracking and history"],
             L["The money line lists every character on the account and what this session has gained or lost."]),
 

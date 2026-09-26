@@ -125,14 +125,11 @@ local function build(win)
         if name then table.insert(_G.UISpecialFrames, name) end
     end
 
-    -- The tool row. Sorting is the client's own call; the other two switch a
-    -- MODE on, because a click on a slot belongs to the client (Slots.lua).
-    -- The bags use our own order (Sort.lua: vendor junk last); the bank keeps
-    -- the client's, which is the only one that can reach its tabs.
+    -- The tool row. Sorting is ours, for the bags and the bank alike
+    -- (Sort.lua); the other two switch a MODE on, because a click on a slot
+    -- belongs to the client (Slots.lua).
     f.sort = toolButton(f, "bags-button-autosort-up", "icon", L["Sort"], function()
-        if win.key == "bags" then Bags.Sort.Run(); return end
-        local fn = C_Container.SortBankBags
-        if type(fn) == "function" then pcall(fn) end
+        Bags.Sort.Run(win.key == "bank" and "bank" or "bags")
     end)
     f.pin = toolButton(f, "PetJournal-FavoritesIcon", "glyph", L["Pin items"], function()
         Bags.Slots.SetMode("pin")

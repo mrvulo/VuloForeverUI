@@ -85,6 +85,8 @@ local mod = ns:RegisterModule("bags", {
 
         -- extras
         showSortButton = true,
+        sortMethod     = "type",    -- type | quality | name | itemlevel (Sort.lua)
+        sortFromBottom = false,
         showPinned     = true,
         showRecent     = true,
         showBagBar     = false,
