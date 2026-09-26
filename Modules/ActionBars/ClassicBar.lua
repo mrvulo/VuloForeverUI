@@ -590,6 +590,10 @@ end
 -- The bags, chained right to left from the backpack, on their own holder.
 -- Measured first -- the holder is as wide as the chain -- then placed from the
 -- holder's right edge. Answers the band x where the chain begins.
+-- bagsLaying: our own SetPoints on the bag buttons, which hookBags must not
+-- answer.
+local bagsLaying = false
+
 local function layoutBags()
     local seats = {}
     local right, lastLeft = BAG_RIGHT, BAG_RIGHT
@@ -617,9 +621,11 @@ local function layoutBags()
     holder:SetScale(1)
     holder:SetSize(math.max(1, BAG_RIGHT - lastLeft), BAND_H)
     placeRow(holder, "bags", "BOTTOMRIGHT", art, "BOTTOMLEFT", BAG_RIGHT, 0)
+    bagsLaying = true
     for _, s in ipairs(seats) do
         anchor(s[1], "BOTTOMRIGHT", "BOTTOMRIGHT", s[2] - BAG_RIGHT, s[3], nil, nil, holder)
     end
+    bagsLaying = false
     return lastLeft
 end
 
@@ -767,16 +773,32 @@ end
 -- every single move. On the band the slots stay shown, and after each of the
 -- client's layout passes the band lays bags and micro menu again. The bag
 -- buttons are plain buttons, so this also works in a fight.
+--
+-- Hooking BagsBar.Layout alone is not enough: the bar registers that Layout
+-- as a callback on MainMenuBarManager.OnExpandChanged when it loads, so the
+-- fold on every pickup and drop calls the ORIGINAL function and never reaches
+-- a hook on the field. What every path has in common is the SetPoint on the
+-- buttons, so that is where the band answers -- inside the client's own call,
+-- before anything is drawn.
 local bagsHooked = false
+local BAG_BUTTONS = {
+    "MainMenuBarBackpackButton", "CharacterBag0Slot", "CharacterBag1Slot",
+    "CharacterBag2Slot", "CharacterBag3Slot", "CharacterReagentBag0Slot",
+    "KeyRingButton",
+}
 
 local function hookBags()
     if bagsHooked then return end
     bagsHooked = true
     local function again()
-        if applied then layoutMicro(layoutBags()) end
+        if applied and not bagsLaying then layoutMicro(layoutBags()) end
     end
     local bar = _G.BagsBar
     if bar and type(bar.Layout) == "function" then hooksecurefunc(bar, "Layout", again) end
+    for _, name in ipairs(BAG_BUTTONS) do
+        local b = _G[name]
+        if b then hooksecurefunc(b, "SetPoint", again) end
+    end
     for n = 0, 3 do
         local b = _G["CharacterBag" .. n .. "Slot"]
         if b and type(b.SetBarExpanded) == "function" then
