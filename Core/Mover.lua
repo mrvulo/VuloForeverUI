@@ -1480,8 +1480,8 @@ function ns:IsMoverEditMode(scope)
 end
 
 function ns:HookBlizzardEditMode()
-    -- Intentional no-op: on TBC, applying a change briefly opens/closes
-    -- EditModeManagerFrame, so hooking its OnShow would create a feedback loop.
+    -- Intentional no-op: the suite runs its own Edit Mode HUD and does not
+    -- follow EditModeManagerFrame; this only reports whether the frame exists.
     return _G.EditModeManagerFrame ~= nil
 end
 

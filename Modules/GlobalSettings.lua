@@ -300,7 +300,7 @@ end
 ns:RegisterEvent("PLAYER_LOGIN", applyGameTextFont)
 
 local CLASS_ORDER = { "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST",
-                      "SHAMAN", "MAGE", "WARLOCK", "DRUID", "DEATHKNIGHT" }
+                      "SHAMAN", "MAGE", "WARLOCK", "DRUID" }
 
 local OUTLINE_VALUES  -- built lazily: labels are locale lookups
 
@@ -437,21 +437,17 @@ end
 local function colorsOptions()
     local g = ns.db.global
 
-    -- Only classes this era can PLAY (the fixed order above) and this client
+    -- Only classes Forever can PLAY (the fixed order above) and this client
     -- can NAME. The client's color table is retail-complete and also carries
     -- classes that do not exist here -- iterating it raised DEMONHUNTER and
-    -- MONK rows with raw token labels on a client that has neither. The name
-    -- check alone is not enough either: the death knight is namable on 2.5.x
-    -- but playable only on the Wrath-based client (Titan Reforged 3.80.x), so
-    -- he carries an explicit era gate.
+    -- MONK rows with raw token labels.
     local classRows = {}
     do
         local rcc   = _G.RAID_CLASS_COLORS or {}
         local names = _G.LOCALIZED_CLASS_NAMES_MALE or {}
         local tokens = {}
         for _, tok in ipairs(CLASS_ORDER) do
-            if rcc[tok] and names[tok]
-               and tok ~= "DEATHKNIGHT" then
+            if rcc[tok] and names[tok] then
                 tokens[#tokens + 1] = tok
             end
         end
@@ -475,8 +471,7 @@ local function colorsOptions()
     end
 
     -- Resource rows only for powers this client can name; the label is the
-    -- client's own localized string. Runic power rides the same era gate as
-    -- the death knight -- its string exists on 2.5.x, the resource does not.
+    -- client's own localized string.
     local powerRows = {}
     for _, tok in ipairs({ "MANA", "RAGE", "ENERGY", "FOCUS" }) do
         local token = tok

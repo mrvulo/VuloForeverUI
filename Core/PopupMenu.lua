@@ -1,11 +1,12 @@
--- Shared popup-menu helper; EasyMenu is often nil on Anniversary.
+-- Shared popup-menu helper, drawn in the suite's own style (the client's
+-- MenuUtil draws Blizzard's).
 --
 -- Two levels: a root menu and one flyout. An entry with `submenu` (a table of
 -- entries, or a function returning one) grows an arrow and opens the flyout on
 -- hover, anchored to its right edge. Long flyouts (sound lists) window
 -- themselves to MAX_VISIBLE rows and scroll on the mouse wheel. Clicking
--- anywhere outside closes the whole thing -- GLOBAL_MOUSE_DOWN, which
--- Blizzard's own 2.5.x talent UI listens to as well.
+-- anywhere outside closes the whole thing -- GLOBAL_MOUSE_DOWN, the same
+-- event the client's own menus close on.
 local _, ns = ...
 
 local MAX_VISIBLE = 18

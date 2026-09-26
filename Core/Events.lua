@@ -22,8 +22,8 @@ function ns:RegisterEvent(event, handler)
     if type(handler) ~= "function" then return false end
     local old = handlers[event]
     if not old then
-        -- pcall: not all events exist in every WoW version
-        -- (e.g. INSPECT_TALENT_READY does not exist in Anniversary). Silently ignore.
+        -- pcall: an event the client does not know raises. Registering one is
+        -- a no-op, not an error: the caller reads the false.
         local ok = pcall(dispatcher.RegisterEvent, dispatcher, event)
         if not ok then return false end
         handlers[event] = { handler }
@@ -124,10 +124,8 @@ end
 -- remaining handlers for that one firing only. Everything else keeps the
 -- isolated per-handler pcall with the friendly chat message.
 local HOT = {
-    COMBAT_LOG_EVENT_UNFILTERED = true,
     UNIT_AURA = true,
     UNIT_HEALTH = true,
-    UNIT_HEALTH_FREQUENT = true,
     UNIT_POWER_UPDATE = true,
     UNIT_POWER_FREQUENT = true,
 }

@@ -148,7 +148,6 @@ local CLASS_ICON_FALLBACK = {
     PRIEST      = { 0.49, 0.73, 0.25, 0.5  },
     WARLOCK     = { 0.73, 0.97, 0.25, 0.5  },
     PALADIN     = { 0,    0.25, 0.5,  0.75 },
-    DEATHKNIGHT = { 0.25, 0.49, 0.5,  0.75 },
 }
 
 -- Returns texture, {left, right, top, bottom} — or nil for an unknown class.
@@ -180,7 +179,6 @@ ns.CLASS_SHEET_COORDS = {
     PRIEST      = { 0.25,  0.375, 0.125, 0.25  },
     WARLOCK     = { 0.375, 0.5,   0.125, 0.25  },
     PALADIN     = { 0,     0.125, 0.25,  0.375 },
-    DEATHKNIGHT = { 0.125, 0.25,  0.25,  0.375 },
     MONK        = { 0.25,  0.375, 0.25,  0.375 },
     DEMONHUNTER = { 0.375, 0.5,   0.25,  0.375 },
 }

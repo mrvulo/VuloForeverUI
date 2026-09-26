@@ -53,8 +53,6 @@ local PowerBarColor = {
     FOCUS          = { r = 1.00, g = 0.50, b = 0.25 },
     ENERGY         = { r = 1.00, g = 1.00, b = 0.00 },
     COMBO_POINTS   = { r = 1.00, g = 0.96, b = 0.41 },
-    RUNES          = { r = 0.50, g = 0.50, b = 0.50 },
-    RUNIC_POWER    = { r = 0.00, g = 0.82, b = 1.00 },
     SOUL_SHARDS    = { r = 0.50, g = 0.32, b = 0.55 },
     LUNAR_POWER    = { r = 0.30, g = 0.52, b = 0.90, atlas = "_Druid-LunarBar" },
     HOLY_POWER     = { r = 0.95, g = 0.90, b = 0.60 },
@@ -74,8 +72,6 @@ PowerBarColor[1]  = PowerBarColor.RAGE
 PowerBarColor[2]  = PowerBarColor.FOCUS
 PowerBarColor[3]  = PowerBarColor.ENERGY
 PowerBarColor[4]  = PowerBarColor.CHI
-PowerBarColor[5]  = PowerBarColor.RUNES
-PowerBarColor[6]  = PowerBarColor.RUNIC_POWER
 PowerBarColor[7]  = PowerBarColor.SOUL_SHARDS
 PowerBarColor[8]  = PowerBarColor.LUNAR_POWER
 PowerBarColor[9]  = PowerBarColor.HOLY_POWER
