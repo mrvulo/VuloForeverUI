@@ -523,7 +523,11 @@ function M:OnEnable()
 
     -- combat edges: the out-of-combat dim, and the "only in combat" switch
     self:RegisterEvent("PLAYER_REGEN_DISABLED", function() NP.Colors.RefreshAll(); showEnemies(true) end)
-    self:RegisterEvent("PLAYER_REGEN_ENABLED", function() NP.Colors.RefreshAll(); showEnemies(false) end)
+    self:RegisterEvent("PLAYER_REGEN_ENABLED", function()
+        NP.Extras.QuestAfterCombat()
+        for _, plate in pairs(NP.plates) do plate:UpdateClassification() end
+        NP.Colors.RefreshAll(); showEnemies(false)
+    end)
     for _, event in ipairs({ "PLAYER_ENTERING_WORLD", "GROUP_ROSTER_UPDATE",
                              "ZONE_CHANGED_NEW_AREA", "PLAYER_ROLES_ASSIGNED" }) do
         self:RegisterEvent(event, NP.Colors.RefreshAll)

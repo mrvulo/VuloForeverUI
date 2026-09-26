@@ -31,43 +31,93 @@ NP.QUEST_ICON = QUEST_ICON
 -- The client puts the quest on the unit's tooltip; there is no "is this a quest
 -- mob" API. Scanning a tooltip is not cheap, so the answer is remembered per
 -- unit and thrown away when the quest log changes.
+--
+-- Not in a fight: the log changes with every kill that counts, and a fresh
+-- scan has to wait for the fight's end -- thrown away there, the marker went
+-- missing for the rest of the fight. So the scan remembers WHICH quests mark
+-- the unit, and a change in a fight only asks the log whether those are done:
+-- a finished quest takes its marker off at once, the rest stand until the
+-- fight's end rescans everything.
 -- ---------------------------------------------------------------------------
-local questCache = {}
+local questCache = {}   -- unit -> false, or { [questID] = true }; 0 = a quest we could not name
+local questStale = false
+
+local function onQuest(id)
+    local on = C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(id)
+    return ns.CanRead(on) and on == true
+end
+
+local function questDone(id)
+    local done = C_QuestLog.IsComplete and C_QuestLog.IsComplete(id)
+    return ns.CanRead(done) and done == true
+end
 
 local function scanQuest(unit)
     local info = C_TooltipInfo and C_TooltipInfo.GetUnit and C_TooltipInfo.GetUnit(unit, true)
     local lines = info and info.lines
     if not lines then return false end
     local types = Enum.TooltipDataLineType
+    local ids, current = nil, nil
     for _, line in ipairs(lines) do
         local kind = line.type
         if ns.CanRead(kind) then
             if kind == types.QuestTitle then
+                -- our own quest, not someone else's tooltip line; the objectives
+                -- below a title belong to it
                 local id = ns.Num(line.id, nil)
-                -- our own quest, not someone else's tooltip line
-                if id and C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(id) then return true end
+                current = id and onQuest(id) and id or nil
+                if current then ids = ids or {}; ids[current] = true end
             elseif kind == types.QuestObjective then
                 local done = line.completed
-                if ns.CanRead(done) and done == false then return true end
+                if ns.CanRead(done) and done == false then
+                    ids = ids or {}
+                    ids[current or 0] = true
+                end
             end
         end
     end
-    return false
+    return ids or false
 end
 
 function Extras.IsQuestMob(unit)
     if not NP.db().questMobEnabled then return false end
     local cached = questCache[unit]
-    if cached ~= nil then return cached end
-    if InCombatLockdown() then return false end     -- tooltip scans wait
-    local ok, res = pcall(scanQuest, unit)
-    res = ok and res or false
-    questCache[unit] = res
-    return res
+    if cached == nil then
+        if InCombatLockdown() then return false end     -- tooltip scans wait
+        local ok, res = pcall(scanQuest, unit)
+        cached = ok and res or false
+        questCache[unit] = cached
+    end
+    return cached ~= false
+end
+
+-- In a fight: drop the quests the log now calls finished (or no longer has).
+local function pruneFinished()
+    for unit, ids in pairs(questCache) do
+        if ids then
+            for id in pairs(ids) do
+                if id ~= 0 and (questDone(id) or not onQuest(id)) then ids[id] = nil end
+            end
+            if next(ids) == nil then questCache[unit] = false end
+        end
+    end
 end
 
 function Extras.ForgetQuest(unit)
-    if unit then questCache[unit] = nil else wipe(questCache) end
+    if unit then questCache[unit] = nil; return end
+    if InCombatLockdown() then
+        questStale = true
+        pruneFinished()
+        return
+    end
+    questStale = false
+    wipe(questCache)
+end
+
+-- The fight is over: what the log changed in it, and the plates that came up
+-- in it unscanned, get their answer now.
+function Extras.QuestAfterCombat()
+    if questStale then Extras.ForgetQuest() end
 end
 
 -- ---------------------------------------------------------------------------
