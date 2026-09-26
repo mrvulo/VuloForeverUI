@@ -47,7 +47,7 @@ UI\GameMenuButton.lua
 Modules\GlobalSettings.lua
 Modules\Locales\Core.lua
 Modules\Locales\Options.lua
-Modules\EditMode.lua
+Modules\EditModeSettings.lua
 Modules\Profiles.lua
 Modules\BarSetups.lua
 Modules\Reminder\Data.lua

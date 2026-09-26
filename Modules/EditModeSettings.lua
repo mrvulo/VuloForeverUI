@@ -1,4 +1,4 @@
--- EditMode: the settings page for the editing session, as its own sidebar row
+-- EditModeSettings: the settings page for the editing session, as its own sidebar row
 -- under Global Settings.
 --
 -- There is no module here in the usual sense -- no lifecycle, nothing to
