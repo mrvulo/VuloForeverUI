@@ -87,6 +87,9 @@ local mod = ns:RegisterModule("bags", {
         showSortButton = true,
         sortMethod     = "type",    -- type | quality | name | itemlevel (Sort.lua)
         sortFromBottom = false,
+        -- [bag family] = { [itemID] = true }: items the server refused for a
+        -- profession bag although the client's item family said they fit.
+        sortRefused    = {},
         showPinned     = true,
         showRecent     = true,
         showBagBar     = false,

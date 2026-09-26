@@ -32,7 +32,8 @@
 -- that fit a special bag (the reagent bag, a profession bag) are placed there
 -- before anything else, and an item that fits fewer special bags gets first
 -- pick, so a herb does not lose the herb bag to something that would have fit
--- the reagent bag too.
+-- the reagent bag too. A special bag only ever receives what its rule accepts,
+-- swaps included: nothing is swapped out of it for an item that would not fit.
 --
 -- HOW ITEMS ARE MOVED
 --
@@ -303,21 +304,55 @@ end
 -- profession bags first, then the reagent bag, then the ordinary ones. The
 -- bank counts too: its tabs are bags in the bank's bag slots, and a herb bag
 -- there refuses everything that is not a herb.
+--
+-- An item already sitting in a special bag fits it: the server let it in. An
+-- item whose data has not arrived is not guessed at -- the pass is marked
+-- incomplete and waits, because a crafting material taken for anything else
+-- is planned into an ordinary bag, and the swap that would follow pushes the
+-- ordinary item into the craft bag, which the server refuses.
+--
+-- The item family is only the client's word. The server has the last one, and
+-- it refuses some items the family lets through (tin bars for a mining bag);
+-- what it has refused once is remembered per family and never tried again.
+local function refusedFor(key)
+    local db = Bags.db()
+    db.sortRefused = db.sortRefused or {}
+    db.sortRefused[key] = db.sortRefused[key] or {}
+    return db.sortRefused[key]
+end
+
 local function bagRules(bagIDs)
-    local checks, rank = {}, {}
+    local rules = { checks = {}, rank = {}, key = {}, incomplete = false }
+    local checks, rank = rules.checks, rules.rank
     local reagent = Enum.BagIndex and Enum.BagIndex.ReagentBag
     for _, bag in ipairs(bagIDs) do
         if bag == reagent then
+            local refused = refusedFor("reagent")
+            rules.key[bag] = "reagent"
             checks[bag] = function(item)
+                if item.bag == bag then return true end
+                if refused[item.itemID] then return false end
+                if not cached(item) then
+                    rules.incomplete = true
+                    return false
+                end
                 return (select(17, C_Item.GetItemInfo(item.itemID))) and true or false
             end
             rank[bag] = 10
         else
             local _, family = C_Container.GetContainerNumFreeSlots(bag)
             if type(family) == "number" and family ~= 0 then
+                local refused = refusedFor(family)
+                rules.key[bag] = family
                 checks[bag] = function(item)
+                    if item.bag == bag then return true end
+                    if refused[item.itemID] then return false end
                     local f = C_Item.GetItemFamily(item.itemID)
-                    return type(f) == "number" and item.classID ~= 1 and item.classID ~= 11
+                    if type(f) ~= "number" then
+                        rules.incomplete = true
+                        return false
+                    end
+                    return item.classID ~= 1 and item.classID ~= 11
                         and bit.band(f, family) ~= 0
                 end
                 rank[bag] = 5
@@ -325,7 +360,7 @@ local function bagRules(bagIDs)
         end
     end
     for _, bag in ipairs(bagIDs) do rank[bag] = rank[bag] or 250 end
-    return { checks = checks, rank = rank }
+    return rules
 end
 
 local function locked(bag, slot)
@@ -346,6 +381,8 @@ local function combineStacks(bagIDs)
     if CursorHasItem() then return LOCKED end
     local byID = {}
     for _, item in ipairs(scan(bagIDs)) do
+        -- a move still in flight: see orderBags
+        if item.locked then return LOCKED end
         byID[item.itemID] = byID[item.itemID] or {}
         table.insert(byID[item.itemID], item)
     end
@@ -431,7 +468,22 @@ local function contains(list, value)
     return false
 end
 
-local function orderBags(bagIDs, method, fromBottom, patient)
+-- The moves of the last burst that put an item into a special bag, checked
+-- once the server has answered them all. Only after the server reported a
+-- wrong-bag refusal during the run: a move that did not land for any other
+-- reason must not teach anything.
+local function learn(run)
+    local list = run.expect
+    run.expect = {}
+    if not (list and run.refused) then return end
+    run.refused = false
+    for _, e in ipairs(list) do
+        local info = C_Container.GetContainerItemInfo(e.bag, e.slot)
+        if not (info and info.itemID == e.id) then refusedFor(e.key)[e.id] = true end
+    end
+end
+
+local function orderBags(run, bagIDs, method, fromBottom, patient)
     if InCombatLockdown() or UnitIsDead("player") then return DONE end
     if CursorHasItem() then return LOCKED end
 
@@ -445,7 +497,17 @@ local function orderBags(bagIDs, method, fromBottom, patient)
         stores[bag] = { first = 1, last = C_Container.GetContainerNumSlots(bag) }
     end
 
-    local items, incomplete = orderList(scan(bagIDs), method)
+    -- A locked item is a move the server has not answered yet, and its slots
+    -- read as they were before it. A plan built on that sends an item to a
+    -- slot that only looks empty; the server turns that into a swap, and the
+    -- arriving item is pushed back into our source -- into a mining bag, say,
+    -- that refuses it. Every pass starts from bags the server has settled.
+    local list = scan(bagIDs)
+    for _, item in ipairs(list) do
+        if item.locked then return LOCKED end
+    end
+    learn(run)
+    local items, incomplete = orderList(list, method)
 
     -- How many special bags an item fits. The fewer, the earlier it chooses.
     for _, item in ipairs(items) do
@@ -460,13 +522,30 @@ local function orderBags(bagIDs, method, fromBottom, patient)
     local junk = filter(items, function(i) return Sort.IsVendorJunk(i) end)
     if fromBottom then kept, junk = junk, kept end
 
-    local toEmpty, toSwap = {}, {}
+    local at = {}
+    for _, item in ipairs(items) do
+        at[item.bag] = at[item.bag] or {}
+        at[item.bag][item.slot] = item
+    end
+
+    -- A swap sends the target's occupant back to where the item came from. Out
+    -- of a special bag that is only allowed when the occupant fits it too;
+    -- otherwise the move waits until the occupant has gone to its own place,
+    -- which it always can, since an ordinary bag takes anything.
+    local toEmpty, toSwap, held = {}, {}, false
     local function plan(item, bag, slot)
         if item.bag == bag and item.slot == slot then return end
         local target = ItemLocation:CreateFromBagAndSlot(bag, slot)
-        local move = { item.bag, item.slot, bag, slot }
+        local move = { item.bag, item.slot, bag, slot, item.itemID }
         if C_Item.DoesItemExist(target) then
-            toSwap[#toSwap + 1] = move
+            local back = rules.checks[item.bag]
+            local occupant = at[bag] and at[bag][slot]
+            if back and not (occupant and back(occupant)) then
+                held = true
+            else
+                move[6] = occupant and occupant.itemID
+                toSwap[#toSwap + 1] = move
+            end
         else
             toEmpty[#toEmpty + 1] = move
         end
@@ -528,15 +607,26 @@ local function orderBags(bagIDs, method, fromBottom, patient)
     -- An order built on missing keys is only provisional, and moving to it
     -- shuffles items that the next pass moves back. Wait for the data first;
     -- only a run that has waited long enough settles for what it has.
+    incomplete = incomplete or rules.incomplete
     if incomplete and patient then return NODATA end
     if #toEmpty == 0 and #toSwap == 0 then
+        if held then return LOCKED end
         return incomplete and NODATA or DONE
+    end
+
+    -- what each issued move puts into a special bag, for learn()
+    local function expect(bag, slot, id)
+        local key = rules.key[bag]
+        if key and id then
+            run.expect[#run.expect + 1] = { bag = bag, slot = slot, id = id, key = key }
+        end
     end
 
     local moved, busy = false, false
     mute(true)
     for _, m in ipairs(toEmpty) do
         if not locked(m[1], m[2]) then
+            expect(m[3], m[4], m[5])
             C_Container.PickupContainerItem(m[1], m[2])
             C_Container.PickupContainerItem(m[3], m[4])
             ClearCursor()
@@ -547,6 +637,8 @@ local function orderBags(bagIDs, method, fromBottom, patient)
     end
     for _, m in ipairs(toSwap) do
         if not locked(m[1], m[2]) and not locked(m[3], m[4]) then
+            expect(m[3], m[4], m[5])
+            expect(m[1], m[2], m[6])
             C_Container.PickupContainerItem(m[1], m[2])
             C_Container.PickupContainerItem(m[3], m[4])
             ClearCursor()
@@ -559,7 +651,7 @@ local function orderBags(bagIDs, method, fromBottom, patient)
 
     if incomplete then return NODATA end
     if moved then return MOVED end
-    if busy then return LOCKED end
+    if busy or held then return LOCKED end
     return DONE
 end
 
@@ -583,6 +675,7 @@ end
 function Sort.Finish()
     cancelWait()
     driver:UnregisterEvent("BANKFRAME_CLOSED")
+    driver:UnregisterEvent("UI_ERROR_MESSAGE")
     running = nil
     Bags.Refresh()
 end
@@ -615,8 +708,17 @@ local function schedule(status, again, complete)
     end
 end
 
-driver:SetScript("OnEvent", function(self, event)
-    if event == "BANKFRAME_CLOSED" then
+-- The two refusals of an item a bag will not take: "doesn't go in that
+-- container" and "only <kind of goods> can be placed in that".
+local WRONG_BAG = { ERR_WRONG_BAG_TYPE = true, ERR_WRONG_BAG_TYPE_SUBCLASS = true }
+
+driver:SetScript("OnEvent", function(self, event, messageType)
+    if event == "UI_ERROR_MESSAGE" then
+        if running and type(messageType) == "number"
+            and WRONG_BAG[GetGameMessageInfo(messageType)] then
+            running.refused = true
+        end
+    elseif event == "BANKFRAME_CLOSED" then
         -- the bank's containers are out of reach the moment the visit ends
         if running and running.isBank then Sort.Finish() end
     elseif self.onBags then
@@ -646,13 +748,14 @@ function Sort.Run(kind)
     local method = ORDERS[db.sortMethod] and db.sortMethod or "type"
     local fromBottom = db.sortFromBottom == true
 
-    local run = { started = GetTime(), isBank = isBank }
+    local run = { started = GetTime(), isBank = isBank, expect = {} }
     running = run
+    driver:RegisterEvent("UI_ERROR_MESSAGE")
     if isBank then driver:RegisterEvent("BANKFRAME_CLOSED") end
 
     local function patient() return GetTime() - run.started < 3 end
     local function layout()
-        local status = guarded(orderBags, bagIDs, method, fromBottom, patient())
+        local status = guarded(orderBags, run, bagIDs, method, fromBottom, patient())
         if status and running == run then schedule(status, layout, Sort.Finish) end
     end
     local function combine()
