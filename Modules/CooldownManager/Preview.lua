@@ -179,6 +179,16 @@ local function wireDrag(index, icon)
         g:Show()
     end)
 
+    -- A left-click (a drag never becomes one) opens the row's own settings.
+    -- Borrowed icons belong to no row and have none.
+    b:SetScript("OnClick", function(self, button)
+        if button ~= "LeftButton" or dragFrom then return end
+        if (self.vfIndex or 0) > (previewBar.ownedCount or 0) then return end
+        local key = currentKey()
+        local menu = key and CM.RowMenu and CM.RowMenu(key, self.vfIndex)
+        if menu then ns:ShowPopupMenu(menu, self, self, true) end
+    end)
+
     b:SetScript("OnDragStop", function()
         if not dragFrom then stopDrag(); return end
         local owned = previewBar.ownedCount or 0

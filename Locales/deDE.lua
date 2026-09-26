@@ -579,6 +579,8 @@ ns:RegisterLocale("deDE", {
     ["Active phase color"] = "Farbe der Aktivphase",
     ["Glow while it is active"] = "Leuchten während der Aktivphase",
     ["Hand every setting back to the bar"] = "Alle Einstellungen an die Leiste zurückgeben",
+    ["All settings for this spell..."] = "Alle Einstellungen für diesen Zauber …",
+    ["%d seconds"] = "%d Sekunden",
     ["Nowhere"] = "Nirgendwohin",
     ["Split the rows"] = "Zeilen teilen",
     ["Puts a gap between the rows, so a double row reads as two."] = "Setzt eine Lücke zwischen die Zeilen, damit eine Doppelzeile als zwei lesbar ist.",

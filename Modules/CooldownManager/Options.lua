@@ -522,6 +522,152 @@ end
 
 -- ---------------------------------------------------------------- layout --
 
+-- ---------------------------------------------------------------- row menu --
+--
+-- The same per-row settings as the tab above, one left-click away on an icon
+-- of the live preview. Every choice writes the override on the entry and
+-- nothing else, so the tab and the menu can never disagree: both read CM.Val's
+-- nil-means-the-bar rule. The menu stays open on a choice, so a setting can be
+-- tried and changed back without reopening it.
+
+-- The page is only rebuilt when it shows per-row controls; any other tab
+-- would be torn down and put back for nothing.
+local function menuApply()
+    apply()
+    if UI.currentTab == "spell" then rebuild("spell") end
+end
+
+-- From the bar / Yes / No, as a flyout of three dots.
+local function menuTri(e, label, key)
+    local function pick(v) return function() e[key] = v; menuApply() end end
+    local function is(v) return function() return e[key] == v end end
+    return { text = label, submenu = {
+        { text = L["From the bar"], radio = true, keepOpen = true, checked = is(nil),   func = pick(nil) },
+        { text = L["Yes"],          radio = true, keepOpen = true, checked = is(true),  func = pick(true) },
+        { text = L["No"],           radio = true, keepOpen = true, checked = is(false), func = pick(false) },
+    } }
+end
+
+-- A flyout of fixed values for a key; `none` is the value that means "off"
+-- and is stored as nil.
+local function menuPick(e, label, key, values, none)
+    local sub = {}
+    for _, v in ipairs(values) do
+        sub[#sub + 1] = { text = v.text, radio = true, keepOpen = true,
+            checked = function() return (e[key] or none) == v.value end,
+            func = function()
+                if v.value == none then e[key] = nil else e[key] = v.value end
+                menuApply()
+            end }
+    end
+    return { text = label, submenu = sub }
+end
+
+local function menuColor(e, label, key, default)
+    return { text = label, func = function()
+        local c = e[key] or default
+        local old = e[key] and { r = c.r, g = c.g, b = c.b } or nil
+        ns:ShowColorPicker({ r = c.r, g = c.g, b = c.b,
+            onChange = function(r, g, b)
+                e[key] = e[key] or {}
+                e[key].r, e[key].g, e[key].b = r, g, b
+                apply()
+            end,
+            onCancel = function()
+                e[key] = old
+                apply()
+            end })
+    end }
+end
+
+local function menuToggle(e, label, key)
+    return { text = label, keepOpen = true,
+        checked = function() return e[key] == true end,
+        func = function() e[key] = (not e[key]) or nil; menuApply() end }
+end
+
+function CM.RowMenu(barKey, index)
+    local b = CM.Bar(barKey)
+    local list = b and CM.Spells(b)
+    local e = list and list[index]
+    if not e then return nil end
+
+    local secs = { { value = 0, text = L["Off"] } }
+    for _, s in ipairs({ 2, 3, 5, 10, 15, 30 }) do
+        secs[#secs + 1] = { value = s, text = string.format(L["%d seconds"], s) }
+    end
+    local stacks = { { value = 0, text = L["Off"] } }
+    for s = 1, 10 do stacks[#stacks + 1] = { value = s, text = tostring(s) } end
+    -- The sound plays on the pick, as it does on the tab.
+    local soundItem = menuPick(e, L["Sound when it is ready"], "readySound", soundValues(), "")
+    for _, item in ipairs(soundItem.submenu) do
+        local pick = item.func
+        item.func = function()
+            pick()
+            local path = CM.SoundPath(e.readySound)
+            if path then pcall(PlaySoundFile, path, "SFX") end
+        end
+    end
+
+    -- The colours ride at the foot of the flyout they belong to: the root
+    -- menu windows itself past 18 rows, and a menu that scrolls hides half of
+    -- what it offers.
+    local threshold = menuPick(e, L["Threshold in seconds"], "thresholdTime", secs, 0)
+    threshold.submenu[#threshold.submenu + 1] = { separator = true }
+    threshold.submenu[#threshold.submenu + 1] =
+        menuColor(e, L["Threshold color"], "thresholdColor", { r = 1, g = 0.3, b = 0.3 })
+
+    local glow = menuPick(e, L["Glow"], "glowType", {
+        { value = "",      text = L["From the bar"] },
+        { value = "none",  text = L["No glow"] },
+        { value = "pixel", text = L["A breathing border"] },
+        { value = "shine", text = L["A turning star"] },
+        { value = "proc",  text = L["The client's proc ring"] },
+    }, "")
+    glow.submenu[#glow.submenu + 1] = { separator = true }
+    glow.submenu[#glow.submenu + 1] = menuColor(e, L["Glow color"], "glowColor", b.glowColor)
+
+    return {
+        { text = entryName(e), title = true },
+        { text = L["Remove from this bar"], func = function()
+            CM.RemoveSpell(barKey, index)
+            CM.RefreshPreview()
+            rebuild(UI.currentTab or "spells")
+        end },
+        { separator = true },
+        menuTri(e, L["Show the swipe"], "showSwipe"),
+        menuTri(e, L["Show the countdown"], "showCountdown"),
+        menuTri(e, L["Dim the icon"], "desaturateOnCooldown"),
+        threshold,
+        menuPick(e, L["Charges"], "chargeMode", {
+            { value = "",      text = L["From the bar"] },
+            { value = "count", text = L["Show the number"] },
+            { value = "none",  text = L["Show nothing"] },
+        }, ""),
+        soundItem,
+        glow,
+        menuTri(e, L["Glow when it is ready"], "readyGlow"),
+        menuTri(e, L["Glow on a proc"], "procGlow"),
+        menuPick(e, L["Glow from this many stacks"], "stackGlow", stacks, 0),
+        { text = L["Active phase"], submenu = {
+            menuToggle(e, L["Show the active phase"], "activePhase"),
+            menuToggle(e, L["Glow while it is active"], "activeGlow"),
+            menuColor(e, L["Active phase color"], "activeColor", { r = 0.2, g = 0.9, b = 0.4 }),
+        } },
+        { separator = true },
+        { text = L["All settings for this spell..."], func = function()
+            selected, selectedRow = barKey, index
+            rebuild("spell")
+        end },
+        { text = L["Hand every setting back to the bar"], func = function()
+            local id, kind = e.id, e.kind
+            wipe(e)
+            e.id, e.kind = id, kind
+            menuApply()
+        end },
+    }
+end
+
 local function layoutPage()
     local db = CM.db()
     local key = currentKey()

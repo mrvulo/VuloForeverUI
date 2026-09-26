@@ -320,7 +320,9 @@ end
 -- "cursor" cannot be mouse-over-tested -- without the owner, the mouse-DOWN
 -- closes the menu and the same click's OnClick reopens it, so the opening
 -- button could never toggle its menu shut.
-function ns:ShowPopupMenu(entries, anchor, owner)
+-- `below` opens the menu straight under the anchor, left edges flush, instead
+-- of down and to its left.
+function ns:ShowPopupMenu(entries, anchor, owner, below)
     if type(entries) ~= "table" then return end
     local menu = createLevel(1).frame
 
@@ -337,7 +339,9 @@ function ns:ShowPopupMenu(entries, anchor, owner)
 
     renderLevel(1, entries, function(m)
         m:ClearAllPoints()
-        if anchor and type(anchor) == "table" and anchor.GetLeft then
+        if anchor and type(anchor) == "table" and anchor.GetLeft and below then
+            m:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -2)
+        elseif anchor and type(anchor) == "table" and anchor.GetLeft then
             m:SetPoint("TOPRIGHT", anchor, "BOTTOMLEFT", -2, 0)
         elseif anchor == "cursor" then
             local cx, cy = GetCursorPosition()
