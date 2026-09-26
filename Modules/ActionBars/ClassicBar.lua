@@ -756,6 +756,37 @@ local function hookExperience()
     end
 end
 
+-- The bags on the band hold still.
+--
+-- The client folds its bag bar away and out again on its own: an item on the
+-- cursor unfolds it, putting the item down folds it (MainMenuBarBagManager's
+-- OnCursorChanged -> SetExpandBarAuto). Folding HIDES the four bag slots
+-- (SetBarExpanded), and every fold ends in BagsBar:Layout, which anchors the
+-- buttons back into the client's own row. A bag sort moves every item through
+-- the cursor, so the bags jumped between the band and the client's row on
+-- every single move. On the band the slots stay shown, and after each of the
+-- client's layout passes the band lays bags and micro menu again. The bag
+-- buttons are plain buttons, so this also works in a fight.
+local bagsHooked = false
+
+local function hookBags()
+    if bagsHooked then return end
+    bagsHooked = true
+    local function again()
+        if applied then layoutMicro(layoutBags()) end
+    end
+    local bar = _G.BagsBar
+    if bar and type(bar.Layout) == "function" then hooksecurefunc(bar, "Layout", again) end
+    for n = 0, 3 do
+        local b = _G["CharacterBag" .. n .. "Slot"]
+        if b and type(b.SetBarExpanded) == "function" then
+            hooksecurefunc(b, "SetBarExpanded", function(self)
+                if applied and not self:IsShown() then pcall(self.Show, self) end
+            end)
+        end
+    end
+end
+
 -- The client's own modern bar art, out of the way.
 --
 -- Its REGIONS are walked rather than named: the parentKeys of that art differ
@@ -1005,6 +1036,7 @@ function Classic.Apply()
     layoutPageArrows()
     layoutMicro(layoutBags())
     hookExperience()
+    hookBags()
     placeExperience()
     layoutExperience()
     applied = true

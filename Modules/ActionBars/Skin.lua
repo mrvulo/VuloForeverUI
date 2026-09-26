@@ -374,10 +374,12 @@ function Skin.ApplyAll()
             slotGround(button, false)
             skinModern(button)
         else
+            -- Standard is the client's art, untouched -- action bar 1 included.
+            -- A slot of ours under the main bar's empty buttons drew the retail
+            -- square where this client draws its own winged slot emblem; the
+            -- client decides that art itself (restore asks it to, above).
             restore(button)
-            -- Only the main bar sits on the wood; the others float free and
-            -- stay as the client draws them.
-            slotGround(button, AB.IsMainBarButton(button))
+            slotGround(button, false)
         end
     end
 end
