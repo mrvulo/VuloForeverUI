@@ -24,7 +24,6 @@ Core\Slash.lua
 Core\Secret.lua
 Core\Database.lua
 Core\Modules.lua
-Core\Container.lua
 Core\Events.lua
 Core\Schedule.lua
 Core\Profiler.lua

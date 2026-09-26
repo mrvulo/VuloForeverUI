@@ -422,7 +422,7 @@ function CM.StyleFrame(frame, bar, list, owned)
     local br, bg, bb = bar.borderColor.r, bar.borderColor.g, bar.borderColor.b
     if bar.borderClassColor then
         local _, class = UnitClass("player")
-        local c = RAID_CLASS_COLORS[class]
+        local c = ns.ClassColor(class)
         if c then br, bg, bb = c.r, c.g, c.b end
     end
     local ba = bar.borderColor.a or 1

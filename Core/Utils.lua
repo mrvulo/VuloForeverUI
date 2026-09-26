@@ -134,21 +134,6 @@ function ns:PixelSnapCenter(value, dim, frame)
     return math.floor((value - half) / px + 0.5) * px + half
 end
 
--- Blizzard reads UIPanelWindows from inside its own secure panel code, so
--- replacing an entry from Lua taints that whole system. The visible symptom is
--- not being able to open the character sheet or the spellbook while in combat.
--- SetUIPanelAttribute is the sanctioned route and keeps the taint off the
--- shared table. Returns false when the client has no such API, in which case
--- the caller must leave the panel alone rather than fall back to the raw write.
-function ns:SetPanelLayout(frame, attrs)
-    if not (frame and type(attrs) == "table") then return false end
-    if type(_G.SetUIPanelAttribute) ~= "function" then return false end
-    for k, v in pairs(attrs) do
-        pcall(_G.SetUIPanelAttribute, frame, k, v)
-    end
-    return true
-end
-
 -- Class icons come out of Blizzard's character-creation atlas, so there is no
 -- art to ship and no client restart to wait for. The coordinates are cut for
 -- exactly that texture; any other class-icon sheet uses a different grid.
@@ -257,14 +242,4 @@ function ns:ApplyFontSize(fs, size)
     if font and not (cur and cur > size - 0.05 and cur < size + 0.05) then
         fs:SetFont(font, size, flags)
     end
-end
-
-function ns:SetBarTextFontSize(bar, size)
-    if not bar then return end
-    local center = bar.TextString or ns:SafeGetFontString(bar, "Text")
-    local left   = bar.LeftText   or ns:SafeGetFontString(bar, "TextLeft")
-    local right  = bar.RightText  or ns:SafeGetFontString(bar, "TextRight")
-    ns:ApplyFontSize(center, size)
-    ns:ApplyFontSize(left, size)
-    ns:ApplyFontSize(right, size)
 end

@@ -378,25 +378,6 @@ end
 -- there -- and wrong on a size change, where the frame may be mid-layout and
 -- nowhere near its final place. Measuring then writes the transient position
 -- into the saved offsets, permanently.
--- Put every window we own back where we say it belongs.
---
--- For when something OUTSIDE re-anchors frames wholesale. Blizzard's Edit Mode
--- does exactly that: selecting its active layout re-applies that layout's anchor
--- to every system in it, and Modules/UnlockMode.lua has to select a layout
--- before the library will let it write anything.
---
--- Roots first, then followers. A docked window is placed FROM its target, so the
--- target has to be back in place before anyone is asked to follow it.
-function ns:ReapplyAllMovers()
-    local store = linkStore() or {}
-    for _, m in ipairs(ns._movers or {}) do
-        if not (m.key and store[m.key]) then pcall(applyPos, m) end
-    end
-    for _, m in ipairs(ns._movers or {}) do
-        if m.key and not store[m.key] then ns:RepositionMoverChildren(m) end
-    end
-end
-
 function ns:RepositionMoverChildren(mover, visited)
     local store = linkStore()
     if not (store and mover and mover.key) then return end

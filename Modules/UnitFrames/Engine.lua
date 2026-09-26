@@ -151,7 +151,9 @@ function UF.ClassColor(unit)
     -- is what rejects a missing token.
     if not ns.CanRead(token) then return nil end
     if type(token) ~= "string" then return nil end
-    local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS[token]
+    -- the suite's own book, so the class colours set in the global settings
+    -- reach the unit frames too
+    local c = ns.ClassColor(token)
     if not c then return nil end
     return c.r, c.g, c.b
 end

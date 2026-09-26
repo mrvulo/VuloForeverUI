@@ -51,16 +51,6 @@ function ns.AnchorPointValues()
     }
 end
 
-function ns.GroupVisValues()
-    return {
-        { value = "any",   text = L["Always"] },
-        { value = "group", text = L["Only in a group"] },
-        { value = "raid",  text = L["Only in a raid"] },
-        { value = "party", text = L["Only in a party"] },
-        { value = "solo",  text = L["Only solo"] },
-    }
-end
-
 -- Frames are never garbage-collected: widgets are pooled by type and reconfigured via _vcSetup.
 local poolHost = CreateFrame("Frame")
 poolHost:Hide()

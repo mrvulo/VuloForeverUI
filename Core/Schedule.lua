@@ -97,9 +97,6 @@ function ns:CancelTicker(handle)
     return true
 end
 
--- Debug aid: how much is actually running right now.
-function ns:TickerCount() return count end
-
 -- ---------------------------------------------------------------------------
 -- Combat deferral
 --

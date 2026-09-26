@@ -330,12 +330,12 @@ end
 -- The colour table itself, for a caller that wants r/g/b as fields.
 function DM.ClassColorTable(classFile)
     if type(classFile) ~= "string" or classFile == "" then return nil end
-    return (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[classFile]
+    return ns.ClassColor(classFile)
 end
 
 function DM.ClassColor(classFile)
     if type(classFile) ~= "string" or classFile == "" then return nil end
-    local c = RAID_CLASS_COLORS[classFile]
+    local c = ns.ClassColor(classFile)
     if not c then return nil end
     return c.r, c.g, c.b
 end

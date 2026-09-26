@@ -437,24 +437,3 @@ function ns:ShowSetup()
     host:Show()
     showStep(1)
 end
-
--- First login on a fresh account only; the marker is true for every existing
--- install (default) and set by InitDB for a database that did not exist yet.
-function ns:MaybeShowSetup()
-    local g = ns.db and ns.db.global
-    if not g or g.setupDone ~= false then return end
-    C_Timer.After(1, function()
-        if not (ns.db and ns.db.global) or ns.db.global.setupDone ~= false then return end
-        if InCombatLockdown() then
-            -- a fresh install pulled straight into a fight: try again after it
-            local f = CreateFrame("Frame")
-            f:RegisterEvent("PLAYER_REGEN_ENABLED")
-            f:SetScript("OnEvent", function(self)
-                self:UnregisterAllEvents()
-                if ns.db.global.setupDone == false then ns:ShowSetup() end
-            end)
-            return
-        end
-        ns:ShowSetup()
-    end)
-end

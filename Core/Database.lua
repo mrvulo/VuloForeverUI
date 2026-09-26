@@ -1181,10 +1181,3 @@ function ns:ImportProfilePayload(payload, opts)
     end
     return name
 end
-
--- The classic one-call entry: decode + import everything the string carries.
-function ns:ImportProfileString(text)
-    local payload, err = ns:DecodeProfileString(text)
-    if not payload then return nil, err end
-    return ns:ImportProfilePayload(payload)
-end

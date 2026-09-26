@@ -1257,11 +1257,6 @@ ns:RegisterLocale("deDE", {
     ["Cancel"] = "Abbrechen",
 
     -- Core/Container.lua
-    ["%s: modules restored."] = "%s: Module wiederhergestellt.",
-    ["%s: all modules off. /reload recommended."] = "%s: alle Module aus. /reload empfohlen.",
-    ["|cffaaaaaaPick a tab above.|r"] = "|cffaaaaaaWähle oben einen Reiter.|r",
-    ["Module enabled"] = "Modul eingeschaltet",
-    ["|cffff5555This tab failed to load.|r"] = "|cffff5555Dieser Reiter konnte nicht geladen werden.|r",
 
     -- Core/Database.lua
     ["|cffff5555Settings migration %s failed:|r %s"] = "|cffff5555Die Umstellung der Einstellungen %s ist fehlgeschlagen:|r %s",
@@ -1645,10 +1640,6 @@ ns:RegisterLocale("deDE", {
 
     -- UI/OptionsBuilder.lua
     ["Mouseover"] = "Bei Mauszeiger",
-    ["Only in a group"] = "Nur in einer Gruppe",
-    ["Only in a raid"] = "Nur im Schlachtzug",
-    ["Only in a party"] = "Nur in einer 5er-Gruppe",
-    ["Only solo"] = "Nur allein",
     ["Differs from the default"] = "Weicht vom Standard ab",
     ["Default: %s"] = "Standard: %s",
     ["Click: reset this setting"] = "Klick: diese Einstellung zurücksetzen",
