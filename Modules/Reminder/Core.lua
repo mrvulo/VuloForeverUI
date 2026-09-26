@@ -8,6 +8,7 @@
 --   Data.lua     what is looked for, per class
 --   Core.lua     the checks, the weapon-item learning, events and lifecycle
 --   Display.lua  the secure icon row
+--   Preview.lua  the live preview on the options page
 --   Options.lua  the options page
 --
 -- WHEN IT LOOKS
@@ -35,9 +36,9 @@ local _, ns = ...
 local L = ns.L
 local R = ns.Reminder
 
-local mod = ns:RegisterModule("reminder", {
+local mod = ns:RegisterModule("reminders", {
     name        = "Reminders",
-    group       = "Global",
+    group       = "General",
     description = "Shows an icon when one of your own buffs or a weapon enchant is missing. Click it to cast. Hidden in combat.",
     defaults    = {
         enabled     = true,
@@ -270,35 +271,36 @@ end
 
 R.dismissed = {}        -- [key] = true until the next loading screen
 
-local function add(items, it)
-    if not R.dismissed[it.key] then items[#items + 1] = it end
+-- all = the preview's question: every reminder that is switched on, whether
+-- it is due or not, each marked `due`. The row asks only for the due ones.
+local function add(items, it, all)
+    if all or (it.due and not R.dismissed[it.key]) then items[#items + 1] = it end
 end
 
--- item: { key, icon, title, short, line, hint, spell, tip, itemID, macro, soon }
-local function collect()
+-- item: { key, icon, title, short, line, hint, spell, tip, itemID, macro, soon, due }
+function R.Collect(all)
     local items = {}
     local db = mod.db
-    if suppressed() then return items end
+    if not all and suppressed() then return items end
     local warn = (db.warnMinutes or 0) * 60
     local aurasOk = not ns.AurasRestricted()
 
-    if db.buffs and aurasOk then
+    if db.buffs and (aurasOk or all) then
         for _, e in ipairs(R.classBuffs) do
             local cfg = R.EntryCfg(e)
             local cast = cfg.on and R.CastFor(cfg, e.cast)
             if cast then
-                local left = auraLeft(e.ids)
-                if not left or left < warn then
-                    add(items, {
-                        key   = "buff:" .. e.key,
-                        icon  = C_Spell.GetSpellTexture(cast),
-                        short = L[e.short],
-                        line  = left and L["Runs out soon"] or L["Missing"],
-                        hint  = L["Left click: cast"],
-                        spell = cast,
-                        soon  = left ~= nil,
-                    })
-                end
+                local left = aurasOk and auraLeft(e.ids) or nil
+                add(items, {
+                    key   = "buff:" .. e.key,
+                    icon  = C_Spell.GetSpellTexture(cast),
+                    short = L[e.short],
+                    line  = left and L["Runs out soon"] or L["Missing"],
+                    hint  = L["Left click: cast"],
+                    spell = cast,
+                    soon  = left ~= nil,
+                    due   = aurasOk and (not left or left < warn),
+                }, all)
             end
         end
     end
@@ -307,48 +309,49 @@ local function collect()
         local remembered = weaponItems()
         for _, s in ipairs(R.SLOTS) do
             local cfg = R.SlotCfg(s)
-            if cfg.on and isWeapon(s.inv) then
-                local left = enchantLeft(weaponSlot(s))
-                if not left or left < warn then
-                    local it = {
-                        key   = "slot:" .. s.key,
-                        short = L[s.label],
-                        title = L[s.label],
-                        line  = left and L["Weapon enchant runs out soon"] or L["No weapon enchant"],
-                        soon  = left ~= nil,
-                    }
-                    local cast = class == "SHAMAN" and R.CastFor(cfg, R.IMBUES) or nil
-                    local itemID = remembered[s.key]
-                    if cast then
-                        it.spell, it.icon, it.hint = cast, C_Spell.GetSpellTexture(cast), L["Left click: cast"]
-                    elseif itemID and (C_Item.GetItemCount(itemID) or 0) > 0 then
-                        it.itemID = itemID
-                        it.icon   = C_Item.GetItemIconByID(itemID)
-                        it.macro  = "/use item:" .. itemID .. "\n/use " .. s.inv
-                        it.hint   = L["Left click: apply the item you used last"]
-                    else
-                        it.icon = GetInventoryItemTexture("player", s.inv)
-                    end
-                    add(items, it)
+            local armed = isWeapon(s.inv)
+            if cfg.on and (armed or all) then
+                local left = armed and enchantLeft(weaponSlot(s)) or nil
+                local it = {
+                    key   = "slot:" .. s.key,
+                    short = L[s.label],
+                    title = L[s.label],
+                    line  = left and L["Weapon enchant runs out soon"] or L["No weapon enchant"],
+                    soon  = left ~= nil,
+                    due   = armed and (not left or left < warn),
+                }
+                local cast = class == "SHAMAN" and R.CastFor(cfg, R.IMBUES) or nil
+                local itemID = remembered[s.key]
+                if cast then
+                    it.spell, it.icon, it.hint = cast, C_Spell.GetSpellTexture(cast), L["Left click: cast"]
+                elseif itemID and (C_Item.GetItemCount(itemID) or 0) > 0 then
+                    it.itemID = itemID
+                    it.icon   = C_Item.GetItemIconByID(itemID)
+                    it.macro  = "/use item:" .. itemID .. "\n/use " .. s.inv
+                    it.hint   = L["Left click: apply the item you used last"]
+                else
+                    it.icon = GetInventoryItemTexture("player", s.inv)
                 end
+                add(items, it, all)
             end
         end
     end
 
-    if aurasOk then
+    if aurasOk or all then
         local tracked = {}
         if db.camp then tracked[1] = R.CAMP end
         for _, id in ipairs(db.customIDs) do tracked[#tracked + 1] = id end
         for _, id in ipairs(tracked) do
             local name = spellName(id)
-            if name and not auraLeft({ id }) then
+            if name then
                 add(items, {
                     key   = "id:" .. id,
                     icon  = C_Spell.GetSpellTexture(id),
                     short = name,
                     line  = L["Missing"],
                     tip   = id,       -- the spell's tooltip, but nothing to cast
-                })
+                    due   = aurasOk and not auraLeft({ id }),
+                }, all)
             end
         end
     end
@@ -360,10 +363,12 @@ end
 local pending
 local function update()
     pending = nil
+    -- the preview is plain frames: it follows every change, module on or off
+    if R.RefreshPreview then R.RefreshPreview() end
     if not (R.IsBuilt() and mod.active) or InCombatLockdown() then return end
     watchEnchants()
     R.Layout()
-    R.Show(collect())
+    R.Show(R.Collect())
 end
 
 -- Many of the events come in bursts (a buff falls off, three UNIT_AURA);

@@ -150,7 +150,7 @@ function R.Build()
         holder:SetFrameStrata("MEDIUM")
         R.Layout()
         mover = ns:CreateMover(holder, {
-            key      = "reminder",
+            key      = "reminders",
             label    = L["Reminders"],
             db       = mod.db.pos,
             width    = holder:GetWidth(),

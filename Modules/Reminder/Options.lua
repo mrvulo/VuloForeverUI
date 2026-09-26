@@ -15,7 +15,7 @@ end
 -- Deferred: rebuilding inside a setter hands the widget's own write-back to
 -- whatever pooled widget the rebuild gave out.
 local function rebuild()
-    ns.NextFrame(function() ns.UI:BuildOptionsPage("reminder") end)
+    ns.NextFrame(function() ns.UI:BuildOptionsPage("reminders") end)
 end
 
 local function toggle(label, get, set, tooltip)
@@ -50,6 +50,7 @@ end
 function mod:GetOptions()
     local db = mod.db
     local o = {
+        R.PreviewItem(),
         { type = "group", layout = "row", gap = 10, align = "center", items = {
             { type = "button", label = L["Open Edit Mode"], width = 200, primary = true,
               onClick = function() ns:SetEditMode(true) end },

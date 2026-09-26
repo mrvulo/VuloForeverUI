@@ -53,6 +53,7 @@ Modules\BarSetups.lua
 Modules\Reminder\Data.lua
 Modules\Reminder\Core.lua
 Modules\Reminder\Display.lua
+Modules\Reminder\Preview.lua
 Modules\Reminder\Options.lua
 Modules\Minimap\Button.lua
 Modules\Minimap\Collector.lua

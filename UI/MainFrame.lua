@@ -960,7 +960,7 @@ function UI:CreateMainFrame()
         return b
     end
     socialButton("TwitchV.tga",  "Twitch",  "https://www.twitch.tv/mrvulo", -14)
-    socialButton("DiscordV.tga", "Discord", "https://discord.gg/P5dTSB6wC",  14)
+    socialButton("DiscordV.tga", "Discord", "https://discord.gg/mxhvFBSXSf",  14)
 
     UI.mainFrame = f
     return f

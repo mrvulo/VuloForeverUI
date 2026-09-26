@@ -79,4 +79,6 @@ Both complete: every label, message and tooltip. The language follows your game 
 
 Forever is in beta, and so is this. Everything listed above runs in the live beta client. The client changes from build to build, and so does what an addon is allowed to do — so bug reports are genuinely useful right now.
 
-Source, issues and releases: https://github.com/mrvulo/VuloForeverUI
+Source, issues and releases are on GitHub; questions, ideas and bug reports are welcome on Discord.
+
+<a href="https://github.com/mrvulo/VuloForeverUI"><img src="https://raw.githubusercontent.com/mrvulo/VuloForeverUI/master/docs/curseforge/button-github.png" alt="GitHub" width="147" height="45"></a> <a href="https://discord.gg/mxhvFBSXSf"><img src="https://raw.githubusercontent.com/mrvulo/VuloForeverUI/master/docs/curseforge/button-discord.png" alt="Discord" width="162" height="45"></a>
