@@ -56,7 +56,7 @@ Source: static analysis of the Forever UI source (Gethe/wow-ui-source, branch `f
 ## Port assessment of VuloClassicUI 1.62.0
 - On Forever, the current flavor detection would wrongly set `ns.isEra = true`.
 - **Low risk, reusable:** Core (registry, DB/profiles, events, Mover, schedule, locale) and UI/* (options, widgets, own Edit Mode HUD), plus bags/BagSort, SlotPicker, Vulslot, PopupSkin, CastHistory, gold/auto-buy/mail/queue timer.
-- **Medium:** UnlockMode (check LibEditModeOverride against camelot), Auras, Reminders, Trinkets, PowerBar, PlayerCastBar, SwingTimer (rebuild on `PLAYER_SWING`), ActionRing, GuildBank, Chat (secret guards), Trackbars, Loadouts.
+- **Medium:** UnlockMode (own Edit Mode HUD, no library), Auras, Reminders, Trinkets, PowerBar, PlayerCastBar, SwingTimer (rebuild on `PLAYER_SWING`), ActionRing, GuildBank, Chat (secret guards), Trackbars, Loadouts.
 - **High, rewrite against Mainline frames:** UnitFrames, CharacterPanel, FriendList, Bank (`C_Bank`), QuestTracker (ObjectiveTracker), ActionBars, CooldownManager, MinimapStyle, DarkSkin, Nameplates.
 - **Blocked or drop:**
   - Meter: reskin `C_DamageMeter` instead.
@@ -474,7 +474,7 @@ plates all confirmed in the client.
 ## To verify in the beta
 1. ~~Values of `/dump WOW_PROJECT_ID`, `GetBuildInfo()`, `C_GameRules.GetActiveGameMode()`.~~ Done 2026-09-18, see Facts.
 2. ~~Whether a plain `.toc` with `## Interface: 16001` loads~~ (it does), and whether a `_Mainline.toc` suffix is accepted.
-3. Whether LibEditModeOverride works with camelot Edit Mode. Our own Edit Mode HUD (`/vedit`) opens without errors (2026-09-18); the library itself is loaded but no module calls it yet, so this stays open until one does.
+3. ~~Whether LibEditModeOverride works with camelot Edit Mode.~~ Dropped 2026-09-26: no module ever called it and our own Edit Mode HUD (`/vedit`) covers the job, so the library was removed.
 4. Which power types stay readable (player mana, rage, energy). Partly answered: `UnitPower("player")` is **secret in combat** and `canaccessvalue` says no; `UnitPowerMax("player")` stays readable. Per-power-type differences not checked yet.
 5. ~~`issecretvalue(UnitHealth("player"))` in and out of combat.~~ Both (2026-09-18): `UnitHealth`, `UnitHealthPercent` and `UnitPower` of the **player** are secret and not accessible **even out of combat**; `UnitHealthMax`/`UnitPowerMax` of the player and `UnitThreatSituation(player, target)` stay readable in combat. Spell cooldowns are readable out of combat and secret in combat.
 6. **New, confirmed 2026-09-18:** `C_UnitAuras.GetAuraDataByIndex("player", 1, "HELPFUL")` in combat does not return a secret, it **throws**: `Auras cannot be accessed when secret while tainted by 'VuloForeverUI'`. Aura code must gate on `C_Secrets.ShouldAurasBeSecret()` (`ns.AurasRestricted()`) before calling; a display-only path is not enough. Cooldown and threat APIs do NOT throw: cooldowns come back secret, threat stays readable.

@@ -26,7 +26,6 @@ ns.PREFIX  = "|cff9b6cffVuloForeverUI|r"
 -- for exactly the reason above.
 local _iface = tonumber((select(4, GetBuildInfo()))) or 0
 
-ns.IFACE     = _iface
 ns.isForever = (_iface >= 16000 and _iface < 20000) and (C_SwingTimer ~= nil)
 
 -- Everything here is written against the retail API surface. Say so once, out

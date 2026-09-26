@@ -53,8 +53,7 @@ Modules/   feature modules: single files (GlobalSettings, Profiles, BarSetups,
            Minimap); a module of several files gets its own folder
            (Modules/UnitFrames/)
 Media/     fonts, textures, icons
-Libs/      LibStub, CallbackHandler, LibSharedMedia, LibDataBroker, LibDeflate,
-           LibEditModeOverride
+Libs/      LibStub, CallbackHandler, LibSharedMedia, LibDataBroker, LibDeflate
 tools/     node check.js — syntax, locals cap, locale coverage, house rules, TOC,
            secret-value lint (calls secretlint.js, baseline in secret-lint-baseline.json),
            API-existence lint (apilint.js, snapshot forever-api.json)

@@ -15,6 +15,15 @@ local mod = ns:RegisterModule("minimap", {
 
 local button
 
+-- We ship vui4.tga locally (VuloForeverUI/Media/Icons/ui/vui4.tga).
+-- If someone has VuloMedia installed instead, that works too.
+local function iconPath()
+    if C_AddOns.IsAddOnLoaded("VuloMedia") then
+        return "Interface\\AddOns\\VuloMedia\\Icons\\vui4"
+    end
+    return "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\vui4"
+end
+
 local function createButton()
     if button then return button end
 
@@ -42,15 +51,7 @@ local function createButton()
     button.icon:SetSize(18, 18)
     button.icon:SetPoint("CENTER", 0, 0)
 
-    -- We ship vui4.tga locally (VuloForeverUI/Media/Icons/ui/vui4.tga).
-    -- If someone has VuloMedia installed instead, that works too.
-    local iconPath
-    if C_AddOns.IsAddOnLoaded("VuloMedia") then
-        iconPath = "Interface\\AddOns\\VuloMedia\\Icons\\vui4"
-    else
-        iconPath = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\vui4"
-    end
-    button.icon:SetTexture(iconPath)
+    button.icon:SetTexture(iconPath())
 
     -- Press feedback: the icon rests 5% inset and fills out while the mouse
     -- is down, so a click is visible without a second texture.
@@ -180,8 +181,9 @@ end
 
 mod.ApplyVisibility = applyVisibility
 
--- Uses the ns:ShowPopupMenu helper (EasyMenu is unreliable in Anniversary)
-function mod:ShowDropdown(anchor)
+-- owner: the frame that was clicked, so a second click on it closes the menu;
+-- nil = the minimap button.
+function mod:ShowDropdown(owner)
     local entries = {
         { title = true, text = (ns.C and ns.C.accent or "|cff9b6cff") .. "VuloForeverUI|r" },
         { text = L["Open Options"],
@@ -209,7 +211,31 @@ function mod:ShowDropdown(anchor)
 
     -- the button as owner: a cursor anchor cannot be mouse-over-tested, and
     -- without it the opening click could never toggle the menu closed again
-    ns:ShowPopupMenu(entries, anchor or "cursor", anchor or button)
+    ns:ShowPopupMenu(entries, "cursor", owner or button)
+end
+
+-- The same two clicks as a data-broker launcher, for info-bar displays. It
+-- does not depend on this module being on: hiding the minimap button is the
+-- common reason to want the entry on a bar instead.
+local LDB = LibStub and LibStub:GetLibrary("LibDataBroker-1.1", true)
+if LDB and not ns.disabled then
+    LDB:NewDataObject("VuloForeverUI", {
+        type  = "launcher",
+        label = "VuloForeverUI",
+        icon  = iconPath(),
+        OnClick = function(frame, mouseBtn)
+            if mouseBtn == "RightButton" then
+                mod:ShowDropdown(frame)
+            elseif ns.UI and ns.UI.ToggleMainFrame then
+                ns.UI:ToggleMainFrame()
+            end
+        end,
+        OnTooltipShow = function(tt)
+            tt:AddLine(ns.C.accent .. "VuloForeverUI|r")
+            tt:AddLine(L["|cffffffffLeft click:|r Open options"], 1, 1, 1)
+            tt:AddLine(L["|cffffffffRight click:|r Quick module selection"], 1, 1, 1)
+        end,
+    })
 end
 
 function mod:OnEnable()

@@ -99,11 +99,9 @@ then goes into `VuloForeverUI.toc` — the checker verifies that list against di
 
 ## Still open in the client
 
-1. Whether LibEditModeOverride works against camelot's Edit Mode. Our own Edit Mode HUD
-   (`/vedit`) is what the suite uses; the library is loaded but no module calls it yet.
-2. Which power types stay readable, per class and per situation — `/vfsecrets` answers it
+1. Which power types stay readable, per class and per situation — `/vfsecrets` answers it
    for the character you are on, and the answers differ.
-3. How much of the restriction behaviour is intended. Blizzard has already called some of
+2. How much of the restriction behaviour is intended. Blizzard has already called some of
    it unintentional, so what `/vfsecrets` prints today may not be what it prints next build.
 
 Confirmed in the client and no longer in question: client detection via
