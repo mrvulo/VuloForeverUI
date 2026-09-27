@@ -1,78 +1,67 @@
-## 0.3.0
+## 0.4.0
 
 **New**
 
-- **Trinkets** — a new tab under Quality of Life: two trinket slots on screen
-  with their cooldowns. Left click uses the trinket, right click picks another
-  from your bags, alt-click switches the slot's auto-queue, which puts the next
-  ready trinket of your list on once the one in the slot is spent (out of
-  combat). The order and the stop marker are set per slot, and the window can be
-  unlocked and moved without Edit Mode.
-- **Threat meter** — a new tab in the damage meter: the threat on your target
-  for everyone in the group, one bar each, with an optional pull-aggro bar and a
-  warning sound. A healer sees the threat on the mob the tank is fighting.
-- **Damage meter** — a Classic window style in the original art, now the
-  default for new profiles. Every meter window, the combat timer and the cast
-  history have their own box in Edit Mode.
-- **Bags** — a bag bar: a tool button shows your bags in a row. Hover lights up
-  a bag's slots, a click shows that bag alone, and bags can be dragged in and
-  out. Two new views: all bags as one block, and one block per bag.
-- **Bags** — your own sort: stacks are merged first, then items go by category
-  and quality, and vendor junk moves to the end. Grey items a vendor pays for
-  are marked with an orange C.
-- **Bags** — see your bank from anywhere: a window shows the bank as it was on
-  your last visit, per character, grouped by tab.
-- **Profile import** — nameplate and damage meter settings can be imported from
-  another UI suite's profile string. Every setting that exists here is taken
-  over; window places and sizes stay yours.
-- **Game menu** — a VuloForeverUI button under Macros opens the settings.
-- **Nameplates** — each aura group (buffs, debuffs, crowd control) can grow up,
-  down, left or right, and has its own border size and colour.
-- **Action bars** — the whole classic bar places every bar, and every bar and
-  group on the band (micro menu, bags, experience bar, page arrows) can be moved
-  on its own in Edit Mode. The settings page shows a live preview of your
-  buttons in the chosen look.
-- **Minimap** — the minimap and each of its text readouts have their own box in
-  Edit Mode.
-- **Resource bars** — a Text layer option draws a bar's text over or under the
-  fill; the cast bar icon and time can be moved on their own in Edit Mode.
-- **Chat** — the whole chat can be moved in Edit Mode. The Friends icon shows
-  how many friends are online.
-- **Flight time** — a route you fly for the first time gets an estimate from
-  its length and your learned flight speed. The bar's font, size, text
-  positions and border can be set.
+- **Unit frames** — the Modern style can now show focus, target of target,
+  focus target, pet and up to five boss frames in a column. Each unit is
+  switched on by itself (all off by default), and every frame can be grabbed in
+  Edit Mode even when its unit is not there.
+- **Live previews** — the unit frame, nameplate, action bar, cooldown bar,
+  reminder, aura and resource bar settings show a live preview pinned above the
+  page, at the size it has on screen. A click on a part of it jumps to the
+  setting that owns it. The unit frame page picks its unit and the cooldown
+  bar page its bar right above the preview.
+- **Reminders** — a new module under General: missing buffs of your own and
+  weapon enchants as clickable icons. It remembers the last poison or oil used
+  on each weapon, watches the campfire buff and spell IDs you add, hides in
+  combat, and a middle click hides an icon until the next loading screen.
+- **Window styles** — five looks for the settings window on the Styles tab of
+  Global Settings: Vulo, Blizzard classic, Blizzard modern, Flat with class
+  colour and Pixel. The style changes at once, without a reload. Blizzard classic is the
+  new default.
+- **Edit Mode** — every window has its own opacity in and out of combat, at
+  full strength under the mouse. Layouts also save chat, minimap, action bars
+  and the damage meter, and the player, target, focus, target of target and
+  quest tracker frames can be moved.
+- **Mail** — an arrow next to the recipient box lists your characters, the
+  characters you know and your last recipients. It shows every character of
+  the account on this realm, including ones you have not logged in since
+  installing.
+- **Nameplates** — an option to show only the first name of a cast's target.
+  The icon size of each aura group is set right in its gear.
+- **Auras** — a tooltip when hovering your own buff and debuff rows, and a
+  choice of cooldown swipe: reversed, normal or off.
+- **Action bars** — the classic band writes the number of free bag slots on
+  the backpack button.
+- **Cooldown manager** — a left click on an icon in the preview opens that
+  spell's settings as a menu under the icon.
+- **Resource bars** — the frame of the client's own cast bar can be hidden in
+  the Standard and Classic styles.
+- **Info bars** — VuloForeverUI as an entry: left click opens the settings,
+  right click the module list.
 
 **Changed**
 
-- **Bags** — the client's bag windows no longer flash open for a moment. The
-  tool buttons wear the game's own icon frames, and the settings button closes
-  the settings again on a second click. Item slots have a flat look with a thin
-  border in the item's quality colour.
-- **Chat** — tab names sit centred in their tab (left is an option), switching
-  tabs follows at once, and the combat log's filter row wears the tab style.
-  The input line is part of the chat panel. The copy window lets you select
-  just the part you want and shows Chinese, Korean and Russian text.
-- **Unit frames** — the class icon on the Classic target portrait is on by
-  default and sits centred in its ring.
-- **Auras** — icons run to the left by default.
-- **Action bars** — the Classic button look uses the full-size original frame
-  with square icons.
+- **Damage meter** — the Classic style wears Blizzard's metal window frame over
+  the rock background, with the title in gold.
+- **Nameplates** — friendly player plates are off by default; the plain name
+  over friendly players stays where the game puts it. Enemies tagged by another
+  player turn grey at once, from their first hit, and aura borders stay sharp
+  at a small interface scale.
+- **Bags** — your own sort has a choice of order and can sort from the bottom.
+  Special bags come first and only get what they take, a bag the server
+  refuses an item for is remembered, and the window redraws once at the end
+  instead of at every move.
+- **Class colours** — your own class colours now reach the unit frames, the
+  damage meter and the cooldown bars too.
 
 **Fixed**
 
-- **Bags** — a second click on the bag button no longer opens the client's
-  bags, and after a login everything is no longer marked as just picked up.
-- **Flight time** — the bar now appears when the flight starts, and its text
-  is no longer drawn under the fill.
-- **Trinkets** — clicking a slot no longer throws an error.
-- **Nameplates** — "keep the bar's own colour" on the target texture no longer
-  draws the texture white, and the client's own target highlight can no longer
-  show through.
-- **Chat** — new chat windows no longer keep the old input box, docked windows
-  no longer draw their text over each other, and the chat can no longer come up
-  empty.
-- **Import boxes** — pasting a long string works, including when the paste
-  does not arrive character by character.
-- **Resource bars** — bar text is no longer drawn under the fill.
-- **Action bars** — the experience bar no longer snaps back to the game's width,
-  and switching back to Standard restores every button's slot art.
+- **Nameplates** — the quest mark no longer disappears in combat once a kill
+  counts for the quest, and it goes away as soon as the quest is complete.
+- **Action bars** — the bag buttons and the key ring stay in place while items
+  are picked up, put down or sorted. The Standard style no longer draws a slot
+  of its own under bar 1, and the preview no longer fills the error log with
+  warnings about a missing frame.
+- **Bags** — a saved view that no longer exists opens the window on All.
+- **Mail** — the Unknown entry under My characters is gone.
