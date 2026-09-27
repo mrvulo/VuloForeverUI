@@ -184,7 +184,7 @@ local function paintCards()
         end
         local col = sel and bgSel or bg
         c._vcBG:SetColorTexture(col.r, col.g, col.b, col.a or 1)
-        if sel then c.name:SetTextColor(a.r, a.g, a.b) else c.name:SetTextColor(0.95, 0.95, 0.97) end
+        if sel then c.name:SetTextColor(a.r, a.g, a.b) else c.name:SetTextColor(ns.TC("label")) end
     end
 end
 

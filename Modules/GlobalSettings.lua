@@ -12,6 +12,7 @@ local mod = ns:RegisterModule("globalsettings", {
     defaults    = {
         enabled    = true,
         themeColor = { r = 0.608, g = 0.424, b = 1.000 },   -- house purple
+        uiStyle    = "vulo",                                  -- Core/Theme.lua
     },
 })
 
@@ -148,6 +149,13 @@ local function themeHex()
         math.floor((c.b or 1.000) * 255 + 0.5))
 end
 
+-- Only the Vulo window style is painted in the Theme color; the others bring
+-- their own accent, so the two rows go grey instead of doing nothing.
+local function themeColorUnused()
+    local t = ns.THEMES[mod.db and mod.db.uiStyle or "vulo"]
+    return t ~= nil and t.accent ~= "theme"
+end
+
 local function setTheme(r, g, b)
     mod.db.themeColor = { r = r, g = g, b = b }
     if ns.ApplyThemeColor then ns:ApplyThemeColor() end
@@ -281,6 +289,10 @@ local function applyCustomColors()
         local src = g.powerColors[tok] or POWER_DEFAULTS[tok]
         if src then own.r, own.g, own.b = src.r, src.g, src.b end
     end
+
+    -- The Flat window style is accented in the player's class color, which
+    -- this book has just (re)written.
+    if ns.theme and ns.theme.accent == "class" then ns:ApplyThemeColor() end
 end
 
 -- Applied at ADDON_LOADED (before any module builds a frame) and again on
@@ -429,8 +441,31 @@ end
 -- reads yet would be a page of switches that do nothing, and the checker says
 -- so out loud (module defaults nothing reads).
 local function stylesOptions()
+    local names = {
+        vulo     = L["Vulo (default)"],
+        blizzard = L["Blizzard classic"],
+        retail   = L["Blizzard modern"],
+        flat     = L["Flat with class color"],
+        pixel    = L["Pixel"],
+    }
+    local values = {}
+    for _, key in ipairs(ns.THEME_ORDER) do
+        values[#values + 1] = { value = key, text = names[key] }
+    end
     return {
-        { type = "desc", text = L["|cffaaaaaaNothing here yet. This tab is where the look shared by every module will live -- bar textures, borders and backdrops, the way Fonts and Colors already work.|r"] },
+        { type = "header", text = L["Window style"] },
+        { type = "dropdown", label = L["Window style"], width = 220,
+          tooltip = L["The look of this settings window and every window built like it. The settings window changes at once; Edit Mode panels, dialogs and the color picker follow after a /reload."],
+          values = values,
+          get = function() return ns.THEMES[mod.db.uiStyle] and mod.db.uiStyle or "vulo" end,
+          set = function(_, v)
+              if v == mod.db.uiStyle then return end
+              mod.db.uiStyle = v
+              ns:ApplyThemeColor()
+              -- next frame: this runs inside a click on the window being replaced
+              C_Timer.After(0, function() ns.UI:RebuildMainFrame() end)
+          end },
+        { type = "desc", text = L["|cffaaaaaaVulo follows your Theme color, Flat takes the color of your class, every other style brings its own.|r"] },
     }
 end
 
@@ -592,6 +627,7 @@ end
 local function generalOptions()
     local display = {
         { type = "dropdown", label = L["Theme color"],
+          disabled = themeColorUnused,
           tooltip = L["|cffaaaaaaColors everything that is purple today in the color of your choice - sidebar, borders, highlights, bars. A /reload applies it everywhere.|r"],
           values = THEME_PRESETS,
           get = function() return themeHex() end,
@@ -602,6 +638,7 @@ local function generalOptions()
               setTheme(r, g, b)
           end },
         { type = "color", label = L["Custom color"],
+          disabled = themeColorUnused,
           get = function() return mod.db.themeColor end,
           set = function(r, g, b) setTheme(r, g, b) end },
 

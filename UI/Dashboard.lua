@@ -151,7 +151,7 @@ local function createStatCard(parent)
             edgeFile = "Interface\\Buttons\\WHITE8X8",
             edgeSize = 1,
         })
-        card:SetBackdropColor(0.09, 0.09, 0.115, 0.95)
+        card:SetBackdropColor(ns.TC("card"))
         local b = ns.COLORS.borderDark
         card:SetBackdropBorderColor(b.r, b.g, b.b, 1)
     end
@@ -172,7 +172,7 @@ local function createStatCard(parent)
     card.value = card:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     UI.Font(card.value, 17)
     card.value:SetPoint("TOPLEFT", card.label, "BOTTOMLEFT", 0, -4)
-    card.value:SetTextColor(0.94, 0.92, 0.98)
+    card.value:SetTextColor(ns.TC("heading"))
 
     card.sub = card:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(card.sub, 10)
@@ -192,24 +192,24 @@ local function createChip(parent)
             edgeFile = "Interface\\Buttons\\WHITE8X8",
             edgeSize = 1,
         })
-        chip:SetBackdropColor(0.12, 0.12, 0.15, 0.95)
+        chip:SetBackdropColor(ns.TC("chip"))
         local b = ns.COLORS.border
         chip:SetBackdropBorderColor(b.r, b.g, b.b, 0.5)
     end
     local hl = chip:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints(chip)
-    hl:SetColorTexture(1, 1, 1, 0.05)
+    hl:SetColorTexture(ns.TC("textHi", 0.05))
 
     chip.icon = chip:CreateTexture(nil, "ARTWORK")
     chip.icon:SetSize(13, 13)
     chip.icon:SetPoint("LEFT", chip, "LEFT", 7, 0)
     chip.icon:SetDesaturated(true)
-    chip.icon:SetVertexColor(0.76, 0.76, 0.84)
+    chip.icon:SetVertexColor(ns.TC("textSoft"))
 
     chip.text = chip:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(chip.text, 11)
     chip.text:SetPoint("LEFT", chip.icon, "RIGHT", 6, 0)
-    chip.text:SetTextColor(0.85, 0.85, 0.9)
+    chip.text:SetTextColor(ns.TC("textSoft"))
 
     chip:SetScript("OnClick", function(self)
         if self._key and UI.ShowModulePage then UI:ShowModulePage(self._key) end
@@ -224,7 +224,7 @@ local function createChangeRow(parent)
     row:SetHeight(20)
     local hl = row:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints(row)
-    hl:SetColorTexture(1, 1, 1, 0.05)
+    hl:SetColorTexture(ns.TC("textHi", 0.05))
 
     row.when = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     UI.Font(row.when, 10)
@@ -295,19 +295,19 @@ local function createSearchPrompt(parent)
             edgeFile = "Interface\\Buttons\\WHITE8X8",
             edgeSize = 1,
         })
-        box:SetBackdropColor(0.10, 0.10, 0.13, 0.95)
+        box:SetBackdropColor(ns.TC("card"))
         local a = ns.COLORS.accent
         box:SetBackdropBorderColor(a.r, a.g, a.b, 0.35)
     end
     local hl = box:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints(box)
-    hl:SetColorTexture(1, 1, 1, 0.04)
+    hl:SetColorTexture(ns.TC("textHi", 0.04))
 
     local icon = box:CreateTexture(nil, "ARTWORK")
     icon:SetSize(14, 14)
     icon:SetPoint("LEFT", box, "LEFT", 11, 0)
     icon:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
-    icon:SetVertexColor(0.7, 0.7, 0.78)
+    icon:SetVertexColor(ns.TC("textDim"))
 
     local text = box:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     UI.Font(text, 12)
@@ -379,7 +379,7 @@ function UI:ShowDashboard()
 
         cont.title = cont:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         UI.Font(cont.title, 16)
-        cont.title:SetTextColor(0.92, 0.90, 0.96)
+        cont.title:SetTextColor(ns.TC("heading"))
 
         cont.who = cont:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         UI.Font(cont.who, 11)
@@ -497,7 +497,7 @@ function UI:ShowDashboard()
                 UI._dashHints[i] = fs
             end
             fs:SetText("|cff9b6cff\226\128\162|r  " .. textValue)
-            fs:SetTextColor(0.78, 0.78, 0.84)
+            fs:SetTextColor(ns.TC("textSoft"))
             fs:ClearAllPoints()
             fs:SetPoint("TOPLEFT", cont, "TOPLEFT", PAD + 2, y)
             fs:Show()
@@ -633,7 +633,7 @@ function UI:ShowDashboard()
             end
             hdr:SetText(string.format("%s  %s%d/%d|r", L[groupName],
                 (ns.C and ns.C.accent) or "|cff9b6cff", on, #keys))
-            hdr:SetTextColor(0.85, 0.85, 0.9)
+            hdr:SetTextColor(ns.TC("textSoft"))
             hdr:ClearAllPoints()
             hdr:SetPoint("TOPLEFT", cont, "TOPLEFT", PAD + 2, y)
             hdr:Show()

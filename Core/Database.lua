@@ -309,7 +309,9 @@ function ns:LoadProfile(profileName)
     return true
 end
 
--- Mutates the ns.COLORS tables IN PLACE so modules holding a reference pick the color up; already-painted textures keep the old color until /reload.
+-- Mutates the ns.COLORS tables IN PLACE so modules holding a reference pick the
+-- color up; already-painted textures keep the old color until /reload. The
+-- window style (Core/Theme.lua) decides whether the Theme color is used at all.
 function ns:ApplyThemeColor()
     local gs = ns.db and ns.db.profile and ns.db.profile.modules
         and ns.db.profile.modules.globalsettings
@@ -318,16 +320,8 @@ function ns:ApplyThemeColor()
     if not (c and type(c.r) == "number" and type(c.g) == "number" and type(c.b) == "number") then
         c = { r = 0.608, g = 0.424, b = 1.000 }
     end
-    local A = ns.COLORS.accent
-    A.r, A.g, A.b = c.r, c.g, c.b
-    local D = ns.COLORS.accentDim
-    D.r, D.g, D.b = c.r * 0.5, c.g * 0.47, c.b * 0.5
-    if ns.C then
-        ns.C.accent = string.format("|cff%02x%02x%02x",
-            math.floor(c.r * 255 + 0.5), math.floor(c.g * 255 + 0.5),
-            math.floor(c.b * 255 + 0.5))
-        ns.PREFIX = ns.C.accent .. "VuloForeverUI|r"
-    end
+    local style = gs and gs.uiStyle
+    ns:ApplyUIStyle(type(style) == "string" and style or "vulo", c)
 end
 
 function ns:GetActiveProfileName()

@@ -477,8 +477,7 @@ local function enterPreview()
         hooksecurefunc(UI, "ShowModulePage", function(_, key)
             if key ~= "damagemeter" and DM.optionsOpen then DM.LeavePreview() end
         end)
-        local f = UI.mainFrame
-        if f then f:HookScript("OnHide", function() DM.LeavePreview() end) end
+        UI:OnMainFrameHide(function() DM.LeavePreview() end)
     end
 end
 

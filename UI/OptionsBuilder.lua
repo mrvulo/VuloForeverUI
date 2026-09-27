@@ -52,9 +52,24 @@ function ns.AnchorPointValues()
 end
 
 -- Frames are never garbage-collected: widgets are pooled by type and reconfigured via _vcSetup.
+-- Declared up here for UI.ResetWidgetPools; each is built further down.
+local rowPopup, flashFrame
+local navChips = {}
+
 local poolHost = CreateFrame("Frame")
 poolHost:Hide()
 local pools = {}
+
+-- Pooled widgets carry the colors of the style they were built in; a style
+-- switch without /reload (UI:RebuildMainFrame) starts every pool empty.
+function UI.ResetWidgetPools()
+    pools = {}
+    if rowPopup then rowPopup:Hide() end
+    rowPopup = nil
+    if flashFrame then flashFrame:Hide() end
+    flashFrame = nil
+    wipe(navChips)
+end
 
 local function acquire(vctype, parent)
     local p = pools[vctype]
@@ -176,6 +191,9 @@ local function createWidget(parent, item)
         -- build(parent) must return a module-owned, memoised frame: it survives clearChildren.
         local w = item.build and item.build(parent)
         if not w then return nil, 0, 0 end
+        -- memoised against the window it was first built in; after a style
+        -- switch (UI:RebuildMainFrame) that window is gone, so bring it over
+        if w:GetParent() ~= parent then w:SetParent(parent) end
         return w, item.height or (w:GetHeight() or 100), item.width or 480
     end
     return nil, 0, 0
@@ -220,10 +238,10 @@ local function makePanel(parent)
     -- i.e. a hair DARKER than the page, so a card was nothing but its outline
     -- and the eye had to trace borders to see where one setting ended. Raising
     -- the fill lets the card read as an object and lets the border step back.
-    p.bg:SetColorTexture(0.115, 0.115, 0.14, 0.95)
+    p.bg:SetColorTexture(ns.TC("card"))
     for _, s in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
         local t = p:CreateTexture(nil, "BORDER")
-        t:SetColorTexture(0.19, 0.19, 0.24, 1)
+        t:SetColorTexture(ns.TC("border"))
         if s == "TOP" or s == "BOTTOM" then
             t:SetPoint(s .. "LEFT"); t:SetPoint(s .. "RIGHT"); t:SetHeight(1)
         else
@@ -479,7 +497,7 @@ local function makeChangeDot(parent)
     b.icon:SetAllPoints(b)
     b.icon:SetTexture(ICON_DOT)
     b:SetScript("OnEnter", function(self)
-        self.icon:SetVertexColor(1, 1, 1)
+        self.icon:SetVertexColor(ns.TC("textHi"))
         local it = self._item
         if not it then return end
         UI:ShowTooltip(self, {
@@ -564,7 +582,7 @@ local function makeRowIcon(parent)
         end
     end)
     b:SetScript("OnLeave", function(self)
-        self.icon:SetVertexColor(0.62, 0.62, 0.70)
+        self.icon:SetVertexColor(ns.TC("textDim"))
         self:SetSize(16, 16)
         UI:HideTooltip()
     end)
@@ -578,7 +596,7 @@ local function setRowIcon(b, tex, tip, onClick, level)
     b.icon:SetTexCoord(cfg.crop and 0.10 or 0, cfg.crop and 0.90 or 1,
                        cfg.crop and 0.10 or 0, cfg.crop and 0.90 or 1)
     b.icon:SetDesaturated(cfg.desat and true or false)
-    b.icon:SetVertexColor(0.62, 0.62, 0.70)
+    b.icon:SetVertexColor(ns.TC("textDim"))
     b._tip = tip
     b._onClick = onClick
     -- pooled: an inline icon may have been greyed out on its last row
@@ -809,7 +827,6 @@ end
 -- reclaims the page's widgets and cannot reach into the panel, and the panel's
 -- own widgets are out of the pool while it is open, so no page can be handed
 -- one that is still on screen.
-local rowPopup
 
 local function closeRowPopup()
     if rowPopup and rowPopup:IsShown() then rowPopup:Hide() end
@@ -838,7 +855,7 @@ local function ensureRowPopup()
     local title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     UI.Font(title, 12)
     title:SetPoint("TOP", f, "TOP", 0, -10)
-    title:SetTextColor(0.95, 0.95, 0.97)
+    title:SetTextColor(ns.TC("label"))
     f._title = title
 
     local body = CreateFrame("Frame", nil, f)
@@ -1887,7 +1904,6 @@ end
 -- row labels above it }, sectionKey (collapsible section holding it),
 -- sectionClosed, section (title, the fallback when the row is not found) }.
 -- ---------------------------------------------------------------------------
-local flashFrame
 local function flashRow(p)
     local fl = flashFrame
     if not fl then
@@ -2061,7 +2077,6 @@ end
 -- more headings, or a row that differs from its default.
 -- ---------------------------------------------------------------------------
 local NAV_CHIP_H, NAV_GAP = 20, 6
-local navChips = {}
 
 local function stripCodes(s)
     s = tostring(s or "")
@@ -2075,11 +2090,11 @@ local function styleChip(c, active, strong)
     if active then
         c:SetBackdropColor(a.r, a.g, a.b, strong and 0.32 or 0.18)
         c:SetBackdropBorderColor(a.r, a.g, a.b, 0.9)
-        c.text:SetTextColor(1, 1, 1)
+        c.text:SetTextColor(ns.TC("textHi"))
     else
-        c:SetBackdropColor(0.12, 0.12, 0.15, 0.95)
+        c:SetBackdropColor(ns.TC("chip"))
         c:SetBackdropBorderColor(b.r, b.g, b.b, 0.6)
-        c.text:SetTextColor(0.82, 0.82, 0.88)
+        c.text:SetTextColor(ns.TC("textSoft"))
     end
 end
 
@@ -2094,7 +2109,7 @@ local function navChip(host, i)
     end
     local hl = c:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints(c)
-    hl:SetColorTexture(1, 1, 1, 0.05)
+    hl:SetColorTexture(ns.TC("textHi", 0.05))
     c.text = c:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(c.text, 11)
     c.text:SetPoint("CENTER", c, "CENTER", 0, 0)

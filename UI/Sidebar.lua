@@ -120,7 +120,7 @@ local function paintRow(key, btn)
     if selected then
         btn.bg:Show()
         if btn.accentBar then btn.accentBar:Show() end
-        btn.label:SetTextColor(1, 1, 1)
+        btn.label:SetTextColor(ns.TC("textHi"))
     else
         btn.bg:Hide()
         if btn.accentBar then btn.accentBar:Hide() end
@@ -139,10 +139,10 @@ local function paintRow(key, btn)
             btn.icon:SetVertexColor(a.r, a.g, a.b)
             btn.icon:SetAlpha(1)
         elseif enabled then
-            btn.icon:SetVertexColor(0.76, 0.76, 0.84)
+            btn.icon:SetVertexColor(ns.TC("textSoft"))
             btn.icon:SetAlpha(0.95)
         else
-            btn.icon:SetVertexColor(0.55, 0.55, 0.6)
+            btn.icon:SetVertexColor(ns.TC("textMuted"))
             btn.icon:SetAlpha(0.4)
         end
     end
@@ -190,17 +190,18 @@ local function createModuleRow(parent, key, mod)
 
     local hover = row:CreateTexture(nil, "HIGHLIGHT")
     hover:SetAllPoints(row)
-    hover:SetColorTexture(1, 1, 1, 0.04)
+    hover:SetColorTexture(ns.TC("textHi", 0.04))
+    ns.UI.ApplyListArt(row, hover)
 
     local icon = row:CreateTexture(nil, "ARTWORK")
     icon:SetSize(16, 16)
     icon:SetPoint("LEFT", row, "LEFT", 8, 0)
     icon:SetTexture(MODULE_ICONS[key] or MODULE_ICON_FALLBACK)
-    icon:SetVertexColor(0.76, 0.76, 0.84, 0.95)
+    icon:SetVertexColor(ns.TC("textSoft", 0.95))
     row.icon = icon
 
     row:HookScript("OnEnter", function()
-        if UI.currentModule ~= key then icon:SetVertexColor(0.95, 0.95, 1) end
+        if UI.currentModule ~= key then icon:SetVertexColor(ns.TC("textHi")) end
     end)
     row:HookScript("OnLeave", function() highlightSelected() end)
 
@@ -240,13 +241,13 @@ local function createModuleRow(parent, key, mod)
             pinIcon:SetVertexColor(a.r, a.g, a.b)
             pin:SetAlpha(1)
         else
-            pinIcon:SetVertexColor(0.62, 0.62, 0.70)
+            pinIcon:SetVertexColor(ns.TC("textDim"))
             pin:SetAlpha(pin._hover and 1 or 0)
         end
     end
     pin:SetScript("OnEnter", function(self)
         self._hover = true
-        pinIcon:SetVertexColor(1, 1, 1)
+        pinIcon:SetVertexColor(ns.TC("textHi"))
         self:SetAlpha(1)
         UI:ShowTooltip(self, { title = isPinned(key) and L["Unpin"] or L["Pin to the top of the sidebar"] })
     end)
@@ -328,7 +329,7 @@ local function ensureFilterBox(f)
     local ph = box:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     ns.UI.Font(ph, 11)
     ph:SetPoint("LEFT", box, "LEFT", 22, 0)
-    ph:SetTextColor(0.45, 0.45, 0.52)
+    ph:SetTextColor(ns.TC("textMuted"))
     box._placeholder = ph
     -- the list moves down under the box
     f.sidebarScroll:SetPoint("TOPLEFT", f.sidebar, "TOPLEFT", 6, -32)
@@ -364,9 +365,10 @@ local function createGroupHeader(parent, groupName)
     line:SetPoint("BOTTOMLEFT", h, "BOTTOMLEFT", 8, 0)
     line:SetPoint("BOTTOMRIGHT", h, "BOTTOMRIGHT", -8, 0)
     line:SetHeight(1)
+    local dv = ns.COLORS.divider
     ns.UI.SetGradient(line, "HORIZONTAL",
-        0.32, 0.32, 0.38, 0.45,
-        0.32, 0.32, 0.38, 0.0)
+        dv.r, dv.g, dv.b, 0.45,
+        dv.r, dv.g, dv.b, 0.0)
 
     h._group = groupName
     return h
@@ -463,13 +465,14 @@ function UI:PopulateSidebar()
 
             local hover = row:CreateTexture(nil, "HIGHLIGHT")
             hover:SetAllPoints(row)
-            hover:SetColorTexture(1, 1, 1, 0.05)
+            hover:SetColorTexture(ns.TC("textHi", 0.05))
+            ns.UI.ApplyListArt(row, hover)
 
             local icon = row:CreateTexture(nil, "ARTWORK")
             icon:SetSize(16, 16)
             icon:SetPoint("LEFT", row, "LEFT", 8, 0)
             icon:SetTexture(ICON_DIR .. "_dashboard.tga")
-            icon:SetVertexColor(0.76, 0.76, 0.84, 0.95)
+            icon:SetVertexColor(ns.TC("textSoft", 0.95))
 
             local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
             ns.UI.Font(label, 12)
@@ -514,13 +517,14 @@ function UI:PopulateSidebar()
 
             local hover = row:CreateTexture(nil, "HIGHLIGHT")
             hover:SetAllPoints(row)
-            hover:SetColorTexture(1, 1, 1, 0.05)
+            hover:SetColorTexture(ns.TC("textHi", 0.05))
+            ns.UI.ApplyListArt(row, hover)
 
             local icon = row:CreateTexture(nil, "ARTWORK")
             icon:SetSize(16, 16)
             icon:SetPoint("LEFT", row, "LEFT", 8, 0)
             icon:SetTexture(ICON_DIR .. "changelog.tga")
-            icon:SetVertexColor(0.76, 0.76, 0.84, 0.95)
+            icon:SetVertexColor(ns.TC("textSoft", 0.95))
 
             local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
             ns.UI.Font(label, 12)

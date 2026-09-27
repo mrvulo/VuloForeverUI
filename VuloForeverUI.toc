@@ -16,6 +16,7 @@ Libs\LibSharedMedia-3.0\LibSharedMedia-3.0.lua
 Libs\LibDeflate\LibDeflate.lua
 
 Core\Namespace.lua
+Core\Theme.lua
 Core\Locale.lua
 Locales\deDE.lua
 Core\Utils.lua

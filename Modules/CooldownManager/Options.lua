@@ -904,11 +904,8 @@ local function enterPreview()
     if CM.optionsOpen then return end
     CM.optionsOpen = true
     if not hookedHide then
-        local f = UI.mainFrame
-        if f then
-            hookedHide = true
-            f:HookScript("OnHide", function() CM.LeavePreview() end)
-        end
+        hookedHide = true
+        UI:OnMainFrameHide(function() CM.LeavePreview() end)
     end
     -- Restyle, not just show: the bars grow by their stand-in icons.
     CM.RestyleAll()

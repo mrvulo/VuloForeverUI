@@ -54,7 +54,7 @@ local function createLevel(i)
             insets   = { left = 1, right = 1, top = 1, bottom = 1 },
         })
         local _, bd = menuColors()
-        f:SetBackdropColor(0.06, 0.06, 0.08, 0.98)
+        f:SetBackdropColor(ns.TC("popup"))
         f:SetBackdropBorderColor(bd.r, bd.g, bd.b, 1)
     end
     if ns.UI and ns.UI.CreateShadow then ns.UI:CreateShadow(f) end
@@ -213,14 +213,14 @@ renderLevel = function(i, entries, anchorFn)
             btn:SetHeight(20)
             btn.text:SetText(entry.text or "")
             if entry.disabled then
-                btn.text:SetTextColor(0.5, 0.5, 0.5)
+                btn.text:SetTextColor(ns.TC("textMuted"))
                 -- mouse stays ON: hovering a dead flyout parent must still
                 -- close an open flyout, and a tooltipless dead row is inert
                 btn:EnableMouse(true)
                 btn._clickable = false
                 btn:SetScript("OnClick", nil)
             else
-                btn.text:SetTextColor(1, 1, 1)
+                btn.text:SetTextColor(ns.TC("textHi"))
                 btn:EnableMouse(true)
                 btn._clickable = true
                 btn:RegisterForClicks("LeftButtonUp")
@@ -280,7 +280,7 @@ renderLevel = function(i, entries, anchorFn)
         btn:EnableMouse(false)
         btn:SetScript("OnClick", nil)
         btn.text:SetText(string.format("%d/%d", last, #entries))
-        btn.text:SetTextColor(0.45, 0.45, 0.45)
+        btn.text:SetTextColor(ns.TC("textMuted"))
         btn:ClearAllPoints()
         btn:SetPoint("TOPLEFT",  menu, "TOPLEFT",  4, y)
         btn:SetPoint("TOPRIGHT", menu, "TOPRIGHT", -4, y)

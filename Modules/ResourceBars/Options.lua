@@ -282,11 +282,8 @@ local function enterPreview()
     if RB.optionsOpen or not RB.mod.active then return end
     RB.optionsOpen = true
     if not hookedHide then
-        local f = UI.mainFrame
-        if f then
-            hookedHide = true
-            f:HookScript("OnHide", function() RB.LeavePreview() end)
-        end
+        hookedHide = true
+        UI:OnMainFrameHide(function() RB.LeavePreview() end)
     end
     RB.Each(function(key) RB.BuildBar(key) end)
     RB.StyleAll()

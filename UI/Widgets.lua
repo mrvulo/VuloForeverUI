@@ -59,9 +59,9 @@ function UI:CreateCloseX(f, onClick)
     close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -6, -7)
     local cx = close:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     UI.Font(cx, 20)
-    cx:SetPoint("CENTER"); cx:SetText("x"); cx:SetTextColor(0.7, 0.7, 0.75)
+    cx:SetPoint("CENTER"); cx:SetText("x"); cx:SetTextColor(ns.TC("textDim"))
     close:SetScript("OnEnter", function() cx:SetTextColor(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b) end)
-    close:SetScript("OnLeave", function() cx:SetTextColor(0.7, 0.7, 0.75) end)
+    close:SetScript("OnLeave", function() cx:SetTextColor(ns.TC("textDim")) end)
     close:SetScript("OnClick", onClick)
     return close
 end
@@ -76,14 +76,14 @@ function UI:CreateSearchBox(parent, opts)
     sb:SetFont(FONT_PATH, 11, "")
     sb:SetMaxLetters(40)
     sb:SetTextInsets(22, 8, 0, 0)
-    sb:SetTextColor(0.9, 0.9, 0.95)
+    sb:SetTextColor(ns.TC("label"))
     local bg = sb:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints(sb); bg:SetColorTexture(0.04, 0.04, 0.055, 0.95)
+    bg:SetAllPoints(sb); bg:SetColorTexture(ns.TC("input"))
     local icon = sb:CreateTexture(nil, "OVERLAY")
     icon:SetSize(11, 11)
     icon:SetPoint("LEFT", sb, "LEFT", 6, 0)
     icon:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\modules\\fixinspect.tga")
-    icon:SetVertexColor(0.55, 0.55, 0.62)
+    icon:SetVertexColor(ns.TC("textMuted"))
     local border = CreateFrame("Frame", nil, sb, BackdropTemplateMixin and "BackdropTemplate")
     border:SetAllPoints(sb)
     if border.SetBackdrop then
@@ -96,10 +96,39 @@ function UI:CreateSearchBox(parent, opts)
     sb:SetScript("OnEditFocusLost", function()
         if border.SetBackdropBorderColor then border:SetBackdropBorderColor(ns.COLORS.border.r, ns.COLORS.border.g, ns.COLORS.border.b, 1) end
     end)
+    if ns.theme.art then UI.ApplySearchArt(sb, bg, border) end
     sb:SetScript("OnTextChanged", opts.onText)
     sb:SetScript("OnEscapePressed", function(self) self:SetText(""); self:ClearFocus() end)
     sb:SetScript("OnEnterPressed",  function(self) self:ClearFocus() end)
     return sb
+end
+
+-- Blizzard's search-box border (InputBoxVisualTemplate's three atlas pieces,
+-- rounded ends) around one of our edit boxes. The flat fill is pulled in off
+-- the rounded ends -- left square, it showed as two black corners outside the
+-- curve -- and the flat one-pixel border steps aside.
+function UI.ApplySearchArt(box, bg, border)
+    if box._searchArt then return end
+    box._searchArt = true
+    bg:ClearAllPoints()
+    bg:SetPoint("TOPLEFT", box, "TOPLEFT", 2, -3)
+    bg:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", -4, 3)
+    bg:SetColorTexture(0, 0, 0, 0.5)
+    if border then border:Hide() end
+    local h = box:GetHeight()
+    if not h or h < 1 then h = 20 end
+    local left = box:CreateTexture(nil, "BORDER")
+    left:SetAtlas("common-search-border-left")
+    left:SetSize(8, h)
+    left:SetPoint("LEFT", box, "LEFT", -5, 0)
+    local right = box:CreateTexture(nil, "BORDER")
+    right:SetAtlas("common-search-border-right")
+    right:SetSize(8, h)
+    right:SetPoint("RIGHT", box, "RIGHT", 0, 0)
+    local mid = box:CreateTexture(nil, "BORDER")
+    mid:SetAtlas("common-search-border-middle")
+    mid:SetPoint("TOPLEFT", left, "TOPRIGHT")
+    mid:SetPoint("BOTTOMRIGHT", right, "BOTTOMLEFT")
 end
 
 -- The normal/highlight/disabled font trio every panel-button skin needs. Four
@@ -117,9 +146,9 @@ function UI:PanelButtonFonts(prefix)
         d:SetFont(UI.FONT_PATH, 12, "")
     end
     local ac = ns.COLORS.accent
-    n:SetTextColor(0.9, 0.9, 0.95)
+    n:SetTextColor(ns.TC("label"))
     h:SetTextColor(ac.r, ac.g, ac.b)
-    d:SetTextColor(0.45, 0.45, 0.5)
+    d:SetTextColor(ns.TC("textMuted"))
     return n, h, d
 end
 
@@ -166,7 +195,7 @@ function UI:SkinPanelButton(b, opts)
 
     local bg = b:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints(b)
-    bg:SetColorTexture(0.13, 0.13, 0.16, 1)
+    bg:SetColorTexture(ns.TC("control"))
     local edges = {}
     for i = 1, 4 do
         local t = b:CreateTexture(nil, "BORDER")
@@ -185,11 +214,11 @@ function UI:SkinPanelButton(b, opts)
         if b.SetDisabledFontObject then b:SetDisabledFontObject(fonts[3]) end
     end
     b:HookScript("OnEnter", function()
-        bg:SetColorTexture(0.19, 0.19, 0.23, 1)
+        bg:SetColorTexture(ns.TC("controlHover"))
         for _, t in ipairs(edges) do t:SetColorTexture(ac.r, ac.g, ac.b, 0.9) end
     end)
     b:HookScript("OnLeave", function()
-        bg:SetColorTexture(0.13, 0.13, 0.16, 1)
+        bg:SetColorTexture(ns.TC("control"))
         for _, t in ipairs(edges) do t:SetColorTexture(bc.r, bc.g, bc.b, 1) end
     end)
 end
@@ -215,9 +244,10 @@ function UI:CreateShadow(frame)
     frame._vcShadow = {}
     local layers = { { 1, 0.45 }, { 3, 0.28 }, { 5, 0.15 }, { 7, 0.07 } }
     for i, l in ipairs(layers) do
+        local d = l[1]
         local t = frame:CreateTexture(nil, "BACKGROUND", nil, -8 + (i - 1))
-        t:SetPoint("TOPLEFT",     frame, "TOPLEFT",     -l[1],  l[1])
-        t:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT",  l[1], -l[1])
+        t:SetPoint("TOPLEFT",     frame, "TOPLEFT",     -d,  d)
+        t:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT",  d, -d)
         t:SetColorTexture(0, 0, 0, l[2])
         frame._vcShadow[i] = t
     end
@@ -282,7 +312,7 @@ function UI.StyleScrollbar(scrollFrame)
         track:SetPoint("TOP",    sb, "TOP",    0, 0)
         track:SetPoint("BOTTOM", sb, "BOTTOM", 0, 0)
         track:SetWidth(4)
-        track:SetColorTexture(0.10, 0.10, 0.13, 1)
+        track:SetColorTexture(ns.TC("track"))
         sb._vcTrack = track
     end
 
@@ -359,6 +389,7 @@ function UI:StyleBackdrop(frame, opts)
     opts = opts or {}
     local bgColor    = opts.bg     or ns.COLORS.bg
     local borderRGB  = opts.border or ns.COLORS.border
+    local edge       = opts.edge or 1
 
     if not frame._vcBG then
         frame._vcBG = frame:CreateTexture(nil, "BACKGROUND")
@@ -376,20 +407,110 @@ function UI:StyleBackdrop(frame, opts)
         local t, b, l, r = unpack(frame._vcBorders)
         t:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
         t:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
-        t:SetHeight(1)
         b:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
         b:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-        b:SetHeight(1)
         l:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
         l:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-        l:SetWidth(1)
         r:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
         r:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-        r:SetWidth(1)
     end
+    -- opts.edge: border width, 1 unless the theme draws a heavier frame
+    local t, b, l, r = unpack(frame._vcBorders)
+    t:SetHeight(edge); b:SetHeight(edge); l:SetWidth(edge); r:SetWidth(edge)
     for _, b in ipairs(frame._vcBorders) do
         b:SetColorTexture(borderRGB.r, borderRGB.g, borderRGB.b, borderRGB.a or 1)
     end
+    -- opts.window: the settings window, which a theme with window art frames
+    -- the way Blizzard frames its own.
+    if opts.window then UI.ApplyWindowArt(frame) end
+end
+
+-- Blizzard's window frame over one of ours: the NineSlice layout named by the
+-- theme, and the theme's background in place of the flat color. The frame
+-- sits ABOVE the window's children on purpose -- the bottom bar is a child and
+-- would otherwise paint over the bottom edge -- and takes no mouse, so
+-- everything under it still clicks. The title bar raises itself above it
+-- (UI/MainFrame.lua).
+function UI.ApplyWindowArt(frame)
+    local w = ns.theme.window
+    if not w or frame._vfWindowArt then return end
+    frame._vfWindowArt = true
+    if w.layout and NineSliceUtil and NineSliceUtil.ApplyLayoutByName then
+        local art = CreateFrame("Frame", nil, frame)
+        -- Forever's metal corners sit their left edge INSIDE the container,
+        -- which put the left metal on top of the sidebar (measured in game
+        -- twice). The frame reaches out on the left and nowhere else, and the
+        -- window background reaches out under it, so no gap opens between the
+        -- metal and the window.
+        local reach = 11
+        art:SetPoint("TOPLEFT", frame, "TOPLEFT", -reach, 0)
+        art:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+        art:SetFrameLevel(frame:GetFrameLevel() + 30)
+        art:EnableMouse(false)
+        NineSliceUtil.ApplyLayoutByName(art, w.layout)
+        frame._vfWindowArt = art
+        for _, e in ipairs(frame._vcBorders or {}) do e:Hide() end
+        if frame._vcBG then
+            frame._vcBG:ClearAllPoints()
+            frame._vcBG:SetPoint("TOPLEFT", frame, "TOPLEFT", -(reach - 3), 0)
+            frame._vcBG:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+        end
+    end
+
+    local bg = frame._vcBG
+    if bg and w.bgFile then
+        bg:SetTexture(w.bgFile, "REPEAT", "REPEAT")
+        bg:SetHorizTile(true); bg:SetVertTile(true)
+        bg:SetVertexColor(1, 1, 1, 1)
+    end
+end
+
+-- The settings panel's list-row art on a sidebar row: its selected and hover
+-- atlases in place of the accent gradient, wash and bar.
+function UI.ApplyListArt(row, hover)
+    if not ns.theme.listArt then return end
+    row.bg:SetAtlas("Options_List_Active")
+    row.bg:SetVertexColor(1, 1, 1, 1)
+    row.accentBar:SetAlpha(0)
+    hover:SetAtlas("Options_List_Hover")
+    hover:SetVertexColor(1, 1, 1, 1)
+end
+
+-- UIPanelButtonTemplate's art: one texture file cut into left cap, middle and
+-- right cap, swapped for its -Down twin while pressed.
+local PANEL_BTN = {
+    up        = "Interface\\Buttons\\UI-Panel-Button-Up",
+    down      = "Interface\\Buttons\\UI-Panel-Button-Down",
+    highlight = "Interface\\Buttons\\UI-Panel-Button-Highlight",
+    coords    = { { 0, 0.09375 }, { 0.09375, 0.53125 }, { 0.53125, 0.625 } },
+}
+
+function UI.ApplyButtonArt(b)
+    if b._artParts then return end
+    b._bg:Hide()
+    for _, e in ipairs(b._borders) do e:Hide() end
+    local parts = {}
+    for i, c in ipairs(PANEL_BTN.coords) do
+        local t = b:CreateTexture(nil, "BACKGROUND", nil, 1)
+        t:SetTexture(PANEL_BTN.up)
+        t:SetTexCoord(c[1], c[2], 0, 0.6875)
+        parts[i] = t
+    end
+    local left, mid, right = parts[1], parts[2], parts[3]
+    left:SetPoint("TOPLEFT"); left:SetPoint("BOTTOMLEFT"); left:SetWidth(12)
+    right:SetPoint("TOPRIGHT"); right:SetPoint("BOTTOMRIGHT"); right:SetWidth(12)
+    mid:SetPoint("TOPLEFT", left, "TOPRIGHT"); mid:SetPoint("BOTTOMRIGHT", right, "BOTTOMLEFT")
+    local hl = b:CreateTexture(nil, "HIGHLIGHT")
+    hl:SetTexture(PANEL_BTN.highlight)
+    hl:SetTexCoord(0, 0.625, 0, 0.6875)
+    hl:SetBlendMode("ADD")
+    hl:SetAllPoints(b)
+    b._artParts = parts
+end
+
+function UI.SetButtonArtPressed(b, down)
+    if not b._artParts then return end
+    for _, t in ipairs(b._artParts) do t:SetTexture(down and PANEL_BTN.down or PANEL_BTN.up) end
 end
 
 -- Header item: { text, subtitle? }
@@ -415,14 +536,14 @@ function UI:CreateHeader(parent, text)
     local fs = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     fs:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 0, 5)
     UI.Font(fs, 13)
-    fs:SetTextColor(0.92, 0.90, 0.96)
+    fs:SetTextColor(ns.TC("heading"))
     fs:SetJustifyH("LEFT")
     f._label = fs
 
     local sub = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     sub:SetPoint("LEFT", fs, "RIGHT", 6, 0)
     UI.Font(sub, 10)
-    sub:SetTextColor(0.40, 0.40, 0.48)
+    sub:SetTextColor(ns.TC("textMuted"))
     sub:Hide()
     f._sub = sub
 
@@ -483,7 +604,7 @@ end
 -- that does nothing.
 local function collapsibleSetup(b, title, expanded, onClick, count)
     b._label:SetText(string.upper(title or ""))
-    b._label:SetTextColor(0.92, 0.90, 0.96)
+    b._label:SetTextColor(ns.TC("heading"))
 
     -- How many settings the heading groups, in the muted tone beside it. A
     -- pooled header carries the last page's number otherwise, so it is set on
@@ -520,7 +641,7 @@ local function collapsibleSetup(b, title, expanded, onClick, count)
     if c then
         b._chevron:SetVertexColor(c.r, c.g, c.b)
     else
-        b._chevron:SetVertexColor(0.65, 0.65, 0.72)
+        b._chevron:SetVertexColor(ns.TC("textDim"))
     end
 end
 
@@ -559,8 +680,8 @@ function UI:CreateCollapsibleHeader(parent, text, expanded, onClick, count)
         ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b, 0.0)
 
     b:SetScript("OnClick", function(self) if self._vcOnClick then self._vcOnClick() end end)
-    b:SetScript("OnEnter", function(self) self._label:SetTextColor(1, 1, 1) end)
-    b:SetScript("OnLeave", function(self) self._label:SetTextColor(0.92, 0.90, 0.96) end)
+    b:SetScript("OnEnter", function(self) self._label:SetTextColor(ns.TC("textHi")) end)
+    b:SetScript("OnLeave", function(self) self._label:SetTextColor(ns.TC("heading")) end)
 
     b._vcType  = "collapsible"
     b._vcSetup = collapsibleSetup
@@ -587,20 +708,25 @@ local function toggleRefresh(container)
         if state then
             container._eye:SetVertexColor(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b, 1)
         else
-            container._eye:SetVertexColor(0.45, 0.45, 0.50, 1)
+            container._eye:SetVertexColor(ns.TC("textMuted"))
         end
+        return
+    end
+
+    if container._check then
+        container._check:SetShown(state)
         return
     end
 
     local knob = container._knob
     if state then
         setTrackColor(container, ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b)
-        knob:SetColorTexture(1, 1, 1, 1)
+        knob:SetColorTexture(ns.TC("knob"))
         knob:ClearAllPoints()
         knob:SetPoint("RIGHT", btn, "RIGHT", -3, 0)
     else
         setTrackColor(container, ns.COLORS.toggleOff.r, ns.COLORS.toggleOff.g, ns.COLORS.toggleOff.b)
-        knob:SetColorTexture(0.72, 0.72, 0.78, 1)
+        knob:SetColorTexture(ns.TC("knobOff"))
         knob:ClearAllPoints()
         knob:SetPoint("LEFT", btn, "LEFT", 3, 0)
     end
@@ -634,7 +760,7 @@ function UI:CreateToggle(parent, config)
     local label = container:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     UI.Font(label, 12)
     label:SetPoint("LEFT", container, "LEFT", 0, 0)
-    label:SetTextColor(0.95, 0.95, 0.97)
+    label:SetTextColor(ns.TC("label"))
 
     local btn = CreateFrame("Button", nil, container)
     btn:SetSize(TOGGLE_W, TOGGLE_H)
@@ -653,6 +779,28 @@ function UI:CreateToggle(parent, config)
         eye:SetPoint("CENTER", btn, "CENTER", 0, 0)
         eye:SetSize(22, 16)
         container._eye = eye
+    elseif ns.theme.art then
+        -- a checkbox in place of the switch: UICheckButtonTemplate's art, or
+        -- the minimal one of Blizzard's settings panel
+        local box = btn:CreateTexture(nil, "ARTWORK")
+        local check = btn:CreateTexture(nil, "OVERLAY")
+        local hl = btn:CreateTexture(nil, "HIGHLIGHT")
+        if ns.theme.art == "modern" then
+            box:SetAtlas("checkbox-minimal")
+            check:SetAtlas("checkmark-minimal")
+            hl:SetAtlas("checkbox-minimal")
+            box:SetSize(22, 22)
+        else
+            box:SetTexture("Interface\\Buttons\\UI-CheckBox-Up")
+            check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
+            hl:SetTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
+            box:SetSize(26, 26)
+        end
+        box:SetPoint("RIGHT", btn, "RIGHT", 2, 0)
+        check:SetAllPoints(box)
+        hl:SetBlendMode("ADD")
+        hl:SetAllPoints(box)
+        container._check = check
     else
         local track = btn:CreateTexture(nil, "BACKGROUND")
         track:SetAllPoints(btn)
@@ -676,7 +824,7 @@ function UI:CreateToggle(parent, config)
 
         local knob = btn:CreateTexture(nil, "ARTWORK", nil, 2)
         knob:SetSize(TOGGLE_H - 6, TOGGLE_H - 6)
-        knob:SetColorTexture(1, 1, 1, 1)
+        knob:SetColorTexture(ns.TC("knob"))
         knobShadow:SetPoint("CENTER", knob, "CENTER", 0, 0)
 
         container._knob = knob
@@ -855,7 +1003,7 @@ function UI:CreateSlider(parent, config)
     if s.High then s.High:SetText("") end
     if s.Text then
         UI.Font(s.Text, 12)
-        s.Text:SetTextColor(0.95, 0.95, 0.97)
+        s.Text:SetTextColor(ns.TC("label"))
         -- The template centres its label over the track. Every other label on
         -- the page starts at the left edge, so a centred one broke the single
         -- reading edge that lets you scan a column of settings by their names
@@ -887,7 +1035,7 @@ function UI:CreateSlider(parent, config)
     trackBg:SetHeight(6)
     trackBg:SetPoint("LEFT", s, "LEFT", 2, 0)
     trackBg:SetPoint("RIGHT", s, "RIGHT", -2, 0)
-    trackBg:SetColorTexture(1, 1, 1, TRACK_IDLE)
+    trackBg:SetColorTexture(ns.TC("textHi", TRACK_IDLE))
     roundTexture(s, trackBg, MASK_ROUNDED)
 
     -- Inner shadow along the top lip: reads as carved into the panel instead of
@@ -924,10 +1072,21 @@ function UI:CreateSlider(parent, config)
     roundTexture(s, thumbGlow, MASK_CIRCLE)
     thumbGlow:Hide()
 
-    if thumb then
+    if thumb and ns.theme.art then
+        -- Blizzard's knob (UISliderTemplate, or MinimalSliderTemplate for the
+        -- modern art); it carries its own shading, so no halo
+        if ns.theme.art == "modern" then
+            thumb:SetAtlas("Minimal_SliderBar_Button")
+            thumb:SetSize(20, 19)
+        else
+            thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+            thumb:SetSize(32, 32)
+        end
+        thumb:SetDrawLayer("OVERLAY")
+    elseif thumb then
         -- Desaturated knob over a saturated fill separates on two channels at
         -- once, which holds up far better than brightness alone.
-        thumb:SetColorTexture(0.97, 0.97, 1.0, 1)
+        thumb:SetColorTexture(ns.TC("thumb"))
         thumb:SetSize(15, 15)
         thumb:SetDrawLayer("OVERLAY")     -- keep it above the halo
         roundTexture(s, thumb, MASK_CIRCLE)
@@ -943,7 +1102,7 @@ function UI:CreateSlider(parent, config)
     local trackNow, trackGoal = TRACK_IDLE, TRACK_IDLE
     local function paintState()
         thumbGlow:SetAlpha(glowNow)
-        trackBg:SetColorTexture(1, 1, 1, trackNow)
+        trackBg:SetColorTexture(ns.TC("textHi", trackNow))
     end
     local function fadeTick(self, elapsed)
         local k = math.min(1, (elapsed or 0) / 0.18 * 3)
@@ -977,19 +1136,19 @@ function UI:CreateSlider(parent, config)
         b:SetSize(16, 16)
         local border = b:CreateTexture(nil, "BACKGROUND")
         border:SetAllPoints(b)
-        border:SetColorTexture(0.3, 0.3, 0.35, 1)
+        border:SetColorTexture(ns.TC("border"))
         roundTexture(b, border, MASK_ROUNDED)
         local fill = b:CreateTexture(nil, "ARTWORK")
         fill:SetPoint("TOPLEFT", b, "TOPLEFT", 1, -1)
         fill:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -1, 1)
-        fill:SetColorTexture(0.14, 0.14, 0.16, 1)
+        fill:SetColorTexture(ns.TC("control"))
         roundTexture(b, fill, MASK_ROUNDED)
         local txt = b:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         UI.Font(txt, 12)
         txt:SetPoint("CENTER", b, "CENTER", 0, 1)
         txt:SetText(label)
         b:SetScript("OnEnter", function() border:SetColorTexture(accent.r, accent.g, accent.b, 1) end)
-        b:SetScript("OnLeave", function() border:SetColorTexture(0.3, 0.3, 0.35, 1) end)
+        b:SetScript("OnLeave", function() border:SetColorTexture(ns.TC("border")) end)
         b:RegisterForClicks("LeftButtonUp")
         b:SetScript("OnClick", function()
             local mult = IsShiftKeyDown() and 5 or 1
@@ -1015,7 +1174,7 @@ function UI:CreateSlider(parent, config)
 
     local vbg = valueText:CreateTexture(nil, "BACKGROUND")
     vbg:SetAllPoints(valueText)
-    vbg:SetColorTexture(1, 1, 1, 0.05)
+    vbg:SetColorTexture(ns.TC("textHi", 0.05))
     vbg:Hide()
     valueText:SetScript("OnEnter", function(self) vbg:Show() end)
     valueText:SetScript("OnLeave", function(self) if not self:HasFocus() then vbg:Hide() end end)
@@ -1088,7 +1247,7 @@ function UI:CreateSlider(parent, config)
 
     row.label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     UI.Font(row.label, 12)
-    row.label:SetTextColor(0.95, 0.95, 0.97)
+    row.label:SetTextColor(ns.TC("label"))
     row.label:SetJustifyH("LEFT")
     row.label:SetPoint("LEFT", row, "LEFT", 0, 0)
     row.label:SetWordWrap(false)
@@ -1152,6 +1311,13 @@ UI.CloseDropdownPopup = closeActivePopup
 -- nothing, silently.
 local placePopupRows
 
+-- A style switch without /reload (UI:RebuildMainFrame) drops the menu, so the
+-- next open builds it in the new colors.
+function UI.ResetDropdownPopup()
+    if activePopup then activePopup:Hide() end
+    activePopup = nil
+end
+
 local function ensurePopupFrame()
     if activePopup then return activePopup end
     local p = CreateFrame("Frame", "VCDropdownPopup", UIParent)
@@ -1179,7 +1345,7 @@ local function ensurePopupFrame()
     UI:CreateShadow(p)
     local bg = p:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints(p)
-    bg:SetColorTexture(0.07, 0.07, 0.09, 0.99)
+    bg:SetColorTexture(ns.TC("popup"))
     p._bg = bg
 
     local borders = {}
@@ -1205,7 +1371,7 @@ local function ensurePopupFrame()
     track:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -1, 2)
     local trackBG = track:CreateTexture(nil, "BACKGROUND")
     trackBG:SetAllPoints(track)
-    trackBG:SetColorTexture(0.10, 0.10, 0.13, 1)
+    trackBG:SetColorTexture(ns.TC("track"))
     track:EnableMouse(true)
     track:Hide()
     p._sbTrack = track
@@ -1381,23 +1547,23 @@ local function ensureRowButton(item, n)
 
     b._icon = b:CreateTexture(nil, "ARTWORK")
     b._icon:SetAllPoints(b)
-    b._icon:SetVertexColor(0.72, 0.72, 0.78)
+    b._icon:SetVertexColor(ns.TC("textDim"))
 
     b._glyph = b:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     UI.Font(b._glyph, 13)
     b._glyph:SetPoint("CENTER", b, "CENTER", 0, 0)
-    b._glyph:SetTextColor(0.72, 0.72, 0.78)
+    b._glyph:SetTextColor(ns.TC("textDim"))
 
     b:SetScript("OnEnter", function(self)
-        self._icon:SetVertexColor(1, 1, 1)
-        self._glyph:SetTextColor(1, 1, 1)
+        self._icon:SetVertexColor(ns.TC("textHi"))
+        self._glyph:SetTextColor(ns.TC("textHi"))
         if self._tooltip then
             UI:ShowTooltip(self, { title = self._tooltip, wrap = true, anchor = "ANCHOR_RIGHT" })
         end
     end)
     b:SetScript("OnLeave", function(self)
-        self._icon:SetVertexColor(0.72, 0.72, 0.78)
-        self._glyph:SetTextColor(0.72, 0.72, 0.78)
+        self._icon:SetVertexColor(ns.TC("textDim"))
+        self._glyph:SetTextColor(ns.TC("textDim"))
         UI:HideTooltip()
     end)
     b:SetScript("OnClick", function(self)
@@ -1614,7 +1780,7 @@ local function openPopup(button, config)
         if opt.separator then
             -- A caption, not a choice: no mark, no hover, nothing to click.
             item._check:Hide()
-            item._text:SetTextColor(0.45, 0.45, 0.50)
+            item._text:SetTextColor(ns.TC("textMuted"))
             item:EnableMouse(false)
             item._hover:Hide()
             item:SetScript("OnClick", nil)
@@ -1640,7 +1806,7 @@ local function openPopup(button, config)
                 if on then
                     item._text:SetTextColor(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b)
                 else
-                    item._text:SetTextColor(0.88, 0.88, 0.90)
+                    item._text:SetTextColor(ns.TC("label"))
                 end
             end
             paint()
@@ -1656,7 +1822,7 @@ local function openPopup(button, config)
                 item._text:SetTextColor(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b)
             else
                 item._check:Hide()
-                item._text:SetTextColor(0.88, 0.88, 0.90)
+                item._text:SetTextColor(ns.TC("label"))
             end
             item:SetScript("OnClick", function()
                 config.set(button, opt.value)
@@ -1712,9 +1878,9 @@ local function segRefresh(container)
         local c  = on and ns.COLORS.accent or ns.COLORS.border
         b._bg:SetColorTexture(c.r, c.g, c.b, on and 0.85 or 0.18)
         if on then
-            b._text:SetTextColor(1, 1, 1)
+            b._text:SetTextColor(ns.TC("textHi"))
         else
-            b._text:SetTextColor(0.72, 0.72, 0.78)
+            b._text:SetTextColor(ns.TC("textDim"))
         end
         b._on = on
     end
@@ -1791,7 +1957,7 @@ function UI:CreateSegmented(parent, config)
     UI.Font(label, 12)
     label:SetJustifyH("LEFT")
     label:SetWordWrap(false)
-    label:SetTextColor(0.95, 0.95, 0.97)
+    label:SetTextColor(ns.TC("label"))
     label:SetPoint("LEFT", container, "LEFT", 0, 0)
     container._label = label
 
@@ -1881,7 +2047,7 @@ function UI:CreateDropdown(parent, config)
     UI.Font(label, 12)
     label:SetJustifyH("LEFT")
     label:SetWordWrap(false)
-    label:SetTextColor(0.95, 0.95, 0.97)
+    label:SetTextColor(ns.TC("label"))
     container._label = label
 
     local btn = CreateFrame("Button", nil, container)
@@ -1901,7 +2067,7 @@ function UI:CreateDropdown(parent, config)
 
     -- same geometry StyleBackdrop draws; it keeps the four edges on the frame as
     -- _vcBorders, which is what the hover recolour below uses
-    UI:StyleBackdrop(btn, { bg = { r = 0.06, g = 0.06, b = 0.08, a = 1 } })
+    UI:StyleBackdrop(btn, { bg = ns.COLORS.popup })
     local borders = btn._vcBorders
 
     local valueText = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -1916,7 +2082,7 @@ function UI:CreateDropdown(parent, config)
     arrow:SetPoint("RIGHT", btn, "RIGHT", -6, 0)
     arrow:SetTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up")
     arrow:SetTexCoord(0.25, 0.75, 0.30, 0.80)
-    arrow:SetVertexColor(0.7, 0.7, 0.75)
+    arrow:SetVertexColor(ns.TC("textDim"))
 
     local function setHovered(state)
         local c = state and ns.COLORS.accent or ns.COLORS.border
@@ -1924,9 +2090,9 @@ function UI:CreateDropdown(parent, config)
             b:SetColorTexture(c.r, c.g, c.b, 1)
         end
         if state then
-            arrow:SetVertexColor(1, 1, 1)
+            arrow:SetVertexColor(ns.TC("textHi"))
         else
-            arrow:SetVertexColor(0.7, 0.7, 0.75)
+            arrow:SetVertexColor(ns.TC("textDim"))
         end
     end
     btn._setHovered = setHovered
@@ -2049,7 +2215,7 @@ function UI:CreateEditBox(parent, config)
     local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     UI.Font(label, 12)
     label:SetPoint("LEFT", container, "LEFT", 0, 0)
-    label:SetTextColor(0.95, 0.95, 0.97)
+    label:SetTextColor(ns.TC("label"))
     container._labelFS = label
 
     local eb = CreateFrame("EditBox", nil, container)
@@ -2061,7 +2227,7 @@ function UI:CreateEditBox(parent, config)
 
     local bg = eb:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints(eb)
-    bg:SetColorTexture(0.06, 0.05, 0.10, 0.85)
+    bg:SetColorTexture(ns.TC("input"))
     eb._bg = bg
 
     local borderColor = ns.COLORS.border or { r = 0.35, g = 0.25, b = 0.55, a = 1 }
@@ -2121,19 +2287,23 @@ local BTN_DANGER = { r = 0.85, g = 0.28, b = 0.28 }
 
 local function buttonApplyIdle(b)
     local cfg = b._vcConfig
-    if cfg and cfg.danger then
-        b._bg:SetColorTexture(0.13, 0.13, 0.16, 1)
+    if b._artParts then
+        -- Blizzard's buttons tell danger and primary apart by label only
+        b._textFS:SetTextColor(1, 0.82, 0)
+        UI.SetButtonArtPressed(b, false)
+    elseif cfg and cfg.danger then
+        b._bg:SetColorTexture(ns.TC("control"))
         b._setBorder(BTN_DANGER, 0.70)
-        b._textFS:SetTextColor(0.92, 0.40, 0.40, 0.95)
+        b._textFS:SetTextColor(ns.TC("danger", 0.95))
     elseif cfg and cfg.primary then
         local a = ns.COLORS.accent
-        b._bg:SetColorTexture(0.13, 0.13, 0.16, 1)
+        b._bg:SetColorTexture(ns.TC("control"))
         b._setBorder(a, 0.70)
         b._textFS:SetTextColor(a.r, a.g, a.b, 0.95)
     else
-        b._bg:SetColorTexture(0.13, 0.13, 0.16, 1)
+        b._bg:SetColorTexture(ns.TC("control"))
         b._setBorder(ns.COLORS.border)
-        b._textFS:SetTextColor(0.95, 0.95, 0.97)
+        b._textFS:SetTextColor(ns.TC("label"))
     end
 end
 
@@ -2168,6 +2338,7 @@ function UI:CreateButton(parent, config)
     b._setBorder = function(c, a)
         for _, bt in ipairs(borders) do bt:SetColorTexture(c.r, c.g, c.b, a or 1) end
     end
+    b._borders = borders
 
     local text = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     UI.Font(text, 12)
@@ -2176,7 +2347,9 @@ function UI:CreateButton(parent, config)
 
     b:SetScript("OnEnter", function(self)
         local cfg = self._vcConfig
-        if cfg and cfg.danger then
+        if self._artParts then
+            self._textFS:SetTextColor(1, 1, 1)
+        elseif cfg and cfg.danger then
             local d = BTN_DANGER
             bg:SetColorTexture(d.r * 0.20, d.g * 0.20, d.b * 0.20, 1)
             self._setBorder(d, 1)
@@ -2187,7 +2360,7 @@ function UI:CreateButton(parent, config)
             self._setBorder(a, 1)
             self._textFS:SetTextColor(a.r, a.g, a.b, 1)
         else
-            bg:SetColorTexture(0.19, 0.19, 0.23, 1)
+            bg:SetColorTexture(ns.TC("controlHover"))
             self._setBorder(ns.COLORS.accent, 0.8)
         end
         UI:ShowTooltip(self, configTip(self))
@@ -2199,9 +2372,11 @@ function UI:CreateButton(parent, config)
 
     b:SetScript("OnMouseDown", function(self)
         self._textFS:SetPoint("CENTER", self, "CENTER", 0, -1)
+        UI.SetButtonArtPressed(self, true)
     end)
     b:SetScript("OnMouseUp", function(self)
         self._textFS:SetPoint("CENTER", self, "CENTER", 0, 0)
+        UI.SetButtonArtPressed(self, false)
     end)
 
     b:SetScript("OnClick", function(self)
@@ -2217,6 +2392,8 @@ function UI:CreateButton(parent, config)
         local cfg = self._vcConfig
         if cfg and cfg.onClick then cfg.onClick(self) end
     end)
+
+    if ns.theme.art then UI.ApplyButtonArt(b) end
 
     b._vcType  = "button"
     b._vcSetup = buttonSetup
@@ -2257,7 +2434,7 @@ function UI:CreateIconButton(parent, config)
 
     local bg = b:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints(b)
-    bg:SetColorTexture(0.15, 0.15, 0.18, 1)
+    bg:SetColorTexture(ns.TC("control"))
 
     local borderColor = ns.COLORS.border
     local borders = {}
@@ -2276,12 +2453,12 @@ function UI:CreateIconButton(parent, config)
     b._icon = icon
 
     b:SetScript("OnEnter", function(self)
-        bg:SetColorTexture(0.22, 0.22, 0.26, 1)
-        icon:SetVertexColor(1, 1, 1)
+        bg:SetColorTexture(ns.TC("controlHover"))
+        icon:SetVertexColor(ns.TC("textHi"))
         UI:ShowTooltip(self, configTip(self))
     end)
     b:SetScript("OnLeave", function()
-        bg:SetColorTexture(0.15, 0.15, 0.18, 1)
+        bg:SetColorTexture(ns.TC("control"))
         icon:SetVertexColor(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b)
         UI:HideTooltip()
     end)
@@ -2311,7 +2488,7 @@ function UI:CreatePowerButton(parent, config)
         if on then
             icon:SetVertexColor(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b, 1)
         else
-            icon:SetVertexColor(0.4, 0.4, 0.4, 0.6)
+            icon:SetVertexColor(ns.TC("textMuted", 0.6))
         end
     end
 
@@ -2322,7 +2499,7 @@ function UI:CreatePowerButton(parent, config)
     end)
 
     b:SetScript("OnEnter", function()
-        icon:SetVertexColor(1, 1, 1, 1)
+        icon:SetVertexColor(ns.TC("textHi"))
         if config.tooltip then
             UI:ShowTooltip(b, { title = config.tooltip, wrap = true })
         end
@@ -2342,7 +2519,7 @@ function UI:CreateColorSwatch(parent, config)
     local b = CreateFrame("Button", nil, parent)
 
     local label = b:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    UI.Font(label, 12); label:SetTextColor(0.95, 0.95, 0.97)
+    UI.Font(label, 12); label:SetTextColor(ns.TC("label"))
     label:SetPoint("LEFT", b, "LEFT", 0, 0)
     label:SetJustifyH("LEFT"); label:SetWordWrap(false)
     b._label = label
@@ -2363,7 +2540,7 @@ function UI:CreateColorSwatch(parent, config)
     local rt = rb:CreateTexture(nil, "ARTWORK")
     rt:SetAllPoints()
     rt:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\reset.tga")
-    rt:SetVertexColor(0.75, 0.75, 0.80, 0.55)
+    rt:SetVertexColor(ns.TC("textSoft", 0.55))
     rb:Hide()
 
     local function curRGB()
@@ -2380,7 +2557,7 @@ function UI:CreateColorSwatch(parent, config)
         if cfg and cfg.labelTint then
             label:SetTextColor(r, g, bl)
         else
-            label:SetTextColor(0.95, 0.95, 0.97)
+            label:SetTextColor(ns.TC("label"))
         end
     end
     local function open()
@@ -2395,8 +2572,8 @@ function UI:CreateColorSwatch(parent, config)
     sw:SetScript("OnClick", open)
     sw:SetScript("OnEnter", function() border:SetColorTexture(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b, 1) end)
     sw:SetScript("OnLeave", function() border:SetColorTexture(0, 0, 0, 0.8) end)
-    rb:SetScript("OnEnter", function() rt:SetVertexColor(1, 1, 1, 0.9); UI:ShowTooltip(rb, L["Reset to default"]) end)
-    rb:SetScript("OnLeave", function() rt:SetVertexColor(0.75, 0.75, 0.80, 0.55); UI:HideTooltip() end)
+    rb:SetScript("OnEnter", function() rt:SetVertexColor(ns.TC("textHi", 0.9)); UI:ShowTooltip(rb, L["Reset to default"]) end)
+    rb:SetScript("OnLeave", function() rt:SetVertexColor(ns.TC("textSoft", 0.55)); UI:HideTooltip() end)
     rb:SetScript("OnClick", function()
         local cfg = b._vcConfig
         if cfg and cfg.onReset then cfg.onReset() end

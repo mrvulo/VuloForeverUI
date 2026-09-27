@@ -105,7 +105,8 @@ function UI:CreateMainFrame()
     f:RegisterForDrag("LeftButton")
     f:Hide()
 
-    UI:StyleBackdrop(f, { bg = ns.COLORS.bg, border = ns.COLORS.borderDark or ns.COLORS.border })
+    UI:StyleBackdrop(f, { bg = ns.COLORS.bg, border = ns.COLORS.borderDark or ns.COLORS.border,
+                          edge = ns.theme.edge, window = true })
     UI:CreateShadow(f)
 
     local brand = f:CreateTexture(nil, "BORDER", nil, 1)
@@ -115,6 +116,8 @@ function UI:CreateMainFrame()
     UI.SetGradient(brand, "HORIZONTAL",
         ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b, 1.0,
         ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b, 0.10)
+    -- a Blizzard window frame has its own top edge; the accent line would sit on it
+    if ns.theme.window then brand:Hide() end
 
     local pos = (ns.db and ns.db.profile and ns.db.profile.ui and ns.db.profile.ui.mainFramePos)
               or { point = "CENTER", relPoint = "CENTER", x = 0, y = 0 }
@@ -128,10 +131,20 @@ function UI:CreateMainFrame()
         end
     end)
 
+    -- A theme with Blizzard's window frame lays a metal band across the top
+    -- 22 pixels. The title then goes INTO that band, centred the way Blizzard
+    -- places its own, and search, version and timings move to a header row
+    -- under it -- 58 pixels in all instead of one 32-pixel bar. The bar is
+    -- raised above the frame art (UI.ApplyWindowArt draws at +30), or the band
+    -- would cover the title.
+    local framed = (ns.theme.window and ns.theme.window.layout) and true or false
+    local titleH = framed and 58 or TITLEBAR_H
+
     local titleBar = CreateFrame("Frame", nil, f)
     titleBar:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
     titleBar:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
-    titleBar:SetHeight(TITLEBAR_H)
+    titleBar:SetHeight(titleH)
+    if framed then titleBar:SetFrameLevel(f:GetFrameLevel() + 35) end
     titleBar:EnableMouse(true)
     titleBar:RegisterForDrag("LeftButton")
     titleBar:SetScript("OnDragStart", function() f:StartMoving() end)
@@ -143,14 +156,17 @@ function UI:CreateMainFrame()
         end
     end)
 
-    local tbBG = UI.SetColorBG(titleBar, 0.04, 0.04, 0.05, 1)
+    local tbBG = UI.SetColorBG(titleBar, ns.TC("barBottom"))
+    local top, bot = ns.COLORS.barTop, ns.COLORS.barBottom
     UI.SetGradient(tbBG, "VERTICAL",
-        0.045, 0.045, 0.06, 1,
-        0.085, 0.085, 0.11, 1)
+        bot.r, bot.g, bot.b, bot.a or 1,
+        top.r, top.g, top.b, top.a or 1)
+    if framed then tbBG:Hide() end   -- the metal band and the window background show instead
 
     -- the icon supplies the leading "V", the text starts at "uloForeverUI"
     local title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     UI.Font(title, 15)
+    if ns.theme.titleFont then title:SetFont(ns.theme.titleFont, 15, "") end
     title:SetText((ns.C and ns.C.accent or "|cff9b6cff") .. "uloForeverUI|r")
     local _, titleFontSize = title:GetFont()
     local iconSize = (titleFontSize or 14) + 4
@@ -167,6 +183,18 @@ function UI:CreateMainFrame()
     version:SetPoint("LEFT", title, "RIGHT", 8, -1)
     version:SetText("v" .. ns.VERSION)
     version:SetTextColor(ns.COLORS.textMuted.r, ns.COLORS.textMuted.g, ns.COLORS.textMuted.b)
+
+    if framed then
+        title:SetFont(ns.theme.titleFont or UI.FONT_PATH, 13, "")
+        iconSize = 17
+        titleIcon:SetSize(iconSize, iconSize)
+        title:ClearAllPoints()
+        title:SetPoint("TOP", titleBar, "TOP", iconSize / 2, -5)
+        titleIcon:ClearAllPoints()
+        titleIcon:SetPoint("RIGHT", title, "LEFT", -1, 0)
+        version:ClearAllPoints()
+        version:SetPoint("LEFT", titleBar, "BOTTOMLEFT", 16, 17)
+    end
 
     local cpuText = titleBar:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     UI.Font(cpuText, 10)
@@ -280,6 +308,7 @@ function UI:CreateMainFrame()
     end)
     f:HookScript("OnHide", function()
         if cpuTicker then cpuTicker:Cancel(); cpuTicker = nil end
+        for _, fn in ipairs(UI._mainHideHooks) do fn() end
     end)
 
     local closeBtn = CreateFrame("Button", nil, titleBar)
@@ -301,13 +330,13 @@ function UI:CreateMainFrame()
 
     local sbBg = searchBox:CreateTexture(nil, "BACKGROUND")
     sbBg:SetAllPoints(searchBox)
-    sbBg:SetColorTexture(0.04, 0.04, 0.055, 0.95)
+    sbBg:SetColorTexture(ns.TC("input"))
 
     local sbIcon = searchBox:CreateTexture(nil, "OVERLAY")
     sbIcon:SetSize(12, 12)
     sbIcon:SetPoint("LEFT", searchBox, "LEFT", 7, 0)
     sbIcon:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
-    sbIcon:SetVertexColor(0.55, 0.55, 0.62)
+    sbIcon:SetVertexColor(ns.TC("textMuted"))
 
     local sbBorder = CreateFrame("Frame", nil, searchBox, BackdropTemplateMixin and "BackdropTemplate")
     sbBorder:SetAllPoints(searchBox)
@@ -326,14 +355,28 @@ function UI:CreateMainFrame()
         if sbBorder.SetBackdropBorderColor then
             sbBorder:SetBackdropBorderColor(ns.COLORS.border.r, ns.COLORS.border.g, ns.COLORS.border.b, 1)
         end
-        sbIcon:SetVertexColor(0.55, 0.55, 0.62)
+        sbIcon:SetVertexColor(ns.TC("textMuted"))
     end)
 
     local placeholder = searchBox:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     UI.Font(placeholder, 11)
     placeholder:SetPoint("LEFT", searchBox, "LEFT", 24, 0)
     placeholder:SetText(L["Search settings..."])
-    placeholder:SetTextColor(0.45, 0.45, 0.52)
+    placeholder:SetTextColor(ns.TC("textMuted"))
+
+    -- Framed: the header row under the band, Blizzard's own search-box border
+    -- and its close button.
+    if framed then
+        searchBox:ClearAllPoints()
+        searchBox:SetPoint("RIGHT", titleBar, "BOTTOMRIGHT", -18, 17)
+        searchBox:SetSize(230, 20)
+        UI.ApplySearchArt(searchBox, sbBg, sbBorder)
+
+        closeBtn:Hide()
+        local blizzClose = CreateFrame("Button", nil, titleBar, "UIPanelCloseButtonNoScripts")
+        blizzClose:SetPoint("TOPRIGHT", f, "TOPRIGHT", -2, 1)
+        blizzClose:SetScript("OnClick", function() f:Hide() end)
+    end
 
     local searchDD = CreateFrame("Frame", nil, f)
     searchDD:SetSize(440, 200)
@@ -345,7 +388,7 @@ function UI:CreateMainFrame()
     UI:CreateShadow(searchDD)
     local ddBg = searchDD:CreateTexture(nil, "BACKGROUND")
     ddBg:SetAllPoints(searchDD)
-    ddBg:SetColorTexture(0.05, 0.05, 0.07, 0.98)
+    ddBg:SetColorTexture(ns.TC("input"))
     local ddBorder = CreateFrame("Frame", nil, searchDD, BackdropTemplateMixin and "BackdropTemplate")
     ddBorder:SetAllPoints(searchDD)
     if ddBorder.SetBackdrop then
@@ -585,16 +628,16 @@ function UI:CreateMainFrame()
     UI.Font(closeText, 20)
     closeText:SetPoint("CENTER", closeBtn, "CENTER", 0, 0)
     closeText:SetText("×")
-    closeText:SetTextColor(0.7, 0.7, 0.7)
+    closeText:SetTextColor(ns.TC("textDim"))
     local font, _, flags = closeText:GetFont()
     if font then closeText:SetFont(font, 20, flags or "") end
     closeBtn:SetScript("OnEnter", function()
         closeBG:Show()
-        closeText:SetTextColor(1, 1, 1)
+        closeText:SetTextColor(ns.TC("textHi"))
     end)
     closeBtn:SetScript("OnLeave", function()
         closeBG:Hide()
-        closeText:SetTextColor(0.7, 0.7, 0.7)
+        closeText:SetTextColor(ns.TC("textDim"))
     end)
     closeBtn:SetScript("OnClick", function() f:Hide() end)
 
@@ -608,7 +651,7 @@ function UI:CreateMainFrame()
     sidebar:SetPoint("TOPLEFT",    sep, "BOTTOMLEFT", 0, 0)
     sidebar:SetPoint("BOTTOMLEFT", f,   "BOTTOMLEFT", 0, BOTTOMBAR_H)
     sidebar:SetWidth(SIDEBAR_WIDTH)
-    UI.SetColorBG(sidebar, ns.COLORS.bgLight.r, ns.COLORS.bgLight.g, ns.COLORS.bgLight.b, 1)
+    UI.SetColorBG(sidebar, ns.TC("bgLight"))
 
     local sidebarSep = f:CreateTexture(nil, "ARTWORK")
     sidebarSep:SetColorTexture(ns.COLORS.border.r, ns.COLORS.border.g, ns.COLORS.border.b, 1)
@@ -670,7 +713,7 @@ function UI:CreateMainFrame()
 
         local hl = ovBtn:CreateTexture(nil, "HIGHLIGHT")
         hl:SetAllPoints(ovBtn)
-        hl:SetColorTexture(1, 1, 1, 0.08)
+        hl:SetColorTexture(ns.TC("textHi", 0.08))
 
         ovBtn:SetScript("OnClick", function(self)
             if ns.ShowOverrideMenu then ns:ShowOverrideMenu(self) end
@@ -709,7 +752,7 @@ function UI:CreateMainFrame()
             -- is already told twice over, by the tick in the menu and by the
             -- accent bars on the overridden rows.
             b._glyph:SetDesaturated(false)
-            b._glyph:SetVertexColor(1, 1, 1)
+            b._glyph:SetVertexColor(ns.TC("textHi"))
             b._glyph:SetAlpha(0.9)
         end
         UI:RefreshOverrideButton()
@@ -721,9 +764,9 @@ function UI:CreateMainFrame()
 
     local tabBar = CreateFrame("Frame", nil, f)
     tabBar:SetPoint("TOPLEFT",  sidebar,  "TOPRIGHT", 1, 0)
-    tabBar:SetPoint("TOPRIGHT", f,        "TOPRIGHT", 0, -TITLEBAR_H - 1)
+    tabBar:SetPoint("TOPRIGHT", f,        "TOPRIGHT", 0, -titleH - 1)
     tabBar:SetHeight(TABBAR_H)
-    UI.SetColorBG(tabBar, ns.COLORS.bgContent.r, ns.COLORS.bgContent.g, ns.COLORS.bgContent.b, 1)
+    UI.SetColorBG(tabBar, ns.TC("bgContent"))
 
     local tabSep = f:CreateTexture(nil, "ARTWORK")
     tabSep:SetColorTexture(ns.COLORS.border.r, ns.COLORS.border.g, ns.COLORS.border.b, 1)
@@ -755,10 +798,10 @@ function UI:CreateMainFrame()
         icon:SetPoint("CENTER", b, "CENTER", 0, 0)
         icon:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\arrow_"
             .. (dir < 0 and "left" or "right") .. ".tga")
-        icon:SetVertexColor(0.7, 0.7, 0.75)
+        icon:SetVertexColor(ns.TC("textDim"))
         b._icon = icon
-        b:SetScript("OnEnter", function(self) self._icon:SetVertexColor(1, 1, 1) end)
-        b:SetScript("OnLeave", function(self) self._icon:SetVertexColor(0.7, 0.7, 0.75) end)
+        b:SetScript("OnEnter", function(self) self._icon:SetVertexColor(ns.TC("textHi")) end)
+        b:SetScript("OnLeave", function(self) self._icon:SetVertexColor(ns.TC("textDim")) end)
         b:SetScript("OnClick", function() UI:ScrollTabs(dir) end)
         b:Hide()
         return b
@@ -778,13 +821,13 @@ function UI:CreateMainFrame()
     tmIcon:SetSize(12, 12)
     tmIcon:SetPoint("CENTER", tabMenu, "CENTER", 0, 0)
     tmIcon:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\arrow_down.tga")
-    tmIcon:SetVertexColor(0.7, 0.7, 0.75)
+    tmIcon:SetVertexColor(ns.TC("textDim"))
     tabMenu:SetScript("OnEnter", function(self)
-        tmIcon:SetVertexColor(1, 1, 1)
+        tmIcon:SetVertexColor(ns.TC("textHi"))
         UI:ShowTooltip(self, { title = L["All tabs"] })
     end)
     tabMenu:SetScript("OnLeave", function()
-        tmIcon:SetVertexColor(0.7, 0.7, 0.75)
+        tmIcon:SetVertexColor(ns.TC("textDim"))
         UI:HideTooltip()
     end)
     tabMenu:SetScript("OnClick", function(self)
@@ -807,10 +850,10 @@ function UI:CreateMainFrame()
     local tabColumn = CreateFrame("Frame", nil, f)
     tabColumn:SetPoint("TOPLEFT",     sidebar, "TOPRIGHT",    1, 0)
     tabColumn:SetPoint("BOTTOMRIGHT", sidebar, "BOTTOMRIGHT", 1 + TABCOL_W, 0)
-    UI.SetColorBG(tabColumn, ns.COLORS.bgLight.r, ns.COLORS.bgLight.g, ns.COLORS.bgLight.b, 1)
+    UI.SetColorBG(tabColumn, ns.TC("bgLight"))
     tabColumn:Hide()
 
-    local tabColSep = f:CreateTexture(nil, "ARTWORK")
+    local tabColSep = tabColumn:CreateTexture(nil, "ARTWORK")
     tabColSep:SetColorTexture(ns.COLORS.border.r, ns.COLORS.border.g, ns.COLORS.border.b, 1)
     tabColSep:SetPoint("TOPLEFT",    tabColumn, "TOPRIGHT", 0, 0)
     tabColSep:SetPoint("BOTTOMLEFT", tabColumn, "BOTTOMRIGHT", 0, 0)
@@ -833,7 +876,7 @@ function UI:CreateMainFrame()
     local content = CreateFrame("Frame", nil, f)
     content:SetPoint("TOPLEFT",     tabBar,  "BOTTOMLEFT",  0, -1)
     content:SetPoint("BOTTOMRIGHT", f,       "BOTTOMRIGHT", 0, BOTTOMBAR_H)
-    UI.SetColorBG(content, ns.COLORS.bgContent.r, ns.COLORS.bgContent.g, ns.COLORS.bgContent.b, 1)
+    UI.SetColorBG(content, ns.TC("bgContent"))
 
     f.content = content
 
@@ -863,10 +906,13 @@ function UI:CreateMainFrame()
     bottomBar:SetPoint("BOTTOMLEFT",  f, "BOTTOMLEFT",  0, 0)
     bottomBar:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, 0)
     bottomBar:SetHeight(BOTTOMBAR_H)
-    local bbBG = UI.SetColorBG(bottomBar, 0.04, 0.04, 0.05, 1)
-    UI.SetGradient(bbBG, "VERTICAL",
-        0.075, 0.075, 0.095, 1,
-        0.045, 0.045, 0.06, 1)
+    local bbBG = UI.SetColorBG(bottomBar, ns.TC("barBottom"))
+    do
+        local top, bot = ns.COLORS.barTop, ns.COLORS.barBottom
+        UI.SetGradient(bbBG, "VERTICAL",
+            top.r, top.g, top.b, top.a or 1,
+            bot.r, bot.g, bot.b, bot.a or 1)
+    end
 
     local bottomSep = f:CreateTexture(nil, "ARTWORK")
     bottomSep:SetColorTexture(ns.COLORS.border.r, ns.COLORS.border.g, ns.COLORS.border.b, 1)
@@ -942,16 +988,16 @@ function UI:CreateMainFrame()
         local t = b:CreateTexture(nil, "ARTWORK")
         t:SetAllPoints(b)
         t:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\" .. iconFile)
-        t:SetVertexColor(0.85, 0.85, 0.85, 0.9)
+        t:SetVertexColor(ns.TC("textSoft", 0.9))
         b:SetScript("OnEnter", function(self)
-            t:SetVertexColor(1, 1, 1, 1)
+            t:SetVertexColor(ns.TC("textHi"))
             UI:ShowTooltip(self, {
                 anchor = "ANCHOR_TOP", title = label,
                 lines  = { L["Click: copy link"] },
             })
         end)
         b:SetScript("OnLeave", function()
-            t:SetVertexColor(0.85, 0.85, 0.85, 0.9)
+            t:SetVertexColor(ns.TC("textSoft", 0.9))
             UI:HideTooltip()
         end)
         b:SetScript("OnClick", function()
@@ -964,6 +1010,64 @@ function UI:CreateMainFrame()
 
     UI.mainFrame = f
     return f
+end
+
+-- What a module wants done when the window closes. Registered here rather than
+-- hooked onto the frame: a style switch replaces the frame (UI:RebuildMainFrame),
+-- and a hook laid on the old one would never fire again.
+UI._mainHideHooks = UI._mainHideHooks or {}
+function UI:OnMainFrameHide(fn)
+    table.insert(UI._mainHideHooks, fn)
+end
+
+-- A style switch without /reload. Every texture of the window was painted once,
+-- when it was built, so the window is built again -- same place, same page --
+-- and the old one is hidden for good. Frames cannot be destroyed; one abandoned
+-- window per switch is the price, and nothing references it afterwards. Every
+-- cache below holds frames of the old window and must go with it.
+-- Windows outside this one (Edit Mode panels, dialogs, color picker) keep
+-- their look until the next /reload.
+local OLD_WINDOW_CACHES = {
+    "_dashRow", "_dashContainer", "_dashStats", "_dashChips", "_dashHints",
+    "_dashChangeRows", "_dashGroupHdrs", "_changelogRow", "_pinRows",
+    "_sidebarChildren", "_sidebarHeaders", "_sidebarFilterBox", "sidebarButtons",
+}
+function UI:RebuildMainFrame()
+    local old = UI.mainFrame
+    if not old then return end
+    local wasShown = old:IsShown()
+    local module, tab = UI.currentModule, UI.currentTab
+    local filter = UI._sidebarFilterBox and UI._sidebarFilterBox:GetText() or ""
+
+    if UI.CloseDropdownPopup then UI.CloseDropdownPopup() end
+    old:Hide()
+    UI.mainFrame = nil
+    for _, k in ipairs(OLD_WINDOW_CACHES) do UI[k] = nil end
+    -- tables the sidebar reads with pairs() before it refills them
+    UI.sidebarButtons = {}
+    UI._pinRows = {}
+    UI._tabPool = {}
+    if UI.ResetWidgetPools then UI.ResetWidgetPools() end
+    if UI.ResetDropdownPopup then UI.ResetDropdownPopup() end
+
+    local f = UI:CreateMainFrame()
+    if not wasShown then return end
+    f:Show()
+    UI:PopulateSidebar()
+    if filter ~= "" and UI._sidebarFilterBox then UI._sidebarFilterBox:SetText(filter) end
+    -- The page waits one frame. A window built this very frame has no resolved
+    -- size yet -- the scroll area reads 0 wide, the page is laid out into
+    -- nothing and the tab rail hides every tab as overflow (seen in game: an
+    -- empty window after the first switch).
+    C_Timer.After(0, function()
+        if UI.mainFrame ~= f or not f:IsShown() then return end
+        if module and module ~= UI.DASHBOARD_KEY and ns.modules[module] then
+            UI:ShowModulePage(module)
+            if tab then UI:ShowTab(tab) end
+        elseif UI.ShowDashboard then
+            UI:ShowDashboard()
+        end
+    end)
 end
 
 -- Entry from outside the window: the slash command. File level, not inside
@@ -1050,7 +1154,7 @@ local function acquireTab(parentBar)
     -- scripts installed once on the pooled frame; they read the live self._tabId
     tab:SetScript("OnEnter", function(self)
         if UI.currentTab ~= self._tabId then
-            self._text:SetTextColor(1, 1, 1)
+            self._text:SetTextColor(ns.TC("textHi"))
         end
     end)
     tab:SetScript("OnLeave", function(self)
@@ -1208,7 +1312,7 @@ function UI:ShowTab(tabId)
         if tab._tabId == tabId then
             if mark then mark:Show() end
             if tab._activeBG then tab._activeBG:Show() end
-            tab._text:SetTextColor(1, 1, 1)
+            tab._text:SetTextColor(ns.TC("textHi"))
         else
             if mark then mark:Hide() end
             if tab._activeBG then tab._activeBG:Hide() end

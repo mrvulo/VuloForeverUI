@@ -324,7 +324,7 @@ local function build()
     local cap = toolbar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(cap, 11)
     cap:SetText(L["Size"])
-    cap:SetTextColor(0.65, 0.65, 0.70)
+    cap:SetTextColor(ns.TC("textDim"))
     cap:SetPoint("LEFT", snapTog, "RIGHT", 16, 0)
 
     -- width is the TRACK only: the minus button, value and plus hang off its
@@ -692,9 +692,9 @@ local function buildPanel()
     UI.Font(cfs, 20)
     cfs:SetPoint("CENTER", close, "CENTER", 0, 0)
     cfs:SetText("x")
-    cfs:SetTextColor(0.7, 0.7, 0.75)
+    cfs:SetTextColor(ns.TC("textDim"))
     close:SetScript("OnEnter", function() cfs:SetTextColor(accent.r, accent.g, accent.b) end)
-    close:SetScript("OnLeave", function() cfs:SetTextColor(0.7, 0.7, 0.75) end)
+    close:SetScript("OnLeave", function() cfs:SetTextColor(ns.TC("textDim")) end)
     close:SetScript("OnClick", function() if ns.DeselectMover then ns:DeselectMover() end end)
 
     -- The gear: straight from the box to its module's settings page. The
@@ -708,13 +708,13 @@ local function buildPanel()
     optIcon:SetSize(14, 14)
     optIcon:SetPoint("CENTER", opt, "CENTER", 0, 0)
     optIcon:SetTexture("Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\gear.tga")
-    optIcon:SetVertexColor(0.7, 0.7, 0.75)
+    optIcon:SetVertexColor(ns.TC("textDim"))
     opt:SetScript("OnEnter", function(self)
         optIcon:SetVertexColor(accent.r, accent.g, accent.b)
         UI:ShowTooltip(self, { title = L["Open this element's settings"] })
     end)
     opt:SetScript("OnLeave", function()
-        optIcon:SetVertexColor(0.7, 0.7, 0.75)
+        optIcon:SetVertexColor(ns.TC("textDim"))
         UI:HideTooltip()
     end)
     opt:SetScript("OnClick", function(self)
@@ -733,13 +733,13 @@ local function buildPanel()
     sep:SetPoint("TOPLEFT",  panel, "TOPLEFT",  14, -38)
     sep:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -14, -38)
     sep:SetHeight(1)
-    sep:SetColorTexture(1, 1, 1, 0.07)
+    sep:SetColorTexture(ns.TC("textHi", 0.07))
 
     local cap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(cap, 10)
     cap:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -46)
     cap:SetText(L["POSITION"])
-    cap:SetTextColor(0.55, 0.55, 0.62)
+    cap:SetTextColor(ns.TC("textMuted"))
 
     panel.xBox = UI:CreateEditBox(panel, {
         label = "X", numeric = true, commitOnFocusLost = true, width = 124, editWidth = 100,
@@ -772,7 +772,7 @@ local function buildPanel()
     panel.scaleCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(panel.scaleCap, 10)
     panel.scaleCap:SetText(L["SCALE"])
-    panel.scaleCap:SetTextColor(0.55, 0.55, 0.62)
+    panel.scaleCap:SetTextColor(ns.TC("textMuted"))
     panel.scaleSlider = UI:CreateSlider(panel, {
         label = "", min = 0.5, max = 2.0, step = 0.05, width = 150,
         get = function() local m = ns._selectedMover; return (m and m.opts.db.scale) or 1 end,
@@ -782,7 +782,7 @@ local function buildPanel()
     panel.anchorCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(panel.anchorCap, 10)
     panel.anchorCap:SetText(L["ANCHOR"])
-    panel.anchorCap:SetTextColor(0.55, 0.55, 0.62)
+    panel.anchorCap:SetTextColor(ns.TC("textMuted"))
 
     panel.anchorToggle = UI:CreateToggle(panel, {
         label   = "",
@@ -805,7 +805,7 @@ local function buildPanel()
     panel.linkCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(panel.linkCap, 10)
     panel.linkCap:SetText(L["FOLLOW WINDOW"])
-    panel.linkCap:SetTextColor(0.55, 0.55, 0.62)
+    panel.linkCap:SetTextColor(ns.TC("textMuted"))
 
     panel.linkDrop = UI:CreateDropdown(panel, {
         label = "", width = DROP_W, values = {},
@@ -841,7 +841,7 @@ local function buildPanel()
     panel.sideCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(panel.sideCap, 10)
     panel.sideCap:SetText(L["ANCHOR SIDE"])
-    panel.sideCap:SetTextColor(0.55, 0.55, 0.62)
+    panel.sideCap:SetTextColor(ns.TC("textMuted"))
 
     panel.sideDrop = UI:CreateDropdown(panel, {
         label = "", width = DROP_W, values = SIDE_POINTS,
@@ -866,7 +866,7 @@ local function buildPanel()
     panel.gapCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(panel.gapCap, 10)
     panel.gapCap:SetText(L["GAP"])
-    panel.gapCap:SetTextColor(0.55, 0.55, 0.62)
+    panel.gapCap:SetTextColor(ns.TC("textMuted"))
 
     panel.gapSlider = UI:CreateSlider(panel, {
         label = "", width = 150, min = 0, max = 60, step = 1,
@@ -892,12 +892,12 @@ local function buildPanel()
     panel.widthCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(panel.widthCap, 10)
     panel.widthCap:SetText(L["WIDTH LIKE"])
-    panel.widthCap:SetTextColor(0.55, 0.55, 0.62)
+    panel.widthCap:SetTextColor(ns.TC("textMuted"))
 
     panel.heightCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(panel.heightCap, 10)
     panel.heightCap:SetText(L["HEIGHT LIKE"])
-    panel.heightCap:SetTextColor(0.55, 0.55, 0.62)
+    panel.heightCap:SetTextColor(ns.TC("textMuted"))
 
     local function sizeSetter(axis)
         return function(_, v)
@@ -939,7 +939,7 @@ local function buildPanel()
     panel.freeCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(panel.freeCap, 10)
     panel.freeCap:SetText(L["FREE MOVE"])
-    panel.freeCap:SetTextColor(0.55, 0.55, 0.62)
+    panel.freeCap:SetTextColor(ns.TC("textMuted"))
 
     panel.freeToggle = UI:CreateToggle(panel, {
         label   = "",
@@ -955,7 +955,7 @@ local function buildPanel()
     panel.fadeCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(panel.fadeCap, 10)
     panel.fadeCap:SetText(L["OPACITY"])
-    panel.fadeCap:SetTextColor(0.55, 0.55, 0.62)
+    panel.fadeCap:SetTextColor(ns.TC("textMuted"))
 
     local function fadeSlider(state, label)
         return UI:CreateSlider(panel, {
@@ -977,7 +977,7 @@ local function buildPanel()
     panel.hoverCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(panel.hoverCap, 10)
     panel.hoverCap:SetText(L["FULL ON MOUSEOVER"])
-    panel.hoverCap:SetTextColor(0.55, 0.55, 0.62)
+    panel.hoverCap:SetTextColor(ns.TC("textMuted"))
     panel.hoverToggle = UI:CreateToggle(panel, {
         label   = "",
         tooltip = L["A faded window comes back to full strength while the mouse is over it."],
@@ -1006,7 +1006,7 @@ local function buildPanel()
     hint:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -16, 14)
     hint:SetJustifyH("LEFT")
     hint:SetSpacing(2)
-    hint:SetTextColor(0.55, 0.55, 0.62)
+    hint:SetTextColor(ns.TC("textMuted"))
     hint:SetText(L["Drag a box, or hover it and use the arrow keys (Shift = 5px). Hold Shift while dragging to lock one axis. Shift+right-click hides a box that is in the way."])
 
     panel._acc = 0
@@ -2007,20 +2007,20 @@ local function buildLayoutsPanel()
     local cfs = close:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     UI.Font(cfs, 20)
     cfs:SetPoint("CENTER", close, "CENTER", 0, 0)
-    cfs:SetText("x"); cfs:SetTextColor(0.7, 0.7, 0.75)
+    cfs:SetText("x"); cfs:SetTextColor(ns.TC("textDim"))
     close:SetScript("OnEnter", function() cfs:SetTextColor(accent.r, accent.g, accent.b) end)
-    close:SetScript("OnLeave", function() cfs:SetTextColor(0.7, 0.7, 0.75) end)
+    close:SetScript("OnLeave", function() cfs:SetTextColor(ns.TC("textDim")) end)
     close:SetScript("OnClick", function() p:Hide() end)
 
     local sep = p:CreateTexture(nil, "ARTWORK")
     sep:SetPoint("TOPLEFT",  p, "TOPLEFT",  14, -38)
     sep:SetPoint("TOPRIGHT", p, "TOPRIGHT", -14, -38)
-    sep:SetHeight(1); sep:SetColorTexture(1, 1, 1, 0.07)
+    sep:SetHeight(1); sep:SetColorTexture(ns.TC("textHi", 0.07))
 
     local cap = p:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(cap, 10)
     cap:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -46)
-    cap:SetText(L["SAVED"]); cap:SetTextColor(0.55, 0.55, 0.62)
+    cap:SetText(L["SAVED"]); cap:SetTextColor(ns.TC("textMuted"))
 
     p.dropdown = UI:CreateDropdown(p, {
         label = "", width = 228, values = layoutValues,
@@ -2054,7 +2054,7 @@ local function buildLayoutsPanel()
     local sep2 = p:CreateTexture(nil, "ARTWORK")
     sep2:SetPoint("TOPLEFT",  p, "TOPLEFT",  14, -158)
     sep2:SetPoint("TOPRIGHT", p, "TOPRIGHT", -14, -158)
-    sep2:SetHeight(1); sep2:SetColorTexture(1, 1, 1, 0.07)
+    sep2:SetHeight(1); sep2:SetColorTexture(ns.TC("textHi", 0.07))
 
     local expBtn = UI:CreateButton(p, {
         label = L["Export"], width = 110,
@@ -2078,7 +2078,7 @@ local function buildLayoutsPanel()
     UI.Font(hint, 11)
     hint:SetPoint("BOTTOMLEFT",  p, "BOTTOMLEFT",  16, 14)
     hint:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -16, 14)
-    hint:SetJustifyH("LEFT"); hint:SetSpacing(2); hint:SetTextColor(0.55, 0.55, 0.62)
+    hint:SetJustifyH("LEFT"); hint:SetSpacing(2); hint:SetTextColor(ns.TC("textMuted"))
     hint:SetText(L["Save your window arrangement, then load or share it any time."])
 end
 
