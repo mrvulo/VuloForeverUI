@@ -244,8 +244,6 @@ local function spellsPage()
     local specValues, currentSpec = CM.SpecValues(b)
 
     return {
-        barSelector("spells"),
-        CM.PreviewItem(),
         { type = "editbox", label = L["Bar name"], width = 240,
           get = function() return bar().name end,
           set = function(_, v)
@@ -395,8 +393,6 @@ local function spellPage()
     end
     if #rowValues == 0 then
         return {
-            barSelector("spell"),
-        CM.PreviewItem(),
             { type = "spacer", height = 6 },
             { type = "desc", text = L["This bar has no rows yet. Add one on the Spells tab first."] },
         }
@@ -404,7 +400,6 @@ local function spellPage()
     entry()   -- settles selectedRow before the controls below read it
 
     return {
-        barSelector("spell"),
         { type = "dropdown", label = L["Spell"], width = 240, values = rowValues,
           get = function() return selectedRow end,
           set = function(_, v) selectedRow = tonumber(v); rebuild("spell") end },
@@ -679,8 +674,6 @@ local function layoutPage()
     end
 
     return {
-        barSelector("layout"),
-        CM.PreviewItem(),
         { type = "spacer", height = 6 },
         { type = "header", text = L["Layout"] },
         slider(L["Icon size"], "iconSize", 16, 80, 1),
@@ -731,8 +724,6 @@ end
 
 local function iconsPage()
     return {
-        barSelector("icons"),
-        CM.PreviewItem(),
         { type = "spacer", height = 6 },
         { type = "header", text = L["Icon"] },
         slider(L["Icon zoom"], "iconZoom", 0, 0.2, 0.01),
@@ -798,8 +789,6 @@ end
 
 local function glowPage()
     return {
-        barSelector("glow"),
-        CM.PreviewItem(),
         { type = "spacer", height = 6 },
         { type = "header", text = L["Glow"] },
         { type = "dropdown", label = L["Kind of glow"], width = 220,
@@ -858,7 +847,6 @@ end
 
 local function visibilityPage()
     local page = {
-        barSelector("visibility"),
         { type = "spacer", height = 6 },
         { type = "header", text = L["Visibility"] },
         { type = "toggle", label = L["Bar enabled"],
@@ -942,4 +930,12 @@ function mod:GetOptions(tabId)
     if tabId == "glow"       then return glowPage() end
     if tabId == "visibility" then return visibilityPage() end
     return spellsPage()
+end
+
+-- The bar picker and the live bar, pinned above every tab (Preview.lua). The
+-- picker is the same dropdown the pages used to open with.
+function mod.BuildPageHeader(host, tabId)
+    CM.EnsureBars()
+    local selector = barSelector(tabId or "spells")
+    return CM.BuildPreviewHeader(host, selector.items[1])
 end

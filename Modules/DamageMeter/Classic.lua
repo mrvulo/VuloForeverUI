@@ -1,10 +1,12 @@
 -- VuloForeverUI / Modules / DamageMeter / Classic
 --
--- The Classic look of the meter windows: the stock meter's shape in 1.x art.
+-- The Classic look of the meter windows: the window Blizzard frames its own
+-- panels in, the same one the settings window wears in its Blizzard theme.
 --
---   window   the tooltip background, tiled and tinted in the window colour,
---            inside the border the 1.x chat tabs wear (cut from ChatFrameTab)
---   header   a lighter band of the same tile, over a rim-grey hairline
+--   window   the metal frame (NineSlice "ButtonFrameTemplateNoPortrait") over
+--            the rock background, the rows on a dark wash inside it
+--   header   the metal's own top band: the title sits in it in gold, the way
+--            a Blizzard window carries its title
 --   bars     the game's own bar fill over a quarter-black track (seeded once,
 --            the settings stay yours afterwards)
 --   buttons  1.x button art and spell icons, in colour, a step brighter on hover
@@ -15,14 +17,24 @@ local _, ns = ...
 local DM = ns.DM
 
 local C = {
-    BG        = "Interface\\Tooltips\\UI-Tooltip-Background",
-    EDGE      = "Interface\\ChatFrame\\ChatFrameTab",
-    EDGE_SIZE = 5,     -- one edge piece: shadow (2), rim (1), bevel (2)
-    BODY      = 3,     -- the tile starts this far inside the window (under the bevel)
-    INSET     = 5,     -- header and rows start this far inside (past the bevel)
-    HDR_SHADE = 1.6,   -- the header band's tint relative to the window's
-    HDR_LIFT  = 0.05,  -- plus this, so a black window still shows a band
-    LINE      = 0.41,  -- the chat tab rim's own grey, for the header hairline
+    LAYOUT = "ButtonFrameTemplateNoPortrait",
+    ROCK   = "Interface\\FrameGeneral\\UI-Background-Rock",
+    -- Laid on the window as it is, the left rim reads wider than the right
+    -- (seen in game). The metal -- and the rock under it -- start this far
+    -- IN on the left, so both rims match and nothing stands out on the left.
+    INSET_L = 12,
+    -- The metal's visible rim starts this far right of its own frame's edge;
+    -- rock laid from the edge itself showed as a grey strip outside the rim.
+    ROCK_L  = 16,
+    BAND   = 22,       -- the metal's top band: the header lives in it
+    -- The rows start this far inside the window, clear of the metal. The
+    -- left one is the right one plus the rock's own inset on that side.
+    PAD    = { l = 17, r = 5, t = 0, b = 5 },
+    WASH   = 0.35,     -- black over the rock behind the rows, for the text
+    TITLE  = { 1.0, 0.82, 0.0 },
+    TITLE_X = 12,      -- the title's distance from the header's left end
+    ART_LEVEL = 30,    -- the metal over the window's own layers ...
+    HDR_LEVEL = 35,    -- ... and the header over the metal
     ICON_SCALE = 0.85, -- header art drawn this much smaller than the glyphs
     ICON_PAD   = 2,    -- with this gap between buttons
     IDLE = 0.85, HOVER = 1,
@@ -34,76 +46,48 @@ function DM.IsClassic()
     return d and d.style == "classic" or false
 end
 
--- ---------------------------------------------------------------- tile --
+-- ---------------------------------------------------------------- box --
 
--- A texture as the tiled tooltip background in a colour: the file is near
--- white, the vertex colour is the tone.
-function DM.ClassicTint(tex, r, g, b, a)
-    if not tex._vfClassicTiled then
-        tex._vfClassicTiled = true
-        tex:SetHorizTile(true)
-        tex:SetVertTile(true)
-        tex:SetTexture(C.BG, "REPEAT", "REPEAT")
-    end
-    tex:SetVertexColor(r or 0, g or 0, b or 0, a or 1)
-end
-
--- The chat tab's border, measured on its 64x32 sheet: every piece is 5x5,
--- the top corners at columns 2..6 / 57..61, rows 9..13, the top edge from a
--- uniform stretch of the top rim, the sides from rows 20..23; the bottom
--- pieces are the top ones flipped. { point, left, right, top, bottom }.
-local EDGE_UV = {
-    { "TOPLEFT",     0.03125,  0.109375, 0.28125, 0.4375  },
-    { "TOPRIGHT",    0.890625, 0.96875,  0.28125, 0.4375  },
-    { "BOTTOMLEFT",  0.03125,  0.109375, 0.4375,  0.28125 },
-    { "BOTTOMRIGHT", 0.890625, 0.96875,  0.4375,  0.28125 },
-    { "TOP",         0.375,    0.5,      0.28125, 0.4375  },
-    { "BOTTOM",      0.375,    0.5,      0.4375,  0.28125 },
-    { "LEFT",        0.03125,  0.109375, 0.625,   0.75    },
-    { "RIGHT",       0.890625, 0.96875,  0.625,   0.75    },
-}
-
--- The box of one window, kept off the frame.
+-- The frame of one window, kept off the frame.
 local boxes = setmetatable({}, { __mode = "k" })
 
 local function buildBox(frame)
-    local box = { parts = {} }
-    local tile = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
-    tile:SetPoint("TOPLEFT", frame, "TOPLEFT", C.BODY, -C.BODY)
-    tile:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -C.BODY, C.BODY)
-    box.tile = tile
+    local box = {}
+    local rock = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
+    -- Starts where the metal's rim starts, so none of it stands out on the left.
+    rock:SetPoint("TOPLEFT", frame, "TOPLEFT", C.ROCK_L, 0)
+    rock:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+    rock:SetTexture(C.ROCK, "REPEAT", "REPEAT")
+    rock:SetHorizTile(true)
+    rock:SetVertTile(true)
+    box.rock = rock
 
-    local p = {}
-    for i, spec in ipairs(EDGE_UV) do
-        local t = frame:CreateTexture(nil, "BORDER")
-        t:SetTexture(C.EDGE)
-        t:SetTexCoord(spec[2], spec[3], spec[4], spec[5])
-        if i <= 4 then t:SetSize(C.EDGE_SIZE, C.EDGE_SIZE) end
-        p[spec[1]] = t
-        box.parts[#box.parts + 1] = t
+    local wash = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
+    wash:SetPoint("TOPLEFT", frame, "TOPLEFT", C.PAD.l, -C.BAND)
+    wash:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -C.PAD.r, C.PAD.b)
+    box.wash = wash
+
+    -- The metal takes no mouse, so everything under it still clicks.
+    if NineSliceUtil and NineSliceUtil.ApplyLayoutByName then
+        local art = CreateFrame("Frame", nil, frame)
+        art:SetPoint("TOPLEFT", frame, "TOPLEFT", C.INSET_L, 0)
+        art:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+        art:EnableMouse(false)
+        pcall(NineSliceUtil.ApplyLayoutByName, art, C.LAYOUT)
+        box.art = art
     end
-    p.TOPLEFT:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-    p.TOPRIGHT:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
-    p.BOTTOMLEFT:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-    p.BOTTOMRIGHT:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-    p.TOP:SetPoint("TOPLEFT", p.TOPLEFT, "TOPRIGHT", 0, 0)
-    p.TOP:SetPoint("BOTTOMRIGHT", p.TOPRIGHT, "BOTTOMLEFT", 0, 0)
-    p.BOTTOM:SetPoint("TOPLEFT", p.BOTTOMLEFT, "TOPRIGHT", 0, 0)
-    p.BOTTOM:SetPoint("BOTTOMRIGHT", p.BOTTOMRIGHT, "BOTTOMLEFT", 0, 0)
-    p.LEFT:SetPoint("TOPLEFT", p.TOPLEFT, "BOTTOMLEFT", 0, 0)
-    p.LEFT:SetPoint("BOTTOMRIGHT", p.BOTTOMLEFT, "TOPRIGHT", 0, 0)
-    p.RIGHT:SetPoint("TOPLEFT", p.TOPRIGHT, "BOTTOMLEFT", 0, 0)
-    p.RIGHT:SetPoint("BOTTOMRIGHT", p.BOTTOMRIGHT, "TOPRIGHT", 0, 0)
     return box
 end
 
--- The whole Classic box on a window, tinted in the window colour -- or gone.
-function DM.ClassicBox(frame, show, r, g, b, a)
+-- The whole Classic frame on a window, or gone. `a` is the window's opacity
+-- setting, carried by the rock.
+function DM.ClassicBox(frame, show, _, _, _, a)
     local box = boxes[frame]
     if not show then
         if box then
-            box.tile:Hide()
-            for _, t in ipairs(box.parts) do t:Hide() end
+            box.rock:Hide()
+            box.wash:Hide()
+            if box.art then box.art:Hide() end
         end
         return
     end
@@ -111,27 +95,13 @@ function DM.ClassicBox(frame, show, r, g, b, a)
         box = buildBox(frame)
         boxes[frame] = box
     end
-    DM.ClassicTint(box.tile, r, g, b, a)
-    box.tile:Show()
-    for _, t in ipairs(box.parts) do t:Show() end
-end
-
--- The header band: the window's tile again, lighter.
-function DM.ClassicHeaderTint(tex, winR, winG, winB, a)
-    local k, lift = C.HDR_SHADE, C.HDR_LIFT
-    DM.ClassicTint(tex,
-        math.min(1, (winR or 0) * k + lift),
-        math.min(1, (winG or 0) * k + lift),
-        math.min(1, (winB or 0) * k + lift), a)
-end
-
--- Back to a flat colour: the tile setup is undone so SetColorTexture draws.
-function DM.ClassicUntint(tex)
-    if tex._vfClassicTiled then
-        tex._vfClassicTiled = nil
-        tex:SetHorizTile(false)
-        tex:SetVertTile(false)
-        tex:SetVertexColor(1, 1, 1, 1)
+    box.rock:SetVertexColor(1, 1, 1, a or 1)
+    box.rock:Show()
+    box.wash:SetColorTexture(0, 0, 0, C.WASH * (a or 1))
+    box.wash:Show()
+    if box.art then
+        box.art:SetFrameLevel(frame:GetFrameLevel() + C.ART_LEVEL)
+        box.art:Show()
     end
 end
 

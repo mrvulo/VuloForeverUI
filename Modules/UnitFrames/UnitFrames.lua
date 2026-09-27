@@ -46,6 +46,30 @@ local function modernDefaults(unit)
     }
 end
 
+-- The smaller units start from the same table with their own size and less on
+-- them: target of target, focus target and pet are a name on a short bar;
+-- focus and the boss column are a compact frame with power and percent.
+local SMALL = {
+    focus        = { width = 160, healthHeight = 26, powerHeight = 6, portraitSide = "right",
+                     leftSize = 11, rightSize = 10, levelSize = 10 },
+    targettarget = { width = 101, healthHeight = 25, showPower = false, showPortrait = false,
+                     rightText = "none", showLevel = false, showThreat = false },
+    focustarget  = { width = 101, healthHeight = 25, showPower = false, showPortrait = false,
+                     rightText = "none", showLevel = false, showThreat = false },
+    pet          = { width = 101, healthHeight = 25, powerHeight = 6, showPortrait = false,
+                     rightText = "none", powerText = "none", showLevel = false, showThreat = false,
+                     leftClassColor = false },
+    boss         = { width = 160, healthHeight = 26, powerHeight = 6, showPortrait = false,
+                     leftSize = 11, rightSize = 10, showLevel = false, showTag = false,
+                     bossSpacing = 30, bossGrowth = "down" },
+}
+
+local function unitDefaults(unit)
+    local d = modernDefaults(unit)
+    for k, v in pairs(SMALL[unit] or {}) do d[k] = v end
+    return d
+end
+
 local mod = ns:RegisterModule("unitframes", {
     name        = "Unit Frames",
     group       = "Unit Frames",
@@ -62,8 +86,13 @@ local mod = ns:RegisterModule("unitframes", {
         classicClassColor = false,     -- Classic: Blizzard's green unless asked
         classicStatusText = true,      -- Classic: Blizzard's bar text, always on, percent + value
         classicClassIcon  = true,      -- Classic: ringed class badge on the target portrait
-        player      = { x = -260, y = -180, scale = 1, modern = modernDefaults("player") },
-        target      = { x =  260, y = -180, scale = 1, modern = modernDefaults("target") },
+        player       = { enabled = true, x = -260, y = -180, scale = 1, modern = unitDefaults("player") },
+        target       = { enabled = true, x =  260, y = -180, scale = 1, modern = unitDefaults("target") },
+        focus        = { enabled = false, x = -480, y =  -60, scale = 1, modern = unitDefaults("focus") },
+        targettarget = { enabled = false, x =  320, y = -235, scale = 1, modern = unitDefaults("targettarget") },
+        focustarget  = { enabled = false, x = -370, y = -60, scale = 1, modern = unitDefaults("focustarget") },
+        pet          = { enabled = false, x = -320, y = -235, scale = 1, modern = unitDefaults("pet") },
+        boss         = { enabled = false, x =  620, y =  120, scale = 1, modern = unitDefaults("boss") },
         blizzPos    = {},       -- where our edit mode put Blizzard's frames, per frame key
     },
 })
@@ -299,21 +328,41 @@ local function modernOptions(unit)
     extraRows[#extraRows + 1] = flagRow(unit, "showClassIcon", L["Class icon beside the frame"])
     extraRows[#extraRows + 1] = flagRow(unit, "showThreat", L["Threat text above the frame"])
 
+    -- Switching a unit off hands its place back to Blizzard's frame, which
+    -- only a reload can bring back; switching it on builds ours at once.
+    table.insert(frameRows, 1, { type = "toggle", label = L["Enable"],
+        get = function() return mod.db[unit].enabled ~= false end,
+        set = function(_, v)
+            mod.db[unit].enabled = v
+            if v then
+                ns.UF.RefreshModern(mod, unit)
+            else
+                if ns.UF.Preview then ns.UF.Preview.Refresh() end
+                if ns.UF.Frames[ns.UF.UnitsOf(unit)[1]] then StaticPopup_Show("VFUI_UNITFRAMES_RELOAD") end
+            end
+        end })
+
+    if unit == "boss" then
+        frameRows[#frameRows + 1] = choiceRow(unit, "bossGrowth", L["Stack direction"], {
+            { value = "down", text = L["Down"] },
+            { value = "up",   text = L["Up"] },
+        })
+        frameRows[#frameRows + 1] = numRow(unit, "bossSpacing", L["Vertical spacing"], 0, 200, 1)
+    end
+
     return {
-        -- A view switch, not a setting: it must not count as "differs from
-        -- the default" when the page is showing the target.
-        { type = "segmented", label = L["Settings for"], noDefaultMark = true,
-          values = {
-              { value = "player", text = L["Player"] },
-              { value = "target", text = L["Target"] },
-          },
-          get = function() return optUnit end,
-          set = function(_, v) optUnit = v; rebuildPage() end },
         { type = "section", title = L["Frame"],  items = frameRows },
         { type = "section", title = L["Colors"], items = colorRows },
         { type = "section", title = L["Text"],   items = textRows },
         { type = "section", title = L["Extras"], items = extraRows },
     }
+end
+
+-- The unit the page shows; the pinned header's dropdown switches it.
+function mod.GetOptUnit() return optUnit end
+function mod.SetOptUnit(v)
+    optUnit = v
+    rebuildPage()
 end
 
 function mod:GetOptions()
@@ -390,4 +439,10 @@ function mod:GetOptions()
     end
 
     return items
+end
+
+-- The unit picker and the live preview, pinned above the page (Preview.lua).
+function mod.BuildPageHeader(host)
+    if mod.db.style ~= "modern" or not UF.Preview then return 0 end
+    return UF.Preview.BuildHeader(host, mod)
 end

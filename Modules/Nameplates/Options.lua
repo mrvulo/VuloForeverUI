@@ -519,7 +519,7 @@ local function displayPage()
             L["\"Vulo Hunt\" is shown as \"Vulo\". A name the client hides in combat stays whole."]),
     })
 
-    return { NP.Preview.Item(), style, positions, texts, aurasSection(), bars, castColors, effects, castText }
+    return { style, positions, texts, aurasSection(), bars, castColors, effects, castText }
 end
 
 -- ---------------------------------------------------------------------------
@@ -578,7 +578,7 @@ local function colorsPage()
         } }),
         toggle("offTankAggroEnabled", L["Tank: Show Special \"Off-Tank\" Color"], nil, { inline = { swatch("offTankAggro", L["Off-Tank"]) } }),
     })
-    return { NP.Preview.Item(), enemy, threat }
+    return { enemy, threat }
 end
 
 -- ---------------------------------------------------------------------------
@@ -684,11 +684,16 @@ local function generalPage()
             end)
         end },
     })
-    return { NP.Preview.Item(), friendlySection(), spacing, targetFocus, section(L["Extras"], extras), import }
+    return { friendlySection(), spacing, targetFocus, section(L["Extras"], extras), import }
 end
 
 function M:GetOptions(tabId)
     if tabId == "colors" then return colorsPage() end
     if tabId == "general" then return generalPage() end
     return displayPage()
+end
+
+-- The live plate, pinned above every tab (Preview.lua).
+function M.BuildPageHeader(host)
+    return NP.Preview.BuildHeader(host)
 end

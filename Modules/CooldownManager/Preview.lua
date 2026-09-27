@@ -25,12 +25,9 @@ local _, ns = ...
 local L  = ns.L
 local CM = ns.CM
 
-local PANEL_H    = 118
 local PREVIEW_ROWS = 5      -- how many stand-ins an empty bar borrows
--- The biggest an icon is drawn in the preview, whatever the bar's own size is.
-local PREVIEW_ICON_MAX = 30
 
-local panel       -- the card, created once and re-parented on every page build
+local panel       -- the header's stage the bar is drawn on
 local previewBar  -- the frame the two passes run on
 local ghost       -- the icon that follows the cursor while one is dragged
 local dragFrom    -- which row is being dragged, nil when none is
@@ -290,52 +287,30 @@ end
 
 -- ---------------------------------------------------------------- build --
 
-local function build(parent)
-    if not panel then
-        panel = CreateFrame("Frame", nil, parent, BackdropTemplateMixin and "BackdropTemplate")
-        panel:SetHeight(PANEL_H)
+local header
 
-        local bg = panel:CreateTexture(nil, "BACKGROUND")
-        bg:SetAllPoints(panel)
-        bg:SetColorTexture(0, 0, 0, 0.25)
-        panel.bg = bg
-
-        panel.edges = ns.MakeEdges(panel, "BORDER")
-        ns.LayoutEdges(panel.edges, panel, 1, 1, 1, 1, 0.08, 0)
-
-        local caption = panel:CreateFontString(nil, "OVERLAY")
-        ns.UI.FontFor("cooldownmanager", caption, 11, nil)
-        caption:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -6)
-        caption:SetTextColor(0.6, 0.6, 0.6)
-        panel.caption = caption
-
+-- Pinned above every tab, with the bar picker on top of it. `control` is the
+-- picker's dropdown config, which the options page owns (Options.lua).
+function CM.BuildPreviewHeader(host, control)
+    if not header then
+        -- The icons are the click targets here -- a click opens the row's
+        -- menu, a drag reorders -- so the header adds none of its own.
+        header = ns.UI:CreatePreviewHeader({ key = "cooldownmanager", hint = false })
+        panel = header.stage
         -- The preview bar is a plain frame with no mover, no anchor and no
         -- visibility rules -- everything that makes a bar a bar lives in the
         -- two passes, not in the frame.
         previewBar = CreateFrame("Frame", nil, panel)
-        previewBar:SetPoint("CENTER", panel, "CENTER", 0, -6)
+        previewBar:SetPoint("CENTER", panel, "CENTER", 0, 0)
         previewBar.icons = {}
         previewBar.barKey = "__preview"
         panel.bar = previewBar
-        panel:SetScript("OnUpdate", tick)
+        local ticker = CreateFrame("Frame", nil, panel)
+        ticker:SetScript("OnUpdate", tick)
         ensurePlus()
     end
-    -- A page rebuild orphans anything the builder does not recognise, so the
-    -- panel re-adopts itself every time it is asked for.
-    panel:SetParent(parent)
-    -- And it takes its width from the page: a custom widget is anchored by one
-    -- corner and nothing else, so a panel that never set a width is zero wide,
-    -- and the fit maths below would shrink the bar to nothing.
-    panel:SetWidth(math.max(120, (parent:GetWidth() or 540) - 28))
-    panel:Show()
-    CM.RefreshPreview()
-    return panel
-end
-
--- The options item. Height is fixed, so the page can lay itself out before the
--- bar inside is measured.
-function CM.PreviewItem()
-    return { type = "custom", height = PANEL_H, build = build }
+    header:Mount(host, { control = control })
+    return CM.RefreshPreview(true) or 0
 end
 
 -- ---------------------------------------------------------------- draw --
@@ -347,8 +322,10 @@ function CM.SetPreviewBar(key)
     CM.RefreshPreview()
 end
 
-function CM.RefreshPreview()
-    if not (panel and panel:IsShown()) then return end
+-- `force`: the page build, before the header is on screen.
+function CM.RefreshPreview(force)
+    if not header then return end
+    if not force and not header:IsLive() then return end
     local bar = CM.Bar(CM.previewKey or "") or firstBar()
     if not bar then return end
 
@@ -370,47 +347,27 @@ function CM.RefreshPreview()
 
     placePlus(bar)
 
-    -- Fit. The page is narrower than a wide bar, and a preview that runs off
-    -- the card shows the left half of a setting instead of the setting.
-    local room = math.max(80, (panel:GetWidth() or 480) - 24)
-    local tall = PANEL_H - 30
+    -- Real size; only a bar wider (or taller) than the page is shrunk. The
+    -- plus is a slot the bar does not know about, so the fit adds it back in
+    -- -- otherwise the button is the part that hangs off the stage.
     local w, h = previewBar:GetWidth() or 1, previewBar:GetHeight() or 1
-    -- The plus is a slot the bar does not know about, so the fit has to add it
-    -- back in -- otherwise the button is the part that hangs off the card.
     local slot = (previewBar.iconSize or 0) + (bar.spacing or 0)
     if bar.vertical then h = h + slot else w = w + slot end
-    local scale = math.min(1, room / math.max(w, 1), tall / math.max(h, 1))
+    local scale, real = header:Fit(w, h)
+    previewBar:SetScale(scale)
 
-    -- And a ceiling on the icon, which is a different thing from the fit above.
-    -- The fit answers "does it still land on the card"; this answers "is the
-    -- card readable". At 42px the six icons of the default bar are the loudest
-    -- thing on the page and the settings around them read as an afterthought,
-    -- so the preview draws them smaller. It is the drawing that shrinks, not
-    -- the bar: nothing here writes iconSize, and the bar on screen is untouched.
-    local draw = scale
-    local size = previewBar.iconSize or 0
-    if size > PREVIEW_ICON_MAX then
-        draw = math.min(draw, PREVIEW_ICON_MAX / size)
-    end
-    if draw < 1 then previewBar:SetScale(math.max(0.25, draw)) end
-
-    -- And the row is centred with the plus counted in, so the icons do not sit
-    -- half a slot to the right of the middle of the card.
-    local shift = slot * previewBar:GetScale() / 2
+    -- Centred with the plus counted in, so the icons do not sit half a slot to
+    -- the right of the middle.
+    local shift = slot / 2
     previewBar:ClearAllPoints()
     if bar.vertical then
-        previewBar:SetPoint("CENTER", panel, "CENTER", 0, -6 + shift)
+        previewBar:SetPoint("CENTER", panel, "CENTER", 0, shift)
     else
-        previewBar:SetPoint("CENTER", panel, "CENTER", -shift, -6)
+        previewBar:SetPoint("CENTER", panel, "CENTER", -shift, 0)
     end
 
-    -- The percentage answers for the FIT only. It is there to say "this is not
-    -- everything", which the deliberate ceiling above is not.
-    local shown = math.floor(math.min(scale, 1) * 100 + 0.5)
-    if shown < 100 then
-        panel.caption:SetFormattedText("%s  |cff777777(%d%%)|r", L["Live preview"], shown)
-    else
-        panel.caption:SetText(L["Live preview"])
-    end
+    -- Said only when the drawing is not the real size: "this is not everything".
+    header:SetNote(not real and string.format("%s  (%d%%)", L["Live preview"],
+        math.floor(scale / header:RealScale() * 100 + 0.5)) or nil)
+    return header:SetStageHeight(h * scale)
 end
-

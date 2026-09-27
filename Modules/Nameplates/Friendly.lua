@@ -77,7 +77,14 @@ function Friendly.ApplyCVars()
     -- the bar-side one; nameplateUseClassColorForFriendlyPlayerUnitNames above
     -- only colours the name text
     NP.SetCVar("nameplateShowFriendlyClassColor", db.classColorFriendly and "1" or "0")
-    NP.SetCVar("UnitNameFriendlyPlayerName", db.showFriendlyPlayers and "1" or "0")
+    -- The name over a friendly player's head is the client's own display, not
+    -- a plate. Ours on: it is switched on for them. Ours off: the client's own
+    -- setting comes back, so the plain name stays where the game puts it.
+    if db.showFriendlyPlayers then
+        NP.SetCVar("UnitNameFriendlyPlayerName", "1")
+    else
+        NP.ReleaseCVar("UnitNameFriendlyPlayerName")
+    end
     NP.SetCVar("nameplateShowFriendlyPlayers", db.showFriendlyPlayers and "1" or "0")
     NP.SetCVar("nameplateShowFriendlyNpcs",
         (db.showFriendlyNPCs and not NP.ctx.inInstance) and "1" or "0")

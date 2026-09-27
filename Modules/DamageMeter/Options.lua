@@ -121,7 +121,7 @@ local function generalOptions()
               { value = "modern",  text = L["Modern"] },
               { value = "classic", text = L["Classic"] },
           },
-          tooltip = L["Classic draws the windows in 1.x art: the tooltip background inside the old chat tab border, a lighter header band and the 1.x buttons. The first switch also sets a near-black window, the game's own bar fill and a dark track behind the bars; after that those settings are yours again."],
+          tooltip = L["Classic draws the windows the way Blizzard frames its own: the metal frame over the rock background, the title in gold on the metal band, and the 1.x buttons. The first switch also sets the game's own bar fill and a dark track behind the bars; after that those settings are yours again."],
           get = function() return d().style end,
           set = function(_, v)
               d().style = v

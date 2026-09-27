@@ -32,7 +32,6 @@ end
 function mod:GetOptions()
     local db = AB.db()
     local page = {
-        AB.PreviewItem(),
         { type = "desc", text = L["|cffaaaaaaThe client's own action bars stay. They keep their clicks, their keys and their paging -- everything below dresses them.|r"] },
 
         { type = "header", text = L["Bar style"] },
@@ -67,4 +66,9 @@ function mod:GetOptions()
     end
 
     return page
+end
+
+-- The twelve buttons, pinned above the page (Preview.lua).
+function mod.BuildPageHeader(host)
+    return AB.BuildPreviewHeader(host)
 end

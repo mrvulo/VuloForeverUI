@@ -698,7 +698,9 @@ function DM.CreateWindow(idx)
         timer:SetPoint("RIGHT", header, "RIGHT", -used - 4 + offX, offY)
 
         title:ClearAllPoints()
-        title:SetPoint("LEFT", header, "LEFT", 6 + offX, offY)
+        -- Classic: a Blizzard window's title keeps clear of the metal rim.
+        local inset = DM.IsClassic() and DM.CLASSIC.TITLE_X or 6
+        title:SetPoint("LEFT", header, "LEFT", inset + offX, offY)
         title:SetPoint("RIGHT", timer, "LEFT", -6, 0)
     end
 
@@ -748,32 +750,38 @@ function DM.CreateWindow(idx)
     -- Everything the settings decide once: fonts, colours, sizes, borders.
     function W.Restyle()
         local d = DM.db()
-        local hh = d.hdrHeight or 22
         local classic = DM.IsClassic()
-        -- Classic: the header and the rows sit inside the box's rim and bevel.
-        local inset = classic and DM.CLASSIC.INSET or 0
+        local C = DM.CLASSIC
+        -- Classic: the header is the metal's top band, the rows sit inside
+        -- the metal on every other side.
+        local hh = classic and C.BAND or (d.hdrHeight or 22)
+        local pl, pr, pt, pb = 0, 0, 0, 0
+        if classic then pl, pr, pt, pb = C.PAD.l, C.PAD.r, C.PAD.t, C.PAD.b end
         header:SetHeight(hh)
         header:ClearAllPoints()
-        header:SetPoint("TOPLEFT", frame, "TOPLEFT", inset, -inset)
-        header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -inset, -inset)
-        viewport:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -inset, inset)
-        catcher:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -inset, inset)
+        header:SetPoint("TOPLEFT", frame, "TOPLEFT", pl, -pt)
+        header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -pr, -pt)
+        header:SetFrameLevel(frame:GetFrameLevel() + (classic and C.HDR_LEVEL or 5))
+        viewport:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pr, pb)
+        catcher:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pr, pb)
+        -- The lock and the grip stand in the corners of the row area, inside
+        -- the metal, not in the window's own corners.
+        W.lock:ClearAllPoints()
+        W.lock:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", pl + 3, pb + 3)
+        W.grip:ClearAllPoints()
+        W.grip:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pr - 2, pb + 2)
         bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -hh)
         DM.ClassicBox(frame, classic, d.bgColor.r, d.bgColor.g, d.bgColor.b, d.bgAlpha or 0.75)
         if classic then
+            -- The rock and the metal band are the ground; nothing of ours on top.
             bg:SetColorTexture(0, 0, 0, 0)
-            DM.ClassicHeaderTint(hbg, d.bgColor.r, d.bgColor.g, d.bgColor.b, d.hdrBgAlpha or 1)
+            hbg:SetColorTexture(0, 0, 0, 0)
         else
             bg:SetColorTexture(d.bgColor.r, d.bgColor.g, d.bgColor.b, d.bgAlpha or 0.75)
-            DM.ClassicUntint(hbg)
             hbg:SetColorTexture(d.hdrBgColor.r, d.hdrBgColor.g, d.hdrBgColor.b, d.hdrBgAlpha or 1)
         end
         if classic then
-            -- One hairline in the rim's grey, whatever the header line says.
-            local g = DM.CLASSIC.LINE
-            hline:SetHeight(ns:Pixel(frame, 1))
-            hline:SetColorTexture(g, g, g, 1)
-            hline:Show()
+            hline:Hide()                  -- the band's own lower edge is the line
         elseif (d.hdrBottomBorderSize or 0) > 0 then
             hline:SetHeight(ns:Pixel(frame, d.hdrBottomBorderSize))
             hline:SetColorTexture(d.hdrBottomBorderColor.r, d.hdrBottomBorderColor.g, d.hdrBottomBorderColor.b, d.hdrBottomBorderAlpha or 1)
@@ -785,7 +793,16 @@ function DM.CreateWindow(idx)
         DM.Font(title, d.hdrFontSize or 11)
         DM.Font(timer, d.hdrFontSize or 11)
         local tr, tg, tb
-        if d.hdrTextUseAccent then tr, tg, tb = DM.Accent() else tr, tg, tb = d.hdrTextColor.r, d.hdrTextColor.g, d.hdrTextColor.b end
+        if classic then
+            -- A Blizzard window's title: gold, in the game's own face -- the
+            -- one its own title font carries, which is the right one for the
+            -- client's language (Friz Quadrata has no Cyrillic or CJK).
+            tr, tg, tb = C.TITLE[1], C.TITLE[2], C.TITLE[3]
+            local _, size = title:GetFont()
+            local face = GameFontNormal and GameFontNormal:GetFont() or "Fonts\\FRIZQT__.TTF"
+            title:SetFont(face, size or 11, "")
+            timer:SetFont(face, size or 11, "")
+        elseif d.hdrTextUseAccent then tr, tg, tb = DM.Accent() else tr, tg, tb = d.hdrTextColor.r, d.hdrTextColor.g, d.hdrTextColor.b end
         title:SetTextColor(tr, tg, tb)
         timer:SetTextColor(tr, tg, tb)
         title:SetText(DM.TypeName(W.dmType))

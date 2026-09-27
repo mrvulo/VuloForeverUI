@@ -50,7 +50,6 @@ end
 function mod:GetOptions()
     local db = mod.db
     local o = {
-        R.PreviewItem(),
         { type = "group", layout = "row", gap = 10, align = "center", items = {
             { type = "button", label = L["Open Edit Mode"], width = 200, primary = true,
               onClick = function() ns:SetEditMode(true) end },
@@ -110,4 +109,9 @@ function mod:GetOptions()
             rebuild()
         end }
     return o
+end
+
+-- The reminder row, pinned above the page (Preview.lua).
+function mod.BuildPageHeader(host)
+    return R.BuildPreviewHeader(host)
 end

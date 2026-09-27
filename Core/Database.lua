@@ -321,7 +321,7 @@ function ns:ApplyThemeColor()
         c = { r = 0.608, g = 0.424, b = 1.000 }
     end
     local style = gs and gs.uiStyle
-    ns:ApplyUIStyle(type(style) == "string" and style or "vulo", c)
+    ns:ApplyUIStyle(type(style) == "string" and style or "blizzard", c)
 end
 
 function ns:GetActiveProfileName()

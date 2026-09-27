@@ -198,6 +198,8 @@ end
 local rebuildQueued
 
 local function refresh()
+    -- The preview at once; the real rows a moment later, in one rebuild.
+    if A.RefreshPreview then A.RefreshPreview() end
     if rebuildQueued then return end
     rebuildQueued = true
     C_Timer.After(0.35, function()
@@ -239,6 +241,12 @@ local function choice(key, label, values)
     return { type = "dropdown", label = label, values = values, width = 200,
         get = function() return mod.db[key] end,
         set = function(_, v) mod.db[key] = v; refresh() end }
+end
+
+-- Two rows on the page carry the same label; the preview opens each by its key.
+local function keyed(row, key)
+    row.subKey = key
+    return row
 end
 
 function mod:GetOptions()
@@ -297,7 +305,7 @@ function mod:GetOptions()
     } }
 
     items[#items + 1] = { type = "section", title = L["Buffs"], items = {
-        num("perRowBuffs", L["Icons per row"], 1, 20, 1),
+        keyed(num("perRowBuffs", L["Icons per row"], 1, 20, 1), "perRowBuffs"),
         num("rowsBuffs", L["Rows"], 1, 6, 1),
         num("maxBuffs", L["Most icons"], 1, 40, 1),
         num("paddingBuffs", L["Spacing"], 0, 20, 1),
@@ -306,7 +314,7 @@ function mod:GetOptions()
     } }
 
     local debuffRows = {
-        num("perRowDebuffs", L["Icons per row"], 1, 20, 1),
+        keyed(num("perRowDebuffs", L["Icons per row"], 1, 20, 1), "perRowDebuffs"),
         num("rowsDebuffs", L["Rows"], 1, 6, 1),
         num("maxDebuffs", L["Most icons"], 1, 40, 1),
         num("paddingDebuffs", L["Spacing"], 0, 20, 1),
@@ -344,4 +352,11 @@ function mod:GetOptions()
     items[#items + 1] = { type = "section", title = L["Text"], items = textRows }
 
     return items
+end
+
+-- The two rows drawn live, pinned above the page (Preview.lua). Only while
+-- our own rows are on: the client's rows are not ours to draw.
+function mod.BuildPageHeader(host)
+    if not mod.db.ownBars or not A.BuildPreviewHeader then return 0 end
+    return A.BuildPreviewHeader(host, mod)
 end

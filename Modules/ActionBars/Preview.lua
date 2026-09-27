@@ -15,9 +15,9 @@
 --
 -- It works while the module is off, which is the point: the module ships off.
 local _, ns = ...
+local L  = ns.L
 local AB = ns.AB
 
-local PANEL_H = 92
 local COUNT = 12
 -- The first two slices of the 1.x band, drawn behind the buttons when the
 -- whole old bar is on. The icons are the player's own slots 1 to 12; an empty
@@ -25,7 +25,7 @@ local COUNT = 12
 local BAND_FILE = "Interface\\MainMenuBar\\UI-MainMenuBar-Dwarf"
 local BAND_SLICES = { { 0.83203125, 1.0 }, { 0.58203125, 0.75 } }
 
-local panel, row, band
+local row, band
 local buttons = {}
 
 local function style()
@@ -45,7 +45,9 @@ local function iconOf(i)
 end
 
 local function makeButton(i)
-    local ok, b = pcall(CreateFrame, "CheckButton", nil, row, "ActionButtonTemplate")
+    -- Named: the template's cooldown flash anchors to "$parent", which the
+    -- client resolves by NAME, and a nameless button logs a warning per anchor.
+    local ok, b = pcall(CreateFrame, "CheckButton", "VuloForeverUIPreviewActionButton" .. i, row, "ActionButtonTemplate")
     if not (ok and b) then return nil end
     -- Ours, so a field is ours to set: the client's art pass reads it to pick
     -- the with-bar-art look the main bar wears.
@@ -60,51 +62,44 @@ local function makeButton(i)
     return b
 end
 
-local function build(parent)
-    if not panel then
-        panel = CreateFrame("Frame", nil, parent)
-        panel:SetHeight(PANEL_H)
+local header
 
-        local bg = panel:CreateTexture(nil, "BACKGROUND")
-        bg:SetAllPoints(panel)
-        bg:SetColorTexture(0, 0, 0, 0.25)
-        panel.edges = ns.MakeEdges(panel, "BORDER")
-        ns.LayoutEdges(panel.edges, panel, 1, 1, 1, 1, 0.08, 0)
+local function build()
+    header = ns.UI:CreatePreviewHeader({ key = "actionbars", hint = true })
+    row = CreateFrame("Frame", nil, header.stage)
 
-        local caption = panel:CreateFontString(nil, "OVERLAY")
-        ns.UI.FontFor("actionbars", caption, 11, nil)
-        caption:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -6)
-        caption:SetTextColor(0.6, 0.6, 0.6)
-        panel.caption = caption
-
-        row = CreateFrame("Frame", nil, panel)
-        row:SetPoint("CENTER", panel, "CENTER", 0, -6)
-
-        band = {}
-        for i, v in ipairs(BAND_SLICES) do
-            local t = row:CreateTexture(nil, "BACKGROUND", nil, -8)
-            t:SetTexture(BAND_FILE)
-            t:SetTexCoord(0, 1, v[1], v[2])
-            t:SetSize(256, 43)
-            t:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", (i - 1) * 256, 0)
-            band[i] = t
-        end
-
-        for i = 1, COUNT do makeButton(i) end
+    band = {}
+    for i, v in ipairs(BAND_SLICES) do
+        local t = row:CreateTexture(nil, "BACKGROUND", nil, -8)
+        t:SetTexture(BAND_FILE)
+        t:SetTexCoord(0, 1, v[1], v[2])
+        t:SetSize(256, 43)
+        t:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", (i - 1) * 256, 0)
+        band[i] = t
     end
-    panel:SetParent(parent)
-    panel:SetWidth(math.max(120, (parent:GetWidth() or 540) - 28))
-    panel:Show()
-    AB.RefreshPreview()
-    return panel
+
+    for i = 1, COUNT do makeButton(i) end
 end
 
-function AB.PreviewItem()
-    return { type = "custom", height = PANEL_H, build = build }
+-- The scale the client's own bar stands at on screen, relative to the rest of
+-- the interface: Edit Mode sizes the bar, and the preview draws it that size.
+local function barScale()
+    local b = _G.ActionButton1
+    local ok, s = pcall(function() return b:GetEffectiveScale() / UIParent:GetEffectiveScale() end)
+    if ok and type(s) == "number" and s > 0 then return s end
+    return 1
 end
 
-function AB.RefreshPreview()
-    if not (panel and panel:IsShown()) then return end
+-- Pinned above the page (Options.lua hands the builder this).
+function AB.BuildPreviewHeader(host)
+    if not header then build() end
+    header:Mount(host)
+    return AB.RefreshPreview(true) or 0
+end
+
+function AB.RefreshPreview(force)
+    if not header then return end
+    if not force and not header:IsLive() then return end
     local look, withBand = style()
 
     -- 1.x spacing for Classic -- 36 pixel buttons 42 apart on the band --
@@ -114,7 +109,10 @@ function AB.RefreshPreview()
     local width = left + (COUNT - 1) * pitch + size + left
     local height = withBand and 43 or size
     row:SetSize(width, height)
-    row:SetScale(math.min(1, (panel:GetWidth() - 20) / width))
+    local scale = header:Fit(width, height, barScale())
+    row:SetScale(scale)
+    row:ClearAllPoints()
+    row:SetPoint("CENTER", header.stage, "CENTER", 0, 0)
 
     for _, t in ipairs(band) do t:SetShown(withBand and true or false) end
 
@@ -133,5 +131,9 @@ function AB.RefreshPreview()
         end
     end
 
-    panel.caption:SetText(AB.StyleLabel(look))
+    header:SetNote(AB.StyleLabel(look))
+    -- The row stands for the look it is dressed in. The band gets no spot of
+    -- its own: it lies under the first six buttons and would take their clicks.
+    header:Spot("buttons", row, { mod = "actionbars", label = L["Style"] })
+    return header:SetStageHeight(height * scale)
 end

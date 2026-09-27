@@ -24,9 +24,25 @@ UF.Frames = UF.Frames or {}
 UF.TEXT_SLOTS = { "Name", "HealthText", "HealthPct", "PowerText" }
 
 local FRAME_NAMES = {
-    player = "VuloForeverUI_PlayerFrame",
-    target = "VuloForeverUI_TargetFrame",
+    player       = "VuloForeverUI_PlayerFrame",
+    target       = "VuloForeverUI_TargetFrame",
+    focus        = "VuloForeverUI_FocusFrame",
+    targettarget = "VuloForeverUI_TargetTargetFrame",
+    focustarget  = "VuloForeverUI_FocusTargetFrame",
+    pet          = "VuloForeverUI_PetFrame",
 }
+for i = 1, 5 do FRAME_NAMES["boss" .. i] = "VuloForeverUI_Boss" .. i .. "Frame" end
+
+-- Every unit the Modern style can draw, in the order the options list them.
+-- `boss` is one setting for five frames (boss1..boss5) standing in a column.
+UF.UNITS = { "player", "target", "focus", "targettarget", "focustarget", "pet", "boss" }
+UF.BOSS_COUNT = 5
+
+-- The db key a real unit reads its settings from: the five boss frames share one.
+function UF.ConfigKey(unit)
+    if unit:find("^boss%d") then return "boss" end
+    return unit
+end
 
 local function newBar(parent, level)
     local bar = CreateFrame("StatusBar", nil, parent)
@@ -51,22 +67,10 @@ local function newText(parent, layer)
     fs:SetText("")
     return fs
 end
-function UF.CreateUnitFrame(unit, db, label)
-    if UF.Frames[unit] then return UF.Frames[unit] end
-    assert(not ns:InCombat(), "unit frames are created out of combat")
-
-    local f = CreateFrame("Button", FRAME_NAMES[unit], UIParent, "SecureUnitButtonTemplate")
-    f.unit = unit
-    f:SetSize(232, 100)                       -- placeholder; the skin sets the real size
-    f:SetFrameStrata("LOW")
-    f:SetFrameLevel(5)
-    f:RegisterForClicks("AnyUp")
-    f:SetAttribute("unit", unit)
-    f:SetAttribute("*type1", "target")
-    f:SetAttribute("*type2", "togglemenu")
-    f:SetAttribute("toggleForVehicle", true)
-    RegisterUnitWatch(f)
-
+-- Every region a skin may place, on any frame. The live preview in the options
+-- builds a plain frame through the same function, so what it shows is laid out
+-- by the very code that lays out the real one.
+function UF.BuildRegions(f)
     -- art + flat panel pieces (one of the two sets is shown per skin)
     f.Art        = f:CreateTexture(nil, "BORDER")
     f.Background = f:CreateTexture(nil, "BACKGROUND")
@@ -96,18 +100,107 @@ function UF.CreateUnitFrame(unit, db, label)
     f.ClassIcon:Hide()
 
     f.classification = "normal"
+end
+
+-- ------------------------------------------------------------ edit mode --
+--
+-- A unit frame is shown by its unit watch, and so is its mover, which is a
+-- child of it: without a focus or a boss there would be nothing to grab. In
+-- edit mode the watch is lifted and the frame stands with its own values or,
+-- for a unit that is not there, full bars and the unit's name. Leaving edit
+-- mode hands it back to the watch. Both are refused in a fight; edit mode
+-- closes as a fight begins, and the watch comes back when it ends.
+local EDIT_NAME = {
+    player = "Player", target = "Target", focus = "Focus", targettarget = "Target of Target",
+    focustarget = "Focus Target", pet = "Pet", boss = "Boss",
+}
+
+local function standIn(f)
+    f.Health:SetMinMaxValues(0, 100)
+    f.Health:SetValue(100)
+    f.Power:SetMinMaxValues(0, 100)
+    f.Power:SetValue(100)
+    local content = f.content or {}
+    for _, key in ipairs(UF.TEXT_SLOTS) do
+        local c = content[key]
+        if c == "name" then
+            f[key]:SetText(L[EDIT_NAME[UF.ConfigKey(f.unit)]])
+            f[key]:SetTextColor(1, 1, 1)
+        elseif c == "perhp" then
+            f[key]:SetText("100%")
+        elseif c and c ~= "none" then
+            f[key]:SetText("")
+        end
+    end
+    f.Level:SetText("")
+    f.ThreatText:SetText("")
+    f.ThreatGlow:Hide()
+end
+
+local watchPending = {}
+
+local function rewatch()
+    for f in pairs(watchPending) do
+        watchPending[f] = nil
+        if f.vfActive then RegisterUnitWatch(f) end
+    end
+end
+
+function UF.EditPreview(list, on)
+    for _, f in ipairs(list) do
+        if f.vfActive then
+            if InCombatLockdown() then
+                if not on then
+                    watchPending[f] = true
+                    ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", rewatch)
+                end
+            elseif on then
+                UnregisterUnitWatch(f)
+                f:Show()
+                if UnitExists(f.unit) then UF.Paint(f) else standIn(f) end
+            else
+                RegisterUnitWatch(f)
+                UF.Paint(f)
+            end
+        end
+    end
+end
+
+-- parent: the boss column hands its holder in; every other frame stands on
+-- UIParent with a mover of its own. A frame with a parent has no mover -- the
+-- holder is what moves.
+function UF.CreateUnitFrame(unit, db, label, parent)
+    if UF.Frames[unit] then return UF.Frames[unit] end
+    assert(not ns:InCombat(), "unit frames are created out of combat")
+
+    local f = CreateFrame("Button", FRAME_NAMES[unit], parent or UIParent, "SecureUnitButtonTemplate")
+    f.unit = unit
+    f:SetSize(232, 100)                       -- placeholder; the skin sets the real size
+    f:SetFrameStrata("LOW")
+    f:SetFrameLevel(5)
+    f:RegisterForClicks("AnyUp")
+    f:SetAttribute("unit", unit)
+    f:SetAttribute("*type1", "target")
+    f:SetAttribute("*type2", "togglemenu")
+    f:SetAttribute("toggleForVehicle", unit == "player")
+    RegisterUnitWatch(f)
+
+    UF.BuildRegions(f)
 
     -- Position and scale through the mover: /vedit moves it, db.x/y/scale
     -- persist per profile, ApplyMover puts it back at load.
-    f.mover = ns:CreateMover(f, {
-        key      = "unitframe_" .. unit,
-        label    = label,
-        db       = db,
-        width    = 232,
-        height   = 100,
-        scalable = true,
-    })
-    ns:ApplyMover(f.mover)
+    if not parent then
+        f.mover = ns:CreateMover(f, {
+            key      = "unitframe_" .. unit,
+            label    = label,
+            db       = db,
+            width    = 232,
+            height   = 100,
+            scalable = true,
+            editPreview = function(on) UF.EditPreview({ f }, on) end,
+        })
+        ns:ApplyMover(f.mover)
+    end
 
     wireEvents(f)
     UF.Frames[unit] = f
@@ -123,9 +216,11 @@ function UF.SetSkin(frame, skinName, opts)
     frame.skin, frame.skinOpts = skin, opts
     UF.ApplySkin(frame, skin, opts)
     -- the mover box should match the new size; ApplyMover re-reads it
-    frame.mover.opts.width, frame.mover.opts.height = skin.width, skin.height
-    ns:RefreshMoverGeometry(frame.mover)
-    ns:ApplyMover(frame.mover)
+    if frame.mover then
+        frame.mover.opts.width, frame.mover.opts.height = skin.width, skin.height
+        ns:RefreshMoverGeometry(frame.mover)
+        ns:ApplyMover(frame.mover)
+    end
 end
 
 -- ---------------------------------------------------------------- painters --
@@ -355,7 +450,7 @@ function UF.PaintThreat(fs, glow, unit, mobUnit)
     end
     if mobUnit then
         local _, _, pct = UnitDetailedThreatSituation(unit, mobUnit)
-        if pct and ns.CanRead(pct) then
+        if type(pct) ~= "nil" and ns.CanRead(pct) then
             fs:SetFormattedText("%d%%", pct)
         else
             fs:SetText(status >= 2 and L["Aggro"] or L["Threat"])
@@ -370,18 +465,20 @@ function UF.PaintThreat(fs, glow, unit, mobUnit)
     end
 end
 
+-- The player's frame shows the player's own threat; every other frame shows
+-- the player's threat ON that unit.
 local function paintThreat(f)
-    if f.unit == "target" then
-        UF.PaintThreat(f.ThreatText, f.ThreatGlow, "player", "target")
-    else
+    if f.unit == "player" then
         UF.PaintThreat(f.ThreatText, f.ThreatGlow, "player", nil)
+    else
+        UF.PaintThreat(f.ThreatText, f.ThreatGlow, "player", f.unit)
     end
 end
 
 local TAG_TEXT = { elite = "Elite", rareelite = "Rare Elite", rare = "Rare", worldboss = "Boss" }
 local function paintClassification(f)
     local cls = UnitClassification(f.unit)
-    if cls and ns.CanRead(cls) then f.classification = cls end   -- else keep last
+    if type(cls) ~= "nil" and ns.CanRead(cls) then f.classification = cls end   -- else keep last
     if f.skin and f.skin.art then
         f.Art:SetTexture(UF.ClassificationArt(f.skin, f.classification, f.skinOpts))
     end
@@ -453,6 +550,29 @@ local function onGlobalEvent(ev, event)
     ns.Prof.End("unitframes", t0)
 end
 
+-- What else repaints a frame whole, per unit: the event that swaps the unit
+-- out, and for a unit's target the UNIT_TARGET of the unit it hangs off.
+-- targettarget and focustarget get no unit events of their own from the
+-- client, so those two are also polled while they are on screen.
+local GLOBAL_EVENTS = {
+    target       = { "PLAYER_TARGET_CHANGED" },
+    focus        = { "PLAYER_FOCUS_CHANGED" },
+    targettarget = { "PLAYER_TARGET_CHANGED" },
+    focustarget  = { "PLAYER_FOCUS_CHANGED" },
+    boss         = { "INSTANCE_ENCOUNTER_ENGAGE_UNIT" },
+}
+local OWNER_UNIT = { targettarget = "target", focustarget = "focus", pet = "player" }
+local POLLED = { targettarget = true, focustarget = true }
+local POLL_EVERY = 0.2
+
+local function onPoll(glob, elapsed)
+    glob.wait = (glob.wait or 0) + elapsed
+    if glob.wait < POLL_EVERY then return end
+    glob.wait = 0
+    local f = glob.frame
+    if f:IsVisible() then UF.Paint(f) end
+end
+
 wireEvents = function(f)
     local ev = CreateFrame("Frame")
     ev.frame = f
@@ -465,7 +585,18 @@ wireEvents = function(f)
     glob.frame = f
     f.globalEvents = glob
     glob:RegisterEvent("PLAYER_ENTERING_WORLD")
-    if f.unit == "target" then glob:RegisterEvent("PLAYER_TARGET_CHANGED") end
+    for _, event in ipairs(GLOBAL_EVENTS[UF.ConfigKey(f.unit)] or {}) do
+        pcall(glob.RegisterEvent, glob, event)
+    end
+    local owner = OWNER_UNIT[f.unit]
+    if owner == "player" then
+        pcall(glob.RegisterUnitEvent, glob, "UNIT_PET", "player")
+    elseif owner then
+        pcall(glob.RegisterUnitEvent, glob, "UNIT_TARGET", owner)
+    end
+    if f.unit:find("^boss%d") then
+        pcall(glob.RegisterUnitEvent, glob, "UNIT_TARGETABLE_CHANGED", f.unit)
+    end
     glob:SetScript("OnEvent", onGlobalEvent)
     ev:SetScript("OnEvent", onUnitEvent)
 end
@@ -475,10 +606,12 @@ function UF.SetEventsEnabled(f, on)
     if on then
         f.events:SetScript("OnEvent", onUnitEvent)
         f.globalEvents:SetScript("OnEvent", onGlobalEvent)
+        if POLLED[f.unit] then f.globalEvents:SetScript("OnUpdate", onPoll) end
         UF.Paint(f)
     else
         f.events:SetScript("OnEvent", nil)
         f.globalEvents:SetScript("OnEvent", nil)
+        f.globalEvents:SetScript("OnUpdate", nil)
     end
 end
 
@@ -533,24 +666,35 @@ local function silencePlayer()
     silenced.player = true
 end
 
-local function silenceTarget()
-    local tf = _G.TargetFrame
-    if not tf or silenced.target then return end
-    unregisterTree(tf, nil)
-    tf:Hide()
-    tf:SetParent(hiddenParent)
-    if not tf._vfuiParentHook then
-        tf._vfuiParentHook = true
-        hooksecurefunc(tf, "SetParent", function(self, parent)
-            if parent ~= hiddenParent and silenced.target and not ns:InCombat() then
+-- A whole Blizzard frame to the hidden parent, events off, and put back there
+-- whenever something hands it a parent of its own again.
+local function silenceWhole(key, frame)
+    if not frame or silenced[key] then return end
+    unregisterTree(frame, nil)
+    frame:Hide()
+    frame:SetParent(hiddenParent)
+    if not frame._vfuiParentHook then
+        frame._vfuiParentHook = true
+        hooksecurefunc(frame, "SetParent", function(self, parent)
+            if parent ~= hiddenParent and silenced[key] and not ns:InCombat() then
                 C_Timer.After(0, function() self:SetParent(hiddenParent) end)
             end
         end)
     end
-    silenced.target = true
+    silenced[key] = true
 end
 
-local SILENCER = { player = silencePlayer, target = silenceTarget }
+-- The target-of-target frames are children of the target and focus frames;
+-- they go with their parent, and on their own when only they are replaced.
+local SILENCER = {
+    player       = silencePlayer,
+    target       = function() silenceWhole("target", _G.TargetFrame) end,
+    focus        = function() silenceWhole("focus", _G.FocusFrame) end,
+    targettarget = function() silenceWhole("targettarget", _G.TargetFrame and _G.TargetFrame.totFrame) end,
+    focustarget  = function() silenceWhole("focustarget", _G.FocusFrame and _G.FocusFrame.totFrame) end,
+    pet          = function() silenceWhole("pet", _G.PetFrame) end,
+    boss         = function() silenceWhole("boss", _G.BossTargetFrameContainer) end,
+}
 
 function UF.SilenceBlizzard(unit)
     local fn = SILENCER[unit]
@@ -580,51 +724,157 @@ end
 -- -------------------------------------------------------- activation --
 
 local LABELS = {
-    player = "|cffffffffPLAYER FRAME|r",
-    target = "|cffffffffTARGET FRAME|r",
+    player       = "|cffffffffPLAYER FRAME|r",
+    target       = "|cffffffffTARGET FRAME|r",
+    focus        = "|cffffffffFOCUS FRAME|r",
+    targettarget = "|cffffffffTARGET OF TARGET|r",
+    focustarget  = "|cffffffffFOCUS TARGET|r",
+    pet          = "|cffffffffPET FRAME|r",
+    boss         = "|cffffffffBOSS FRAMES|r",
 }
+
+-- The real units behind one setting: five for the boss column, one otherwise.
+local function unitsOf(key)
+    if key ~= "boss" then return { key } end
+    local list = {}
+    for i = 1, UF.BOSS_COUNT do list[i] = "boss" .. i end
+    return list
+end
+UF.UnitsOf = unitsOf
+
+-- The boss column: a plain holder the mover moves, the five secure frames
+-- standing in it one under (or over) the other.
+local bossHolder
+
+local function ensureBossHolder(db)
+    if bossHolder then return bossHolder end
+    bossHolder = CreateFrame("Frame", "VuloForeverUI_BossFrames", UIParent)
+    bossHolder:SetSize(160, 200)
+    bossHolder:SetFrameStrata("LOW")
+    bossHolder.mover = ns:CreateMover(bossHolder, {
+        key      = "unitframe_boss",
+        label    = LABELS.boss,
+        db       = db,
+        width    = 160,
+        height   = 200,
+        scalable = true,
+        editPreview = function(on)
+            local list = {}
+            for i = 1, UF.BOSS_COUNT do list[#list + 1] = UF.Frames["boss" .. i] end
+            UF.EditPreview(list, on)
+        end,
+    })
+    ns:ApplyMover(bossHolder.mover)
+    return bossHolder
+end
+
+local function layoutBossColumn(cfg)
+    if not bossHolder then return end
+    local skin = UF.ModernSkin(cfg)
+    local gap = cfg.bossSpacing or 30
+    local n = UF.BOSS_COUNT
+    local h = n * skin.height + (n - 1) * gap
+    bossHolder:SetSize(skin.width, h)
+    local up = cfg.bossGrowth == "up"
+    for i = 1, n do
+        local f = UF.Frames["boss" .. i]
+        if f then
+            f:ClearAllPoints()
+            local off = (i - 1) * (skin.height + gap)
+            if up then
+                f:SetPoint("BOTTOMLEFT", bossHolder, "BOTTOMLEFT", 0, off)
+            else
+                f:SetPoint("TOPLEFT", bossHolder, "TOPLEFT", 0, -off)
+            end
+        end
+    end
+    local m = bossHolder.mover
+    m.opts.width, m.opts.height = skin.width, h
+    ns:RefreshMoverGeometry(m)
+    ns:ApplyMover(m)
+end
+
+local function unitOn(mod, key)
+    local db = mod.db[key]
+    return db and db.enabled ~= false
+end
+UF.IsUnitOn = unitOn
 
 function UF.ActivateOwnFrames(mod)
     if mod.db.style ~= "modern" then return end
-    for _, unit in ipairs({ "player", "target" }) do
-        local f = UF.CreateUnitFrame(unit, mod.db[unit], LABELS[unit])
-        UF.SetSkin(f, "modern", { unit = unit, cfg = mod.db[unit].modern })
-        RegisterUnitWatch(f)
-        UF.SetEventsEnabled(f, true)
-        UF.SilenceBlizzard(unit)
+    for _, key in ipairs(UF.UNITS) do
+        if unitOn(mod, key) then
+            local db = mod.db[key]
+            local parent = key == "boss" and ensureBossHolder(db) or nil
+            for _, unit in ipairs(unitsOf(key)) do
+                local f = UF.CreateUnitFrame(unit, db, LABELS[key], parent)
+                UF.SetSkin(f, "modern", { unit = unit, cfg = db.modern })
+                -- A frame already running keeps what it has: in edit mode the
+                -- watch is lifted for its stand-in, and a second pass here
+                -- (a unit switched on while editing) must not put it back.
+                if not f.vfActive then
+                    RegisterUnitWatch(f)
+                    f.vfActive = true
+                    if ns:IsEditModeActive() then UF.EditPreview({ f }, true) end
+                end
+                UF.SetEventsEnabled(f, true)
+            end
+            if parent then
+                parent:Show()
+                layoutBossColumn(db.modern)
+            end
+            UF.SilenceBlizzard(key)
+        end
     end
 end
 
 -- A setting changed: rebuild that unit's skin from db and repaint. SetSkin
 -- calls SetSize on a secure unit button, which the client refuses in combat,
--- so a change made mid-fight lands when the fight ends.
+-- so a change made mid-fight lands when the fight ends. The options preview
+-- is not secure and follows at once, fight or not.
 local refreshPending = {}
 
-function UF.RefreshModern(mod, unit)
+function UF.RefreshModern(mod, key)
+    if UF.Preview then UF.Preview.Refresh() end
     if mod.db.style ~= "modern" then return end
-    local f = UF.Frames[unit]
-    if not f then return end
     if ns:InCombat() then
-        if not refreshPending[unit] then
-            refreshPending[unit] = true
+        if not refreshPending[key] then
+            refreshPending[key] = true
             ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", function()
-                refreshPending[unit] = nil
-                UF.RefreshModern(mod, unit)
+                refreshPending[key] = nil
+                UF.RefreshModern(mod, key)
             end)
         end
         return
     end
-    UF.SetSkin(f, "modern", { unit = unit, cfg = mod.db[unit].modern })
-    UF.Paint(f)
+    -- A unit switched on after login is built here; one switched off is left
+    -- to the reload the options ask for.
+    if unitOn(mod, key) and not UF.Frames[unitsOf(key)[1]] then
+        UF.ActivateOwnFrames(mod)
+        return
+    end
+    local db = mod.db[key]
+    for _, unit in ipairs(unitsOf(key)) do
+        local f = UF.Frames[unit]
+        if f then
+            UF.SetSkin(f, "modern", { unit = unit, cfg = db.modern })
+            UF.Paint(f)
+        end
+    end
+    if key == "boss" then layoutBossColumn(db.modern) end
 end
 
 function UF.DeactivateOwnFrames()
-    for _, unit in ipairs({ "player", "target" }) do
-        local f = UF.Frames[unit]
-        if f then
-            UF.SetEventsEnabled(f, false)
-            UnregisterUnitWatch(f)
-            f:Hide()
+    for _, key in ipairs(UF.UNITS) do
+        for _, unit in ipairs(unitsOf(key)) do
+            local f = UF.Frames[unit]
+            if f then
+                UF.SetEventsEnabled(f, false)
+                UnregisterUnitWatch(f)
+                f.vfActive = nil
+                f:Hide()
+            end
         end
     end
+    if bossHolder then bossHolder:Hide() end
 end

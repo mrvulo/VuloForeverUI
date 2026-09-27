@@ -26,7 +26,6 @@ local UI = ns.UI
 local Preview = {}
 NP.Preview = Preview
 
-local PANEL_H   = 170
 local CAST_LOOP = 2.8        -- seconds per preview cast
 local TICK      = 0.05
 
@@ -45,7 +44,7 @@ local SAMPLE_ICONS = {
 local SAMPLE_STACK = { "3", "8", "2", "5", "4" }
 local SAMPLE_DUR   = { "14", "8", "26", "4", "11" }
 
-local panel, plate, spots, auraRows
+local header, plate, auraRows, ticker
 local elapsedCast = 0
 
 -- ---------------------------------------------------------------------------
@@ -55,48 +54,13 @@ local elapsedCast = 0
 -- TRANSLATED section title, which is what UI:RevealRow matches on. Every
 -- nameplate setting a preview element stands for lives on the Display page.
 -- ---------------------------------------------------------------------------
-local function reveal(label, section)
-    if not (UI and UI.RevealRow) then return end
-    UI:RevealRow({ mod = "nameplates", tab = "display", label = label, section = section })
-end
-
--- One invisible button over a region, with a border on hover so the target is
--- visible before the click. Created once per key and re-anchored on refresh.
 local function spot(key, region, label, section, pad)
-    if not region then return end
-    local b = spots[key]
-    if not b then
-        b = CreateFrame("Button", nil, panel)
-        b:SetFrameStrata("HIGH")
-        b:SetFrameLevel(940)                 -- over the plate's text layer (900)
-        b.edges = ns.MakeEdges(b, "OVERLAY")
-        b:SetScript("OnEnter", function(self)
-            local c = ns.COLORS and ns.COLORS.accent
-            ns.LayoutEdges(self.edges, self, 1, (c and c.r) or 0.61, (c and c.g) or 0.42,
-                (c and c.b) or 1, 1, 1)
-            UI:ShowTooltip(self, { title = self.vfLabel, accent = true,
-                lines = { L["Click to open the setting"] } })
-        end)
-        b:SetScript("OnLeave", function(self)
-            ns.LayoutEdges(self.edges, self, 0, 1, 1, 1, 1)
-            UI:HideTooltip()
-        end)
-        b:SetScript("OnClick", function(self) reveal(self.vfLabel, self.vfSection) end)
-        spots[key] = b
-    end
-    b.vfLabel, b.vfSection = label, section
-    ns.LayoutEdges(b.edges, b, 0, 1, 1, 1, 1)
-    pad = pad or 1
-    b:ClearAllPoints()
-    b:SetPoint("TOPLEFT", region, "TOPLEFT", -pad, pad)
-    b:SetPoint("BOTTOMRIGHT", region, "BOTTOMRIGHT", pad, -pad)
-    b:Show()
-    return b
+    return header:Spot(key, region,
+        { mod = "nameplates", tab = "display", label = label, section = section }, 0, pad)
 end
 
 local function hideSpot(key)
-    local b = spots[key]
-    if b then b:Hide() end
+    header:HideSpot(key)
 end
 
 -- ---------------------------------------------------------------------------
@@ -357,7 +321,7 @@ end
 -- ---------------------------------------------------------------------------
 local function ensurePlate()
     if plate then return end
-    plate = CreateFrame("Frame", nil, panel)
+    plate = CreateFrame("Frame", nil, header.stage)
     Mixin(plate, NP.Plate)
     plate.isPreview = true
     plate:Build()
@@ -366,7 +330,7 @@ local function ensurePlate()
     -- that would put them behind the page, so the preview lifts them.
     plate.textFrame:SetFrameStrata("HIGH")
     plate.iconFrame:SetFrameStrata("HIGH")
-    plate:SetPoint("CENTER", panel, "CENTER", 0, 0)   -- Refresh settles the offset
+    plate:SetPoint("CENTER", header.stage, "CENTER", 0, 0)   -- Refresh settles the offset
     plate:Show()
 end
 
@@ -391,8 +355,10 @@ local function extents(db)
     return up + topRow, down, side
 end
 
-function Preview.Refresh()
-    if not (panel and panel:IsShown()) then return end
+-- `force`: the page build, before the header is on screen.
+function Preview.Refresh(force)
+    if not header then return end
+    if not force and not header:IsLive() then return end
     local db = NP.db()
     if not db then return end
     ensurePlate()
@@ -417,66 +383,36 @@ function Preview.Refresh()
 
     spot("health", plate.health, L["Health Bar Width"], L["Health and Cast Bar"])
 
-    -- Fit. A 250 px bar with an aura column on each side is wider than the
-    -- page, and a preview that runs off the card shows half a setting. The
+    -- Real size, the plate as it stands on screen; only a plate wider than the
+    -- page (a 250 px bar with an aura column each side) is shrunk. The
     -- extents are computed from the SETTINGS, never measured: a getter on a
     -- region of a plate is exactly what this module does not do.
     local up, down, side = extents(db)
-    local room  = math.max(120, (panel:GetWidth() or 480) - 24)
-    local tall  = PANEL_H - 34
     local wide  = db.healthBarWidth + 2 * side
     local high  = up + db.healthBarHeight + down
-    local scale = math.min(1, room / math.max(wide, 1), tall / math.max(high, 1))
-    scale = math.max(0.4, scale)
+    local scale, real = header:Fit(wide, high)
     plate:SetScale(scale)
+    header:SetNote(not real and string.format("%s  (%d%%)", L["Live preview"],
+        math.floor(scale / header:RealScale() * 100 + 0.5)) or nil)
 
     -- The health bar is the plate's centre, but the composition is not: the
     -- name and a top aura row sit above it, the cast bar below. Shifting by
-    -- half the difference puts the whole plate in the middle of the card.
+    -- half the difference puts the whole plate in the middle of the stage.
     plate:ClearAllPoints()
-    plate:SetPoint("CENTER", panel, "CENTER", 0, (down - up) / 2 * scale - 5)
+    plate:SetPoint("CENTER", header.stage, "CENTER", 0, (down - up) / 2)
+    return header:SetStageHeight(high * scale + 8)
 end
 
 -- ---------------------------------------------------------------------------
--- The options item
+-- The pinned header, on every nameplate tab
 -- ---------------------------------------------------------------------------
-local function build(parent)
-    if not panel then
-        panel = CreateFrame("Frame", nil, parent)
-        panel:SetHeight(PANEL_H)
-        spots, auraRows = {}, {}
-
-        local bg = panel:CreateTexture(nil, "BACKGROUND")
-        bg:SetAllPoints(panel)
-        bg:SetColorTexture(0, 0, 0, 0.25)
-
-        panel.edges = ns.MakeEdges(panel, "BORDER")
-        ns.LayoutEdges(panel.edges, panel, 1, 1, 1, 1, 0.08, 0)
-
-        local caption = panel:CreateFontString(nil, "OVERLAY")
-        UI.FontFor("nameplates", caption, 11, nil)
-        caption:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -6)
-        caption:SetTextColor(0.6, 0.6, 0.6)
-        caption:SetText(L["Live preview"])
-
-        local hint = panel:CreateFontString(nil, "OVERLAY")
-        UI.FontFor("nameplates", hint, 11, nil)
-        hint:SetPoint("BOTTOM", panel, "BOTTOM", 0, 6)
-        hint:SetTextColor(0.45, 0.45, 0.5)
-        hint:SetText(L["Click an element to open its settings"])
-
-        panel:SetScript("OnUpdate", tick)
+function Preview.BuildHeader(host)
+    if not header then
+        header = UI:CreatePreviewHeader({ key = "nameplates", hint = true })
+        auraRows = {}
+        ticker = CreateFrame("Frame", nil, header.stage)
+        ticker:SetScript("OnUpdate", tick)
     end
-    -- A page rebuild orphans anything the builder does not recognise, so the
-    -- panel re-adopts itself every time it is asked for, and takes its width
-    -- from the page -- a custom widget is anchored by one corner only.
-    panel:SetParent(parent)
-    panel:SetWidth(math.max(160, (parent:GetWidth() or 540) - 28))
-    panel:Show()
-    Preview.Refresh()
-    return panel
-end
-
-function Preview.Item()
-    return { type = "custom", height = PANEL_H, build = build }
+    header:Mount(host)
+    return Preview.Refresh(true) or 0
 end

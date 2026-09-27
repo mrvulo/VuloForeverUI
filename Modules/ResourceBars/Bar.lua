@@ -33,7 +33,28 @@ function RB.BuildBar(key)
     frame:SetFrameStrata("MEDIUM")
     frame.barKey = key
     RB.frames[key] = frame
+    RB.BuildRegions(frame)
 
+    frame.mover = ns:CreateMover(frame, {
+        key      = "resourcebar_" .. key,
+        label    = RB.Label(key),
+        db       = bar,
+        module   = "resourcebars",
+        width    = bar.width,
+        height   = bar.height,
+        scalable = true,
+        -- A transient bar is invisible most of the time; the mover box has to
+        -- stand in for it, or there is nothing to grab in Edit Mode.
+        fill     = isTransient(key),
+    })
+    ns:ApplyMover(frame.mover)
+
+    return frame
+end
+
+-- Every region a bar is made of, on any frame. The settings page's live
+-- preview builds its bars through this too, so they are the same bars.
+function RB.BuildRegions(frame)
     local fill = CreateFrame("StatusBar", nil, frame)
     fill:SetAllPoints(frame)
     fill:SetMinMaxValues(0, 1)
@@ -86,22 +107,6 @@ function RB.BuildBar(key)
     frame.right = right
 
     frame.ticks = {}
-
-    frame.mover = ns:CreateMover(frame, {
-        key      = "resourcebar_" .. key,
-        label    = RB.Label(key),
-        db       = bar,
-        module   = "resourcebars",
-        width    = bar.width,
-        height   = bar.height,
-        scalable = true,
-        -- A transient bar is invisible most of the time; the mover box has to
-        -- stand in for it, or there is nothing to grab in Edit Mode.
-        fill     = isTransient(key),
-    })
-    ns:ApplyMover(frame.mover)
-
-    return frame
 end
 
 -- ---------------------------------------------------------------- ticks --
@@ -125,7 +130,10 @@ function RB.ApplyTicks(key, maxVal)
     local frame = RB.frames[key]
     local bar = RB.Bar(key)
     if not (frame and bar) then return end
+    RB.ApplyTicksTo(frame, bar, maxVal)
+end
 
+function RB.ApplyTicksTo(frame, bar, maxVal)
     local values = parseTicks(bar.ticks)
     local width  = frame:GetWidth() or bar.width
     local shown  = 0
@@ -158,11 +166,9 @@ end
 
 -- ---------------------------------------------------------------- style --
 
-function RB.StyleBar(key)
-    local frame = RB.frames[key] or RB.BuildBar(key)
-    local bar = RB.Bar(key)
-    if not (frame and bar) then return end
-
+-- The look a bar's settings give it, on any frame built by RB.BuildRegions:
+-- size, fill, ground, border, spark, text face and the icon's seat.
+function RB.PaintLook(frame, bar)
     frame:SetSize(bar.width, bar.height)
     frame.fill:SetStatusBarTexture(ns.MediaStatusbar(bar.texture, WHITE))
     frame.fill:SetStatusBarColor(bar.fillColor.r, bar.fillColor.g, bar.fillColor.b)
@@ -197,8 +203,14 @@ function RB.StyleBar(key)
     frame.shield:ClearAllPoints()
     frame.shield:SetPoint("CENTER", frame, "LEFT", 0, 0)
     frame.shield:SetSize(size * 1.6, size * 1.6)
+end
 
-    RB.ApplyTicks(key, frame.maxValue)
+function RB.StyleBar(key)
+    local frame = RB.frames[key] or RB.BuildBar(key)
+    local bar = RB.Bar(key)
+    if not (frame and bar) then return end
+    RB.PaintLook(frame, bar)
+    RB.ApplyTicksTo(frame, bar, frame.maxValue)
 
     if frame.mover then
         frame.mover.opts.db = bar

@@ -172,7 +172,7 @@ local M = ns:RegisterModule("nameplates", {
         comboHeight = 5, comboGap = 2, comboOffset = 2,
 
         -- friendly plates
-        showFriendlyPlayers = true, friendlyNameOnly = true, showFriendlyNPCs = false,
+        showFriendlyPlayers = false, friendlyNameOnly = true, showFriendlyNPCs = false,
         friendlyNameSize = 15, classColorFriendly = true,
         friendlyBarColor = c(.314, .8, .408), friendlyNPCColor = c(0, 1, 0),
         friendlyClickThrough = false,
@@ -377,6 +377,16 @@ local function setCVar(name, value)
     pcall(C_CVar.SetCVar, name, value)
 end
 NP.SetCVar = setCVar
+
+-- Hands one CVar back: the value it had before we first wrote it, and it is
+-- the client's again. A CVar we never wrote is left alone.
+function NP.ReleaseCVar(name)
+    local saved = M.db.savedCVars
+    local was = saved and saved[name]
+    if was == nil then return end
+    pcall(C_CVar.SetCVar, name, was)
+    saved[name] = nil
+end
 
 local function applyCVars()
     if not M.active then return end      -- queued in a fight the module was switched off in

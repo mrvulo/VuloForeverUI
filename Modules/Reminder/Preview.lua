@@ -11,8 +11,7 @@ local _, ns = ...
 local L = ns.L
 local R = ns.Reminder
 
-local PANEL_H = 104
-local panel, row, empty
+local row, empty
 local icons = {}
 
 local function showTooltip(f)
@@ -53,8 +52,12 @@ local function makeIcon(i)
     return f
 end
 
-function R.RefreshPreview()
-    if not (panel and panel:IsShown()) then return end
+local header
+
+-- `force`: the page build, before the header is on screen.
+function R.RefreshPreview(force)
+    if not header then return end
+    if not force and not header:IsLive() then return end
     local db = R.mod.db
     local items = R.Collect(true)
     local size, gap = db.size, db.spacing
@@ -89,44 +92,30 @@ function R.RefreshPreview()
         end
     end
 
+    -- Real size, at the row's own scale on screen; a long row shrinks to fit.
+    -- The names hang under the icons, so the stage makes room for them.
+    local labels = (db.showLabels and n > 0) and 16 or 0
     row:SetSize(math.max(width, 1), size)
-    -- a long row shrinks to fit the panel instead of running out of it
-    row:SetScale(math.min(1, (panel:GetWidth() - 20) / math.max(width, 1)))
+    local scale = header:Fit(math.max(width, 1), size + labels, db.pos and db.pos.scale or 1)
+    row:SetScale(scale)
+    row:ClearAllPoints()
+    row:SetPoint("CENTER", header.stage, "CENTER", 0, labels / 2)
     empty:SetShown(n == 0)
+    local h = (n == 0) and 30 or (size + labels) * scale
+    return header:SetStageHeight(h)
 end
 
-local function build(parent)
-    if not panel then
-        panel = CreateFrame("Frame", nil, parent)
-        panel:SetHeight(PANEL_H)
-
-        local bg = panel:CreateTexture(nil, "BACKGROUND")
-        bg:SetAllPoints(panel)
-        bg:SetColorTexture(0, 0, 0, 0.25)
-        panel.edges = ns.MakeEdges(panel, "BORDER")
-        ns.LayoutEdges(panel.edges, panel, 1, 1, 1, 1, 0.08, 0)
-
-        local caption = panel:CreateFontString(nil, "OVERLAY")
-        ns.UI.FontFor("reminders", caption, 11, nil)
-        caption:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -6)
-        caption:SetTextColor(0.6, 0.6, 0.6)
-        panel.caption = caption
-
-        row = CreateFrame("Frame", nil, panel)
-        row:SetPoint("CENTER", panel, "CENTER", 0, -2)
-
-        empty = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-        empty:SetPoint("CENTER", panel, "CENTER", 0, -4)
+-- Pinned above the page. The icons keep their spell tooltips, so there are no
+-- click targets here and no hint about them.
+function R.BuildPreviewHeader(host)
+    if not header then
+        header = ns.UI:CreatePreviewHeader({ key = "reminders", hint = false })
+        row = CreateFrame("Frame", nil, header.stage)
+        empty = header.stage:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+        empty:SetPoint("CENTER", header.stage, "CENTER", 0, 0)
     end
-    panel.caption:SetText(L["Preview -- faded icons are switched on but not due right now"])
     empty:SetText(L["No reminder is switched on for this character."])
-    panel:SetParent(parent)
-    panel:SetWidth(math.max(120, (parent:GetWidth() or 540) - 28))
-    panel:Show()
-    R.RefreshPreview()
-    return panel
-end
-
-function R.PreviewItem()
-    return { type = "custom", height = PANEL_H, build = build }
+    header:Mount(host)
+    header:SetNote(L["Preview -- faded icons are switched on but not due right now"])
+    return R.RefreshPreview(true) or 0
 end

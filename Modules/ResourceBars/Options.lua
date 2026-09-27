@@ -27,6 +27,8 @@ local function rebuild(tabId)
 end
 
 local function apply()
+    -- The preview first: it is drawn whether the module is on or not.
+    if RB.RefreshPreview then RB.RefreshPreview() end
     if not RB.mod.active then return end
     RB.StyleAll()
     RB.Power.Rescan()
@@ -318,4 +320,9 @@ function mod:GetOptions(tabId)
     if tabId == "cast"  then return castPage() end
     if tabId == "swing" then return swingPage() end
     return resourcesPage()
+end
+
+-- The bars of the tab, pinned above it (Preview.lua).
+function mod.BuildPageHeader(host, tabId)
+    return RB.BuildPreviewHeader(host, tabId)
 end
