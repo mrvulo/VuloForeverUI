@@ -28,7 +28,6 @@ local KINDS = {
     gem         = "GemID",
     bonus       = "BonusID",
     set         = "SetID",
-    expansion   = "ExpansionID",
     currency    = "CurrencyID",
     spell       = "SpellID",
     macro       = "MacroID",
@@ -49,15 +48,15 @@ local KINDS = {
 }
 
 -- Noise for most players: bonus IDs are long lists, the trait IDs matter only
--- to talent tools, and every Forever item reports the same expansion.
+-- to talent tools.
 local OFF_BY_DEFAULT = {
-    bonus = true, expansion = true, traitnode = true, traitentry = true, traitdef = true,
+    bonus = true, traitnode = true, traitentry = true, traitdef = true,
 }
 
 -- Page order; every kind sits in exactly one section. The names are locale
 -- keys, looked up when the page is built.
 local SECTIONS = {
-    { name = "Items",       "item", "enchant", "gem", "bonus", "set", "expansion", "currency" },
+    { name = "Items",       "item", "enchant", "gem", "bonus", "set", "currency" },
     { name = "Spells",      "spell", "macro", "icon", "traitnode", "traitentry", "traitdef" },
     { name = "World",       "unit", "object", "quest", "achievement", "areapoi", "vignette" },
     { name = "Collections", "mount", "species", "visual", "source" },
@@ -97,6 +96,15 @@ local mod = ns:RegisterModule("tooltipids", {
 })
 
 local LABEL_R, LABEL_G, LABEL_B = 0.55, 0.72, 0.95
+
+-- True while Blizzard's own tooltip build runs our post call. It shows the
+-- tooltip itself right after the post calls; a Show of ours there would run
+-- the tooltip's OnShow chain inside our (insecure) code first.
+local inPostCall = false
+
+local function reshow(tooltip)
+    if not inPostCall then tooltip:Show() end
+end
 
 local isSecret = ns.IsSecret
 
@@ -176,7 +184,7 @@ local function extendLine(tooltip, name, label, id)
             if #values > count then
                 left:SetText(#values > 1 and plural or label)
                 right:SetText(table.concat(values, ","))
-                tooltip:Show()
+                reshow(tooltip)
             end
             return true
         end
@@ -197,7 +205,7 @@ local function addLine(tooltip, id, kind)
     tooltip:AddDoubleLine(label .. (multiple and "s" or ""),
         multiple and table.concat(id, ",") or id,
         LABEL_R, LABEL_G, LABEL_B, 1, 1, 1)
-    tooltip:Show()
+    reshow(tooltip)
 end
 
 -- id may be a list (a transmog look has several sources). Spells and items
@@ -261,9 +269,8 @@ local function addItem(tooltip, link)
         add(tooltip, gems, "gem")
     end
 
-    if kindOn("expansion") or kindOn("set") then
-        local expansionId, setId = select(15, C_Item.GetItemInfo(itemId))
-        if expansionId ~= 254 then add(tooltip, expansionId, "expansion") end
+    if kindOn("set") then
+        local setId = select(16, C_Item.GetItemInfo(itemId))
         add(tooltip, setId, "set")
     end
     return true
@@ -318,7 +325,12 @@ end
 
 local function installHooks()
     if not hooked.post and TooltipDataProcessor and TooltipDataProcessor.AddTooltipPostCall then
-        TooltipDataProcessor.AddTooltipPostCall(TooltipDataProcessor.AllTypes, onTooltipData)
+        TooltipDataProcessor.AddTooltipPostCall(TooltipDataProcessor.AllTypes, function(tooltip, data)
+            inPostCall = true
+            local ok, err = pcall(onTooltipData, tooltip, data)
+            inPostCall = false
+            if not ok then geterrorhandler()(err) end
+        end)
         hooked.post = true
     end
 
