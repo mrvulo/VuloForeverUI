@@ -36,7 +36,6 @@ local CLASSIC = {
 }
 -- The 1.x art was drawn around a 36 pixel button.
 local BASE = 36
-local WHITE = "Interface\\Buttons\\WHITE8X8"
 
 -- What a button looked like before we arrived, kept off the button. Dropped
 -- again once a restore has put it back, so Standard costs nothing per event.
@@ -48,6 +47,12 @@ local grounds = setmetatable({}, { __mode = "k" })
 -- Modern's own icon ground, and which look a button last wore: a change of
 -- look goes through a full restore first, so nothing of the old one lingers.
 local groundsModern = setmetatable({}, { __mode = "k" })
+-- The out-of-range tint: a texture of ours over the icon in multiply mode.
+-- The icon's own colour stays the client's -- it draws "not usable" and "not
+-- enough mana" there, and a tint written into it would fight that.
+local rangeOf = setmetatable({}, { __mode = "k" })
+-- Action slot -> the Modern buttons showing it, rebuilt on every pass.
+local rangeSlots = {}
 local lookOf = setmetatable({}, { __mode = "k" })
 
 -- Modern's press, hover and cast art: a soft white glow along the inner edge,
@@ -85,7 +90,8 @@ local function textsOf(button)
 end
 
 local function snapFont(fs)
-    local s = { font = { fs:GetFont() }, justify = fs:GetJustifyH(), alpha = fs:GetAlpha(), points = {} }
+    local s = { font = { fs:GetFont() }, justify = fs:GetJustifyH(), alpha = fs:GetAlpha(), points = {},
+        shadow = { fs:GetShadowOffset() }, shadowColor = { fs:GetShadowColor() } }
     for i = 1, fs:GetNumPoints() do s.points[i] = { fs:GetPoint(i) } end
     return s
 end
@@ -94,6 +100,8 @@ local function putFont(fs, s)
     if s.font[1] then fs:SetFont(s.font[1], s.font[2], s.font[3] or "") end
     fs:SetJustifyH(s.justify)
     fs:SetAlpha(s.alpha)
+    if s.shadow[1] then fs:SetShadowOffset(s.shadow[1], s.shadow[2]) end
+    if s.shadowColor[1] then fs:SetShadowColor(unpack(s.shadowColor)) end
     fs:ClearAllPoints()
     for _, p in ipairs(s.points) do fs:SetPoint(unpack(p)) end
 end
@@ -161,6 +169,12 @@ local function remember(button)
     if button.icon then o.iconCoords = { button.icon:GetTexCoord() } end
     local cd = button.cooldown
     if cd and cd.GetEdgeScale then o.edgeScale = cd:GetEdgeScale() end
+    if cd and cd.GetDrawEdge then o.drawEdge = cd:GetDrawEdge() end
+    local hk = button.HotKey
+    if hk then
+        o.hotkeyText, o.hotkeyShown = hk:GetText(), hk:IsShown()
+        o.hotkeyW, o.hotkeyH = hk:GetSize()
+    end
     original[button] = o
     return o
 end
@@ -226,11 +240,11 @@ local function skinClassic(button, filled)
     end
     -- The swipe covers the whole square icon, not the porthole it was cut for.
     local cd = button.cooldown
+    -- Once per look: the client never moves it again, and re-anchoring a
+    -- child of a secure button on every pass would do so in combat too.
     if cd and not o.cdPoints then
         o.cdPoints = {}
         for i = 1, cd:GetNumPoints() do o.cdPoints[i] = { cd:GetPoint(i) } end
-    end
-    if cd then
         cd:ClearAllPoints()
         cd:SetAllPoints(button)
     end
@@ -300,11 +314,6 @@ end
 -- font, the keybind shortened (SHIFT-BUTTON4 reads SM4).
 
 -- Pet, stance and possess buttons are smaller; their texts step down.
-local function isSmall(button)
-    local name = button:GetName() or ""
-    return name:find("^PetActionButton") or name:find("^StanceButton") or name:find("^PossessButton")
-end
-
 local function classColor()
     local _, class = UnitClass("player")
     local c = class and C_ClassColor.GetClassColor(class)
@@ -323,7 +332,7 @@ local function bindingKey(button)
         n = name:match("^StanceButton(%d+)$")
         if n then action = "SHAPESHIFTBUTTON" .. n end
         n = name:match("PreviewActionButton(%d+)$")
-        if n then action = "ACTIONBUTTON" .. n end
+        if n then action = AB.BindingOf(AB.selectedBar, n) end
     end
     local key = action and GetBindingKey(action)
     if not key and name ~= "" then key = GetBindingKey("CLICK " .. name .. ":LeftButton") end
@@ -378,10 +387,55 @@ local function pressTexture(tex, button, kind, c, blend)
     tex:SetBlendMode(blend)
 end
 
+-- Out of range when the client checked and said no. Either value secret:
+-- no answer, and the tint stays off rather than guessing.
+local function setRange(tex, inRange, checksRange)
+    if ns.IsSecret(inRange) or ns.IsSecret(checksRange) then tex:Hide(); return end
+    tex:SetShown(checksRange and inRange == false)
+end
+
+local function rangeTint(button, db)
+    local tex = rangeOf[button]
+    local action = button.action
+    if not db.outOfRange or type(action) ~= "number" or not button.icon then
+        if tex then tex:Hide() end
+        return
+    end
+    if not tex then
+        tex = button:CreateTexture(nil, "BACKGROUND", nil, 7)   -- right over the icon, under everything else
+        tex:SetTexture("Interface\\Buttons\\WHITE8X8")
+        tex:SetBlendMode("MOD")
+        rangeOf[button] = tex
+    end
+    local c = db.outOfRangeColor
+    tex:SetVertexColor(c.r, c.g, c.b, 1)
+    tex:ClearAllPoints()
+    tex:SetAllPoints(button.icon)
+    local list = rangeSlots[action]
+    if not list then list = {}; rangeSlots[action] = list end
+    list[#list + 1] = button
+    -- The state right now; the event keeps it current from here.
+    local inRange = C_ActionBar.IsActionInRange(action)
+    if ns.IsSecret(inRange) then tex:Hide() else tex:SetShown(inRange == false) end
+end
+
+-- The client says when an action goes in or out of range of the target.
+local rangeWatch = CreateFrame("Frame")
+rangeWatch:RegisterEvent("ACTION_RANGE_CHECK_UPDATE")
+rangeWatch:SetScript("OnEvent", function(_, _, slot, inRange, checksRange)
+    local list = rangeSlots[slot]
+    if not list then return end
+    for _, button in ipairs(list) do
+        local tex = rangeOf[button]
+        if tex and button.action == slot then setRange(tex, inRange, checksRange) end
+    end
+end)
+
 local function skinModern(button)
-    local db = AB.db()
+    local bar = AB.BarOf(button)
+    local db = AB.Cfg(bar)
     local o = remember(button)
-    local small = isSmall(button)
+    local small = AB.IsSmallBar(bar)
     local press = db.pressClassColor and classColor() or db.pressColor
 
     -- The client's frame art, off. Alpha rather than Hide: the client shows
@@ -429,12 +483,18 @@ local function skinModern(button)
         if not o.cdPoints then
             o.cdPoints = {}
             for i = 1, cd:GetNumPoints() do o.cdPoints[i] = { cd:GetPoint(i) } end
+            cd:ClearAllPoints()
+            cd:SetAllPoints(button)
         end
-        cd:ClearAllPoints()
-        cd:SetAllPoints(button)
+        -- The template draws this cooldown WITHOUT its edge (drawEdge="false"
+        -- in ActionButtonTemplate.xml), so the edge has to be switched on.
+        if cd.SetDrawEdge then cd:SetDrawEdge(true) end
         if cd.SetEdgeColor then cd:SetEdgeColor(press.r, press.g, press.b, 1) end
         if cd.SetEdgeScale then cd:SetEdgeScale(2.1) end
     end
+    -- The recharge of a spell with charges runs on its own cooldown frame.
+    local charge = button.chargeCooldown
+    if charge and charge.SetEdgeColor then charge:SetEdgeColor(press.r, press.g, press.b, 1) end
 
     pressTexture(button.GetPushedTexture and button:GetPushedTexture(), button, db.pushedType, press, "BLEND")
     pressTexture(button.GetHighlightTexture and button:GetHighlightTexture(), button, db.highlightType, press, "ADD")
@@ -516,6 +576,8 @@ local function skinModern(button)
         cdText:ClearAllPoints()
         cdText:SetPoint("CENTER", button, "CENTER", 0, 0)
     end
+
+    rangeTint(button, db)
 end
 
 local function restore(button)
@@ -547,20 +609,31 @@ local function restore(button)
     if o.iconCoords and button.icon then button.icon:SetTexCoord(unpack(o.iconCoords)) end
     if cd and cd.SetEdgeColor then cd:SetEdgeColor(1, 1, 1, 1) end
     if cd and o.edgeScale and cd.SetEdgeScale then cd:SetEdgeScale(o.edgeScale) end
+    if cd and o.drawEdge ~= nil and cd.SetDrawEdge then cd:SetDrawEdge(o.drawEdge) end
+    local charge = button.chargeCooldown
+    if charge and charge.SetEdgeColor then charge:SetEdgeColor(1, 1, 1, 1) end
     if button.NewActionTexture then button.NewActionTexture:SetDesaturated(false) end
     if button.Flash then button.Flash:SetDesaturated(false) end
     if groundsModern[button] then groundsModern[button]:Hide() end
+    if rangeOf[button] then rangeOf[button]:Hide() end
     for key, fs in pairs(textsOf(button)) do
         local f = o.fonts and o.fonts[key]
         if f then putFont(fs, f) end
     end
-    -- The keybind as the client writes it, in the box the client gives it.
+    -- The keybind in the box it had. Action and pet buttons get the text the
+    -- client writes today (the binding may have changed meanwhile); the stance
+    -- bar never writes one, so it gets back exactly what it had.
     local hk = button.HotKey
     if hk and o.fonts and o.fonts.hotkey then
-        hk:SetSize(math.max(1, (button:GetWidth() or 45) - 8), 10)
-        local key = bindingKey(button)
-        local text = key and GetBindingText(key, 1)
-        if text and text ~= "" then hk:SetText(text) end
+        if o.hotkeyW then hk:SetSize(o.hotkeyW, o.hotkeyH) end
+        if (button:GetName() or ""):find("^StanceButton") then
+            hk:SetText(o.hotkeyText or "")
+            hk:SetShown(o.hotkeyShown and true or false)
+        else
+            local key = bindingKey(button)
+            local text = key and GetBindingText(key, 1)
+            if text and text ~= "" then hk:SetText(text) end
+        end
     end
 
     -- Which of the two slot textures shows is the client's call, per bar: with
@@ -613,6 +686,7 @@ end
 
 function Skin.ApplyAll()
     local db = AB.db()
+    wipe(rangeSlots)
     local buttons = AB.Buttons(db.skinPetStance)
 
     -- The band comes first: it moves the buttons, and the look below dresses
@@ -640,6 +714,19 @@ function Skin.ApplyAll()
             -- client decides that art itself (restore asks it to, above).
             restore(button)
             slotGround(button, false)
+        end
+    end
+
+    -- Pet, stance and possess buttons switched off: whatever look they still
+    -- wear comes off.
+    if not db.skinPetStance then
+        local dressed = {}
+        for _, button in ipairs(buttons) do dressed[button] = true end
+        for _, button in ipairs(AB.Buttons(true)) do
+            if not dressed[button] and lookOf[button] and lookOf[button] ~= "standard" then
+                restore(button)
+                lookOf[button] = nil
+            end
         end
     end
 end

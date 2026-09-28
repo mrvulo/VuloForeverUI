@@ -63,47 +63,130 @@ local function textPositions()
     }
 end
 
+-- ---------------------------------------------------------------- per bar --
+--
+-- The Modern settings belong to the bar picked at the top of the block. Every
+-- bar follows the shared values until something is changed for it; "Apply to
+-- all bars" makes the picked bar's values the shared ones and drops every
+-- bar's own.
+
+local function sel() return AB.selectedBar or "bar1" end
+local function pget(key) return AB.Cfg(sel())[key] end
+local function pset(key, v) AB.OwnCfg(sel())[key] = v; apply() end
+
+local function rebuild()
+    ns.NextFrame(function() ns.UI:BuildOptionsPage("actionbars") end)
+end
+
+local function pToggle(key, label, tooltip)
+    return { type = "toggle", label = label, tooltip = tooltip,
+        get = function() return pget(key) end,
+        set = function(_, v) pset(key, v) end }
+end
+
+local function pSlider(key, label, min, max, step, tooltip)
+    return { type = "slider", label = label, tooltip = tooltip, min = min, max = max, step = step,
+        get = function() return pget(key) end,
+        set = function(_, v) pset(key, v) end }
+end
+
+local function pDropdown(key, label, values, tooltip)
+    return { type = "dropdown", label = label, tooltip = tooltip, width = 200, values = values,
+        get = function() return pget(key) end,
+        set = function(_, v) pset(key, v) end }
+end
+
+-- A colour is written as a fresh table: the shared one must never be edited
+-- through a bar that only borrowed it.
+local function pColor(key, label)
+    return { type = "color", label = label,
+        get = function() return pget(key) end,
+        set = function(r, g, b)
+            local old = pget(key)
+            pset(key, { r = r, g = g, b = b, a = old and old.a })
+        end }
+end
+
+local function copyValue(v)
+    if type(v) ~= "table" then return v end
+    local t = {}
+    for k, x in pairs(v) do t[k] = x end
+    return t
+end
+
+local function applyToAll()
+    local db, view = AB.db(), AB.Cfg(sel())
+    local values = {}
+    for _, key in ipairs(AB.PER_BAR_KEYS) do values[key] = copyValue(view[key]) end
+    for key, v in pairs(values) do db[key] = v end
+    db.perBar = {}
+    apply(); rebuild()
+end
+
+local function resetBar()
+    local db = AB.db()
+    if db.perBar then db.perBar[sel()] = nil end
+    apply(); rebuild()
+end
+
 -- The Modern look's own settings, shown only while Modern is the style.
 local function modernOptions(page)
     local add = function(item) page[#page + 1] = item end
 
+    add({ type = "header", text = L["Bar"] })
+    add({ type = "desc", text = L["|cffaaaaaaThe settings below belong to the bar picked here. A bar you never changed follows the shared settings, and Apply to all bars makes this bar's settings the shared ones.|r"] })
+    add({ type = "dropdown", label = L["Bar"], width = 200, values = AB.BarList(),
+        get = sel,
+        set = function(_, v)
+            AB.selectedBar = v
+            AB.RefreshPreview(true)
+            rebuild()
+        end })
+    add({ type = "group", layout = "row", gap = 6, items = {
+        { type = "button", label = L["Apply to all bars"], width = 190, onClick = applyToAll },
+        { type = "button", label = L["Reset this bar"], width = 190, onClick = resetBar },
+    } })
+
     add({ type = "header", text = L["Icons"] })
-    add(dropdown("borderSize", L["Border size"], {
+    add(pDropdown("borderSize", L["Border size"], {
         { value = "none",   text = L["None"] },
         { value = "thin",   text = L["Thin"] },
         { value = "normal", text = L["Normal"] },
         { value = "heavy",  text = L["Heavy"] },
         { value = "strong", text = L["Strong"] },
     }))
-    add(color("borderColor", L["Border color"]))
-    add(toggle("borderClassColor", L["Class-colored border"]))
-    add(slider("iconZoom", L["Icon zoom"], 0, 10, 0.5,
+    add(pColor("borderColor", L["Border color"]))
+    add(pToggle("borderClassColor", L["Class-colored border"]))
+    add(pSlider("iconZoom", L["Icon zoom"], 0, 10, 0.5,
         L["Trims the icon's rim. 0 shows the whole icon with its drawn frame."]))
-    add(slider("iconBgOpacity", L["Icon background"], 0, 100, 5,
+    add(pSlider("iconBgOpacity", L["Icon background"], 0, 100, 5,
         L["The dark ground behind the icon, seen on empty slots and around see-through icons."]))
-    add(color("iconBgColor", L["Icon background color"]))
+    add(pColor("iconBgColor", L["Icon background color"]))
+    add(pToggle("outOfRange", L["Out of range coloring"],
+        L["Tints the icon while your target is out of range of that action."]))
+    add(pColor("outOfRangeColor", L["Out of range color"]))
     add({ type = "toggle", label = L["Show cooldown numbers"],
-        tooltip = L["The game's own countdown on the icon (the game setting of the same name)."],
+        tooltip = L["The game's own countdown on the icon. A game setting, so it applies to every bar."],
         get = function() return C_CVar.GetCVar("countdownForCooldowns") == "1" end,
         set = function(_, v) C_CVar.SetCVar("countdownForCooldowns", v and "1" or "0") end })
 
     add({ type = "header", text = L["Interactions"] })
-    add(color("pressColor", L["Interaction color"]))
-    add(toggle("pressClassColor", L["Class-colored interactions"]))
-    add(dropdown("pushedType", L["Pushed look"], pressTypes(),
+    add(pColor("pressColor", L["Interaction color"]))
+    add(pToggle("pressClassColor", L["Class-colored interactions"]))
+    add(pDropdown("pushedType", L["Pushed look"], pressTypes(),
         L["What a button shows while its key or mouse button is held."]))
-    add(dropdown("highlightType", L["Hover look"], pressTypes()))
-    add(toggle("castHighlight", L["Highlight on spell cast"],
+    add(pDropdown("highlightType", L["Hover look"], pressTypes()))
+    add(pToggle("castHighlight", L["Highlight on spell cast"],
         L["The button of the spell being cast or channelled glows white."]))
 
     add({ type = "header", text = L["Text"] })
-    add(toggle("keybindHide", L["Hide keybind text"]))
-    add(slider("keybindSize", L["Keybind text size"], 6, 30, 1))
-    add(dropdown("keybindPos", L["Keybind position"], textPositions()))
-    add(toggle("macroHide", L["Hide macro text"]))
-    add(slider("macroSize", L["Macro text size"], 6, 30, 1))
-    add(slider("countSize", L["Charges text size"], 6, 30, 1))
-    add(slider("cooldownSize", L["Cooldown text size"], 6, 30, 1))
+    add(pToggle("keybindHide", L["Hide keybind text"]))
+    add(pSlider("keybindSize", L["Keybind text size"], 6, 30, 1))
+    add(pDropdown("keybindPos", L["Keybind position"], textPositions()))
+    add(pToggle("macroHide", L["Hide macro text"]))
+    add(pSlider("macroSize", L["Macro text size"], 6, 30, 1))
+    add(pSlider("countSize", L["Charges text size"], 6, 30, 1))
+    add(pSlider("cooldownSize", L["Cooldown text size"], 6, 30, 1))
 end
 
 function mod:GetOptions()
@@ -122,8 +205,10 @@ function mod:GetOptions()
           set = function(_, v)
               AB.db().style = v
               apply()
-              -- the Modern block comes and goes with the style
-              ns.UI:BuildOptionsPage("actionbars")
+              -- The Modern block comes and goes with the style. A frame
+              -- later: the dropdown still writes its own label after this
+              -- setter returns, and a rebuild now would hand it another row.
+              ns.NextFrame(function() ns.UI:BuildOptionsPage("actionbars") end)
           end },
         toggle("skin", L["Skin the action bars"]),
         toggle("classicBar", L["Classic: the whole old bar"],

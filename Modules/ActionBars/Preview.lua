@@ -38,6 +38,16 @@ end
 -- is only handed to SetTexture, never tested for truth: type() is the one
 -- question a secret value answers without an error.
 local function iconOf(i)
+    -- The bar picked on the settings page: whatever its live button i shows.
+    -- Pet and stance bars have ten buttons, so the last two stay empty.
+    local bar = AB.selectedBar or "bar1"
+    local real = AB.ButtonOf(bar, i)
+    if real and real.icon then
+        local tex = real.icon:GetTexture()
+        if type(tex) ~= "nil" and real.icon:IsShown() then return tex, true end
+        return nil, false
+    end
+    if bar ~= "bar1" then return nil, false end
     local get = C_ActionBar and C_ActionBar.GetActionTexture
     local ok, tex = pcall(get, i)
     if ok and type(tex) ~= "nil" then return tex, true end
