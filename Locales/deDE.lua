@@ -1899,4 +1899,9 @@ ns:RegisterLocale("deDE", {
     ["While you cast a spell with a cast time, the part of the bar it will spend is shaded."] = "Während du einen Zauber mit Zauberzeit wirkst, wird der Teil der Leiste schattiert, den er verbrauchen wird.",
     ["Cost color"] = "Farbe der Kosten",
     ["Cost opacity"] = "Deckkraft der Kosten",
+    -- Action bars: bar art
+    ["Show bar background"] = "Leistenhintergrund zeigen",
+    ["Action bar 1's frame and the dividers between its buttons."] = "Der Rahmen von Aktionsleiste 1 und die Trennstriche zwischen ihren Buttons.",
+    ["Show end caps"] = "Endkappen zeigen",
+    ["The figures at both ends of action bar 1."] = "Die Figuren an beiden Enden von Aktionsleiste 1.",
 })

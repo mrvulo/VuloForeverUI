@@ -211,12 +211,26 @@ function mod:GetOptions()
               ns.NextFrame(function() ns.UI:BuildOptionsPage("actionbars") end)
           end },
         toggle("skin", L["Skin the action bars"]),
-        toggle("classicBar", L["Classic: the whole old bar"],
-            L["The stone band with its gryphons, and the buttons, page arrows, micro menu and bags put back in their 1.x places on it. Switched off, only the buttons change."]),
+        { type = "toggle", label = L["Classic: the whole old bar"],
+          tooltip = L["The stone band with its gryphons, and the buttons, page arrows, micro menu and bags put back in their 1.x places on it. Switched off, only the buttons change."],
+          get = function() return AB.db().classicBar end,
+          set = function(_, v)
+              AB.db().classicBar = v
+              apply()
+              -- the bar art switches below come and go with the band
+              rebuild()
+          end },
         toggle("backpackFreeSlots", L["Free bag slots on the backpack"],
             L["The classic bar writes how many bag slots are still free on the backpack button."]),
         toggle("skinPetStance", L["Skin the pet and stance buttons too"]),
     }
+    -- The client's own bar art is there in every look but the Classic band.
+    if not (db.style == "classic" and db.classicBar) then
+        page[#page + 1] = toggle("showBarFrame", L["Show bar background"],
+            L["Action bar 1's frame and the dividers between its buttons."])
+        page[#page + 1] = toggle("showEndCaps", L["Show end caps"],
+            L["The figures at both ends of action bar 1."])
+    end
     if db.style == "modern" then modernOptions(page) end
     local rest = {
         { type = "header", text = L["Paging by form"] },

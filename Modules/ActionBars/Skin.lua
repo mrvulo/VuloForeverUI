@@ -682,6 +682,45 @@ local function slotGround(button, show)
     grounds[button]:Show()
 end
 
+-- ---------------------------------------------------------------- bar art --
+--
+-- Action bar 1's own art, in pieces: the frame around the bar, the thin
+-- dividers between its buttons, and the end caps. The client only offers all
+-- of it at once (Edit Mode's hide bar art); here the frame with its dividers
+-- and the end caps are two switches. Alpha, never Hide: the client shows and
+-- hides these itself on every layout change, and an alpha survives that.
+-- None of it is a button, so nothing that answers a click is touched.
+
+local dividersHooked = false
+
+local function dividerAlpha(bar, alpha)
+    for _, pool in ipairs({ bar.HorizontalDividersPool, bar.VerticalDividersPool }) do
+        if pool and pool.EnumerateActive then
+            for divider in pool:EnumerateActive() do divider:SetAlpha(alpha) end
+        end
+    end
+end
+
+local function barArt(showFrame, showCaps)
+    local bar = _G.MainActionBar
+    if not bar then return end
+    local frameAlpha = showFrame and 1 or 0
+    if bar.BorderArt then bar.BorderArt:SetAlpha(frameAlpha) end
+    dividerAlpha(bar, frameAlpha)
+    if bar.EndCaps then bar.EndCaps:SetAlpha(showCaps and 1 or 0) end
+
+    -- The dividers are pooled and handed out afresh on every layout change,
+    -- so the switch follows each hand-out.
+    if not dividersHooked and type(bar.UpdateDividers) == "function" then
+        dividersHooked = true
+        hooksecurefunc(bar, "UpdateDividers", function(self)
+            local db = AB.db()
+            local art = AB.mod.active and db.skin and not (db.style == "classic" and db.classicBar)
+            dividerAlpha(self, (not art or db.showBarFrame) and 1 or 0)
+        end)
+    end
+end
+
 -- ---------------------------------------------------------------- pass --
 
 function Skin.ApplyAll()
@@ -695,6 +734,8 @@ function Skin.ApplyAll()
         AB.ClassicBar.Apply()
     else
         AB.ClassicBar.Restore()
+        -- After the band's restore, which puts the client's art back whole.
+        barArt(not db.skin or db.showBarFrame, not db.skin or db.showEndCaps)
     end
 
     for _, button in ipairs(buttons) do
@@ -748,6 +789,7 @@ end
 
 function Skin.RestoreAll()
     AB.ClassicBar.Restore()
+    barArt(true, true)
     for _, button in ipairs(AB.Buttons(true)) do
         restore(button)
         lookOf[button] = nil
