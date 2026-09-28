@@ -39,6 +39,26 @@ local mod = ns:RegisterModule("actionbars", {
         skinPetStance = true,
         borderColor = { r = 0, g = 0, b = 0, a = 1 },
 
+        -- The Modern look. The interaction colour is a pale gold; it tints
+        -- the press and hover glow and the cooldown's moving edge.
+        borderSize       = "thin",
+        borderClassColor = false,
+        iconZoom         = 5.5,
+        iconBgColor      = { r = 0.15, g = 0.15, b = 0.15 },
+        iconBgOpacity    = 50,
+        pressColor       = { r = 0.973, g = 0.839, b = 0.604 },
+        pressClassColor  = false,
+        pushedType       = 2,       -- 1 light, 2 medium, 3 strong, 4 solid, 6 none
+        highlightType    = 2,
+        castHighlight    = true,
+        keybindHide      = false,
+        keybindSize      = 12,
+        keybindPos       = "default",
+        macroHide        = false,
+        macroSize        = 12,
+        countSize        = 12,
+        cooldownSize     = 12,
+
         -- Paging. Whether this client lets us do it at all is probed once.
         keepPage    = false,
     },
@@ -135,7 +155,7 @@ function mod:OnEnable()
     for _, event in ipairs({
         "ACTIONBAR_SLOT_CHANGED", "ACTIONBAR_PAGE_CHANGED", "UPDATE_BONUS_ACTIONBAR",
         "UPDATE_VEHICLE_ACTIONBAR", "PET_BAR_UPDATE", "UPDATE_SHAPESHIFT_FORMS",
-        "UPDATE_SHAPESHIFT_USABLE", "ACTIONBAR_UPDATE_STATE",
+        "UPDATE_SHAPESHIFT_USABLE", "ACTIONBAR_UPDATE_STATE", "UPDATE_BINDINGS",
     }) do
         self:RegisterEvent(event, function() AB.Apply() end)
     end
@@ -186,9 +206,9 @@ end
 -- The style names, built lazily so the saved language is the one that answers.
 function AB.StyleLabel(key)
     local labels = {
-        standard = L["Standard -- the look the client came with"],
-        classic  = L["Classic -- the old 1.x buttons"],
-        modern   = L["Modern -- flat, in the suite's own style"],
+        standard = L["Standard"],
+        classic  = L["Classic"],
+        modern   = L["Modern"],
     }
     return labels[key] or key
 end
