@@ -32,7 +32,6 @@
 -- Holding SHIFT suppresses the quest half for as long as it is held, the same
 -- escape hatch the one-click looting has.
 local _, ns = ...
-local L = ns.L
 
 local QoL = ns.QoL
 local Char = QoL.RegisterPart("character", {})

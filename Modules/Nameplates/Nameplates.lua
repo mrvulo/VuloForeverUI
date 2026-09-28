@@ -18,7 +18,6 @@
 -- the clickable area. It loads first and calls into the other files only from
 -- OnEnable and event handlers, when all of them exist.
 local _, ns = ...
-local L = ns.L
 
 local NP = {
     plates  = {},   -- unit token -> our plate

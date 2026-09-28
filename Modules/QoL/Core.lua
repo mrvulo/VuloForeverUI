@@ -20,7 +20,6 @@
 --
 -- Nothing in this module needs the combat log, and nothing decides on a secret.
 local _, ns = ...
-local L = ns.L
 
 local QoL = {}
 ns.QoL = QoL

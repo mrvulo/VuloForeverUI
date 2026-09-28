@@ -23,7 +23,6 @@
 -- cached. A negative is only cached once the item data has actually arrived:
 -- a brand new item has an empty tooltip for a moment, and that is not a "no".
 local _, ns = ...
-local L = ns.L
 
 local QoL = ns.QoL
 local Loot = QoL.RegisterPart("loot", {})

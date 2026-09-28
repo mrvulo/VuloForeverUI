@@ -33,7 +33,6 @@
 -- bar nothing rather than teaching it a wrong number.
 local _, ns = ...
 local L  = ns.L
-local UI = ns.UI
 
 local QoL = ns.QoL
 local Flight = QoL.RegisterPart("flight", {})

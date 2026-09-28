@@ -12,26 +12,13 @@ local SIDEBAR_FILTER_W = 150
 -- Bundled monochrome glyphs, tinted at runtime; see Media\Icons\modules\LICENSE.txt.
 local ICON_DIR = "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\modules\\"
 local MODULE_ICONS = {}
+-- One glyph per module, the file named after the module key. A module whose
+-- key has no glyph of its own borrows one below; anything else gets the
+-- fallback.
 for _, key in ipairs({
-    -- The four "Tools" containers are not listed here: Modules/Pages.lua points
-    -- them at existing glyphs itself, the way the pg_* pages already do.
-    "globalsettings", "unlockmode", "bugfixes", "uireskin", "profiles",
-    "minimap", "minimapstyle", "fontbars", "playercastbar", "unitframes", "nameplates",
-    "cooldownpulse", "cooldownmanager", "powerbar", "actionbars",
-    "arenaframes", "characterpanel", "darkskin", "friendlist",
-    "miscqol", "queuetimer", "tooltipids", "autoitembuy", "goldtracker",
-    "addonskins", "popupskin", "reminders",
-    "spamfilter", "chat", "bags", "questlog", "questtracker",
-    "professionwindow", "disenchantqueue", "vtmanadisplay", "lazyvulo",
-    "vulslot", "combattext", "loadouts", "slotpicker", "trinkets",
-    "swingtimer", "vulmail", "vulfishing", "vullfg", "vultraining",
-    "fixinspect", "fixlfgbrowsenil", "fixguildnews", "fixauctiondropdown",
-    "fixbindsocket", "fixcombatglow",
-    -- added 12.09.2026: these had a glyph on disk (or got one now) but were
-    -- missing from this list, so the sidebar showed the fallback for them
-    "meter", "changelog", "actionring", "auras", "trackbars", "talentview",
-    "fixnameplaterole", "casthistory",
-    "locales",
+    "globalsettings", "profiles", "vulslot", "minimap", "minimapstyle",
+    "unitframes", "nameplates", "cooldownmanager", "actionbars", "auras",
+    "tooltipids", "reminders", "chat", "bags", "locales",
 }) do
     MODULE_ICONS[key] = ICON_DIR .. key .. ".tga"
 end
@@ -40,6 +27,8 @@ MODULE_ICONS.minimapcollector = ICON_DIR .. "minimap.tga"   -- shares the minima
 -- settled on "Edit Mode"; the art is the padlock, which still fits.
 MODULE_ICONS.editmode         = ICON_DIR .. "unlockmode.tga"
 MODULE_ICONS.damagemeter      = ICON_DIR .. "meter.tga"
+MODULE_ICONS.qol              = ICON_DIR .. "miscqol.tga"
+MODULE_ICONS.resourcebars     = ICON_DIR .. "powerbar.tga"
 local MODULE_ICON_FALLBACK = ICON_DIR .. "_fallback.tga"
 
 ns.MODULE_ICONS = MODULE_ICONS
@@ -49,10 +38,6 @@ function ns:GetModuleIcon(key)
 end
 
 UI.sidebarButtons     = {}
--- "Tools" holds the four containers that replaced the single "Quality of Life"
--- row (see Modules/Pages.lua) plus "Class Specific". The four category names
--- themselves never appear as headers: their modules carry parentTab and so are
--- collected into the container rows instead of getting rows of their own.
 UI.sidebarGroupOrder  = {
     "Global", "Unit Frames", "General", "HUD", "PvP", "Tools", "UI Reskin", "Bugfixes",
 }
