@@ -743,22 +743,12 @@ local function generalOptions()
         { type = "section", title = L["Developer"], items = {
             -- The CVar is the state: the client saves it account-wide on its
             -- own, so there is nothing to store or to re-apply at login.
-            -- noOverride on both toggles: account-level switches make no sense
-            -- replayed per talent group, and the replay would even print the
-            -- module-disabled line on every switch.
+            -- noOverride: an account-level switch makes no sense replayed per
+            -- talent group.
             { type = "toggle", label = L["Suppress Lua Errors"], noOverride = true,
               tooltip = L["Hides the game's own Lua error popup (CVar scriptErrors). Errors still happen and error-collecting addons still see them - they just stop interrupting you."],
               get = function() return getCVarNum("scriptErrors") == 0 end,
               set = function(_, v) setCVar("scriptErrors", v and "0" or "1") end },
-
-            -- Drives the existing Tooltip IDs module instead of duplicating its
-            -- hooks; per-ID fine-tuning stays on that module's own page.
-            { type = "toggle", label = L["Show IDs in Tooltips"], noOverride = true,
-              tooltip = L["Shows spell, item, NPC and other IDs in tooltips. Which ID types appear can be fine-tuned on the Tooltip IDs page in the Extras group."],
-              get = function() return ns:IsModuleEnabled("tooltipids") end,
-              set = function(_, v)
-                  if ns.ToggleModule then ns:ToggleModule("tooltipids", v) end
-              end },
 
             -- Shows the popup /vfui reset shows (alert, reload, own combat
             -- re-check in OnAccept) instead of wiping anything on its own —
