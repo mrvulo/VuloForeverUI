@@ -205,7 +205,91 @@ local function updateOne(key, powerType, label)
 
     RB.SetLeftText(key, nil, label)
     setValueText(frame, bar, powerType)
+    Power.PaintCost(key, powerType)
 end
+
+-- ---------------------------------------------------------------- cost --
+--
+-- The power the cast in progress will spend, shaded at the end of the fill.
+-- The same recipe as the client's own player frame: the spell's cost over the
+-- bar's max, as a width, hung on the fill TEXTURE's right edge. The current
+-- amount is never read -- it is secret here -- and does not need to be: the
+-- texture edge is where the engine drew it. A cost larger than what is left
+-- would reach past the start of the bar, so the strip sits in a clipping frame.
+
+local castSpell, castGUID    -- the cast being predicted; nil when none
+
+local function costOf(spellID, powerType)
+    if type(spellID) ~= "number" or ns.IsSecret(spellID) then return nil end
+    local ok, cost = pcall(function()
+        local costs = C_Spell.GetSpellPowerCost(spellID)
+        if type(costs) ~= "table" then return nil end
+        for _, c in ipairs(costs) do
+            local t, n = c.type, c.cost
+            if not ns.IsSecret(t) and not ns.IsSecret(n) and t == powerType
+               and type(n) == "number" and n > 0 then
+                return n
+            end
+        end
+    end)
+    return ok and cost or nil
+end
+
+local function costStrip(frame)
+    if frame.costStrip then return frame.costStrip end
+    local clip = CreateFrame("Frame", nil, frame.fill)
+    clip:SetAllPoints(frame.fill)
+    clip:SetClipsChildren(true)
+    local host = CreateFrame("Frame", nil, clip)
+    host:SetAllPoints(clip)
+    local tex = host:CreateTexture(nil, "ARTWORK")
+    tex:SetTexture(RB.WHITE)
+    frame.costStrip = tex
+    -- The strip's frames sit above the fill; the texts must stay above them.
+    if frame.textHolder then frame.textHolder:SetFrameLevel(host:GetFrameLevel() + 1) end
+    return tex
+end
+
+function Power.PaintCost(key, powerType)
+    local frame, bar = RB.frames[key], RB.Bar(key)
+    if not (frame and bar) then return end
+    local cost = bar.showCost and castSpell and costOf(castSpell, powerType)
+    local max = frame.maxValue
+    if not (cost and type(max) == "number" and max > 0) then
+        if frame.costStrip then frame.costStrip:Hide() end
+        return
+    end
+    local tex = costStrip(frame)
+    local edge = frame.fill:GetStatusBarTexture()
+    local width = (frame.fill:GetWidth() or 0) * math.min(1, cost / max)
+    tex:ClearAllPoints()
+    tex:SetPoint("TOPRIGHT", edge, "TOPRIGHT")
+    tex:SetPoint("BOTTOMRIGHT", edge, "BOTTOMRIGHT")
+    tex:SetWidth(math.max(1, width))
+    local c = bar.costColor
+    tex:SetVertexColor(c.r, c.g, c.b, (bar.costOpacity or 50) / 100)
+    tex:Show()
+end
+
+-- Only casts with a cast time: an instant pays before there is anything to
+-- show, and a channel pays at its start. A cast that ends only clears the
+-- strip when it is the one being shown -- a queued spell failing mid-cast
+-- must not wipe the cast still running.
+local costWatch = CreateFrame("Frame")
+for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_FAILED",
+                         "UNIT_SPELLCAST_INTERRUPTED" }) do
+    costWatch:RegisterUnitEvent(event, "player")
+end
+costWatch:SetScript("OnEvent", function(_, event, _, guid, spellID)
+    if event == "UNIT_SPELLCAST_START" then
+        castSpell, castGUID = spellID, guid
+    else
+        local same = ns.IsSecret(guid) or ns.IsSecret(castGUID) or guid == castGUID
+        if not same then return end
+        castSpell, castGUID = nil, nil
+    end
+    if RB.mod.active then Power.Update() end
+end)
 
 function Power.Update()
     if type(primaryType) ~= "number" then

@@ -150,6 +150,17 @@ end
 
 -- ---------------------------------------------------------------- pages --
 
+-- The power the cast in progress will spend, shaded on the bar.
+local function costRows(key)
+    return {
+        { type = "header", text = L["Spell cost"] },
+        toggle(key, "showCost", L["Shade the cost of the current cast"],
+            L["While you cast a spell with a cast time, the part of the bar it will spend is shaded."]),
+        color(key, "costColor", L["Cost color"]),
+        slider(key, "costOpacity", L["Cost opacity"], 0, 100, 5),
+    }
+end
+
 local function resourcesPage()
     local power = { enabledRow("power") }
     for _, row in ipairs({
@@ -162,6 +173,7 @@ local function resourcesPage()
         slider("power", "thresholdPct", L["Threshold in percent"], 0, 100, 1),
         color("power", "thresholdColor", L["Threshold color"]),
     }) do power[#power + 1] = row end
+    for _, row in ipairs(costRows("power")) do power[#power + 1] = row end
     for _, row in ipairs(tickRows("power")) do power[#power + 1] = row end
     for _, row in ipairs(lookRows("power")) do power[#power + 1] = row end
 
@@ -171,6 +183,7 @@ local function resourcesPage()
           get = function() return RB.Bar("mana").onlyInForms end,
           set = function(_, v) RB.Bar("mana").onlyInForms = v; apply() end },
     }
+    for _, row in ipairs(costRows("mana")) do mana[#mana + 1] = row end
     for _, row in ipairs(tickRows("mana")) do mana[#mana + 1] = row end
     for _, row in ipairs(lookRows("mana")) do mana[#mana + 1] = row end
 

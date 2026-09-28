@@ -100,9 +100,16 @@ RB.EXTRA_DEFAULTS = {
         -- setting this client cannot honour has no business in the options.
         thresholdPct   = 0,        -- 0 is off
         thresholdColor = { r = 0.95, g = 0.35, b = 0.25 },
+        -- The part of the bar the cast in progress will spend, shaded.
+        showCost       = true,
+        costColor      = { r = 0, g = 0, b = 0 },
+        costOpacity    = 50,
     },
     mana = {
         onlyInForms    = true,     -- only while the primary power is not mana
+        showCost       = true,
+        costColor      = { r = 0, g = 0, b = 0 },
+        costOpacity    = 50,
     },
     cast = {
         -- Which cast bar the player actually wants:
@@ -153,7 +160,7 @@ function RB.db() return mod.db end
 -- Raised when BAR_DEFAULTS or EXTRA_DEFAULTS grow a key, so a bar saved by an
 -- older build is filled again rather than reaching the paint pass with a hole
 -- in it.
-RB.DEFAULTS_VERSION = 2
+RB.DEFAULTS_VERSION = 3
 
 local function presetFor(key)
     for _, def in ipairs(RB.BARS) do

@@ -1893,4 +1893,10 @@ ns:RegisterLocale("deDE", {
     ["Out of range coloring"] = "Färben außer Reichweite",
     ["Tints the icon while your target is out of range of that action."] = "Färbt das Symbol, solange dein Ziel für diese Aktion außer Reichweite ist.",
     ["Out of range color"] = "Farbe außer Reichweite",
+    -- Resource bars: spell cost
+    ["Spell cost"] = "Zauberkosten",
+    ["Shade the cost of the current cast"] = "Kosten des laufenden Zaubers schattieren",
+    ["While you cast a spell with a cast time, the part of the bar it will spend is shaded."] = "Während du einen Zauber mit Zauberzeit wirkst, wird der Teil der Leiste schattiert, den er verbrauchen wird.",
+    ["Cost color"] = "Farbe der Kosten",
+    ["Cost opacity"] = "Deckkraft der Kosten",
 })
