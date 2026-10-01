@@ -1,33 +1,52 @@
-## 0.5.0
+## 0.6.0
 
 **New**
 
-- **Tooltip IDs** — a new module under General: spell, item, NPC, quest,
-  currency, mount, pet, macro, icon, talent, map point and appearance IDs in
-  tooltips. All 23 ID types can be switched one by one, with All on, All off
-  and Defaults. On request the IDs only show while Shift, Ctrl or Alt is held,
-  and pressing the key over an open tooltip adds them at once. IDs the game
-  keeps hidden in combat are left out. Buff tooltips on the aura bars cannot
-  carry IDs on this client: the game does not let addons write into them.
+- **Quality of Life** — a Train all button next to Train at every trainer: it
+  learns everything you can afford, one after the other. Learning a new
+  profession stays your decision, and the pet trainer is left out.
+- **Quality of Life** — zone levels on the world map: the level range of the
+  zone in the top left corner, coloured like a quest of that level; on a
+  continent, the zone under the cursor. The game gives no ranges on this
+  client, so they come from a table of the original zones plus Riverglades and
+  Mount Hyjal.
+- **Quality of Life** — group invite on a whispered keyword (inv by default),
+  Battle.net whispers included, optionally only for friends, guild and
+  Battle.net friends.
+- **Quality of Life** — decline duels, decline Battle.net friend requests, and
+  block quests shared by strangers before the automatic accept can take them.
+- **Auras** — right-clicking one of your own buffs removes it, as on the game's
+  own buff row.
+- **Resource bars** — spell cost: while a spell with a cast time is being cast,
+  the power bar and the extra mana bar shade the part it will use, with its own
+  switch, colour and opacity per bar.
+- **Action bars** — Modern settings per bar, with a bar picker (action bars 1
+  to 8, pet, stance), Apply to all bars and Reset this bar; the preview shows
+  the icons and keybinds of the picked bar.
+- **Action bars** — icons turn red when out of range, per bar, with a colour of
+  your own, without covering the game's own tint for unusable and out of mana.
 
 **Changed**
 
-- **Action bars** — the Modern style is rebuilt: square icons across the whole
-  button with a trimmed rim, a dark ground behind them, a thin border inside
-  the button, a soft pale gold glow along the inner edge on press and hover, a
-  white glow on the spell being cast and a gold edge on the cooldown sweep.
-  Keybind, charges, macro name and countdown use Expressway with an outline,
-  and keybinds are shortened (SHIFT-BUTTON4 reads SM4).
-- **Action bars** — new settings while Modern is picked: border size, colour
-  and class colour, icon zoom, icon background with opacity and colour,
-  cooldown numbers, interaction colour and class colour, press and hover look
-  in five steps, highlight on spell cast, size and position of every text, and
-  keybind and macro name can be hidden.
-- **Action bars** — the style menu now simply reads Standard, Classic and
-  Modern.
-- **Global Settings** — the Show IDs in Tooltips switch under Developer is
-  gone. It never worked; Tooltip IDs is now switched from its sidebar row like
-  every module.
+- **Unit frames** — on a new profile the Modern frames start where the game's
+  frames stand instead of at fixed places. Existing profiles keep their layout
+  exactly as it is.
+- **Action bars** — Show bar background and Show end caps: the frame and
+  dividers of action bar 1 and the figures at its ends can be hidden on their
+  own. Not offered with the whole Classic bar.
+- **Sidebar** — Quality of Life and Resource bars show their own icon.
+- **Tooltip IDs** — ExpansionID is gone: on this client every item shows the
+  same expansion.
 
-This version brings new texture files: restart the game once, a /reload is
-not enough.
+**Fixed**
+
+- **Damage meter** — in the Classic style the bars start clear of the frame, so
+  the class icon and the first bar are no longer cut off.
+- **Action bars** — the gold edge on the cooldown circle was never visible; pet
+  and stance buttons stayed styled after their option was switched off; macro
+  names lost their shadow on a style change; stance buttons showed keybinds;
+  keybind texts when switching to a gamepad.
+- **Tooltip IDs** — no longer shows a tooltip itself in the middle of the
+  game's own tooltip setup.
+
+This version brings new files: restart the game once, a /reload is not enough.
