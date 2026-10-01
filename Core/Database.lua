@@ -101,13 +101,29 @@ end
 -- receive nothing: they operate on the saved tables directly. An install that
 -- has never been stamped is stamped at the current version WITHOUT running
 -- anything -- a fresh install has no old shape to convert.
--- Nothing to migrate yet: this addon's first release IS schema 1, and the
--- saved variables of VuloClassicUI are a different product's, under a
--- different name. The machinery stays because the first shape change will
--- need it, and retrofitting it after the fact is what made it necessary
--- there in the first place.
-local SCHEMA = 1
+-- Schema 1 is this addon's first release; the saved variables of
+-- VuloClassicUI are a different product's, under a different name.
+local SCHEMA = 2
 local MIGRATIONS = {}
+
+-- [2] The Modern unit frames now take their first place from Blizzard's
+-- frames instead of fixed numbers (UnitFrames/Engine.lua, seedFromBlizzard).
+-- Every profile that exists already keeps the place it has: marked as placed,
+-- whether it was ever moved or not. Re-runnable: it only ever sets true.
+MIGRATIONS[2] = function()
+    local units = { "player", "target", "focus", "targettarget", "focustarget", "pet", "boss" }
+    for _, prof in pairs(VuloForeverUIDB.profiles or {}) do
+        if type(prof) == "table" then
+            if type(prof.modules) ~= "table" then prof.modules = {} end
+            if type(prof.modules.unitframes) ~= "table" then prof.modules.unitframes = {} end
+            local uf = prof.modules.unitframes
+            for _, unit in ipairs(units) do
+                if type(uf[unit]) ~= "table" then uf[unit] = {} end
+                uf[unit].seeded = true
+            end
+        end
+    end
+end
 
 -- A database that has never been written carries no profile with module
 -- settings in it. Anything that has been played with does -- that is the only

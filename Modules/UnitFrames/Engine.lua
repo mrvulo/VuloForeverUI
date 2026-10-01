@@ -800,10 +800,54 @@ local function unitOn(mod, key)
 end
 UF.IsUnitOn = unitOn
 
+-- -------------------------------------------- first place: Blizzard's --
+
+-- A fresh profile's own frames start where Blizzard's stand -- wherever the
+-- client's Edit Mode put them -- rather than at numbers of ours. Once per
+-- setting, and only on a position nobody has touched (still the default):
+-- an imported or dragged one is never overwritten. Profiles from before this
+-- carry seeded = true from migration [2], so a layout that already exists
+-- stays exactly where it is.
+--
+-- Read BEFORE the frame is silenced: under the hidden parent its place means
+-- nothing any more. The target-of-target frames go with their parents.
+local BLIZZARD_FRAME = {
+    player       = function() return _G.PlayerFrame end,
+    target       = function() return _G.TargetFrame end,
+    focus        = function() return _G.FocusFrame end,
+    targettarget = function() return _G.TargetFrame and _G.TargetFrame.totFrame end,
+    focustarget  = function() return _G.FocusFrame and _G.FocusFrame.totFrame end,
+    pet          = function() return _G.PetFrame end,
+    boss         = function() return _G.BossTargetFrameContainer end,
+}
+local SILENCED_WITH = { targettarget = "target", focustarget = "focus" }
+
+local function seedFromBlizzard(mod, key)
+    local db, def = mod.db[key], mod.defaults[key]
+    if not (db and def) or db.seeded then return end
+    if db.x ~= def.x or db.y ~= def.y then db.seeded = true; return end
+    if silenced[key] or silenced[SILENCED_WITH[key] or key] then return end
+    local get = BLIZZARD_FRAME[key]
+    local frame = get and get()
+    if not (frame and frame.GetCenter) then return end
+    local fx, fy = frame:GetCenter()
+    local px, py = UIParent:GetCenter()
+    local us = UIParent:GetEffectiveScale()
+    if not (fx and fy and px and py and us and us > 0) then return end
+    local fs = frame:GetEffectiveScale()
+    -- the frame's centre in UIParent units, then in our frame's own: db.x/y
+    -- are offsets in the space of a frame scaled by db.scale
+    local sx, sy = (fx * fs - px * us) / us, (fy * fs - py * us) / us
+    local scale = db.scale or 1
+    db.x, db.y = math.floor(sx / scale + 0.5), math.floor(sy / scale + 0.5)
+    db.seeded = true
+end
+
 function UF.ActivateOwnFrames(mod)
     if mod.db.style ~= "modern" then return end
     for _, key in ipairs(UF.UNITS) do
         if unitOn(mod, key) then
+            seedFromBlizzard(mod, key)
             local db = mod.db[key]
             local parent = key == "boss" and ensureBossHolder(db) or nil
             for _, unit in ipairs(unitsOf(key)) do
