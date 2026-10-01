@@ -146,6 +146,8 @@ Modules\Bags\Options.lua
 Modules\QoL\Core.lua
 Modules\QoL\Character.lua
 Modules\QoL\World.lua
+Modules\QoL\Trainer.lua
+Modules\QoL\ZoneLevels.lua
 Modules\QoL\StackSplit.lua
 Modules\QoL\Flight.lua
 Modules\QoL\Mail.lua

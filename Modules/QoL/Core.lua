@@ -89,6 +89,14 @@ local mod = ns:RegisterModule("qol", {
             gossipSingle = false,
             blockInvites = false,
             blockTrades  = false,
+            blockDuels   = false,
+            blockFriendRequests = false,
+            blockSharedQuests   = false,
+            inviteWhisper     = false,
+            inviteKeyword     = "inv",
+            inviteFriendsOnly = true,
+            zoneLevels = false,
+            trainAll   = false,
         },
 
         -- --------------------------------------------------------- stack split

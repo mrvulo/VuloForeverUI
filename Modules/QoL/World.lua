@@ -1,7 +1,8 @@
 -- VuloForeverUI / Modules / QoL / World
 --
--- Two kinds of answer: one that saves a click at an NPC, and two that decide
--- who is allowed to interrupt you.
+-- Two kinds of answer: one that saves a click at an NPC, and the ones that
+-- decide who is allowed to interrupt you -- invites, trades, duels, friend
+-- requests, shared quests -- plus the one invite you ask for by whisper.
 --
 -- THE ONE-OPTION RULE
 --
@@ -144,6 +145,104 @@ local function onTradeShow()
     ns:Print(L["Trade with %s cancelled: not a friend, guild member or Battle.net friend."], name)
 end
 
+-- -------------------------------------------------------------- duels --
+
+local function hideDuelPopup()
+    local hide = _G.StaticPopup_Hide
+    if hide then hide("DUEL_REQUESTED") end
+end
+
+local function onDuelRequested(_, name)
+    if not db().blockDuels then return end
+    if _G.CancelDuel then _G.CancelDuel() end
+    -- The client opens its popup from the same event. Whichever handler runs
+    -- first, the popup is gone again by the next frame.
+    hideDuelPopup()
+    C_Timer.After(0, hideDuelPopup)
+    if type(name) ~= "string" or not ns.CanRead(name) then name = "?" end
+    ns:Print(L["Duel from %s declined."], name)
+end
+
+-- ---------------------------------------------------- invite by whisper --
+
+-- The whole whisper has to be the keyword, case aside: "inv" invites, "can
+-- you inv me later" does not. A whisper the client hands out as a secret is
+-- never read at all.
+local function keywordMatches(text)
+    if type(text) ~= "string" or not ns.CanRead(text) then return false end
+    local want = db().inviteKeyword
+    if type(want) ~= "string" then return false end
+    want = want:match("^%s*(.-)%s*$"):lower()
+    if want == "" then return false end
+    return text:match("^%s*(.-)%s*$"):lower() == want
+end
+
+-- Alone you can always invite; in a group only the leader, or an assistant in
+-- a raid. Anybody else would be refused by the server.
+local function canInvite()
+    if not IsInGroup() then return true end
+    if UnitIsGroupLeader("player") then return true end
+    return IsInRaid() and UnitIsGroupAssistant("player") or false
+end
+
+local function onWhisper(_, text, sender, _, _, _, _, _, _, _, _, _, guid)
+    local d = db()
+    if not d.inviteWhisper or not keywordMatches(text) then return end
+    if type(sender) ~= "string" or not ns.CanRead(sender) then return end
+    if not ns.CanRead(guid) then guid = nil end
+    if d.inviteFriendsOnly and isStranger(sender, guid) then return end
+    if not canInvite() then return end
+    C_PartyInfo.InviteUnit(sender)
+end
+
+-- A Battle.net whisper carries the account, not the character: the invite goes
+-- to the game account, and only when it is in this same game.
+local function onBNWhisper(_, text, _, _, _, _, _, _, _, _, _, _, _, bnSenderID)
+    if not db().inviteWhisper or not keywordMatches(text) then return end
+    if type(bnSenderID) ~= "number" or not ns.CanRead(bnSenderID) then return end
+    if not canInvite() then return end
+    local info = C_BattleNet.GetAccountInfoByID(bnSenderID)
+    local game = info and info.gameAccountInfo
+    if not (game and game.isOnline and game.gameAccountID) then return end
+    if game.clientProgram ~= BNET_CLIENT_WOW or game.wowProjectID ~= WOW_PROJECT_ID then return end
+    C_BattleNet.InviteFriend(game.gameAccountID)
+end
+
+-- ----------------------------------------------------- friend requests --
+
+-- Every pending request goes, the ones waiting from before the login too: the
+-- list is only complete once BN_FRIEND_INVITE_LIST_INITIALIZED has fired.
+local function declineFriendRequests()
+    if not db().blockFriendRequests then return end
+    for i = BNGetNumFriendInvites(), 1, -1 do
+        local info = C_BattleNet.GetFriendInviteInfo(i)
+        if info and info.inviteID then
+            BNDeclineFriendInvite(info.inviteID)
+            ns:Print(L["Battle.net friend request from %s declined."], info.accountName or "?")
+        end
+    end
+end
+
+-- ------------------------------------------------------- shared quests --
+
+-- A quest shared by a player opens the same detail window a quest giver does;
+-- the "questnpc" unit is then that player. The same stranger rule as above.
+function World.BlocksSharedQuest()
+    if not db().blockSharedQuests then return false end
+    if not UnitIsPlayer("questnpc") then return false end
+    local name, guid = UnitName("questnpc"), UnitGUID("questnpc")
+    if type(name) ~= "string" or not ns.CanRead(name) then return false end
+    if not ns.CanRead(guid) then guid = nil end
+    return isStranger(name, guid)
+end
+
+local function onQuestDetail()
+    if not World.BlocksSharedQuest() then return end
+    local name = UnitName("questnpc")
+    DeclineQuest()
+    ns:Print(L["Quest shared by %s declined: not a friend, guild member or Battle.net friend."], name)
+end
+
 -- ------------------------------------------------------------ apply --
 
 function World.Apply()
@@ -151,10 +250,24 @@ function World.Apply()
     QoL.SyncEvent(d.gossipSingle, "GOSSIP_SHOW",          onGossipShow)
     QoL.SyncEvent(d.blockInvites, "PARTY_INVITE_REQUEST", onPartyInvite)
     QoL.SyncEvent(d.blockTrades,  "TRADE_SHOW",           onTradeShow)
+    QoL.SyncEvent(d.blockDuels,   "DUEL_REQUESTED",       onDuelRequested)
+    QoL.SyncEvent(d.inviteWhisper, "CHAT_MSG_WHISPER",    onWhisper)
+    QoL.SyncEvent(d.inviteWhisper, "CHAT_MSG_BN_WHISPER", onBNWhisper)
+    QoL.SyncEvent(d.blockFriendRequests, "BN_FRIEND_INVITE_ADDED",            declineFriendRequests)
+    QoL.SyncEvent(d.blockFriendRequests, "BN_FRIEND_INVITE_LIST_INITIALIZED", declineFriendRequests)
+    QoL.SyncEvent(d.blockSharedQuests, "QUEST_DETAIL",    onQuestDetail)
+    -- switched on with requests already waiting: those go now, not on the next one
+    if d.blockFriendRequests then declineFriendRequests() end
 end
 
 function World.Disable()
     QoL.SyncEvent(false, "GOSSIP_SHOW",          onGossipShow)
     QoL.SyncEvent(false, "PARTY_INVITE_REQUEST", onPartyInvite)
     QoL.SyncEvent(false, "TRADE_SHOW",           onTradeShow)
+    QoL.SyncEvent(false, "DUEL_REQUESTED",       onDuelRequested)
+    QoL.SyncEvent(false, "CHAT_MSG_WHISPER",     onWhisper)
+    QoL.SyncEvent(false, "CHAT_MSG_BN_WHISPER",  onBNWhisper)
+    QoL.SyncEvent(false, "BN_FRIEND_INVITE_ADDED",            declineFriendRequests)
+    QoL.SyncEvent(false, "BN_FRIEND_INVITE_LIST_INITIALIZED", declineFriendRequests)
+    QoL.SyncEvent(false, "QUEST_DETAIL",         onQuestDetail)
 end

@@ -58,6 +58,8 @@ end
 -- thing. Blizzard's own frame makes the same distinction.
 local function onQuestDetail()
     if not db().acceptQuests or suppressed() then return end
+    -- a quest the block is about to decline is never accepted first
+    if QoL.World and QoL.World.BlocksSharedQuest() then return end
     if QuestGetAutoAccept and QuestGetAutoAccept() then
         if AcknowledgeAutoAcceptQuest then AcknowledgeAutoAcceptQuest() end
         if CloseQuest then CloseQuest() end
