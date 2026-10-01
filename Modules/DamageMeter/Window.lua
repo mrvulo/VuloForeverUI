@@ -762,7 +762,13 @@ function DM.CreateWindow(idx)
         header:SetPoint("TOPLEFT", frame, "TOPLEFT", pl, -pt)
         header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -pr, -pt)
         header:SetFrameLevel(frame:GetFrameLevel() + (classic and C.HDR_LEVEL or 5))
+        local rx, ry = 0, 0
+        if classic then rx, ry = C.ROWS.x, C.ROWS.y end
+        viewport:ClearAllPoints()
+        viewport:SetPoint("TOPLEFT", header, "BOTTOMLEFT", rx, -ry)
         viewport:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pr, pb)
+        catcher:ClearAllPoints()
+        catcher:SetPoint("TOPLEFT", header, "BOTTOMLEFT", rx, -ry)
         catcher:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pr, pb)
         -- The lock and the grip stand in the corners of the row area, inside
         -- the metal, not in the window's own corners.

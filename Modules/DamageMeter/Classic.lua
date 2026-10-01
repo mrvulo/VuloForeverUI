@@ -30,6 +30,10 @@ local C = {
     -- The rows start this far inside the window, clear of the metal. The
     -- left one is the right one plus the rock's own inset on that side.
     PAD    = { l = 17, r = 5, t = 0, b = 5 },
+    -- The rows' own start below the header and right of the rim: flush, the
+    -- class icon sat under the left rim and the first row under the band's
+    -- lower edge (seen in game).
+    ROWS   = { x = 5, y = 4 },
     WASH   = 0.35,     -- black over the rock behind the rows, for the text
     TITLE  = { 1.0, 0.82, 0.0 },
     TITLE_X = 12,      -- the title's distance from the header's left end
