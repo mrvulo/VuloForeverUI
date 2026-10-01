@@ -142,6 +142,14 @@ function Style.Initializer(kind, db)
         -- involved reports success.
         button:SetSize(size, size)
 
+        -- Right click takes a buff off, as on the client's own row. The click
+        -- itself runs inside the button, in the client's code (AuraButton's
+        -- OnClick_Intrinsic, Blizzard_AuraContainer/Blizzard_AuraButton.lua:90):
+        -- we only name the mouse button, the cancel never passes through us.
+        if buffs and button.SetCancelAuraButtons then
+            pcall(button.SetCancelAuraButtons, button, "RightButtonUp")
+        end
+
         local icon = button:CreateTexture(nil, "ARTWORK")
         icon:SetAllPoints(button)
         icon:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom)
@@ -190,12 +198,12 @@ function Style.Initializer(kind, db)
             end
         end
 
-        -- Clicks off, hover on. The engine shows the aura's tooltip from its
-        -- own OnEnter (Blizzard_AuraButton.lua:80), in and out of combat, so
-        -- mouse motion is all it needs; a click still falls through to the
-        -- world. Both calls are refused on a restricted button, and this
-        -- callback is the one moment when it is not restricted yet.
-        pcall(button.SetMouseClickEnabled, button, false)
+        -- Hover on: the engine shows the aura's tooltip from its own OnEnter
+        -- (Blizzard_AuraButton.lua:80), in and out of combat. Clicks only on
+        -- buffs, for the right-click cancel above; a debuff lets a click fall
+        -- through to the world. Both calls are refused on a restricted button,
+        -- and this callback is the one moment when it is not restricted yet.
+        pcall(button.SetMouseClickEnabled, button, buffs and true or false)
         pcall(button.SetMouseMotionEnabled, button, true)
     end
 end
