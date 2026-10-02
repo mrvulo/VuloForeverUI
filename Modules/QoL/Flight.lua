@@ -41,6 +41,15 @@
 -- taxi map says it (past the stop, measured along the hop), and without a
 -- position the ride's time against each stop's share of the length does.
 --
+-- A RELOAD MID-FLIGHT
+--
+-- The ride lives in the addon's locals, and a /reload empties them. So the
+-- ride is also written to the character's store at the start, at every stop
+-- passed and at an early landing, and read back when the bar finds the player
+-- already in the air. GetTime runs on through a reload, so the start time
+-- comes back exact; a stored ride that cannot be this one (time() and GetTime
+-- disagree, or it would have landed long ago) is thrown away.
+--
 -- LANDING EARLY
 --
 -- The same request the client's own leave button sends while on a taxi: the
@@ -103,6 +112,46 @@ local function learnSpeed(yards, seconds)
     if sample < 10 or sample > 120 then return end
     local old = tonumber(g.qolFlightSpeed)
     g.qolFlightSpeed = old and (old * 0.7 + sample * 0.3) or sample
+end
+
+-- The ride in the character's store, for a reload mid-flight.
+local function saveRide()
+    local c = ns.db and ns.db.char
+    if not (c and startedAt) then return end
+    c.qolFlightRide = {
+        gt = startedAt, at = time() - (GetTime() - startedAt),
+        key = routeKey, label = routeLabel, yards = routeYards,
+        expected = expected, estimated = estimated,
+        stops = stops, map = taxiMap, w = mapW, h = mapH,
+        passed = passed, landing = landing,
+    }
+end
+
+local function clearRide()
+    local c = ns.db and ns.db.char
+    if c then c.qolFlightRide = nil end
+end
+
+-- The stored ride, if it can be the one still in the air: started in this
+-- run of the clock and not so long ago that it should have landed.
+local function restoreRide()
+    local c = ns.db and ns.db.char
+    local r = c and c.qolFlightRide
+    clearRide()
+    if type(r) ~= "table" or type(r.gt) ~= "number" or type(r.at) ~= "number" then return false end
+    local flown = GetTime() - r.gt
+    if flown < 0 or math.abs(flown - (time() - r.at)) > 5 then return false end
+    local limit = (type(r.expected) == "number" and r.expected > 0) and r.expected * 1.5 + 60 or 1800
+    if flown > limit then return false end
+    startedAt = r.gt
+    routeKey, routeLabel, routeYards = r.key, r.label, r.yards
+    expected, estimated = r.expected, r.estimated and true or false
+    stops = type(r.stops) == "table" and #r.stops > 1 and r.stops or nil
+    taxiMap, mapW, mapH = r.map, r.w, r.h
+    passed = tonumber(r.passed) or 1
+    if not stops or passed >= #stops then passed = 1 end
+    landing = r.landing and true or false
+    return true
 end
 
 -- ------------------------------------------------------------- route --
@@ -448,7 +497,7 @@ end
 
 -- Landing early only means something while a stop lies before the last one:
 -- on the last hop the ride ends where it would anyway. Without a route (a
--- reload mid-flight) there is no telling, so the button stays.
+-- reload with nothing stored) there is no telling, so the button stays.
 local function canLandEarly()
     return not landing and (stops == nil or passed + 1 < #stops)
 end
@@ -468,13 +517,14 @@ local function tick()
         bar.fill:SetValue(math.min(1, flown / expected))
         bar.time:SetText(clock(flown) .. " / " .. (estimated and "~" or "") .. clock(expected))
     else
-        -- No route to go by (a reload mid-flight): only what is known, the
+        -- No route to go by (a reload with nothing stored): only what is known, the
         -- time in the air so far.
         bar.fill:SetValue(0)
         bar.time:SetText(clock(flown))
     end
     if bar.route:IsShown() and stops then
         if advance(flown) then
+            saveRide()
             scrollTo(passed)
             -- the last hop begun: nothing left to land early at
             if not canLandEarly() then Flight.Refresh() end
@@ -498,7 +548,8 @@ function Flight.Refresh()
     bar.land:SetShown(d.landButton)
     local can = canLandEarly()
     bar.land:SetEnabled(can)
-    bar.land:GetNormalTexture():SetDesaturated(not can)
+    -- the arrow keeps its red; a button that cannot land only fades
+    bar.land:SetAlpha(can and 1 or 0.45)
     if landing and stops and stops[passed + 1] then
         bar.label:SetText(stops[passed + 1].name)
     end
@@ -509,11 +560,16 @@ end
 
 local function startFlight()
     if startedAt or not (UnitOnTaxi and UnitOnTaxi("player")) then return end
-    startedAt = GetTime()
-    expected  = routeKey and tonumber(learned()[routeKey]) or nil
-    estimated = false
-    if not expected and routeYards then
-        expected, estimated = routeYards / speed(), true
+    -- No click before it: a reload mid-flight, and the ride may be stored.
+    local restored = not routeKey and not stops and restoreRide()
+    if not restored then
+        startedAt = GetTime()
+        expected  = routeKey and tonumber(learned()[routeKey]) or nil
+        estimated = false
+        if not expected and routeYards then
+            expected, estimated = routeYards / speed(), true
+        end
+        passed, landing = 1, false
     end
 
     if db().showBar then
@@ -522,12 +578,12 @@ local function startFlight()
         bar.fill:SetValue(0)
         bar:Show()
     end
-    passed, landing = 1, false
+    saveRide()
     -- Runs with the bar off too: it is also what notices the landing.
     if ticker then ns:CancelTicker(ticker) end
     ticker = ns:AddTicker(0.1, tick, nil, "qol.flight")
     if bar then
-        scrollTo(1, true)
+        scrollTo(passed, true)
         Flight.Refresh()
     else
         tick()
@@ -571,6 +627,7 @@ function endFlight()
 
     local flown = GetTime() - startedAt
     startedAt = nil
+    clearRide()
     if ticker then ns:CancelTicker(ticker); ticker = nil end
     if bar then bar:Hide() end
 
@@ -606,6 +663,7 @@ function Flight.Apply()
             hooksecurefunc("TaxiRequestEarlyLanding", function()
                 if startedAt and not landing then
                     landing = true
+                    saveRide()
                     Flight.Refresh()
                 end
             end)
@@ -615,8 +673,8 @@ function Flight.Apply()
     QoL.SyncEvent(on, "PLAYER_CONTROL_LOST",   waitForTaxi)
     QoL.SyncEvent(on, "TAXIMAP_CLOSED",        waitForTaxi)
     QoL.SyncEvent(on, "PLAYER_CONTROL_GAINED", endFlight)
-    -- Already in the air (a reload mid-flight): the ride is picked up, with
-    -- no route to count down to.
+    -- Already in the air (a reload mid-flight): the ride is picked up, its
+    -- route and times read back from the character's store.
     if on and not startedAt then startFlight() end
 
     if not d.showBar then
@@ -636,6 +694,7 @@ function Flight.Disable()
     QoL.SyncEvent(false, "PLAYER_CONTROL_GAINED", endFlight)
     stopWaiting()
     startedAt = nil
+    clearRide()
     routeKey, routeLabel, expected, estimated, routeYards = nil, nil, nil, false, nil
     stops, passed, landing = nil, 1, false
     if ticker then ns:CancelTicker(ticker); ticker = nil end
@@ -653,7 +712,7 @@ function showExample()
     local d = db()
     bar.land:SetShown(d.landButton)
     bar.land:SetEnabled(true)
-    bar.land:GetNormalTexture():SetDesaturated(false)
+    bar.land:SetAlpha(1)
     bar.route:SetShown(d.showRoute)
     if d.showRoute then
         local list = {}
