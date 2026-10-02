@@ -521,6 +521,14 @@ function M:OnEnable()
             NP.Colors.Apply(plate)
         end
     end)
+    self:RegisterEvent("TOOLTIP_DATA_UPDATE", function(_, dataID)
+        -- nil is "every tooltip"; anything else must be a readable id
+        if type(dataID) == "nil" then
+            NP.Extras.OnTooltipData(nil)
+        elseif ns.CanRead(dataID) and type(dataID) == "number" then
+            NP.Extras.OnTooltipData(dataID)
+        end
+    end)
     self:RegisterEvent("UNIT_POWER_UPDATE", function(_, unit, powerType)
         if unit == "player" and (powerType == nil or powerType == "COMBO_POINTS") then
             NP.Extras.UpdateAll("combo")

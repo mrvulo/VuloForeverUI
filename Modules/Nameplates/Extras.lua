@@ -14,8 +14,8 @@
 --     power. The third pip fills when the value passes 3. Geometry again.
 --
 -- The quest scan is the exception: tooltip lines really are read, so every
--- field is checked for readability first and an unreadable one simply ends the
--- scan. It runs out of combat only and is cached per unit.
+-- field is checked for readability first. Its answer is cached per unit; one
+-- that could not be read is tried once per fight and again after it.
 local _, ns = ...
 local NP = ns.NP
 
@@ -38,9 +38,20 @@ NP.QUEST_ICON = QUEST_ICON
 -- the unit, and a change in a fight only asks the log whether those are done:
 -- a finished quest takes its marker off at once, the rest stand until the
 -- fight's end rescans everything.
+--
+-- NOT CACHED AS "NO" TOO EARLY. A plate comes up before the client has the
+-- unit's quest lines: the first tooltip is often bare, and a "no" cached from
+-- it held until the next quest log change. The client says when a tooltip's
+-- data fills in (TOOLTIP_DATA_UPDATE, by its dataInstanceID), and that unit is
+-- scanned again right then. A scan that met an unreadable line answers
+-- "unknown" rather than "no", so it is not kept and the next look tries again;
+-- that is also what lets a plate that comes up mid-fight try at once instead
+-- of waiting for the fight's end.
 -- ---------------------------------------------------------------------------
 local questCache = {}   -- unit -> false, or { [questID] = true }; 0 = a quest we could not name
 local questStale = false
+local questData  = {}   -- unit -> the dataInstanceID its last scan read
+local triedBlind = {}   -- unit -> true: an unreadable scan in this fight, no retry until data changes
 
 local function onQuest(id)
     local on = C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(id)
@@ -52,15 +63,21 @@ local function questDone(id)
     return ns.CanRead(done) and done == true
 end
 
+-- A table of quest ids, false for "no quest", nil for "could not tell".
 local function scanQuest(unit)
     local info = C_TooltipInfo and C_TooltipInfo.GetUnit and C_TooltipInfo.GetUnit(unit, true)
-    local lines = info and info.lines
-    if not lines then return false end
+    if type(info) ~= "table" then return nil end
+    local dataID = info.dataInstanceID
+    questData[unit] = (ns.CanRead(dataID) and type(dataID) == "number") and dataID or nil
+    local lines = info.lines
+    if type(lines) ~= "table" then return nil end
     local types = Enum.TooltipDataLineType
-    local ids, current = nil, nil
+    local ids, current, blind = nil, nil, false
     for _, line in ipairs(lines) do
         local kind = line.type
-        if ns.CanRead(kind) then
+        if not ns.CanRead(kind) then
+            blind = true
+        else
             if kind == types.QuestTitle then
                 -- our own quest, not someone else's tooltip line; the objectives
                 -- below a title belong to it
@@ -76,19 +93,53 @@ local function scanQuest(unit)
             end
         end
     end
-    return ids or false
+    if ids then return ids end
+    if blind then return nil end
+    return false
 end
 
 function Extras.IsQuestMob(unit)
     if not NP.db().questMobEnabled then return false end
     local cached = questCache[unit]
     if cached == nil then
-        if InCombatLockdown() then return false end     -- tooltip scans wait
+        -- in a fight one try per unit; its data changing allows the next
+        if triedBlind[unit] then return false end
         local ok, res = pcall(scanQuest, unit)
-        cached = ok and res or false
+        if not ok then res = false end
+        if res == nil then
+            -- In a fight: once, then wait for the unit's data or the fight's
+            -- end. Out of one: a "no" like any other, which the unit's data
+            -- filling in still asks again -- not a scan on every redraw.
+            if InCombatLockdown() then triedBlind[unit] = true; return false end
+            res = false
+        end
+        cached = res
         questCache[unit] = cached
     end
     return cached ~= false
+end
+
+-- The client filled in a tooltip's data: the unit it belongs to is asked
+-- again. nil means every tooltip changed. Only a "no" is asked again: a unit already marked loses its marker through
+-- the quest log. And at most twice a second per unit, in case the scan itself
+-- is what makes the client send the event.
+local rescanAt = {}
+
+function Extras.OnTooltipData(dataID)
+    if not NP.db().questMobEnabled then return end
+    local now = GetTime()
+    for unit, id in pairs(questData) do
+        local open = questCache[unit] == false or triedBlind[unit]
+        if open and (dataID == nil or id == dataID) and now - (rescanAt[unit] or 0) >= 0.5 then
+            rescanAt[unit] = now
+            questCache[unit], triedBlind[unit] = nil, nil
+            local plate = NP.plates[unit]
+            if plate then
+                plate:UpdateClassification()
+                NP.Colors.Apply(plate)       -- the quest mob colour asks the same question
+            end
+        end
+    end
 end
 
 -- In a fight: drop the quests the log now calls finished (or no longer has).
@@ -104,7 +155,10 @@ local function pruneFinished()
 end
 
 function Extras.ForgetQuest(unit)
-    if unit then questCache[unit] = nil; return end
+    if unit then
+        questCache[unit], questData[unit], triedBlind[unit], rescanAt[unit] = nil, nil, nil, nil
+        return
+    end
     if InCombatLockdown() then
         questStale = true
         pruneFinished()
@@ -112,11 +166,14 @@ function Extras.ForgetQuest(unit)
     end
     questStale = false
     wipe(questCache)
+    wipe(triedBlind)
 end
 
 -- The fight is over: what the log changed in it, and the plates that came up
 -- in it unscanned, get their answer now.
 function Extras.QuestAfterCombat()
+    -- the units the fight could not read get their scan now, stale log or not
+    wipe(triedBlind)
     if questStale then Extras.ForgetQuest() end
 end
 
