@@ -71,6 +71,8 @@ local mod = ns:RegisterModule("minimapstyle", {
         hideMail     = false,
         hideClock    = true,            -- the client's own clock; ours is an element
         hideDiel     = false,           -- Forever's day/night indicator
+        queueScale   = 1,               -- the queue eye, in every look: a factor on the client's size
+        queuePos     = nil,             -- its own place from our edit mode; nil = where the look puts it
     },
 })
 MM.mod = mod
@@ -172,12 +174,15 @@ local function restore(frame, key)
     end
     -- the parent first: a new parent resets the frame level
     if entry.parent ~= nil and frame.SetParent then set("SetParent", entry.parent or nil) end
+    -- The scale BEFORE the points: on an Edit Mode system (the queue eye)
+    -- SetScale rescales whatever points the frame has, and run after the
+    -- restore it scaled the saved ones -- a little further on every pass.
+    if entry.scale and frame.SetScale then set("SetScale", entry.scale) end
     if not entry.keepPoints then
         frame:ClearAllPoints()
         for _, pt in ipairs(entry.points) do set("SetPoint", unpack(pt)) end
     end
     if entry.w and entry.w > 0 then set("SetSize", entry.w, entry.h) end
-    if entry.scale and frame.SetScale then set("SetScale", entry.scale) end
     if entry.alpha then set("SetAlpha", entry.alpha) end
     if entry.level and frame.SetFrameLevel then set("SetFrameLevel", entry.level) end
     if entry.mouse ~= nil and frame.EnableMouse then set("EnableMouse", entry.mouse) end
@@ -326,6 +331,17 @@ local function applyClutter()
     if _G.TimeManagerClockButton then
         setShown(_G.TimeManagerClockButton, blizz.clock and not (db.style == "classic" and db.hideClock))
     end
+end
+
+-- The queue eye is an Edit Mode system: its SetPoint, ClearAllPoints and
+-- SetScale are Lua overrides that write Edit Mode state. This hands out the
+-- engine method the mixin kept aside instead (see the queue eye further down).
+local function engine(f, name)
+    local fn = f[name .. "Base"]
+    if type(fn) == "function" then return fn end
+    local mt = getmetatable(f)
+    local idx = mt and mt.__index
+    return type(idx) == "table" and idx[name] or f[name]
 end
 
 -- ---------------------------------------------------------------------------
@@ -661,10 +677,11 @@ local function applyClassic()
         local q = _G.QueueStatusButton
         q:SetParent(backdrop)
         q:SetFrameLevel(above)
-        q:SetScale(1)
         q:SetSize(33, 33)
-        q:ClearAllPoints()
-        q:SetPoint("TOPLEFT", backdrop, "TOPLEFT", 22, -100)
+        -- in scale-1 offsets, converted for the scale the eye has right now
+        local qs = q:GetScale() or 1
+        engine(q, "ClearAllPoints")(q)
+        engine(q, "SetPoint")(q, "TOPLEFT", backdrop, "TOPLEFT", 22 / qs, -100 / qs)
         local ring = region(q, "ring", "OVERLAY")
         ring:SetTexture(TRACK_BORDER)
         ring:SetSize(52, 52)
@@ -725,6 +742,44 @@ local function applyModern()
 end
 
 -- ---------------------------------------------------------------------------
+-- The queue eye
+--
+-- In this client the eye is an Edit Mode system (the group finder). Its
+-- SetPoint, ClearAllPoints and SetScale are Lua overrides that write Edit Mode
+-- state, so everything here goes through the engine methods the mixin kept
+-- aside (SetPointBase and friends).
+--
+-- The size is a factor on top of the size the client's own editor gives it.
+-- A scale also scales the anchor offsets, so they are converted from the old
+-- scale to the new one -- what the client's override does -- and the eye
+-- stays where it sits.
+-- ---------------------------------------------------------------------------
+local function clientQueueScale(q)
+    local enum = Enum and Enum.EditModeGroupFinderSetting
+    if not (enum and enum.Size and q.GetSettingValue and q.systemInfo) then return 1 end
+    local ok, v = pcall(q.GetSettingValue, q, enum.Size)
+    if ok and type(v) == "number" and v > 0 then return v / 100 end
+    return 1
+end
+
+local function scaleQueue(factor)
+    local q = _G.QueueStatusButton
+    if not (q and q.GetNumPoints) then return end
+    local old = q:GetScale() or 1
+    local new = clientQueueScale(q) * (factor or 1)
+    if old == 0 or new <= 0 or math.abs(old - new) < 0.001 then return end
+    local pts = {}
+    for i = 1, q:GetNumPoints() do
+        local p, rel, rp, x, y = q:GetPoint(i)
+        pts[i] = { p, rel, rp, (x or 0) * old / new, (y or 0) * old / new }
+    end
+    engine(q, "SetScale")(q, new)
+    engine(q, "ClearAllPoints")(q)
+    local setPoint = engine(q, "SetPoint")
+    for _, pt in ipairs(pts) do setPoint(q, pt[1], pt[2], pt[3], pt[4], pt[5]) end
+end
+
+-- ---------------------------------------------------------------------------
 -- Applying, and doing it again when the client redoes its own skin
 -- ---------------------------------------------------------------------------
 local applying
@@ -744,6 +799,9 @@ function mod:Apply()
         else applyStandard() end
         applyClutter()
         if style ~= "standard" then applyZoneSize() end
+        scaleQueue(self.db.queueScale)
+        -- a place of the user's own wins over every look's
+        if self.queueMover then self.queueMover.Apply() end
         MM.Elements.Apply()
         MM.Elements.ApplyVisibility()
     end)
@@ -809,6 +867,21 @@ function mod:OnEnable()
         end
         if _G.QueueStatusButton and _G.QueueStatusButton.UpdatePosition then
             hooksecurefunc(_G.QueueStatusButton, "UpdatePosition", relayout)
+        end
+        -- This client puts the eye back with UpdateDefaultAnchor (a layout
+        -- applied, the minimap's scale changed), not with UpdatePosition --
+        -- the button has none. Our look and our own place go back on top.
+        if _G.QueueStatusButton and _G.QueueStatusButton.UpdateDefaultAnchor then
+            hooksecurefunc(_G.QueueStatusButton, "UpdateDefaultAnchor", function()
+                if mod.active then ns.NextFrame(function() mod:Apply() end) end
+            end)
+        end
+        -- The client's editor sets the eye's own size when a layout loads;
+        -- our factor goes back on top of it.
+        if _G.QueueStatusButton and _G.QueueStatusButton.UpdateSystemSettingSize then
+            hooksecurefunc(_G.QueueStatusButton, "UpdateSystemSettingSize", function()
+                if mod.active then scaleQueue(mod.db.queueScale) end
+            end)
         end
         -- The calendar redraws its own face whenever the date is set.
         if _G.GameTimeFrame_SetDate then
@@ -883,15 +956,31 @@ function mod:OnEnable()
         })
         self.editMover.Apply()
     end
+    -- And one for the queue eye, the same careful way. Without a place of
+    -- its own it sits where the look puts it; a reset hands it back there.
+    if _G.QueueStatusButton then
+        self.queueMover = ns:AttachEditModeMover(_G.QueueStatusButton, {
+            key      = "minimap_queue",
+            label    = L["Queue eye"],
+            module   = "minimapstyle",
+            isActive = function() return mod.active end,
+            getPos   = function() return mod.db.queuePos end,
+            setPos   = function(p) mod.db.queuePos = p end,
+            onPlaced = function() if mod.active then mod:Apply() end end,
+        })
+        self.queueMover.Apply()
+    end
 end
 
 function mod:OnDisable()
     if self.editMover then self.editMover.Release() end
+    if self.queueMover then self.queueMover.Release() end
     MM.Elements.HideAll()
     if MinimapCluster then MinimapCluster:Show() end
     Minimap:SetScript("OnMouseWheel", blizzWheel)
     applyStandard()
     applyClutter()
+    scaleQueue(1)
 end
 
 -- ---------------------------------------------------------------------------
@@ -999,6 +1088,9 @@ function mod:GetOptions()
               tooltip = L["Only in the classic look. Modern draws its own clock instead, and standard leaves the game's alone."],
               disabled = function() return d.style ~= "classic" end,
               get = function() return d.hideClock end, set = set("hideClock") },
+            { type = "slider", label = L["Queue eye size"], min = 0.5, max = 1.5, step = 0.05,
+              tooltip = L["The eye that shows a dungeon or battleground queue, on top of the size the game's own editor gives it. Its place is set in Edit Mode: /vedit."],
+              get = function() return d.queueScale end, set = set("queueScale") },
             { type = "slider", label = L["Zoom back out after"], min = 0, max = 60, step = 5,
               tooltip = L["Seconds of quiet before the map returns to its widest zoom. 0 leaves it alone."],
               get = function() return d.zoomReset end, set = set("zoomReset") },

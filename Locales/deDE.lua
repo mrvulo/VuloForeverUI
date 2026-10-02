@@ -831,6 +831,9 @@ ns:RegisterLocale("deDE", {
     ["Show the minimap"] = "Minimap zeigen",
     ["When to show the map"] = "Wann die Karte sichtbar ist",
     ["Zoom back out after"] = "Zurückzoomen nach",
+    ["Queue eye size"] = "Größe des Warteschlangen-Auges",
+    ["The eye that shows a dungeon or battleground queue, on top of the size the game's own editor gives it. Its place is set in Edit Mode: /vedit."] = "Das Auge, das eine Dungeon- oder Schlachtfeld-Warteschlange anzeigt -- zusätzlich zur Größe aus dem Edit Mode des Spiels. Platziert wird es im Edit Mode: /vedit.",
+    ["Queue eye"] = "Warteschlangen-Auge",
     ["Only in the classic look. Modern draws its own clock instead, and standard leaves the game's alone."] = "Nur im Classic-Look. Modern zeichnet eine eigene Uhr, Standard lässt die des Spiels in Ruhe.",
     -- Chat
     ["Window"] = "Fenster",
