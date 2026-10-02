@@ -723,6 +723,29 @@ ns.Slash.SECRETS = function(msg)
             hidden > 0 and ns.C.neg or ns.C.pos, hidden, R, quest)
     end)
 
+    -- What the quest progress on the plates is read from: the target's first
+    -- objective line, its text and its two counts, each readable or not.
+    probe("quest objective (target)", function()
+        if not hasTarget then return "no target" end
+        local info = C_TooltipInfo and C_TooltipInfo.GetUnit and C_TooltipInfo.GetUnit("target", true)
+        local lines = type(info) == "table" and info.lines
+        if type(lines) ~= "table" then return ns.C.neg .. "no data" .. R end
+        local kindObjective = Enum.TooltipDataLineType.QuestObjective
+        for _, line in ipairs(lines) do
+            local kind = line.type
+            if ns.CanRead(kind) and kind == kindObjective then
+                local function show(v)
+                    if not ns.CanRead(v) then return ns.C.neg .. "secret" .. R end
+                    if type(v) == "nil" then return "nil" end
+                    return tostring(v)
+                end
+                return string.format("text=%s have=%s need=%s done=%s", show(line.leftText),
+                    show(line.numFulfilled), show(line.numRequired), show(line.completed))
+            end
+        end
+        return "no objective line"
+    end)
+
     -- The combat log is the hard stop, and the reason five VuloClassicUI
     -- modules cannot come across as they are.
     local ccl = _G.C_CombatLog
