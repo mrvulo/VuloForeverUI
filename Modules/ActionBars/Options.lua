@@ -224,6 +224,11 @@ function mod:GetOptions()
             L["The classic bar writes how many bag slots are still free on the backpack button."]),
         toggle("skinPetStance", L["Skin the pet and stance buttons too"]),
     }
+    -- Shamans only: the client's totem bar on the classic band.
+    if select(2, UnitClass("player")) == "SHAMAN" then
+        page[#page + 1] = toggle("classicTotemBar", L["Totem bar on the classic bar"],
+            L["The client's totem bar joins the small row over the band, after the stance and pet bars, and is moved in Edit Mode like the other rows. Only with the whole old bar."])
+    end
     -- The client's own bar art is there in every look but the Classic band.
     if not (db.style == "classic" and db.classicBar) then
         page[#page + 1] = toggle("showBarFrame", L["Show bar background"],

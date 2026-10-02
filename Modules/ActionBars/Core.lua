@@ -36,6 +36,7 @@ local mod = ns:RegisterModule("actionbars", {
         -- off, the Classic style is the old BUTTONS on the client's own bar.
         classicBar  = true,
         backpackFreeSlots = true,   -- the classic band: free bag slots on the backpack
+        classicTotemBar = false,    -- the classic band: the shaman's totem bar on its small row
         skinPetStance = true,
         -- Action bar 1's own art outside the Classic band: the frame with the
         -- dividers between its buttons, and the end caps, one switch each.

@@ -64,7 +64,7 @@ local EXTRA_BARS = {
 -- The band's own groups each stand on a holder of their own, so each can be
 -- moved on its own: the micro menu, the bags, the experience bar, the page
 -- arrows. A holder nobody moved stands exactly where the group always stood.
-local HOLDER = { micro = 12, bags = 13, xp = 14, page = 15 }
+local HOLDER = { micro = 12, bags = 13, xp = 14, page = 15, totem = 16 }
 local SIDE_BARS = {
     { name = "MultiBarRight", row = 7 },
     { name = "MultiBarLeft",  row = 8 },
@@ -304,6 +304,7 @@ local function moverLabel(key)
         stance = L["Stance bar"],
         possess = L["Possess bar"],
         pet    = L["Pet bar"],
+        totem  = L["Totem bar"],
     }
     return labels[key] or key
 end
@@ -481,6 +482,49 @@ local function layoutColumn(bar, rowIndex, right, top, pitch, target)
     return count
 end
 
+-- The shaman's totem bar, when it is asked for: on the small row after
+-- whichever of the stance, possess and pet bars show, and moved whole -- its
+-- slot, page and summon buttons are anchored to each other inside it, so the
+-- frame is what goes onto the row. Off, it is handed back to the client's
+-- place, and the watch is told to stop looking after it.
+local totemHooked = false
+
+local function layoutTotem(x)
+    local totem = _G.MultiCastActionBarFrame
+    if not totem then return end
+    local _, class = UnitClass("player")
+    local want = AB.db().classicTotemBar and class == "SHAMAN"
+    -- The bar shows only once the client counts the totem slots, which is
+    -- after the band's first pass: when it comes up unplaced, the band is
+    -- laid again (after the fight, if one is on).
+    if want and not totemHooked and totem.UpdateShownState then
+        totemHooked = true
+        hooksecurefunc(totem, "UpdateShownState", function(self)
+            if not (applied and AB.mod.active and AB.db().classicTotemBar) then return end
+            if self:IsShown() and not placed[self] then
+                -- a frame later: not from inside the client's own update
+                ns.NextFrame(function()
+                    ns:RunOutOfCombatOnce("actionbars.totem", function()
+                        if applied then Classic.Apply() end
+                    end)
+                end)
+            end
+        end)
+    end
+    if want and totem:IsShown() then
+        local row = Row(HOLDER.totem)
+        row:SetScale(1)
+        local fs = ratio(totem)
+        local w, h = totem:GetSize()
+        row:SetSize(math.max(1, (w or 1) * fs), math.max(1, (h or 1) * fs))
+        placeRow(row, "totem", "BOTTOMLEFT", art, "BOTTOMLEFT", x, SMALL_Y)
+        anchor(totem, "BOTTOMLEFT", "BOTTOMLEFT", 0, 0, nil, nil, row)
+    elseif not want and placed[totem] then
+        restoreFrame(totem)
+        placed[totem], original[totem] = nil, nil
+    end
+end
+
 local function layoutButtons()
     -- The main bar first; its twelve buttons are the row the band was drawn
     -- around. A client that keeps its buttons somewhere other than
@@ -505,6 +549,7 @@ local function layoutButtons()
                 if n > 0 then x = x + n * SMALL_PITCH + 6 end
             end
         end
+        layoutTotem(x)
         -- Bar 4 outermost; bar 5 takes the outer column when bar 4 is off.
         local right = SIDE_RIGHT
         local screenH = (UIParent:GetHeight() or 768) / BAND_SCALE
