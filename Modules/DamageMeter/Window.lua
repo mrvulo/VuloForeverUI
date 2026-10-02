@@ -220,6 +220,9 @@ function DM.CreateWindow(idx)
     frame:SetResizable(true)
     if frame.SetResizeBounds then frame:SetResizeBounds(DM.MIN_W, DM.MIN_H) end
     frame:SetFrameStrata("LOW")
+    -- High within LOW: the quest tracker lives in LOW too and its lines drew
+    -- over the bars. Still LOW, so bags and panels (MEDIUM) stay on top.
+    frame:SetFrameLevel(100)
     frame:EnableMouse(true)
     frame:SetDontSavePosition(true)
 
