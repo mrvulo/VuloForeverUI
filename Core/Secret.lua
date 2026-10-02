@@ -700,6 +700,29 @@ ns.Slash.SECRETS = function(msg)
         return info and state(info.startTime) or "no spell on action slot 1"
     end)
 
+    -- The quest marker on the plates reads the unit's tooltip lines; whether
+    -- that works in a fight decides whether a mob met mid-fight gets its
+    -- marker at once or only after it.
+    probe("tooltip lines (target)", function()
+        if not hasTarget then return "no target" end
+        local info = C_TooltipInfo and C_TooltipInfo.GetUnit and C_TooltipInfo.GetUnit("target", true)
+        local lines = type(info) == "table" and info.lines
+        if type(lines) ~= "table" then return ns.C.neg .. "no data" .. R end
+        local types = Enum.TooltipDataLineType
+        local n, hidden, quest = 0, 0, 0
+        for _, line in ipairs(lines) do
+            n = n + 1
+            local kind = line.type
+            if not ns.CanRead(kind) then
+                hidden = hidden + 1
+            elseif kind == types.QuestTitle or kind == types.QuestObjective then
+                quest = quest + 1
+            end
+        end
+        return string.format("%d lines, %s%d unreadable%s, %d quest", n,
+            hidden > 0 and ns.C.neg or ns.C.pos, hidden, R, quest)
+    end)
+
     -- The combat log is the hard stop, and the reason five VuloClassicUI
     -- modules cannot come across as they are.
     local ccl = _G.C_CombatLog
