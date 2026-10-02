@@ -468,9 +468,22 @@ function Skin.OnCastStart(texture, duration)
     end
 end
 
-function Skin.OnCastStop()
-    local bar = Skin.Frame()
-    if not bar then return end
+-- Nothing to do on our own stop event. It is not this cast's end for sure:
+-- a failed attempt at another spell sends it mid-cast, and so does every
+-- settings change (Cast.Apply). The client's bar knows which cast ended and
+-- plays its finish, fade or interrupt animation for exactly that one; the
+-- time stops there (freeze, hooked below), and the icon and the time stay on
+-- the bar while it fades and go with it, since they are its children.
+function Skin.OnCastStop() end
+
+local function freeze(bar)
+    local s = state[bar]
+    if not s or s.previewing then return end
+    if s.holder then s.holder:SetScript("OnUpdate", nil) end
+end
+
+-- The bar is gone: nothing of the last cast may come back with the next one.
+local function clearExtras(bar)
     local s = state[bar]
     if not s or s.previewing then return end
     if s.holder and s.time then ns:DurationText(s.holder, s.time, nil) end
@@ -524,6 +537,11 @@ function Skin.Apply()
         hookMethod(bar, "PlayFadeAnim", "cast.fade", dressFlash)
         hookMethod(bar, "PlayFinishAnim", "cast.finish", stopFinish)
         hookMethod(bar, "PlayInterruptAnims", "cast.interrupt", hideFx)
+        -- the cast's real end, as the client's bar sees it: the time stops
+        for _, method in ipairs({ "PlayFadeAnim", "PlayFinishAnim", "PlayInterruptAnims" }) do
+            if type(bar[method]) == "function" then hooksecurefunc(bar, method, freeze) end
+        end
+        bar:HookScript("OnHide", clearExtras)
     end
 
     if style() == "classic" then guard("cast.dress", dress, bar) end
