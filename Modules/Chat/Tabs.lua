@@ -115,6 +115,24 @@ local function ghost(index)
     g.glow:SetHeight(8)
     g.glow:Hide()
 
+    -- Unread: the client's own new-message light, where the client puts it,
+    -- tinted in the underline's colour and breathing slowly instead of the
+    -- client's hard blink. A soft file, not a gradient of ours: a plain
+    -- rectangle reads as a lit box rather than as light.
+    g.alert = g:CreateTexture(nil, "BORDER")
+    g.alert:SetTexture("Interface\\ChatFrame\\ChatFrameTab-NewMessage")
+    g.alert:SetBlendMode("ADD")
+    g.alert:SetPoint("BOTTOMLEFT", g, "BOTTOMLEFT", 8, -2)
+    g.alert:SetPoint("BOTTOMRIGHT", g, "BOTTOMRIGHT", -8, -2)
+    g.alert:Hide()
+    g.alertAnim = g.alert:CreateAnimationGroup()
+    g.alertAnim:SetLooping("BOUNCE")
+    local fade = g.alertAnim:CreateAnimation("Alpha")
+    fade:SetFromAlpha(0.25)
+    fade:SetToAlpha(1)
+    fade:SetDuration(1.2)
+    fade:SetSmoothing("IN_OUT")
+
     s.ghosts[index] = g
     return g
 end
@@ -196,6 +214,37 @@ local function paintGround(g, db, active)
     ns.LayoutEdges(g.edges, g, size, col.r, col.g, col.b, col.a or 0.18, -size)
 end
 
+-- The client's own "this tab has news" state. It is kept in a table of the
+-- client's (the tab's glow only plays it), and the reader is public.
+local function isAlerting(tab)
+    local util = _G.ChatFrameUtil
+    if util and util.IsTabAlerting then
+        local ok, v = pcall(util.IsTabAlerting, tab)
+        if ok and ns.CanRead(v) then return v and true or false end
+        return false
+    end
+    local anim = tab.glow and tab.glow.FlashAnim
+    if anim then
+        local ok, v = pcall(anim.IsPlaying, anim)
+        return ok and ns.CanRead(v) and v and true or false
+    end
+    return false
+end
+
+local function paintAlert(g, db, on)
+    if on and db.unreadGlow ~= false then
+        local u = underlineColor(db)
+        g.alert:SetVertexColor(u.r, u.g, u.b, 0.8)
+        g.alert:Show()
+        if not g.alertAnim:IsPlaying() then g.alertAnim:Play() end
+    elseif g.alert:IsShown() then
+        g.alertAnim:Stop()
+        g.alert:Hide()
+    end
+end
+
+local alerting = {}
+
 local function isSelected(cf)
     if not FCFDock_GetSelectedWindow then return false end
     local ok, selected = pcall(FCFDock_GetSelectedWindow, _G.GENERAL_CHAT_DOCK)
@@ -260,10 +309,17 @@ function Tabs.Refresh()
                 g.underline:Hide()
                 g.glow:Hide()
             end
+            local alert = isAlerting(tab)
+            alerting[tab] = alert
+            paintAlert(g, db, alert and not active)
             g:Show()
         end
     end
-    for i = shown + 1, #s.ghosts do s.ghosts[i]:Hide() end
+    for i = shown + 1, #s.ghosts do
+        local g = s.ghosts[i]
+        g:Hide()
+        paintAlert(g, db, false)
+    end
     s:Show()
     Tabs.StyleQuickBar()
     Tabs.Watch()
@@ -434,6 +490,15 @@ local function watchSlow()
     -- the chat moved.
     if Chat.Sidebar and Chat.Sidebar.SyncNewWindow then Chat.Sidebar.SyncNewWindow() end
     if unowned then Chat.Refresh() end
+    -- The client starts and stops a tab's alert from places we never see
+    -- (a whisper window popping out, the tab menu); a changed one repaints.
+    for _, cf in ipairs(Chat.Frames()) do
+        local tab = cf.GetName and _G[cf:GetName() .. "Tab"]
+        if tab and type(alerting[tab]) ~= "nil" and alerting[tab] ~= isAlerting(tab) then
+            Tabs.Refresh()
+            break
+        end
+    end
 end
 
 function Tabs.Watch()
@@ -445,7 +510,8 @@ function Tabs.Watch()
 end
 
 -- A line arrived in a window. The client owns the flashing of its own tab; all
--- we do is re-read which tab is selected, on the next frame.
+-- we do is re-read which tab is selected and which one alerts, on the next
+-- frame.
 function Tabs.OnMessage()
     Chat.Queue("chat.tabs", function() Tabs.Refresh() end)
 end
@@ -469,6 +535,7 @@ function Tabs.Release()
     if Tabs.fast then Tabs.fast:Hide() end
     lastSelected = nil
     wipe(lastShown)
+    wipe(alerting)
     restoreDock()
     Tabs.ReleaseQuickBar()
     if strip then strip:Hide() end

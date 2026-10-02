@@ -93,6 +93,9 @@ local mod = ns:RegisterModule("chat", {
         tabAlign           = "CENTER",
 
         activeUnderline = true,
+        -- A tab with a line the player has not seen (the client's own alert:
+        -- whispers, and whatever a window was set to flash for) glows softly.
+        unreadGlow      = true,
         underlineSize   = 2,
         -- On, the underline follows the suite's accent colour and the custom
         -- one below is ignored. Off, the custom colour is used as it stands.

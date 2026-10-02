@@ -304,6 +304,8 @@ local function tabsPage()
                     apply()
                 end },
           } },
+        toggle("unreadGlow", L["Glow on tabs with unread messages"],
+            L["A tab you are not on glows softly while the client would make it flash: a whisper, or a channel the window was set to alert for."]),
 
         { type = "header", text = L["Border"] },
         gateToggle("tabBorderSync", L["Match the chat window's border"],

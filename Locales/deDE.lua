@@ -853,6 +853,8 @@ ns:RegisterLocale("deDE", {
     ["The chat messages, the input line and the tab labels."] = "Die Chatnachrichten, die Eingabezeile und die Beschriftung der Reiter.",
     ["Tab text size"] = "Schriftgröße der Reiter",
     ["Underline the active tab"] = "Aktiven Reiter unterstreichen",
+    ["Glow on tabs with unread messages"] = "Reiter mit ungelesenen Nachrichten leuchten",
+    ["A tab you are not on glows softly while the client would make it flash: a whisper, or a channel the window was set to alert for."] = "Ein Reiter, auf dem du gerade nicht bist, leuchtet sanft, solange der Client ihn blinken lassen würde: bei einem Flüstern oder einem Kanal, für den das Fenster Hinweise geben soll.",
     ["Inner padding"] = "Innenabstand der Reiter",
     ["Tab text alignment"] = "Ausrichtung des Reitertexts",
     ["Automatic"] = "Automatisch",
