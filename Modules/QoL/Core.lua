@@ -109,8 +109,11 @@ local mod = ns:RegisterModule("qol", {
         -- The learned times themselves are NOT here: they are world facts and
         -- live account-wide (ns.db.global.qolFlightTimes), not per profile.
         flight = {
-            showBar = false,
+            showBar = true,
             chat    = false,
+            -- the stops of the ride under the bar, and the land-early button
+            showRoute = true, routeRows = 3,
+            landButton = true,
             width   = 240,
             height  = 18,
             texture = "Matte",
