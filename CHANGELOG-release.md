@@ -1,52 +1,49 @@
-## 0.6.0
+## 0.7.0
 
 **New**
 
-- **Quality of Life** — a Train all button next to Train at every trainer: it
-  learns everything you can afford, one after the other. Learning a new
-  profession stays your decision, and the pet trainer is left out.
-- **Quality of Life** — zone levels on the world map: the level range of the
-  zone in the top left corner, coloured like a quest of that level; on a
-  continent, the zone under the cursor. The game gives no ranges on this
-  client, so they come from a table of the original zones plus Riverglades and
-  Mount Hyjal.
-- **Quality of Life** — group invite on a whispered keyword (inv by default),
-  Battle.net whispers included, optionally only for friends, guild and
-  Battle.net friends.
-- **Quality of Life** — decline duels, decline Battle.net friend requests, and
-  block quests shared by strangers before the automatic accept can take them.
-- **Auras** — right-clicking one of your own buffs removes it, as on the game's
-  own buff row.
-- **Resource bars** — spell cost: while a spell with a cast time is being cast,
-  the power bar and the extra mana bar shade the part it will use, with its own
-  switch, colour and opacity per bar.
-- **Action bars** — Modern settings per bar, with a bar picker (action bars 1
-  to 8, pet, stance), Apply to all bars and Reset this bar; the preview shows
-  the icons and keybinds of the picked bar.
-- **Action bars** — icons turn red when out of range, per bar, with a colour of
-  your own, without covering the game's own tint for unusable and out of mana.
+- **Quality of Life** — the flight bar shows the route below it, every stop
+  with the time until it, and moves on as a stop goes by. A button next to it
+  lands at the next stop; it fades on the last leg. A /reload in mid-flight
+  keeps destination, time and stops. Flight bar, route and button are on by
+  default.
+- **Action bars** — Shamans can show the game's totem bar in the Classic stone
+  band, in the small row behind the stance and pet bars, and move it in our
+  Edit Mode (off by default).
+- **Minimap** — a size slider for the queue eye, and the eye can be moved in
+  our Edit Mode.
+- **Chat** — Glow on tabs with unread messages: a tab you are not on glows
+  softly while the game would make it flash (a whisper, or a channel the
+  window alerts for). On by default.
+- **Nameplates** — Quest progress instead of the marker (3/8, 40%) under
+  General, Extras; Enemy types in instances only, so outside dungeons grey
+  means one thing: tagged by someone else; Border in the bar's color.
 
 **Changed**
 
-- **Unit frames** — on a new profile the Modern frames start where the game's
-  frames stand instead of at fixed places. Existing profiles keep their layout
-  exactly as it is.
-- **Action bars** — Show bar background and Show end caps: the frame and
-  dividers of action bar 1 and the figures at its ends can be hidden on their
-  own. Not offered with the whole Classic bar.
-- **Sidebar** — Quality of Life and Resource bars show their own icon.
-- **Tooltip IDs** — ExpansionID is gone: on this client every item shows the
-  same expansion.
+- **Nameplates** — a new default look: a wider and taller bar with the name on
+  the left and health as value and percent on the right, a black border, a
+  white border on your target instead of a glow, other plates at 70 percent,
+  new colours, cast bar and icon places.
+- **Nameplates** — with Show All Debuffs off, only your own debuffs (and your
+  pet's) are shown. Side aura rows grow away from the bar instead of upwards.
+  Aura icons are zoomed in a little and carry a sharp border inside the icon.
+- **Nameplates** — the execute glow is always red, without a colour setting.
+- **Nameplates** — the profile import now also takes text places, icon places,
+  aura groups and aura texts, the low health glow and the quest progress.
+- **Nameplates** — the spell target in the settings preview can be clicked.
 
 **Fixed**
 
-- **Damage meter** — in the Classic style the bars start clear of the frame, so
-  the class icon and the first bar are no longer cut off.
-- **Action bars** — the gold edge on the cooldown circle was never visible; pet
-  and stance buttons stayed styled after their option was switched off; macro
-  names lost their shadow on a style change; stance buttons showed keybinds;
-  keybind texts when switching to a gamepad.
-- **Tooltip IDs** — no longer shows a tooltip itself in the middle of the
-  game's own tooltip setup.
-
-This version brings new files: restart the game once, a /reload is not enough.
+- **Nameplates** — the quest marker disappears once nothing is left to do for
+  that mob, and shows up sooner when the game fills in a mob's details.
+- **Nameplates** — the execute glow did not show.
+- **Nameplates** — Spell Target: first name only works in combat too; there
+  the first name of the caster's own target is shown.
+- **Nameplates** — the target's and the hover border no longer run around the
+  cast bar.
+- **Damage meter** — the window sits above the quest tracker instead of below
+  it.
+- **Resource bars** — spell icon and cast time on the cast bar disappear
+  together with the game's bar; a failed second spell or a settings change no
+  longer freezes the time mid-cast.
