@@ -137,6 +137,9 @@ function Plate:Build()
         classification = iconFrame:CreateTexture(nil, "OVERLAY"),
         nameRaid       = textFrame:CreateTexture(nil, "OVERLAY"),
     }
+    -- the quest progress in place of the marker, on the marker's spot
+    self.questText = iconFrame:CreateFontString(nil, "OVERLAY")
+    self.questText:Hide()
     self.icons.raidMarker:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
     self.icons.nameRaid:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
 
@@ -190,8 +193,8 @@ function Plate:ApplyAppearance()
     local bg = db.bgColor
     self.healthBG:SetColorTexture(bg.r, bg.g, bg.b, db.bgAlpha)
 
-    local bc = db.borderColor
-    ns.LayoutEdges(self.border, self.borderHost, db.showBorder and db.borderSize or 0, bc.r, bc.g, bc.b, 1)
+    -- fixed, bar-coloured or the target's: one place decides
+    NP.Target.PaintBorder(self)
 
     -- text slots
     local font = ns.ModuleFontPath("nameplates")
@@ -259,6 +262,10 @@ function Plate:ApplyAppearance()
     -- icon slots
     placeIcon(self, self.icons.raidMarker, db.raidMarkerPos, db)
     placeIcon(self, self.icons.classification, db.classificationSlot, db)
+    self.questText:SetFont(font, db.questObjectiveTextSize or 13, "OUTLINE")
+    self.questText:SetTextColor(1, 0.82, 0)
+    self.questText:ClearAllPoints()
+    self.questText:SetPoint("CENTER", self.icons.classification, "CENTER", 0, 0)
     local nr = self.icons.nameRaid
     nr:ClearAllPoints()
     nr:SetSize(db.nameRaidMarkerSize, db.nameRaidMarkerSize)
@@ -360,8 +367,16 @@ end
 function Plate:UpdateClassification()
     local tex = self.icons.classification
     local unit = self.unit
+    self.questText:Hide()
     if not unit or not tex.slotted then tex:Hide(); return end
     local db = NP.db()
+    local progress = db.questObjectiveText and NP.Extras.QuestProgress(unit)
+    if progress then
+        self.questText:SetText(progress)
+        self.questText:Show()
+        tex:Hide()
+        return
+    end
     if NP.Extras.IsQuestMob(unit) then
         -- SetTexture replaces whatever atlas was on it; clearing first is not
         -- worth the risk of SetAtlas(nil) being refused.
@@ -461,6 +476,7 @@ function Plate:Clear()
     if self.isFocus then self.gen = nil end
     for _, fs in pairs(self.texts) do fs:SetText("") end
     for _, tex in pairs(self.icons) do tex:Hide() end
+    self.questText:Hide()
     self.unit, self.nameplate = nil, nil
     self.isTarget, self.isFocus, self.isHover = false, false, false
     if self.executeGlow then self.executeGlow:Hide() end

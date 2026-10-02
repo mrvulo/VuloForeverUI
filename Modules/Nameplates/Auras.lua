@@ -48,7 +48,14 @@ local function filterFor(kind, db)
         end
         return filter(helpful, plate, F.Important or "IMPORTANT")
     end
-    if db.debuffIncludeCC then return filter(harmful, plate) end
+    -- Without "show all": only what the player (or the pet) cast -- the dots
+    -- of others crowd out the ones that are ours to keep up.
+    local own = not db.showAllDebuffs and (F.Player or "PLAYER") or nil
+    if db.debuffIncludeCC then
+        if own then return filter(harmful, plate, own) end
+        return filter(harmful, plate)
+    end
+    if own then return filter(harmful, plate, own, "!" .. cc) end
     return filter(harmful, plate, "!" .. cc)
 end
 
@@ -92,7 +99,11 @@ end
 local function sizeFor(kind)
     local slot = NP.SlotOfAura(kind)
     local cfg = slot ~= "none" and NP.db().iconSlots[slot]
-    return cfg and cfg.size or 24
+    local size = cfg and cfg.size or 24
+    -- whole physical pixels, as the buttons themselves are (AuraStyle): the
+    -- layout steps by this size, and a fractional step blurs every other border
+    local px = NP.AuraStyle.PlatePixel()
+    return math.max(px, math.floor(size / px + 0.5) * px)
 end
 
 local function newContainer(holder, kind)
@@ -148,11 +159,11 @@ local SLOT_ANCHOR = {
     topright = { "BOTTOMRIGHT", "TOPRIGHT", 0, 1 },
 }
 
--- Which way a slot's icons run when the setting says "auto": a single column
--- beside the bar, a row above or below it, the top-left row leftwards.
+-- Which way a slot's icons run when the setting says "auto": beside the bar
+-- a row away from it (the left slot leftwards, the right one rightwards), a
+-- row above or below it, the top-left row leftwards.
 function Auras.AutoGrow(slot)
-    if slot == "left" or slot == "right" then return "up" end
-    if slot == "topleft" then return "left" end
+    if slot == "left" or slot == "topleft" then return "left" end
     return "right"
 end
 

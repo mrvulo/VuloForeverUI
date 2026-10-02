@@ -127,6 +127,7 @@ end
 -- every colour the bar gets (Target.lua).
 local function retint(plate)
     if NP.Target and NP.Target.RetintOverlay then NP.Target.RetintOverlay(plate) end
+    if NP.db().borderBarColor and NP.Target and NP.Target.PaintBorder then NP.Target.PaintBorder(plate) end
 end
 
 local function setPlain(plate, r, g, b)
@@ -176,7 +177,10 @@ function Colors.Apply(plate)
         return setPlain(plate, dim(db, unit, c.r, c.g, c.b))
     end
 
-    local kind = mobType(unit)
+    -- Out in the world every enemy is simply an enemy when asked: casters,
+    -- elites and bosses get their colours in instances only, and grey is left
+    -- to the mobs another player has tagged.
+    local kind = (NP.ctx.inInstance or not db.mobTypesInInstancesOnly) and mobType(unit) or nil
 
     if NP.ctx.inGroup then
         local c = threatColor(db, unit, kind)

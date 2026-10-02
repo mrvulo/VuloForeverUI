@@ -233,6 +233,42 @@ end
 -- ---------------------------------------------------------------------------
 -- Apply: target wins over focus wins over hover, channel by channel.
 -- ---------------------------------------------------------------------------
+-- Border colour and size: the target's or the hover's when set, else the
+-- bar's own colour when that is asked for and known as plain numbers (a
+-- player's class colour may be secret; then the fixed border colour).
+-- Called again by Colors whenever the bar changes colour.
+function Target.PaintBorder(plate)
+    local db = NP.db()
+    local T, H = plate.isTarget, plate.isHover and not plate.isTarget
+    local r, g, b
+    local bs = db.showBorder and db.borderSize or 0
+    if T and db.targetGlowBorderColor then
+        local c = db.targetBorderColor; r, g, b = c.r, c.g, c.b
+    elseif H and db.hoverGlowBorderColor then
+        local c = db.hoverBorderColor; r, g, b = c.r, c.g, c.b
+    elseif db.borderBarColor and type(plate.lastR) == "number" then
+        r, g, b = plate.lastR, plate.lastG, plate.lastB
+    else
+        local c = db.borderColor; r, g, b = c.r, c.g, c.b
+    end
+    local special = (T and (db.targetGlowBorderColor or db.targetGlowBorderSize))
+        or (H and (db.hoverGlowBorderColor or db.hoverGlowBorderSize))
+    if T then
+        if db.targetGlowBorderSize then bs = db.targetBorderSizeValue end
+    elseif H then
+        if db.hoverGlowBorderSize then bs = db.hoverBorderSizeValue end
+    end
+    -- Around the cast bar too while a cast runs, if asked -- but never in the
+    -- target's or the hover's colour: a light frame round the cast bar read
+    -- as part of the cast, not as "this is your target".
+    local wrap = plate.borderWrapped and db.showBorder and db.wrapBorderCastbar and not special
+    local host = plate.borderHost
+    host:ClearAllPoints()
+    host:SetPoint("TOPLEFT", plate.health, "TOPLEFT", 0, 0)
+    host:SetPoint("BOTTOMRIGHT", wrap and plate.cast or plate.health, "BOTTOMRIGHT", 0, 0)
+    ns.LayoutEdges(plate.border, host, bs, r, g, b, 1)
+end
+
 function Target.Apply(plate)
     local unit = plate.unit
     if not unit then return end
@@ -251,16 +287,7 @@ function Target.Apply(plate)
     elseif H and db.hoverGlow then setGlow(plate, true, db.hoverGlowColor, db.hoverGlowAlpha)
     else setGlow(plate, false) end
 
-    -- border colour and size
-    local bc, bs = db.borderColor, db.showBorder and db.borderSize or 0
-    if T then
-        if db.targetGlowBorderColor then bc = db.targetBorderColor end
-        if db.targetGlowBorderSize then bs = db.targetBorderSizeValue end
-    elseif H then
-        if db.hoverGlowBorderColor then bc = db.hoverBorderColor end
-        if db.hoverGlowBorderSize then bs = db.hoverBorderSizeValue end
-    end
-    ns.LayoutEdges(plate.border, plate.borderHost, bs, bc.r, bc.g, bc.b, 1)
+    Target.PaintBorder(plate)
 
     -- highlight wash
     local hl = plate.highlight

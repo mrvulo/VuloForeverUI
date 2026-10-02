@@ -324,7 +324,7 @@ local function aurasSection()
         auraKindRows("buffs", L["Buffs"]),
         auraKindRows("cc", L["Crowd Control"]),
         toggle("debuffIncludeCC", L["Debuffs include Crowd Control"]),
-        toggle("showAllDebuffs", L["Show All Debuffs"], L["Also show debuffs cast by other players."]),
+        toggle("showAllDebuffs", L["Show All Debuffs"], L["Off, only the debuffs you (or your pet) cast are shown. On, also those cast by other players."]),
         dropdown("enemyBuffFilter", L["Enemy Buff Filter"], {
             { value = "important",   text = L["Important"] },
             { value = "dispellable", text = L["Only Dispellable"] },
@@ -345,6 +345,9 @@ local function displayPage()
             gear(L["Castbar Border"], { toggle("wrapBorderCastbar", L["Wrap Around Castbar"]) }),
         } }),
         slider("borderSize", L["Border Size"], 1, 4, 1, { disabled = function() return not d.showBorder end }),
+        toggle("borderBarColor", L["Border in the bar's color"],
+            L["The border takes the health bar's colour: red for hostile, yellow for neutral, the threat colours in a group. A player whose colour cannot be read keeps the border colour."],
+            { disabled = function() return not d.showBorder end }),
         slider("bgAlpha", L["Background"], 0, 100, 1, { scale = 100, inline = { swatch("bgColor", L["Background color"]) } }),
         dropdown("absorbStyle", L["Absorb Style"], absorbStyles, { inline = {
             swatch("absorbColor", L["Absorb color"], function() return d.absorbStyle == "blizzard" end),
@@ -516,7 +519,7 @@ local function displayPage()
         -- A row of its own, not in the popup: it counts in the combined mode
         -- too, where the row above is locked.
         toggle("castTargetFirstName", L["Spell Target: first name only"],
-            L["\"Vulo Hunt\" is shown as \"Vulo\". A name the client hides in combat stays whole."]),
+            L["\"Vulo Hunt\" is shown as \"Vulo\". In combat the client hides the name; then the first name of the caster's own target is shown, which is nearly always the one the spell is aimed at."]),
     })
 
     return { style, positions, texts, aurasSection(), bars, castColors, effects, castText }
@@ -534,6 +537,9 @@ local function colorsPage()
         color("boss", L["Bosses"], L["World bosses and skull-level enemies."]),
         color("neutral", L["Neutral"]),
         color("tapped", L["Tapped"], L["Enemies another player has tagged."]),
+        toggle("mobTypesInInstancesOnly", L["Enemy types in instances only"],
+            L["Outside dungeons and raids every enemy wears the enemy colour; casters, elites and bosses are told apart in instances only. Grey then means one thing: tagged by someone else."],
+            { after = function() NP.Colors.RefreshAll() end }),
         toggle("darkenEnemiesOOC", L["Darken Enemies Out of Combat"], nil, { inline = {
             gear(L["Out of Combat"], {
                 toggle("darkenOOCRecolor", L["Change Color Instead"]),
@@ -640,12 +646,18 @@ local function generalPage()
         toggle("executeEnabled", L["Execute Glow"],
             L["Lights the plate up once the enemy is low enough to finish."],
             { inline = {
-                swatch("executeColor", L["Glow color"]),
                 gear(L["Execute Glow"], {
                     slider("executeThreshold", L["Execute Threshold"], 5, 50),
                     slider("executeGlowSize", L["Size"], 2, 16),
                 }),
             } }),
+        toggle("questObjectiveText", L["Quest progress instead of the marker"],
+            L["Shows how far the quest is (3/8, 40%) where the quest marker would be. A mob whose line carries no count keeps the marker."],
+            { disabled = function() return not d.questMobEnabled end,
+              after = function() NP.Bump() end,
+              inline = { gear(L["Quest progress instead of the marker"], {
+                  slider("questObjectiveTextSize", L["Size"], 8, 24),
+              }) } }),
         toggle("comboEnabled", L["Combo Points"],
             L["Shows your combo points under the plate of your target."],
             { inline = {

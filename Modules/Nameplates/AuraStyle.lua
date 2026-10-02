@@ -146,6 +146,10 @@ function Style.Initializer(kind, size)
         -- the spacing arithmetic and never reaches the frame. Without this the
         -- button stays 0x0 and nothing is ever visible, while every call
         -- involved reports success.
+        -- Whole physical pixels, or the 1 px border lands between two of
+        -- them and is drawn blurred on one side.
+        local px = platePixel()
+        size = math.max(px, math.floor(size / px + 0.5) * px)
         button:SetSize(size, size)
 
         local icon = button:CreateTexture(nil, "ARTWORK")
@@ -160,8 +164,16 @@ function Style.Initializer(kind, size)
 
         local bSize, bc = Style.Border(a)
         if bSize > 0 and bc then
-            local edges = ns.MakeEdges(button, "OVERLAY")
-            ns.LayoutEdgesAt(edges, button, bSize * platePixel(), bc.r, bc.g, bc.b, bc.a or 1)
+            -- Inside the icon, over its outer pixels: the border is exactly
+            -- as wide as the button, and neighbours one pixel apart do not
+            -- draw their borders into each other.
+            -- On a frame above the cooldown, so the swipe does not darken it.
+            local holder = CreateFrame("Frame", nil, button)
+            holder:SetAllPoints(button)
+            holder:SetFrameLevel(cd:GetFrameLevel() + 1)
+            local edges = ns.MakeEdges(holder, "OVERLAY")
+            local th = bSize * px
+            ns.LayoutEdgesAt(edges, button, th, bc.r, bc.g, bc.b, bc.a or 1, -th)
         end
 
         -- Fonts BEFORE the engine is told about the strings: an unstyled

@@ -7,7 +7,7 @@
 -- Two of them look like they need a comparison and do not:
 --
 --   * the execute glow asks the CLIENT to turn health into a colour. A colour
---     curve is red below the threshold and transparent above it, and
+--     curve is red below the threshold and black (nothing, under ADD) above it, and
 --     UnitHealthPercent evaluates it for us -- so the decision "is this mob low
 --     enough" is made in C on a number we never see.
 --   * a combo point is one bar per pip, each scaled i-1 .. i and fed the secret
@@ -52,6 +52,28 @@ local questCache = {}   -- unit -> false, or { [questID] = true }; 0 = a quest w
 local questStale = false
 local questData  = {}   -- unit -> the dataInstanceID its last scan read
 local triedBlind = {}   -- unit -> true: an unreadable scan in this fight, no retry until data changes
+local questText  = {}   -- unit -> "3/8" or "40%": the first open objective's progress, plain text
+
+-- The progress of an objective line, or nil. The line carries it as numbers
+-- (numFulfilled, numRequired); an area objective shown as a percentage has
+-- 0/1 there and its real progress only in the text, so a percent in the text
+-- wins.
+local function progressOf(line)
+    local text = line.leftText
+    if ns.CanRead(text) and type(text) == "string" then
+        local pct = text:match("(%d+)%s*%%")
+        if pct then return pct .. "%" end
+    end
+    local have, need = line.numFulfilled, line.numRequired
+    if ns.CanRead(have) and ns.CanRead(need) and type(have) == "number" and type(need) == "number" then
+        return have .. "/" .. need
+    end
+    if ns.CanRead(text) and type(text) == "string" then
+        local done, total = text:match("(%d+)%s*/%s*(%d+)")
+        if done then return done .. "/" .. total end
+    end
+    return nil
+end
 
 local function onQuest(id)
     local on = C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(id)
@@ -72,30 +94,43 @@ local function scanQuest(unit)
     local lines = info.lines
     if type(lines) ~= "table" then return nil end
     local types = Enum.TooltipDataLineType
-    local ids, current, blind = nil, nil, false
+    -- Only an OPEN objective marks the unit. A title alone does not: the
+    -- client keeps a quest's title on the mob after its last kill or drop,
+    -- and the marker stayed until the quest was handed in.
+    local ids, current, skip, blind, progress = nil, nil, false, false, nil
     for _, line in ipairs(lines) do
         local kind = line.type
         if not ns.CanRead(kind) then
             blind = true
         else
             if kind == types.QuestTitle then
-                -- our own quest, not someone else's tooltip line; the objectives
-                -- below a title belong to it
+                -- our own quest, still open, not someone else's tooltip line;
+                -- the objectives below a title belong to it
                 local id = ns.Num(line.id, nil)
-                current = id and onQuest(id) and id or nil
-                if current then ids = ids or {}; ids[current] = true end
-            elseif kind == types.QuestObjective then
+                current = id and onQuest(id) and not questDone(id) and id or nil
+                -- a title we can read but that is not an open quest of ours:
+                -- its objectives count for nothing
+                skip = id ~= nil and current == nil
+            elseif kind == types.QuestObjective and not skip then
                 local done = line.completed
                 if ns.CanRead(done) and done == false then
                     ids = ids or {}
                     ids[current or 0] = true
+                    progress = progress or progressOf(line)
                 end
             end
         end
     end
-    if ids then return ids end
+    if ids then questText[unit] = progress; return ids end
     if blind then return nil end
+    questText[unit] = nil
     return false
+end
+
+-- The progress to show in place of the marker, when the unit is a quest mob
+-- and its objective line carried one.
+function Extras.QuestProgress(unit)
+    return Extras.IsQuestMob(unit) and questText[unit] or nil
 end
 
 function Extras.IsQuestMob(unit)
@@ -120,7 +155,8 @@ function Extras.IsQuestMob(unit)
 end
 
 -- The client filled in a tooltip's data: the unit it belongs to is asked
--- again. nil means every tooltip changed. Only a "no" is asked again: a unit already marked loses its marker through
+-- again. nil means every tooltip changed. Only a "no" is asked again, and a
+-- marked unit whose progress is still missing: a unit already marked loses its marker through
 -- the quest log. And at most twice a second per unit, in case the scan itself
 -- is what makes the client send the event.
 local rescanAt = {}
@@ -129,7 +165,10 @@ function Extras.OnTooltipData(dataID)
     if not NP.db().questMobEnabled then return end
     local now = GetTime()
     for unit, id in pairs(questData) do
+        -- a quest mob read before the client had its counts is asked again
+        -- too, while its progress is missing
         local open = questCache[unit] == false or triedBlind[unit]
+            or (questCache[unit] and not questText[unit] and NP.db().questObjectiveText)
         if open and (dataID == nil or id == dataID) and now - (rescanAt[unit] or 0) >= 0.5 then
             rescanAt[unit] = now
             questCache[unit], triedBlind[unit] = nil, nil
@@ -143,13 +182,20 @@ function Extras.OnTooltipData(dataID)
 end
 
 -- In a fight: drop the quests the log now calls finished (or no longer has).
+-- A unit still marked is read again, so its progress counts up with every
+-- kill; a read that comes back unreadable keeps what the unit had.
 local function pruneFinished()
     for unit, ids in pairs(questCache) do
         if ids then
             for id in pairs(ids) do
                 if id ~= 0 and (questDone(id) or not onQuest(id)) then ids[id] = nil end
             end
-            if next(ids) == nil then questCache[unit] = false end
+            if next(ids) == nil then
+                questCache[unit], questText[unit] = false, nil
+            else
+                local ok, res = pcall(scanQuest, unit)
+                if ok and type(res) ~= "nil" then questCache[unit] = res end
+            end
         end
     end
 end
@@ -157,6 +203,7 @@ end
 function Extras.ForgetQuest(unit)
     if unit then
         questCache[unit], questData[unit], triedBlind[unit], rescanAt[unit] = nil, nil, nil, nil
+        questText[unit] = nil
         return
     end
     if InCombatLockdown() then
@@ -167,6 +214,7 @@ function Extras.ForgetQuest(unit)
     questStale = false
     wipe(questCache)
     wipe(triedBlind)
+    wipe(questText)
 end
 
 -- The fight is over: what the log changed in it, and the plates that came up
@@ -181,16 +229,22 @@ end
 -- Execute glow
 --
 -- The curve is the whole trick: two points, one just below the threshold and
--- one just above, so the client returns a lit colour for a mob in range and a
--- transparent one for everything else. We hand the result straight to
--- SetVertexColor without ever looking at it.
+-- one just above, so the client returns a lit colour for a mob in range and
+-- BLACK for everything else. Only the colour changes, never the alpha: what
+-- the curve does with alpha between its points is not to be relied on, and
+-- black adds nothing under the edges' ADD blend, so it is invisible. We hand
+-- the result straight to SetVertexColor without ever looking at it.
 -- ---------------------------------------------------------------------------
 local curve, curveKey
 
+-- Always red: the glow says one thing, and a second colour setting for it
+-- only made the row harder to read.
+local EXECUTE_RED = { r = 1, g = 0, b = 0 }
+
 local function executeCurve()
     local db = NP.db()
-    local c = db.executeColor
-    local key = ("%f/%f/%f/%f"):format(db.executeThreshold, c.r, c.g, c.b)
+    local c = EXECUTE_RED
+    local key = db.executeThreshold
     if curve and curveKey == key then return curve end
     if not (C_CurveUtil and C_CurveUtil.CreateColorCurve and CreateColor) then return nil end
     local ok, new = pcall(C_CurveUtil.CreateColorCurve)
@@ -199,8 +253,8 @@ local function executeCurve()
     local t = db.executeThreshold / 100
     new:AddPoint(0, CreateColor(c.r, c.g, c.b, 1))
     new:AddPoint(t, CreateColor(c.r, c.g, c.b, 1))
-    new:AddPoint(math.min(t + 0.001, 1), CreateColor(c.r, c.g, c.b, 0))
-    new:AddPoint(1, CreateColor(c.r, c.g, c.b, 0))
+    new:AddPoint(math.min(t + 0.0001, 1), CreateColor(0, 0, 0, 1))
+    new:AddPoint(1, CreateColor(0, 0, 0, 1))
     curve, curveKey = new, key
     return curve
 end

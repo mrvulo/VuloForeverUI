@@ -238,7 +238,7 @@ local function layoutRow(kind, db)
         f.tex:SetTexCoord(crop, 1 - crop, crop, 1 - crop)
         local bSize, bc = NP.AuraStyle.Border(a)
         if bc then
-            ns.LayoutEdges(f.edges, f, bSize, bc.r, bc.g, bc.b, bc.a or 1)
+            ns.LayoutEdges(f.edges, f, bSize, bc.r, bc.g, bc.b, bc.a or 1, -bSize)
         else
             ns.LayoutEdges(f.edges, f, 0, 0, 0, 0, 1)
         end
@@ -281,6 +281,13 @@ local function fillCast(db)
     local c = db.castBar
     cast:SetStatusBarColor(c.r, c.g, c.b)
     cast:Show()
+    -- the plate border as a real cast draws it: round the cast bar too, when
+    -- that is asked for
+    -- (once: this runs on every tick, and a settings change repaints anyway)
+    if not plate.borderWrapped then
+        plate.borderWrapped = true
+        NP.Target.PaintBorder(plate)
+    end
 
     plate.castIcon:SetTexture(SAMPLE_ICONS[5])
     plate.castName:SetText(L["Spell Name"])
@@ -297,6 +304,12 @@ local function fillCast(db)
         spot("castName", plate.castName, L["Spell Name"], L["Cast Bar Text"], 2)
     else
         hideSpot("castName")
+    end
+    -- the spell's target: its own row, unless it rides in the spell name
+    if db.castTargetSide ~= "none" and not db.castCombineNameTarget then
+        spot("castTarget", plate.castTarget, L["Spell Target"], L["Cast Bar Text"], 2)
+    else
+        hideSpot("castTarget")
     end
     if db.showCastTimer then
         spot("castTimer", plate.castTimer, L["Cast Timer"], L["Health and Cast Bar"], 2)
@@ -346,10 +359,17 @@ local function extents(db)
     end
     local down = db.castBarHeight + 4
     if NP.IconInSlot("bottom") ~= "none" then down = down + db.iconSlots.bottom.size + 2 end
+    -- a side slot is a row growing away from the bar (Auras.AutoGrow) unless
+    -- its group was told to run up or down: then it is one icon wide
     local side = 0
     for _, slot in ipairs({ "left", "right" }) do
-        if NP.IconInSlot(slot) ~= "none" then
-            side = math.max(side, db.iconSlots[slot].size + 2)
+        local what = NP.IconInSlot(slot)
+        if what ~= "none" then
+            local size = db.iconSlots[slot].size
+            local a = db.auras[what]
+            local n = 1
+            if a and a.grow ~= "up" and a.grow ~= "down" then n = a.max or 1 end
+            side = math.max(side, n * (size + (a and a.spacing or 0)) + 2)
         end
     end
     return up + topRow, down, side

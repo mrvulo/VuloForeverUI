@@ -375,14 +375,12 @@ end
 -- ---------------------------------------------------------------------------
 -- Start / stop
 -- ---------------------------------------------------------------------------
+-- Whether the plate's border may take the cast bar in is decided where the
+-- border is painted (Target.PaintBorder): the target's and the hover's colour
+-- stay on the health bar.
 local function wrapBorder(plate, on)
-    local db = NP.db()
-    -- switched off mid-cast, the border still has to come back to the bar
-    local wrap = on and db.showBorder and db.wrapBorderCastbar
-    local host = plate.borderHost
-    host:ClearAllPoints()
-    host:SetPoint("TOPLEFT", plate.health, "TOPLEFT", 0, 0)
-    host:SetPoint("BOTTOMRIGHT", wrap and plate.cast or plate.health, "BOTTOMRIGHT", 0, 0)
+    plate.borderWrapped = on and true or false
+    NP.Target.PaintBorder(plate)
 end
 
 local function hide(plate)
@@ -525,8 +523,15 @@ function Cast.UpdateTarget(plate, spellName)
     if db.castTargetFirstName then
         if ns.CanRead(target) then
             target = firstName(target)
-        elseif not db.castCombineNameTarget then
-            showOwnName(plate, unit, db)
+        else
+            -- Secret, so it cannot be cut. The caster's own target is almost
+            -- always the one the spell is aimed at, and UnitName hands a
+            -- Forever name back in two parts -- the first one is the first
+            -- name, secret or not, and goes straight into the text.
+            local ok, first = pcall(UnitName, unit .. "target")
+            if ok and ns.Exists(first) then target = firstName(first) end
+            -- and when the spell is aimed at us, our own name for sure
+            if not db.castCombineNameTarget then showOwnName(plate, unit, db) end
         end
     end
     if db.castCombineNameTarget then
