@@ -567,7 +567,7 @@ local function generalPage()
         toggle("executeEnabled", L["Execute Glow"],
             { tooltip = L["Lights the plate up once the enemy is low enough to finish."], inline = {
                 gear(L["Execute Glow"], {
-                    slider("executeThreshold", L["Execute Threshold"], 5, 50),
+                    slider("executeThreshold", L["Execute Threshold"], 5, 50, 1, { suffix = "%" }),
                     slider("executeGlowSize", L["Size"], 2, 16),
                 }),
             } }),
