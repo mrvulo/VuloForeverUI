@@ -445,11 +445,17 @@ local function autoColumns(count)
 end
 
 -- The money, the free slots and whichever currencies the player asked for.
+-- The free slots are the ones anything fits into; room in profession bags is
+-- told apart, in their colour, because it is no room for loot.
 local function headerText(win, bagIDs, db)
     local parts = {}
     if db.showFreeSlots then
-        local free, total = Bags.CountSlots(bagIDs)
-        parts[#parts + 1] = ("%d/%d"):format(free, total)
+        local free, _, special = Bags.CountSlots(bagIDs)
+        local text = L["%d free"]:format(free)
+        if special > 0 then
+            text = text .. "  |cff66cccc" .. L["+%d profession"]:format(special) .. "|r"
+        end
+        parts[#parts + 1] = text
     end
 
     local list = db.currencies
