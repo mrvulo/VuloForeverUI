@@ -25,7 +25,7 @@ M.tabs = {
 local function db() return M.db end
 
 local rows = ns.OptionRows(db, function() NP.Bump() end)
-local toggle, slider, dropdown = rows.toggle, rows.slider, rows.dropdown
+local toggle, slider, dropdown, opacity = rows.toggle, rows.slider, rows.dropdown, rows.opacity
 local color, swatch = rows.color, rows.swatch
 local gear, section = ns.OptionGear, ns.OptionSection
 
@@ -274,10 +274,10 @@ local function displayPage()
         toggle("wrapBorderCastbar", L["Wrap Around Castbar"], { disabled = function() return not d.showBorder end }),
         toggle("borderBarColor", L["Border in the bar's color"],
             { tooltip = L["The border takes the health bar's colour: red for hostile, yellow for neutral, the threat colours in a group. A player whose colour cannot be read keeps the border colour."], disabled = function() return not d.showBorder end }),
-        slider("bgAlpha", L["Background"], 0, 100, 1, { scale = 100, inline = { swatch("bgColor", L["Background color"]) } }),
+        opacity("bgAlpha", L["Background"], { inline = { swatch("bgColor", L["Background color"]) } }),
         dropdown("absorbStyle", L["Absorb Style"], absorbStyles, { inline = {
             swatch("absorbColor", { tooltip = L["Absorb color"], disabled = function() return d.absorbStyle == "blizzard" end }),
-            gear(L["Absorb Style"], { slider("absorbAlpha", L["Opacity"], 5, 100) }),
+            gear(L["Absorb Style"], { opacity("absorbAlpha", L["Opacity"], { percent = true, min = 5 }) }),
         } }),
         dropdown("healthBarTexture", L["Bar Texture"], ns.MediaStatusbarValues()),
         dropdown("castBarTexture", L["Cast Bar Texture"], ns.MediaStatusbarValues()),
@@ -307,7 +307,7 @@ local function displayPage()
             toggle("hideCastIconBorder", L["Hide Border"]),
             toggle("castIconTargetBorder", L["Use Target Border Color"]),
         }) } }),
-        slider("castBgAlpha", L["Cast Background"], 0, 100, 1, { scale = 100, inline = { swatch("castBgColor", L["Background color"]) } }),
+        opacity("castBgAlpha", L["Cast Background"], { inline = { swatch("castBgColor", L["Background color"]) } }),
         { type = "header", text = L["Cast Bar Border"] },
         ns.BorderRows(rows, { size = "castBorderSize", color = "castBorderColor" }),
         dropdown("castTimerSide", L["Cast Timer"], sideValues(false), {
@@ -361,7 +361,7 @@ local function displayPage()
         local none = function() return d[prefix .. "OverlayTexture"] == "none" end
         local items = { toggle(prefix .. "OverlayFullBgAlpha", L["Full alpha on empty part of bar"]) }
         if alphaKey then
-            table.insert(items, 1, slider(alphaKey, L["Opacity"], 5, 100, 1, { scale = 100 }))
+            table.insert(items, 1, opacity(alphaKey, L["Opacity"], { min = 5 }))
             items[#items + 1] = toggle(prefix .. "OverlayNoTint", L["Don't tint (keep bar's own color)"])
         end
         local inline = { gear(label, items, { disabled = none }) }
@@ -372,14 +372,14 @@ local function displayPage()
     local effects = section(L["Target, Focus & Hover Effects"], {
         toggle("targetGlow", L["Target: Glow"], { inline = {
             swatch("targetGlowColor", L["Glow color"]),
-            gear(L["Target: Glow"], { slider("targetGlowAlpha", L["Glow Opacity"], 0, 100, 1, { scale = 100 }) }),
+            gear(L["Target: Glow"], { opacity("targetGlowAlpha", L["Glow Opacity"]) }),
         } }),
         toggle("targetGlowBorderColor", L["Target: Border Color"], { inline = { swatch("targetBorderColor", { tooltip = L["Border color"], hasAlpha = true }) } }),
         toggle("targetGlowBorderSize", L["Target: Border Size"], { inline = {
             gear(L["Target: Border Size"], { slider("targetBorderSizeValue", L["Border size"], 0, 4) }) } }),
         toggle("targetGlowHighlight", L["Target: Highlight"], { inline = {
             swatch("targetHighlightColor", L["Highlight Color"]),
-            gear(L["Target: Highlight"], { slider("targetHighlightAlpha", L["Highlight Opacity"], 0, 100, 1, { scale = 100 }) }),
+            gear(L["Target: Highlight"], { opacity("targetHighlightAlpha", L["Highlight Opacity"]) }),
         } }),
         toggle("showTargetArrows", L["Target Arrows"], { inline = {
             swatch("targetArrowColor", { tooltip = L["Arrow color"], disabled = function() return d.targetArrowClassColor end }),
@@ -395,11 +395,11 @@ local function displayPage()
         overlayRow("hover", L["Hover Texture"]),
         toggle("hoverGlowHighlight", L["Hover: Highlight"], { inline = {
             swatch("hoverColor", L["Highlight Color"]),
-            gear(L["Hover: Highlight"], { slider("hoverAlpha", L["Highlight Opacity"], 0, 100, 1, { scale = 100 }) }),
+            gear(L["Hover: Highlight"], { opacity("hoverAlpha", L["Highlight Opacity"]) }),
         } }),
         toggle("hoverGlow", L["Hover: Glow"], { inline = {
             swatch("hoverGlowColor", L["Glow color"]),
-            gear(L["Hover: Glow"], { slider("hoverGlowAlpha", L["Glow Opacity"], 0, 100, 1, { scale = 100 }) }),
+            gear(L["Hover: Glow"], { opacity("hoverGlowAlpha", L["Glow Opacity"]) }),
         } }),
         toggle("hoverGlowBorderColor", L["Hover: Border Color"], { inline = { swatch("hoverBorderColor", { tooltip = L["Border color"], hasAlpha = true }) } }),
         toggle("hoverGlowBorderSize", L["Hover: Border Size"], { inline = {
@@ -548,7 +548,7 @@ local function generalPage()
         toggle("hashLineEnabled", L["Show Hash Line on Target at Percent"], { inline = { swatch("hashLineColor", L["Line color"]) } }),
         slider("hashLinePercent", L["Hash Line Location"], 0, 100, 1, { disabled = function() return not d.hashLineEnabled end }),
         slider("targetScale", L["Scale Target Nameplate (Percent)"], 50, 200, 5),
-        slider("nonTargetAlpha", L["Non-Target Opacity"], 0, 100, 1, { inline = {
+        opacity("nonTargetAlpha", L["Non-Target Opacity"], { percent = true, inline = {
             gear(L["Non-Target Opacity"], { toggle("nonTargetKeepFocus", L["Keep Focus Full Opacity"]) }) } }),
         slider("focusCastHeight", L["Focus Cast Height"], 100, 200, 5),
         toggle("focusLetterEnabled", L["Focus Letter"], { inline = { gear(L["Focus Letter"], {
@@ -592,11 +592,11 @@ local function generalPage()
     -- A pure client setting with no copy in the profile; only offered when
     -- this client has it.
     if C_CVar.GetCVar("nameplateOccludedAlphaMult") ~= nil then
-        extras[#extras + 1] = { type = "slider", label = L["Line of Sight Opacity"], min = 0, max = 1, step = 0.01,
+        extras[#extras + 1] = { type = "slider", label = L["Line of Sight Opacity"], min = 0, max = 100, step = 1, suffix = "%",
             tooltip = L["How visible nameplates stay behind walls and terrain. Cannot change in combat."],
-            get = function() return tonumber(C_CVar.GetCVar("nameplateOccludedAlphaMult")) or 1 end,
+            get = function() return (tonumber(C_CVar.GetCVar("nameplateOccludedAlphaMult")) or 1) * 100 end,
             set = function(_, v)
-                if not InCombatLockdown() then pcall(C_CVar.SetCVar, "nameplateOccludedAlphaMult", tostring(v)) end
+                if not InCombatLockdown() then pcall(C_CVar.SetCVar, "nameplateOccludedAlphaMult", tostring(v / 100)) end
             end }
     end
     -- Settings out of another suite's profile string (Import.lua).

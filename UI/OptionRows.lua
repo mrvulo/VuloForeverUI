@@ -12,7 +12,8 @@
 -- the tooltip string or a table:
 --   { tooltip, inline, disabled, width, subKey, after, get, set,
 --     scale = n,       slider only: shown value = stored value * scale
---     hasAlpha = true } colour only: the picker shows an opacity bar, .a is saved
+--     hasAlpha = true, colour only: the picker shows an opacity bar, .a is saved
+--     suffix = "%" }    slider only: a unit after the number
 --
 -- Rows are built per call, never at file load: labels are locale lookups and
 -- the saved language only exists from ADDON_LOADED on.
@@ -39,6 +40,7 @@ function ns.OptionRows(db, apply, opts)
         if extra.width then row.width = extra.width end
         if extra.subKey then row.subKey = extra.subKey end
         if extra.hasAlpha then row.hasAlpha = true end
+        if extra.suffix then row.suffix = extra.suffix end
         if extra.get then row.get = extra.get end
         if extra.set then row.set = extra.set end
         return row
@@ -68,6 +70,18 @@ function ns.OptionRows(db, apply, opts)
         end
         return finish({ type = "slider", label = label, min = min, max = max,
             step = step or 1, get = get, set = set }, extra)
+    end
+
+    -- Opacity, the same everywhere: shown as 0-100 %, saved as 0..1 (or as
+    -- 0..100 with extra.percent, for the keys that were always saved that way).
+    -- extra.min / extra.max are in per cent.
+    function rows.opacity(key, label, extra)
+        extra = asExtra(extra) or {}
+        local scale = extra.percent and 1 or 100
+        return finish({ type = "slider", label = label, suffix = "%",
+            min = extra.min or 0, max = extra.max or 100, step = extra.step or 1,
+            get = function() return (db()[key] or 0) * scale end,
+            set = function(_, v) db()[key] = v / scale; changed(extra) end }, extra)
     end
 
     function rows.dropdown(key, label, values, extra)

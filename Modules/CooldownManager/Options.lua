@@ -76,7 +76,7 @@ end
 -- ---------------------------------------------------------------- widgets --
 
 local rows = ns.OptionRows(bar, apply)
-local toggle, slider, color = rows.toggle, rows.slider, rows.color
+local toggle, slider, color, opacity = rows.toggle, rows.slider, rows.color, rows.opacity
 
 -- The kinds a new bar can be started as. Same three the client's own cooldown
 -- viewer keeps, and the same three a fresh profile starts with -- a bar added
@@ -671,7 +671,7 @@ local function layoutPage()
         toggle("vertical", L["Stand the bar upright"]),
         toggle("splitRows", L["Split the rows"], L["Puts a gap between the rows, so a double row reads as two."]),
         slider("splitGap", L["Gap between the rows"], 0, 40, 1),
-        slider("opacity", L["Opacity"], 0.1, 1, 0.01),
+        opacity("opacity", L["Opacity"], { min = 10 }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Size limits"] },
@@ -729,7 +729,7 @@ local function iconsPage()
         { type = "spacer", height = 6 },
         { type = "header", text = L["While the spell is on cooldown"] },
         toggle("showSwipe", L["Show the swipe"]),
-        slider("swipeAlpha", L["Swipe darkness"], 0, 1, 0.01),
+        opacity("swipeAlpha", L["Swipe darkness"]),
         { type = "toggle", label = L["Dim the icon"],
           tooltip = L["The client dims it, so it also works while you are in combat."],
           get = function() return bar().desaturateOnCooldown end,
@@ -834,7 +834,7 @@ local function visibilityPage()
           get = function() return bar().visibility end,
           set = function(_, v) bar().visibility = v; apply() end },
         toggle("oocFade", L["Fade out of combat"]),
-        slider("oocAlpha", L["Faded opacity"], 0.05, 1, 0.01),
+        opacity("oocAlpha", L["Faded opacity"], { min = 5 }),
         { type = "spacer", height = 6 },
         { type = "header", text = L["Only under these conditions"] },
         { type = "desc", text = L["|cffaaaaaaPick as many as you like. Every one you pick has to hold, so nothing picked means the bar always follows the rule above.|r"] },

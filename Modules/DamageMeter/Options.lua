@@ -29,6 +29,7 @@ local function d() return DM.db() end
 
 local rows = ns.OptionRows(d, nil, { dropdownWidth = 200 })
 local toggle, slider, dropdown, color = rows.toggle, rows.slider, rows.dropdown, rows.color
+local opacity = rows.opacity
 
 local function restyle() DM.RestyleAll() end
 local function repaint() DM.RefreshAll() end
@@ -141,7 +142,7 @@ end
 local function windowOptions()
     return {
         { type = "header", text = L["Background"] },
-        slider("bgAlpha", L["Opacity"], 0, 1, 0.01, { after = restyle }),
+        opacity("bgAlpha", L["Opacity"], { after = restyle }),
         color("bgColor", L["Background color"], { after = restyle }),
 
         { type = "spacer", height = 6 },
@@ -156,7 +157,7 @@ local function windowOptions()
         { type = "spacer", height = 6 },
         { type = "header", text = L["Header"] },
         slider("hdrHeight", L["Header height"], 14, 40, 1, { after = restyle }),
-        slider("hdrBgAlpha", L["Header opacity"], 0, 1, 0.01, { after = restyle }),
+        opacity("hdrBgAlpha", L["Header opacity"], { after = restyle }),
         color("hdrBgColor", L["Header color"], { after = restyle }),
         slider("hdrFontSize", L["Header text size"], 8, 18, 1, { after = restyle }),
         toggle("hdrTextUseAccent", L["Accent color for the header text"], { after = restyle }),
@@ -182,14 +183,14 @@ local function barsOptions()
         dropdown("barTexture", L["Bar texture"], ns.MediaStatusbarValues(), { after = restyle, width = 220 }),
         slider("barHeight", L["Bar height"], 8, 40, 1, { after = restyle }),
         slider("barSpacing", L["Spacing"], -1, 10, 1, { after = restyle }),
-        slider("barFillAlpha", L["Fill opacity"], 0, 1, 0.01, { after = restyle }),
+        opacity("barFillAlpha", L["Fill opacity"], { after = restyle }),
         toggle("showClassColor", L["Class color"], { after = restyle }),
         toggle("barColorUseAccent", L["Accent color instead"], { after = restyle }),
         color("barColor", L["Bar color"], { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Bar background"] },
-        slider("barBgAlpha", L["Background opacity"], 0, 1, 0.01, { after = restyle }),
+        opacity("barBgAlpha", L["Background opacity"], { after = restyle }),
         toggle("barBgUseClassColor", L["Class color for the background"], { after = restyle }),
         color("barBgColor", L["Background color"], { after = restyle }),
 
@@ -345,7 +346,7 @@ local function historyOptions()
         items[#items + 1] = shRows.slider("iconZoom", L["Icon zoom"], 0, 0.2, 0.01, { after = apply })
         items[#items + 1] = shRows.slider("iconCount", L["Number of icons"], 1, 10, 1, { after = apply })
         items[#items + 1] = shRows.slider("iconSpacing", L["Icon spacing"], 0, 10, 1, { after = apply })
-        items[#items + 1] = shRows.slider("iconOpacity", L["Icon opacity"], 0.1, 1, 0.01, { after = apply })
+        items[#items + 1] = shRows.opacity("iconOpacity", L["Icon opacity"], { min = 10, after = apply })
         items[#items + 1] = shRows.dropdown("iconAnimation", L["Animation"], DM.SpellHistory.AnimationValues(), { after = apply })
         items[#items + 1] = { type = "slider", label = L["Fade after"], min = 0, max = 60, step = 1,
             tooltip = L["Seconds before an icon fades. The clock pauses while you are fighting. Zero keeps them."],
@@ -371,7 +372,7 @@ local function historyOptions()
         items[#items + 1] = shRows.slider("barHeight", L["Bar height"], 12, 32, 1, { after = apply })
         items[#items + 1] = shRows.slider("maxBars", L["Number of bars"], 1, 10, 1, { after = apply })
         items[#items + 1] = shRows.toggle("hideTopBar", L["Hide the top bar"], { after = apply })
-        items[#items + 1] = shRows.slider("bgAlpha", L["Background opacity"], 0, 1, 0.01, { after = apply })
+        items[#items + 1] = shRows.opacity("bgAlpha", L["Background opacity"], { after = apply })
         items[#items + 1] = shRows.color("bgColor", L["Background color"], { after = apply })
         items[#items + 1] = shRows.dropdown("barTexture", L["Bar texture"], (function()
             local v = { { value = "match", text = L["Same as the bars"] } }
@@ -381,7 +382,7 @@ local function historyOptions()
         items[#items + 1] = shRows.toggle("barColorUseClass", L["Class color"], { after = apply })
         items[#items + 1] = shRows.toggle("barColorUseAccent", L["Accent color instead"], { after = apply })
         items[#items + 1] = shRows.color("barColor", L["Bar color"], { after = apply })
-        items[#items + 1] = shRows.slider("barOpacity", L["Bar opacity"], 0.1, 1, 0.01, { after = apply })
+        items[#items + 1] = shRows.opacity("barOpacity", L["Bar opacity"], { min = 10, after = apply })
         items[#items + 1] = shRows.slider("textSize", L["Text size"], 8, 16, 1, { after = apply })
         items[#items + 1] = shRows.toggle("textColorUseAccent", L["Accent color for the text"], { after = apply })
         items[#items + 1] = shRows.color("textColor", L["Text color"], { after = apply })
@@ -467,8 +468,8 @@ local function threatOptions()
 
     items[#items + 1] = { type = "header", text = L["Look"] }
     items[#items + 1] = threatRows.dropdown("texture", L["Bar texture"], ns.MediaStatusbarValues(), { after = apply, width = 220 })
-    items[#items + 1] = threatRows.slider("barOpacity", L["Bar opacity"], 0, 100, 1, { after = apply })
-    items[#items + 1] = threatRows.slider("bgAlpha", L["Background opacity"], 0, 1, 0.05, { after = apply })
+    items[#items + 1] = threatRows.opacity("barOpacity", L["Bar opacity"], { percent = true, after = apply })
+    items[#items + 1] = threatRows.opacity("bgAlpha", L["Background opacity"], { after = apply })
     items[#items + 1] = ns.BorderRows(threatRows, { size = "borderSize", color = "borderColor" }, { after = apply })
 
     items[#items + 1] = { type = "header", text = L["Text"] }

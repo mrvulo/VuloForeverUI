@@ -66,6 +66,12 @@ local function color(key, field, label)
     return rowsFor(key).color(field, label, { subKey = key .. field })
 end
 
+local function opacity(key, field, label, extra)
+    extra = extra or {}
+    extra.subKey = key .. field
+    return rowsFor(key).opacity(field, label, extra)
+end
+
 local function dropdown(key, field, label, values, width)
     return rowsFor(key).dropdown(field, label, values, { width = width, subKey = key .. field })
 end
@@ -113,9 +119,9 @@ local function lookRows(key)
             { value = "noncombat", text = L["Out of combat"] },
             { value = "hidden",    text = L["Never"] },
         }, 220),
-        slider(key, "opacity", L["Opacity"], 0.1, 1, 0.01),
+        opacity(key, "opacity", L["Opacity"], { min = 10 }),
         toggle(key, "oocFade", L["Fade out of combat"]),
-        slider(key, "oocAlpha", L["Faded opacity"], 0.05, 1, 0.01),
+        opacity(key, "oocAlpha", L["Faded opacity"], { min = 5 }),
     }
     return rows
 end
@@ -156,7 +162,7 @@ local function costRows(key)
         toggle(key, "showCost", L["Shade the cost of the current cast"],
             L["While you cast a spell with a cast time, the part of the bar it will spend is shaded."]),
         color(key, "costColor", L["Cost color"]),
-        slider(key, "costOpacity", L["Cost opacity"], 0, 100, 5),
+        opacity(key, "costOpacity", L["Cost opacity"], { percent = true, step = 5 }),
     }
 end
 

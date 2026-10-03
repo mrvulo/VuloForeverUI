@@ -687,7 +687,7 @@ local function fitColumns(run, availW)
         if item.type == "slider" then
             -- the widest value the slider can display decides its block, and a
             -- track has to fit beside it -- this is the binding constraint
-            local e = UI.SliderEndWidth and UI.SliderEndWidth(item.min, item.max, item.step) or 90
+            local e = UI.SliderEndWidth and UI.SliderEndWidth(item.min, item.max, item.step, item.suffix) or 90
             if e + MIN_TRACK > sliderEnd then sliderEnd = e + MIN_TRACK end
         else
             local c = CONTROL_NEED[item.type] or 44

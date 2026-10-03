@@ -913,14 +913,15 @@ local function snapSliderValue(step, v)
     return math.floor(v * inv + 0.5) / inv
 end
 
-local function formatSliderValue(step, v)
-    return string.format("%g", snapSliderValue(step, v))
+-- suffix: a unit shown after the number ("%" on an opacity slider).
+local function formatSliderValue(step, v, suffix)
+    return string.format("%g", snapSliderValue(step, v)) .. (suffix or "")
 end
 
 -- Wide enough for the widest value the range can produce, instead of a fixed
 -- 36 which "-800" never fitted into.
-local function sliderValueWidth(min, max, step)
-    local widest = math.max(#formatSliderValue(step, min or 0), #formatSliderValue(step, max or 0))
+local function sliderValueWidth(min, max, step, suffix)
+    local widest = math.max(#formatSliderValue(step, min or 0, suffix), #formatSliderValue(step, max or 0, suffix))
     return math.max(36, 8 + widest * 7)
 end
 
@@ -928,8 +929,8 @@ end
 -- to the track, the two 16px buttons, the value box and the gaps between them.
 -- The options page asks this before it builds anything, because how many
 -- columns a run may use depends on whether a track still fits beside it.
-function UI.SliderEndWidth(min, max, step)
-    return 8 + 16 + 4 + sliderValueWidth(min, max, step) + 4 + 16 + 4
+function UI.SliderEndWidth(min, max, step, suffix)
+    return 8 + 16 + 4 + sliderValueWidth(min, max, step, suffix) + 4 + 16 + 4
 end
 
 -- Row metrics. They are the same numbers the toggle and dropdown rows use, so
@@ -981,6 +982,7 @@ local function sliderSetup(row, config)
     s._min  = config.min or 0
     s._max  = config.max or 100
     s._step = config.step or 1
+    s._suffix = config.suffix
 
     -- SetMinMaxValues/SetValue fire OnValueChanged; a reconfigure must not call config.set()
     s._configuring = true
@@ -988,13 +990,13 @@ local function sliderSetup(row, config)
     s:SetValueStep(s._step)
     row.label:SetText(clean(config.label) or "")
 
-    local valW = sliderValueWidth(s._min, s._max, s._step)
+    local valW = sliderValueWidth(s._min, s._max, s._step, s._suffix)
     s._valueText:SetWidth(valW)
     -- gap + minus + gap + value + gap + plus, matching the anchors below. The
     -- options page needs the same number BEFORE the row exists, to decide how
     -- many columns fit -- so the formula lives in UI.SliderEndWidth and both
     -- read it there rather than each keeping its own copy.
-    row._endW = UI.SliderEndWidth(s._min, s._max, s._step)
+    row._endW = UI.SliderEndWidth(s._min, s._max, s._step, s._suffix)
 
     -- config.width has always meant the TRACK width, not the row width. Callers
     -- that pass it (the edit-mode toolbar) size themselves around the track, so
@@ -1009,7 +1011,7 @@ local function sliderSetup(row, config)
 
     local v = config.get(s) or s._min
     s:SetValue(v)
-    s._valueText:SetText(formatSliderValue(s._step, v))
+    s._valueText:SetText(formatSliderValue(s._step, v, s._suffix))
     layoutSliderRow(row)
     sliderUpdateFill(s, v)
     s._configuring = false
@@ -1209,13 +1211,14 @@ function UI:CreateSlider(parent, config)
 
     local function restoreFromSlider(self)
         self:HighlightText(0, 0)
-        self:SetText(formatSliderValue(s._step, s:GetValue() or s._min))
+        self:SetText(formatSliderValue(s._step, s:GetValue() or s._min, s._suffix))
         self:ClearFocus()
         if not self:IsMouseOver() then vbg:Hide() end
     end
 
     valueText:SetScript("OnEnterPressed", function(self)
-        local typed = tonumber(self:GetText())
+        -- The unit may be typed along ("50%"); only the number counts.
+        local typed = tonumber((self:GetText() or ""):match("^%s*(-?[%d%.]+)"))
         if typed then
             -- Clamp before snapping: typing 9999 into a 0..100 slider should
             -- land on 100, not be refused without a word.
@@ -1239,7 +1242,7 @@ function UI:CreateSlider(parent, config)
         -- Never fight the user's cursor: if they are typing in the box, the
         -- slider must not overwrite what is half-entered.
         if not self._valueText:HasFocus() then
-            self._valueText:SetText(formatSliderValue(cfg.step, v))
+            self._valueText:SetText(formatSliderValue(cfg.step, v, cfg.suffix))
         end
         sliderUpdateFill(self, v)
         if self._configuring then return end
