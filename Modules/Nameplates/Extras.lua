@@ -272,11 +272,19 @@ function Extras.UpdateExecute(plate)
     -- GetRGBA has to be inside the pcall: the colour comes out of a secret
     -- evaluation, and a throw here would fire once per plate per frame.
     local unit = plate.unit
+    -- A dead unit sits at 0 % and would light up: black instead. Read before
+    -- it is tested -- the flag may come back secret, and a test would throw.
+    local dead = UnitIsDeadOrGhost(unit)
+    if ns.CanRead(dead) and dead == true then
+        for _, tex in ipairs(plate.executeEdges) do tex:SetVertexColor(0, 0, 0, 1) end
+        glow:Show()
+        return
+    end
     local ok, r, g, b, a = pcall(function()
         return UnitHealthPercent(unit, true, c):GetRGBA()
     end)
     if not ok then glow:Hide(); return end
-    for _, tex in pairs(plate.executeEdges) do tex:SetVertexColor(r, g, b, a) end
+    for _, tex in ipairs(plate.executeEdges) do tex:SetVertexColor(r, g, b, a) end
     glow:Show()
 end
 
@@ -334,24 +342,26 @@ end
 -- ---------------------------------------------------------------------------
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 
--- The execute glow is a soft halo around the health bar plus a thin bright
--- line on its edge. The halo is cut from soft-glow.tga, whose alpha rises
--- from nothing at the rim to full a fifth of the way in (GLOW_IN): each edge
--- and corner piece takes that falloff, outer side out. Every piece is tinted
--- with the colour the curve hands back, so they all stay secret-safe and,
--- under ADD, invisible while the curve answers black.
+-- The execute glow: one soft-edged rectangle laid around the health bar as a
+-- nine-slice of soft-glow.tga. It reaches executeGlowSize past the bar, its
+-- corners twice that, so the soft rim straddles the bar's edge -- half
+-- outside, half on the bar -- and the centre lays a red wash over the bar
+-- itself. Every piece is tinted with the colour the curve hands back, so they
+-- stay secret-safe and, under ADD, invisible while the curve answers black.
 local GLOW_TEX = "Interface\\AddOns\\VuloForeverUI\\Media\\textures\\soft-glow"
-local GLOW_IN = 0.3125
+local GLOW_MARGIN = 0.48
+local M1, M2 = GLOW_MARGIN, 1 - GLOW_MARGIN
 local GLOW_PIECES = {
-    -- key        texcoords (l, r, t, b)
-    top    = { 0.4, 0.6, 0, GLOW_IN },
-    bottom = { 0.4, 0.6, 1 - GLOW_IN, 1 },
-    left   = { 0, GLOW_IN, 0.4, 0.6 },
-    right  = { 1 - GLOW_IN, 1, 0.4, 0.6 },
-    tl     = { 0, GLOW_IN, 0, GLOW_IN },
-    tr     = { 1 - GLOW_IN, 1, 0, GLOW_IN },
-    bl     = { 0, GLOW_IN, 1 - GLOW_IN, 1 },
-    br     = { 1 - GLOW_IN, 1, 1 - GLOW_IN, 1 },
+    -- key     texcoords (l, r, t, b)
+    tl     = { 0, M1, 0, M1 },
+    tr     = { M2, 1, 0, M1 },
+    bl     = { 0, M1, M2, 1 },
+    br     = { M2, 1, M2, 1 },
+    top    = { M1, M2, 0, M1 },
+    bottom = { M1, M2, M2, 1 },
+    left   = { 0, M1, M1, M2 },
+    right  = { M2, 1, M1, M2 },
+    center = { M1, M2, M1, M2 },
 }
 
 function Extras.Build(plate)
@@ -359,27 +369,24 @@ function Extras.Build(plate)
     glow:SetFrameLevel(math.max(plate.health:GetFrameLevel() - 1, 0))
     glow:Hide()
     plate.executeGlow = glow
-    -- every texture the curve colours: the halo pieces and the line
     local all = {}
     plate.executeHalo = {}
     for key, tc in pairs(GLOW_PIECES) do
         local t = glow:CreateTexture(nil, "BACKGROUND")
         t:SetTexture(GLOW_TEX)
         t:SetTexCoord(tc[1], tc[2], tc[3], tc[4])
+        t:SetVertexColor(0, 0, 0, 1)   -- black: nothing under ADD until the first update
         t:SetBlendMode("ADD")
         plate.executeHalo[key] = t
         all[#all + 1] = t
     end
-    plate.executeLine = ns.MakeEdges(glow, "ARTWORK")
-    for _, t in pairs(plate.executeLine) do
-        t:SetBlendMode("ADD")
-        all[#all + 1] = t
-    end
     plate.executeEdges = all
+    -- the pulse runs on the frame; the gate is the textures' colour, so the
+    -- two never fight
     local pulse = glow:CreateAnimationGroup()
     pulse:SetLooping("BOUNCE")
     local a = pulse:CreateAnimation("Alpha")
-    a:SetFromAlpha(1); a:SetToAlpha(0.45); a:SetDuration(0.8)
+    a:SetFromAlpha(1); a:SetToAlpha(0.35); a:SetDuration(0.55)
     a:SetSmoothing("IN_OUT")
     plate.executePulse = pulse
     glow:SetScript("OnShow", function() pulse:Play() end)
@@ -402,27 +409,34 @@ end
 function Extras.ApplyAppearance(plate)
     local db = NP.db()
     local hp = plate.health
-    local size = ns:Pixel(hp, db.executeGlowSize)
-    plate.executeGlow:ClearAllPoints()
-    plate.executeGlow:SetPoint("TOPLEFT", hp, "TOPLEFT", -size, size)
-    plate.executeGlow:SetPoint("BOTTOMRIGHT", hp, "BOTTOMRIGHT", size, -size)
-    -- The halo outside the bar, one piece per side and per corner.
+    local extend = ns:Pixel(hp, db.executeGlowSize)
+    -- Corners twice the reach, but never more than half the glow's height:
+    -- on a thin bar the top and bottom corners would otherwise overlap.
+    local barH = ns.Num(hp:GetHeight(), db.healthBarHeight) or db.healthBarHeight
+    local corner = math.min(extend * 2, (barH + extend * 2) / 2)
+    local glow = plate.executeGlow
+    glow:ClearAllPoints()
+    glow:SetPoint("TOPLEFT", hp, "TOPLEFT", -extend, extend)
+    glow:SetPoint("BOTTOMRIGHT", hp, "BOTTOMRIGHT", extend, -extend)
     local h = plate.executeHalo
-    local function place(t, p1, rel1, x1, y1, p2, rel2, x2, y2)
-        t:ClearAllPoints()
-        t:SetPoint(p1, hp, rel1, x1, y1)
-        t:SetPoint(p2, hp, rel2, x2, y2)
+    for _, key in ipairs({ "tl", "tr", "bl", "br" }) do
+        h[key]:ClearAllPoints()
+        h[key]:SetSize(corner, corner)
     end
-    place(h.top,    "BOTTOMLEFT", "TOPLEFT", 0, 0,          "TOPRIGHT", "TOPRIGHT", 0, size)
-    place(h.bottom, "TOPLEFT", "BOTTOMLEFT", 0, 0,          "BOTTOMRIGHT", "BOTTOMRIGHT", 0, -size)
-    place(h.left,   "TOPRIGHT", "TOPLEFT", 0, 0,            "BOTTOMLEFT", "BOTTOMLEFT", -size, 0)
-    place(h.right,  "TOPLEFT", "TOPRIGHT", 0, 0,            "BOTTOMRIGHT", "BOTTOMRIGHT", size, 0)
-    place(h.tl,     "BOTTOMRIGHT", "TOPLEFT", 0, 0,         "TOPLEFT", "TOPLEFT", -size, size)
-    place(h.tr,     "BOTTOMLEFT", "TOPRIGHT", 0, 0,         "TOPRIGHT", "TOPRIGHT", size, size)
-    place(h.bl,     "TOPRIGHT", "BOTTOMLEFT", 0, 0,         "BOTTOMLEFT", "BOTTOMLEFT", -size, -size)
-    place(h.br,     "TOPLEFT", "BOTTOMRIGHT", 0, 0,         "BOTTOMRIGHT", "BOTTOMRIGHT", size, -size)
-    -- The thin bright line right on the bar's edge.
-    ns.LayoutEdges(plate.executeLine, hp, 1, 1, 1, 1, 1)
+    h.tl:SetPoint("TOPLEFT", glow, "TOPLEFT")
+    h.tr:SetPoint("TOPRIGHT", glow, "TOPRIGHT")
+    h.bl:SetPoint("BOTTOMLEFT", glow, "BOTTOMLEFT")
+    h.br:SetPoint("BOTTOMRIGHT", glow, "BOTTOMRIGHT")
+    h.top:ClearAllPoints()
+    h.top:SetPoint("TOPLEFT", h.tl, "TOPRIGHT"); h.top:SetPoint("BOTTOMRIGHT", h.tr, "BOTTOMLEFT")
+    h.bottom:ClearAllPoints()
+    h.bottom:SetPoint("TOPLEFT", h.bl, "TOPRIGHT"); h.bottom:SetPoint("BOTTOMRIGHT", h.br, "BOTTOMLEFT")
+    h.left:ClearAllPoints()
+    h.left:SetPoint("TOPLEFT", h.tl, "BOTTOMLEFT"); h.left:SetPoint("BOTTOMRIGHT", h.bl, "TOPRIGHT")
+    h.right:ClearAllPoints()
+    h.right:SetPoint("TOPLEFT", h.tr, "BOTTOMLEFT"); h.right:SetPoint("BOTTOMRIGHT", h.br, "TOPRIGHT")
+    h.center:ClearAllPoints()
+    h.center:SetPoint("TOPLEFT", h.tl, "BOTTOMRIGHT"); h.center:SetPoint("BOTTOMRIGHT", h.br, "TOPLEFT")
 
     plate.comboBar:ClearAllPoints()
     plate.comboBar:SetPoint("TOP", plate.cast, "BOTTOM", 0, -db.comboOffset)
