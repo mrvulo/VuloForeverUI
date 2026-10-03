@@ -53,8 +53,51 @@ function J.IsJunk(info)
     return type(info.quality) == "number" and info.quality == POOR and not info.hasNoValue
 end
 
+-- ---------------------------------------------------- the client's bags --
+--
+-- Our bags draw the C themselves (Modules/Bags/Slots.lua). The client's bags
+-- get it from a post-hook on each container frame's UpdateItems. The font
+-- strings are kept in a table of our own rather than on the client's buttons:
+-- a key written into a client frame's table taints it.
+
+local marks = setmetatable({}, { __mode = "k" })
+
+local function markFrame(frame)
+    if not frame:IsShown() then return end
+    local active = QoL.mod.active
+    for _, button in frame:EnumerateValidItems() do
+        local info = C_Container.GetContainerItemInfo(button:GetBagID(), button:GetID())
+        local fs = marks[button]
+        if active and J.IsJunk(info) then
+            if not fs then
+                fs = button:CreateFontString(nil, "OVERLAY")
+                ns.UI.FontFor("bags", fs, 11, "OUTLINE")
+                fs:SetTextColor(0.93, 0.64, 0.35)
+                fs:SetText("C")
+                fs:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 2, 2)
+                marks[button] = fs
+            end
+            fs:Show()
+        elseif fs then
+            fs:Hide()
+        end
+    end
+end
+
+local hookedFrames
+local function hookClientBags()
+    if hookedFrames or type(ContainerFrameUtil_EnumerateContainerFrames) ~= "function" then return end
+    hookedFrames = true
+    for _, frame in ContainerFrameUtil_EnumerateContainerFrames() do
+        hooksecurefunc(frame, "UpdateItems", markFrame)
+    end
+end
+
 local function refreshBags()
     if ns.Bags and ns.Bags.Refresh and ns:IsModuleEnabled("bags") then ns.Bags.Refresh() end
+    if hookedFrames then
+        for _, frame in ContainerFrameUtil_EnumerateContainerFrames() do pcall(markFrame, frame) end
+    end
 end
 
 function J.Count()
@@ -196,6 +239,7 @@ function J.Apply()
             pcall(onItemTooltip, tooltip, data)
         end)
     end
+    if on then hookClientBags() end
     local sellOn = on and d.sellJunk and true or false
     local discardOn = on and d.junkDiscard and true or false
     if registered ~= (sellOn and 1 or 0) + (discardOn and 2 or 0) then
