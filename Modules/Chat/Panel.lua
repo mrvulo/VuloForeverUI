@@ -23,12 +23,7 @@ local Chat = ns.Chat
 local Panel = {}
 Chat.Panel = Panel
 
--- The chat frame's rectangle, in UIParent's coordinates, or nothing.
-local function readable(v)
-    return ns.CanRead(v) and type(v) == "number"
-end
-
-local rawRect
+local rawRect = ns.UIParentRect
 
 -- A docked combat log is pushed down by the client to leave room for its
 -- filter bar, so its own rectangle starts lower than every other tab's. Our
@@ -44,21 +39,6 @@ local function rectOf(cf)
         if l1 and b1 + h1 > bottom + height then height = b1 + h1 - bottom end
     end
     return left, bottom, width, height
-end
-
-function rawRect(cf)
-    local ok, left, bottom, width, height = pcall(cf.GetRect, cf)
-    if not ok then return nil end
-    -- Each value on its own, never a table walk: GetRect answers with plain
-    -- NILS for a frame whose rectangle is not resolved yet -- which is exactly
-    -- the state a chat window is in for the first moments after login -- and
-    -- ipairs over a table with a nil in it stops at the hole and checks
-    -- nothing at all. That is how a missing rect became "arithmetic on a nil".
-    if not (readable(left) and readable(bottom) and readable(width) and readable(height)) then
-        return nil
-    end
-    local s = (cf:GetEffectiveScale() or 1) / (UIParent:GetEffectiveScale() or 1)
-    return left * s, bottom * s, width * s, height * s
 end
 
 -- ---------------------------------------------------------------- build --

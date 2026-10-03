@@ -33,8 +33,7 @@ local function tdb() return DM.db().threat end
 
 -- Readable first, THEN compared: a secret must never meet an operator.
 local function readable(v)
-    if not ns.CanRead(v) then return false end
-    return v ~= nil
+    return ns.Readable(v) ~= nil
 end
 
 -- Forever returns threat in display units already, not the x100 scale of the

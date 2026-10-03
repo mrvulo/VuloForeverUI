@@ -56,10 +56,7 @@ local panel, window
 
 local function db() return QoL.db().gold end
 
-local function readable(v)
-    if ns.CanRead(v) then return v end
-    return nil
-end
+local readable = ns.Readable
 
 local function store()
     local g = ns.db and ns.db.global

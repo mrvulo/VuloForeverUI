@@ -276,10 +276,7 @@ local function addItem(tooltip, link)
     return true
 end
 
-local function readable(v)
-    if isSecret(v) then return nil end
-    return v
-end
+local readable = ns.Readable
 
 local function onTooltipData(tooltip, data)
     if not mod._enabled or not modifierAllows() then return end

@@ -62,6 +62,27 @@ function ns.Num(v, fallback)
     return fallback
 end
 
+-- The value itself when it may be read, nil when it may not. For lookups that
+-- treat "not readable" the same as "not there".
+function ns.Readable(v)
+    if ns.CanRead(v) then return v end
+    return nil
+end
+
+-- A frame's rectangle in UIParent units, or nil while it is not resolved or
+-- not readable. Each value is tested on its own: GetRect answers with plain
+-- nils for a frame whose rectangle is not resolved yet (the first moments
+-- after login), and a table walk would stop at the first hole.
+function ns.UIParentRect(f)
+    local ok, left, bottom, width, height = pcall(f.GetRect, f)
+    if not ok then return nil end
+    if not (ns.Num(left) and ns.Num(bottom) and ns.Num(width) and ns.Num(height)) then
+        return nil
+    end
+    local s = (f:GetEffectiveScale() or 1) / (UIParent:GetEffectiveScale() or 1)
+    return left * s, bottom * s, width * s, height * s
+end
+
 -- Health and power as a bar fill, secret-safe.
 --
 -- The bar is scaled 0..1 and fed the FRACTION, because UnitHealthPercent

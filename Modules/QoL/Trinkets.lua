@@ -109,7 +109,7 @@ local function inBags(id)
     return (C_Item.GetItemCount(id) or 0) > 0 and not C_Item.IsEquippedItem(id)
 end
 
-local function num(v) return ns.CanRead(v) and type(v) == "number" and v or nil end
+local num = ns.Num
 
 -- Seconds of cooldown left on an item, from the plain (out-of-combat) numbers.
 local function itemLeft(id)

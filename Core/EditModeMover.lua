@@ -40,11 +40,6 @@ local _, ns = ...
 
 local instances = {}
 
-local function readable(v)
-    if not ns.CanRead(v) then return false end
-    return type(v) == "number"
-end
-
 local function baseMethod(f, base, name)
     local fn = f[base]
     if type(fn) == "function" then return fn end
@@ -53,16 +48,7 @@ local function baseMethod(f, base, name)
     return type(idx) == "table" and idx[name] or nil
 end
 
--- The frame's rectangle in UIParent units; nil while it is not resolved yet.
-local function rawRect(f)
-    local ok, left, bottom, width, height = pcall(f.GetRect, f)
-    if not ok then return nil end
-    if not (readable(left) and readable(bottom) and readable(width) and readable(height)) then
-        return nil
-    end
-    local s = (f:GetEffectiveScale() or 1) / (UIParent:GetEffectiveScale() or 1)
-    return left * s, bottom * s, width * s, height * s
-end
+local rawRect = ns.UIParentRect
 
 local function editorOpen()
     local em = _G.EditModeManagerFrame
@@ -114,9 +100,9 @@ local function new(frame, opts)
     if not anchorInfo() then
         ownPoints = {}
         local ok, n = pcall(frame.GetNumPoints, frame)
-        for i = 1, (ok and readable(n)) and n or 0 do
+        for i = 1, (ok and ns.Num(n)) and n or 0 do
             local okp, p, rel, rp, x, y = pcall(frame.GetPoint, frame, i)
-            if okp and type(p) == "string" and readable(x) and readable(y) then
+            if okp and type(p) == "string" and ns.Num(x) and ns.Num(y) then
                 ownPoints[#ownPoints + 1] = { p, rel, rp, x, y }
             end
         end

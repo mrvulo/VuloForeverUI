@@ -35,10 +35,7 @@ local itemObjectives = {}
 
 local function db() return QoL.db().quest end
 
-local function readable(v)
-    if ns.CanRead(v) then return v end
-    return nil
-end
+local readable = ns.Readable
 
 local function isTrue(v) return ns.CanRead(v) and v == true end
 

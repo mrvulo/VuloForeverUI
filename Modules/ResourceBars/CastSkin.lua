@@ -209,10 +209,7 @@ local PLACES = {
 }
 
 -- A plain number we may do arithmetic on, or nil.
-local function num(v)
-    if type(v) ~= "number" or not ns.CanRead(v) then return nil end
-    return v
-end
+local num = ns.Num
 
 -- Where the bar's anchor edge is, in the bar's own units: x of the named side
 -- and the vertical centre. nil while the bar has no rect yet.
