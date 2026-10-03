@@ -211,17 +211,8 @@ local function auraKindRows(kind, label)
                 num("spacing", L["Spacing"], -5, 20),
                 flag("crop", L["Cropped Icons"], restyleAuras),
                 num("cropPct", L["Adjust Crop"], 5, 25, restyleAuras),
-                flag("hideBorder", L["Hide Border"], restyleAuras),
-                num("borderSize", L["Border size"], 0, 4, restyleAuras),
-                { type = "color", label = L["Border color"],
-                    disabled = function() return cfg().hideBorder end,
-                    get = function() return cfg().borderColor end,
-                    set = function(r, g, b)
-                        local c = cfg().borderColor
-                        if type(c) ~= "table" then c = {}; cfg().borderColor = c end
-                        c.r, c.g, c.b = r, g, b
-                        restyleAuras()
-                    end },
+                ns.BorderRows(ns.OptionRows(cfg, restyleAuras),
+                    { hide = "hideBorder", size = "borderSize", color = "borderColor" }),
             }),
         } }
 end
@@ -279,11 +270,8 @@ local function displayPage()
     for _, e in ipairs(ns.MediaStatusbarValues()) do absorbStyles[#absorbStyles + 1] = e end
 
     local style = section(L["Style"], {
-        toggle("showBorder", L["Border"], { inline = {
-            swatch("borderColor", L["Border color"]),
-            gear(L["Castbar Border"], { toggle("wrapBorderCastbar", L["Wrap Around Castbar"]) }),
-        } }),
-        slider("borderSize", L["Border Size"], 1, 4, 1, { disabled = function() return not d.showBorder end }),
+        ns.BorderRows(rows, { show = "showBorder", size = "borderSize", color = "borderColor" }, { minSize = 1 }),
+        toggle("wrapBorderCastbar", L["Wrap Around Castbar"], { disabled = function() return not d.showBorder end }),
         toggle("borderBarColor", L["Border in the bar's color"],
             { tooltip = L["The border takes the health bar's colour: red for hostile, yellow for neutral, the threat colours in a group. A player whose colour cannot be read keeps the border colour."], disabled = function() return not d.showBorder end }),
         slider("bgAlpha", L["Background"], 0, 100, 1, { scale = 100, inline = { swatch("bgColor", L["Background color"]) } }),
@@ -320,7 +308,8 @@ local function displayPage()
             toggle("castIconTargetBorder", L["Use Target Border Color"]),
         }) } }),
         slider("castBgAlpha", L["Cast Background"], 0, 100, 1, { scale = 100, inline = { swatch("castBgColor", L["Background color"]) } }),
-        slider("castBorderSize", L["Cast Bar Border"], 0, 4, 1, { inline = { swatch("castBorderColor", L["Border color"]) } }),
+        { type = "header", text = L["Cast Bar Border"] },
+        ns.BorderRows(rows, { size = "castBorderSize", color = "castBorderColor" }),
         dropdown("castTimerSide", L["Cast Timer"], sideValues(false), {
             get = function() return d.showCastTimer and d.castTimerSide or "none" end,
             set = function(_, v)
@@ -385,9 +374,9 @@ local function displayPage()
             swatch("targetGlowColor", L["Glow color"]),
             gear(L["Target: Glow"], { slider("targetGlowAlpha", L["Glow Opacity"], 0, 100, 1, { scale = 100 }) }),
         } }),
-        toggle("targetGlowBorderColor", L["Target: Border Color"], { inline = { swatch("targetBorderColor", L["Border color"]) } }),
+        toggle("targetGlowBorderColor", L["Target: Border Color"], { inline = { swatch("targetBorderColor", { tooltip = L["Border color"], hasAlpha = true }) } }),
         toggle("targetGlowBorderSize", L["Target: Border Size"], { inline = {
-            gear(L["Target: Border Size"], { slider("targetBorderSizeValue", L["Border Size"], 0, 4) }) } }),
+            gear(L["Target: Border Size"], { slider("targetBorderSizeValue", L["Border size"], 0, 4) }) } }),
         toggle("targetGlowHighlight", L["Target: Highlight"], { inline = {
             swatch("targetHighlightColor", L["Highlight Color"]),
             gear(L["Target: Highlight"], { slider("targetHighlightAlpha", L["Highlight Opacity"], 0, 100, 1, { scale = 100 }) }),
@@ -412,9 +401,9 @@ local function displayPage()
             swatch("hoverGlowColor", L["Glow color"]),
             gear(L["Hover: Glow"], { slider("hoverGlowAlpha", L["Glow Opacity"], 0, 100, 1, { scale = 100 }) }),
         } }),
-        toggle("hoverGlowBorderColor", L["Hover: Border Color"], { inline = { swatch("hoverBorderColor", L["Border color"]) } }),
+        toggle("hoverGlowBorderColor", L["Hover: Border Color"], { inline = { swatch("hoverBorderColor", { tooltip = L["Border color"], hasAlpha = true }) } }),
         toggle("hoverGlowBorderSize", L["Hover: Border Size"], { inline = {
-            gear(L["Hover: Border Size"], { slider("hoverBorderSizeValue", L["Border Size"], 0, 4) }) } }),
+            gear(L["Hover: Border Size"], { slider("hoverBorderSizeValue", L["Border size"], 0, 4) }) } }),
     })
 
     -- Spell name and spell target may not share a side: taking the other

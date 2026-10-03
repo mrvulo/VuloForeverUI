@@ -424,7 +424,7 @@ function UI:CreateMainFrame()
                 local container = m.parentTab and ns.modules[m.parentTab]
                 if container then modName = L[container.name] .. SEP .. modName end
                 for _, tid in ipairs(tabIds) do
-                    local ok, items = pcall(m.GetOptions, m, tid)
+                    local ok, items = ns.ModuleOptions(m, tid)
                     if ok and type(items) == "table" then
                         local tabName = realTabs and tabLabels[tid] and L[tabLabels[tid]] or nil
                         local function add(res)

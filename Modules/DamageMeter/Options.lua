@@ -34,14 +34,6 @@ local function restyle() DM.RestyleAll() end
 local function repaint() DM.RefreshAll() end
 local function visibility() DM.UpdateVisibilityAll() end
 
-local function borderValues()
-    local v = { { value = "solid", text = L["Solid"] } }
-    for _, e in ipairs(ns.MediaBorderValues()) do
-        if e.value ~= "" then v[#v + 1] = e end
-    end
-    return v
-end
-
 local function keyValues()
     local v = { { value = "", text = L["- none -"] } }
     for i = 1, 12 do v[#v + 1] = { value = "F" .. i, text = "F" .. i } end
@@ -154,10 +146,8 @@ local function windowOptions()
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Border"] },
-        dropdown("windowBorderTexture", L["Border style"], borderValues(), { after = restyle }),
-        slider("windowBorderSize", L["Border size"], 0, 8, 1, { after = restyle }),
-        color("windowBorderColor", L["Border color"], { after = restyle }),
-        slider("windowBorderAlpha", L["Border opacity"], 0, 1, 0.01, { after = restyle }),
+        ns.BorderRows(rows, { texture = "windowBorderTexture", size = "windowBorderSize",
+            color = "windowBorderColor", alpha = "windowBorderAlpha" }, { maxSize = 8, after = restyle }),
         slider("windowBorderOffsetX", L["Border offset X"], -10, 10, 1, { after = restyle }),
         slider("windowBorderOffsetY", L["Border offset Y"], -10, 10, 1, { after = restyle }),
         toggle("windowBorderIncludeHeader", L["Include the header"], { after = restyle }),
@@ -173,8 +163,9 @@ local function windowOptions()
         color("hdrTextColor", L["Header text color"], { after = restyle }),
         slider("hdrTextOffX", L["Header text offset X"], -20, 20, 1, { after = restyle }),
         slider("hdrTextOffY", L["Header text offset Y"], -20, 20, 1, { after = restyle }),
-        slider("hdrBottomBorderSize", L["Bottom border"], 0, 4, 1, { after = restyle }),
-        color("hdrBottomBorderColor", L["Bottom border color"], { after = restyle }),
+        { type = "header", text = L["Bottom border"] },
+        ns.BorderRows(rows, { size = "hdrBottomBorderSize", color = "hdrBottomBorderColor",
+            alpha = "hdrBottomBorderAlpha" }, { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Header icons"] },
@@ -209,16 +200,14 @@ local function barsOptions()
           tooltip = L["Applies to the spec and Blizzard class icons; the other sets are already framed."],
           get = function() return d().classIconZoom end,
           set = function(_, v) d().classIconZoom = v; restyle() end },
-        toggle("customIconBorder", L["Border around the icon"], { after = restyle }),
-        slider("iconBorderSize", L["Icon border size"], 0, 4, 1, { after = restyle }),
-        color("iconBorderColor", L["Icon border color"], { after = restyle }),
+        { type = "header", text = L["Border around the icon"] },
+        ns.BorderRows(rows, { show = "customIconBorder", size = "iconBorderSize",
+            color = "iconBorderColor", alpha = "iconBorderAlpha" }, { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Bar border"] },
-        dropdown("borderTexture", L["Bar border style"], borderValues(), { after = restyle }),
-        slider("borderSize", L["Bar border size"], 0, 4, 1, { after = restyle }),
-        color("borderColor", L["Bar border color"], { after = restyle }),
-        slider("borderAlpha", L["Bar border opacity"], 0, 1, 0.01, { after = restyle }),
+        ns.BorderRows(rows, { texture = "borderTexture", size = "borderSize",
+            color = "borderColor", alpha = "borderAlpha" }, { after = restyle }),
         { type = "toggle", label = L["The border follows the fill"],
           tooltip = L["Wraps only the filled part of a bar instead of the whole row. Always drawn solid."],
           get = function() return d().borderFollowFill end,
@@ -480,8 +469,7 @@ local function threatOptions()
     items[#items + 1] = threatRows.dropdown("texture", L["Bar texture"], ns.MediaStatusbarValues(), { after = apply, width = 220 })
     items[#items + 1] = threatRows.slider("barOpacity", L["Bar opacity"], 0, 100, 1, { after = apply })
     items[#items + 1] = threatRows.slider("bgAlpha", L["Background opacity"], 0, 1, 0.05, { after = apply })
-    items[#items + 1] = threatRows.slider("borderSize", L["Border size"], 0, 4, 1, { after = apply })
-    items[#items + 1] = threatRows.color("borderColor", L["Border color"], { after = apply })
+    items[#items + 1] = ns.BorderRows(threatRows, { size = "borderSize", color = "borderColor" }, { after = apply })
 
     items[#items + 1] = { type = "header", text = L["Text"] }
     items[#items + 1] = threatRows.slider("textSize", L["Text size"], 6, 24, 1, { after = apply })

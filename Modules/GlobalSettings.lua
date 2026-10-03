@@ -764,7 +764,7 @@ end
 local function delegate(key, missingText)
     local m = ns.modules and ns.modules[key]
     if m and m.GetOptions then
-        local ok, items = pcall(m.GetOptions, m)
+        local ok, items = ns.ModuleOptions(m)
         if ok and items then return items end
     end
     return { { type = "desc", text = missingText } }

@@ -149,7 +149,7 @@ local function applyStyle()
     local texture = barTexture()
     for i = 1, #rows do styleRow(rows[i], texture) end
     local c = t.borderColor
-    ns.LayoutEdges(frame.edges, frame, t.borderSize or 0, c.r, c.g, c.b, 1, 0)
+    ns.LayoutEdges(frame.edges, frame, t.borderSize or 0, c.r, c.g, c.b, c.a or 1, 0)
 end
 
 local function build()

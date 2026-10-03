@@ -375,10 +375,12 @@ console.log('\n== locale keys nothing reaches ==');
         console.log('every deDE key is reachable from code');
     } else {
         console.log('  ' + unreached.length + ' key(s) no code literal reaches — dead weight in all nine files:');
-        for (const k of unreached.slice(0, 15)) {
+        // CHECK_ALL=1 lists every one, for a script that removes them.
+        const shown = process.env.CHECK_ALL ? unreached.length : 15;
+        for (const k of unreached.slice(0, shown)) {
             console.log('    UNUSED ' + (k.length > 90 ? k.slice(0, 90) + '…' : k));
         }
-        if (unreached.length > 15) console.log('    ... and ' + (unreached.length - 15) + ' more');
+        if (unreached.length > shown) console.log('    ... and ' + (unreached.length - shown) + ' more');
     }
 }
 

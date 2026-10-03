@@ -257,10 +257,10 @@ local function borderRGB()
     if db.borderClassColor then
         local _, class = UnitClass("player")
         local c = class and ((ns.CLASS_COLORS and ns.CLASS_COLORS[class]) or RAID_CLASS_COLORS[class])
-        if c then return c.r, c.g, c.b end
+        if c then return c.r, c.g, c.b, db.borderColor.a or 1 end
     end
     local c = db.borderColor
-    return c.r, c.g, c.b
+    return c.r, c.g, c.b, c.a or 1
 end
 
 local function applyShape(round)
@@ -727,8 +727,8 @@ local function applyModern()
         ours[Minimap] = ours[Minimap] or {}
         ours[Minimap].edges = edges
     end
-    local r, g, b = borderRGB()
-    ns.LayoutEdges(edges, Minimap, mod.db.borderSize, r, g, b, 1)
+    local r, g, b, a = borderRGB()
+    ns.LayoutEdges(edges, Minimap, mod.db.borderSize, r, g, b, a)
 
     if cluster.ZoneTextButton and mod.db.zoneMode ~= "none" then
         cluster.ZoneTextButton:ClearAllPoints()
@@ -1059,17 +1059,9 @@ function mod:GetOptions()
               get = function() return d.shape end, set = set("shape") },
             { type = "slider", label = L["Scale"], min = 0.5, max = 2, step = 0.05,
               get = function() return d.scale end, set = set("scale") },
-            { type = "slider", label = L["Border Size"], min = 0, max = 4, step = 1, disabled = modern,
-              inline = { { kind = "color", tooltip = L["Border color"],
-                           disabled = function() return d.borderClassColor end,
-                           get = function() return d.borderColor end,
-                           set = function(r, g, b)
-                               d.borderColor.r, d.borderColor.g, d.borderColor.b = r, g, b
-                               mod:Apply()
-                           end } },
-              get = function() return d.borderSize end, set = set("borderSize") },
-            { type = "toggle", label = L["Use my class color"], disabled = modern,
-              get = function() return d.borderClassColor end, set = set("borderClassColor") },
+            ns.BorderRows(ns.OptionRows(function() return mod.db end, function() mod:Apply() end),
+                { size = "borderSize", color = "borderColor", classColor = "borderClassColor" },
+                { disabled = modern }),
         } },
 
         { type = "section", title = L["Around the Map"], items = {

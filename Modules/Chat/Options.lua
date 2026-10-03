@@ -154,9 +154,7 @@ local function chatPage()
         dropdown("fontOutline", L["Outline"], outlineValues()),
         toggle("lockChatSize", L["Lock the main chat size"],
             L["Kills the resize grip of the first chat window. The other windows have none.\n\nA change made in combat takes effect the moment combat ends: the chat frames are protected, and the client refuses the call while you are fighting."]),
-        toggle("showBorder", L["Show a border"]),
-        slider("borderSize", L["Border size"], 0, 4, 1),
-        color("borderColor", L["Border color"]),
+        ns.BorderRows(rows, { show = "showBorder", size = "borderSize", color = "borderColor" }),
         slider("padding", L["Padding"], 0, 20, 1),
 
         { type = "header", text = L["Idle fade"] },
@@ -281,33 +279,8 @@ local function tabsPage()
         { type = "header", text = L["Border"] },
         gateToggle("tabBorderSync", L["Match the chat window's border"],
             L["On, a tab wears whatever border the chat panel wears, so there is only one answer to what a border looks like here."]),
-        { type = "slider", label = L["Tab border size"], min = 0, max = 4, step = 1,
-          disabled = synced,
-          get = function() return Chat.db().tabBorderSize end,
-          set = function(_, v) Chat.db().tabBorderSize = v; apply() end },
-        { type = "slider", label = L["Tab border opacity"], min = 0, max = 1, step = 0.05,
-          disabled = synced,
-          tooltip = L["Applies to both border colours below."],
-          get = function() return Chat.db().tabBorderColor.a end,
-          set = function(_, v)
-              Chat.db().tabBorderColor.a = v
-              Chat.db().tabBorderColorActive.a = v
-              apply()
-          end },
-        { type = "color", label = L["Tab border color"], disabled = synced,
-          get = function() return Chat.db().tabBorderColor end,
-          set = function(r, g, b)
-              local c = Chat.db().tabBorderColor
-              c.r, c.g, c.b = r, g, b
-              apply()
-          end },
-        { type = "color", label = L["Active tab border color"], disabled = synced,
-          get = function() return Chat.db().tabBorderColorActive end,
-          set = function(r, g, b)
-              local c = Chat.db().tabBorderColorActive
-              c.r, c.g, c.b = r, g, b
-              apply()
-          end },
+        ns.BorderRows(rows, { size = "tabBorderSize", color = "tabBorderColor" }, { disabled = synced }),
+        color("tabBorderColorActive", L["Active tab border color"], { disabled = synced, hasAlpha = true }),
     }
 end
 

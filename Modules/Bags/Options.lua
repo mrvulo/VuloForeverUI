@@ -186,9 +186,7 @@ local function bagsPage()
         slider("slotSize", L["Slot size"], 24, 52, 1),
 
         slider("spacing", L["Spacing"], 0, 12, 1),
-        slider("borderSize", L["Border size"], 0, 4, 1, { inline = {
-            swatch("borderColor", L["Border color"]),
-        } }),
+        ns.BorderRows(rows, { size = "borderSize", color = "borderColor" }),
 
         toggle("search", L["Show the search box"]),
         toggle("qualityBorder", L["Colour the border by quality"]),

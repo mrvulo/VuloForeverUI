@@ -73,12 +73,12 @@ end
 
 -- A colour is written as a fresh table: the shared one must never be edited
 -- through a bar that only borrowed it.
-local function pColor(key, label)
-    return { type = "color", label = label,
+local function pColor(key, label, hasAlpha)
+    return { type = "color", label = label, hasAlpha = hasAlpha,
         get = function() return pget(key) end,
-        set = function(r, g, b)
+        set = function(r, g, b, a)
             local old = pget(key)
-            pset(key, { r = r, g = g, b = b, a = old and old.a })
+            pset(key, { r = r, g = g, b = b, a = (hasAlpha and a) or (old and old.a) })
         end }
 end
 
@@ -123,14 +123,12 @@ local function modernOptions(page)
     } })
 
     add({ type = "header", text = L["Icons"] })
-    add(pDropdown("borderSize", L["Border size"], {
-        { value = "none",   text = L["None"] },
-        { value = "thin",   text = L["Thin"] },
-        { value = "normal", text = L["Normal"] },
-        { value = "heavy",  text = L["Heavy"] },
-        { value = "strong", text = L["Strong"] },
-    }))
-    add(pColor("borderColor", L["Border color"]))
+    -- The same border rows as everywhere else; the size is saved as the
+    -- step name it always was (none, thin, normal, heavy, strong).
+    add({ type = "slider", label = L["Border size"], min = 0, max = #AB.BORDER_STEPS - 1, step = 1,
+        get = function() return AB.BORDER_PX[pget("borderSize")] or 1 end,
+        set = function(_, v) pset("borderSize", AB.BORDER_STEPS[v + 1] or "thin") end })
+    add(pColor("borderColor", L["Border color"], true))
     add(pToggle("borderClassColor", L["Class-colored border"]))
     add(pSlider("iconZoom", L["Icon zoom"], 0, 10, 0.5,
         L["Trims the icon's rim. 0 shows the whole icon with its drawn frame."]))

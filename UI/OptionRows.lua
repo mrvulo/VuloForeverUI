@@ -44,7 +44,9 @@ function ns.OptionRows(db, apply, opts)
         return row
     end
 
-    local rows = {}
+    -- Exposed for builders that compose rows of their own (ns.BorderRows):
+    -- the bound table, and "a setting changed" with the same after/apply rule.
+    local rows = { db = db, changed = changed }
 
     function rows.toggle(key, label, extra)
         extra = asExtra(extra)
@@ -77,7 +79,9 @@ function ns.OptionRows(db, apply, opts)
 
     local function setColor(key, extra)
         return function(r, g, b, a)
-            local c = db()[key]
+            local t = db()
+            local c = t[key]
+            if type(c) ~= "table" then c = {}; t[key] = c end
             c.r, c.g, c.b = r, g, b
             if a and extra and extra.hasAlpha then c.a = a end
             changed(extra)
@@ -98,6 +102,43 @@ function ns.OptionRows(db, apply, opts)
     end
 
     return rows
+end
+
+-- A list of rows that stands in a page as if its rows were written there one
+-- by one (ns.BorderRows returns one). Flattened by ns.ModuleOptions.
+function ns.RowList(list)
+    list._splice = true
+    return list
+end
+
+local function splice(list)
+    if type(list) ~= "table" then return list end
+    local i = 1
+    while i <= #list do
+        local it = list[i]
+        if type(it) == "table" and it._splice then
+            table.remove(list, i)
+            for k = #it, 1, -1 do table.insert(list, i, it[k]) end
+        else
+            if type(it) == "table" then
+                splice(it.items)
+                splice(it.inline)
+                if type(it.popup) == "table" then splice(it.popup.items) end
+            end
+            i = i + 1
+        end
+    end
+    return list
+end
+
+-- A module's rows for one tab: GetOptions, protected, with row lists
+-- flattened. Every place that reads a module's options goes through here.
+-- Returns ok, items (or ok == false and the error).
+function ns.ModuleOptions(mod, tabId)
+    if not (mod and mod.GetOptions) then return false, "no options" end
+    local ok, items = pcall(mod.GetOptions, mod, tabId)
+    if ok and type(items) == "table" then splice(items) end
+    return ok, items
 end
 
 -- The two layout rows that bind to nothing.

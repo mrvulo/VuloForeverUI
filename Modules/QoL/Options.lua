@@ -137,8 +137,7 @@ local function generalPage()
         slider("flight", "width", L["Bar width"], 120, 480, 5),
         slider("flight", "height", L["Bar height"], 8, 40, 1),
         dropdown("flight", "texture", L["Bar texture"], ns.MediaStatusbarValues(), { width = 220 }),
-        slider("flight", "borderSize", L["Border size"], 0, 4, 1),
-        color("flight", "borderColor", L["Border color"]),
+        ns.BorderRows(rowsFor("flight"), { size = "borderSize", color = "borderColor" }),
         dropdown("flight", "font", L["Font"], (function()
             local v = { { value = "", text = L["Module font"] } }
             for _, e in ipairs(ns.MediaFontValues()) do v[#v + 1] = e end
@@ -271,8 +270,7 @@ local function displayPage()
         slider("crosshair", "length", L["Arm length"], 6, 200, 2),
         slider("crosshair", "thickness", L["Arm thickness"], 1, 8, 1),
         color("crosshair", "color", L["Crosshair color"]),
-        slider("crosshair", "borderSize", L["Border size"], 0, 4, 1),
-        color("crosshair", "borderColor", L["Border color"]),
+        ns.BorderRows(rowsFor("crosshair"), { size = "borderSize", color = "borderColor" }),
         slider("crosshair", "xOffset", L["Sideways"], -400, 400, 1),
         slider("crosshair", "yOffset", L["Up and down"], -400, 400, 1),
 

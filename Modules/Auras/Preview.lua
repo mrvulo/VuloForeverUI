@@ -106,7 +106,7 @@ local function layoutBlock(kind, db)
         local n = (i - 1) % #art + 1
         f.tex:SetTexture(art[n])
         f.tex:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom)
-        ns.LayoutEdges(f.edges, f, bSize, bColor.r, bColor.g, bColor.b, 1)
+        ns.LayoutEdges(f.edges, f, bSize, bColor.r, bColor.g, bColor.b, bColor.a or 1)
         -- The client paints a debuff's border in its dispel type; here each
         -- sample debuff stands for one type.
         local dc = (not buffs) and db.dispelColors and db[DEBUFF_TYPE[n]]

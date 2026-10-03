@@ -67,6 +67,7 @@ local PRESS_SOLID, PRESS_NONE = 4, 6
 
 -- Border steps, in physical pixels.
 local BORDER_PX = { none = 0, thin = 1, normal = 2, heavy = 3, strong = 4 }
+AB.BORDER_PX = BORDER_PX
 AB.BORDER_STEPS = { "none", "thin", "normal", "heavy", "strong" }
 
 -- The text regions a look restyles. The cooldown's countdown is the first

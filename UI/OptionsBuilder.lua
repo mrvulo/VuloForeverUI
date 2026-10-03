@@ -2352,7 +2352,7 @@ function UI:BuildOptionsPage(key, tabId)
     -- the path the user actually walks.
     local items
     if mod.GetOptions then
-        local ok, result = pcall(mod.GetOptions, mod, tabId)
+        local ok, result = ns.ModuleOptions(mod, tabId)
         if ok then
             items = result
         else

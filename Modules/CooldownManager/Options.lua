@@ -720,19 +720,10 @@ local function iconsPage()
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Border"] },
-        { type = "dropdown", label = L["Border texture"], width = 220,
-          values = (function()
-              local v = { { value = "", text = L["Flat edges"] } }
-              for _, e in ipairs(ns.MediaBorderValues()) do v[#v + 1] = e end
-              return v
-          end)(),
-          tooltip = L["A shaped icon brings its own border; this one is for the square shape."],
-          get = function() return bar().borderTexture or "" end,
-          set = function(_, v) bar().borderTexture = v; apply() end },
-        slider("borderSize", L["Border size"], 0, 4, 1),
-        slider("borderInset", L["Border offset"], 0, 10, 1),
-        toggle("borderClassColor", L["Class color for the border"]),
-        color("borderColor", L["Border color"]),
+        ns.BorderRows(rows, { texture = "borderTexture", size = "borderSize", offset = "borderInset",
+            color = "borderColor", classColor = "borderClassColor" },
+            { flatValue = "", maxOffset = 10,
+              tooltips = { texture = L["A shaped icon brings its own border; this one is for the square shape."] } }),
         color("bgColor", L["Background color"]),
 
         { type = "spacer", height = 6 },

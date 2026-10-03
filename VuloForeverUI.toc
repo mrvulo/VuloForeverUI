@@ -29,6 +29,7 @@ Core\Events.lua
 Core\Schedule.lua
 Core\Profiler.lua
 Core\MediaRegistry.lua
+Core\Border.lua
 Core\ForeignProfile.lua
 Core\Mover.lua
 Core\EditModeMover.lua

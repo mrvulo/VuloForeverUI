@@ -113,53 +113,6 @@ end
 
 -- ---------------------------------------------------------------- borders --
 
--- A border of "solid" strips or a shared-media edge file around a frame.
--- Both live on one holder so a style switch is a repaint, not a rebuild.
-local function ensureBorder(holder)
-    if holder._edges then return end
-    holder._edges = ns.MakeEdges(holder, "OVERLAY")
-    local bd = CreateFrame("Frame", nil, holder, BackdropTemplateMixin and "BackdropTemplate")
-    bd:SetAllPoints(holder)
-    bd:Hide()
-    holder._backdrop = bd
-end
-
-function DM.PaintBorder(holder, anchor, texture, size, color, alpha, offX, offY, level)
-    ensureBorder(holder)
-    local edges, bd = holder._edges, holder._backdrop
-    if level then bd:SetFrameLevel(level) end
-    if not size or size <= 0 then
-        for _, t in pairs(edges) do t:Hide() end
-        bd:Hide()
-        return
-    end
-    local r, g, b = color.r, color.g, color.b
-    local path = texture ~= "solid" and ns.MediaBorder(texture) or nil
-    if not path then
-        bd:Hide()
-        ns.LayoutEdges(edges, anchor, size, r, g, b, alpha, 0)
-        if offX ~= 0 or offY ~= 0 then
-            for _, t in pairs(edges) do
-                local p1, rel, p2, x, y = t:GetPoint(1)
-                t:SetPoint(p1, rel, p2, (x or 0) + (offX or 0), (y or 0) + (offY or 0))
-                local q1, rel2, q2, x2, y2 = t:GetPoint(2)
-                if q1 then t:SetPoint(q1, rel2, q2, (x2 or 0) + (offX or 0), (y2 or 0) + (offY or 0)) end
-            end
-        end
-        return
-    end
-    for _, t in pairs(edges) do t:Hide() end
-    local edge = 6 + size * 4
-    bd:ClearAllPoints()
-    bd:SetPoint("TOPLEFT", anchor, "TOPLEFT", -(offX or 0) - size, (offY or 0) + size)
-    bd:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", (offX or 0) + size, -(offY or 0) - size)
-    if bd.SetBackdrop then
-        bd:SetBackdrop({ edgeFile = path, edgeSize = edge })
-        bd:SetBackdropBorderColor(r, g, b, alpha or 1)
-    end
-    bd:Show()
-end
-
 -- ---------------------------------------------------------------- menus --
 
 local function openOptions()
@@ -845,8 +798,9 @@ function DM.CreateWindow(idx)
         -- Frame border: with or without the header, behind or over the bars.
         local anchor = d.windowBorderIncludeHeader and frame or bg
         borderHolder:SetFrameLevel(frame:GetFrameLevel() + (d.windowBorderBehind and 0 or 12))
-        DM.PaintBorder(borderHolder, anchor, d.windowBorderTexture, classic and 0 or d.windowBorderSize, d.windowBorderColor,
-            d.windowBorderAlpha, d.windowBorderOffsetX or 0, d.windowBorderOffsetY or 0, borderHolder:GetFrameLevel())
+        ns.PaintBorder(borderHolder, anchor, { texture = d.windowBorderTexture,
+            size = classic and 0 or d.windowBorderSize, color = d.windowBorderColor, alpha = d.windowBorderAlpha,
+            offX = d.windowBorderOffsetX, offY = d.windowBorderOffsetY, level = borderHolder:GetFrameLevel() })
 
         for i = 1, DM.BAR_POOL do DM.StyleRow(W, W.rows[i]) end
         DM.StyleRow(W, W.sticky)
@@ -1240,12 +1194,12 @@ function DM.StyleRow(W, bar)
         anchor = bar.fill:GetStatusBarTexture()
         if d.borderFollowFillIcon then anchor = bar.fill end
     end
-    DM.PaintBorder(bar.border, anchor, d.borderFollowFill and "solid" or d.borderTexture,
-        DM.IsClassic() and 0 or (d.borderSize or 0),
-        d.borderColor, d.borderAlpha, 0, 0, bar.row:GetFrameLevel() + 3)
+    ns.PaintBorder(bar.border, anchor, { texture = d.borderFollowFill and "solid" or d.borderTexture,
+        size = DM.IsClassic() and 0 or d.borderSize, color = d.borderColor, alpha = d.borderAlpha,
+        level = bar.row:GetFrameLevel() + 3 })
     if d.borderFollowFill and d.borderFollowFillIcon then
         -- With the icon: strips from the icon's left edge to the fill's end.
-        local e = bar.border._edges
+        local e = bar.border._vfEdges
         if e then
             local ft = bar.fill:GetStatusBarTexture()
             e.top:SetPoint("BOTTOMLEFT", bar.row, "TOPLEFT", -ns:Pixel(frame, d.borderSize), 0)
@@ -1256,8 +1210,8 @@ function DM.StyleRow(W, bar)
             e.rgt:SetPoint("BOTTOMLEFT", ft, "BOTTOMRIGHT", 0, 0)
         end
     end
-    DM.PaintBorder(bar.iconBorder, bar.icon, "solid", d.customIconBorder and d.iconBorderSize or 0,
-        d.iconBorderColor, d.iconBorderAlpha, 0, 0, bar.row:GetFrameLevel() + 6)
+    ns.PaintBorder(bar.iconBorder, bar.icon, { size = d.customIconBorder and d.iconBorderSize or 0,
+        color = d.iconBorderColor, alpha = d.iconBorderAlpha, level = bar.row:GetFrameLevel() + 6 })
 
     bar.src, bar.classFile, bar.spec, bar.nameMemo, bar.amtMemo, bar.rank = nil, nil, nil, nil, nil, nil
 end

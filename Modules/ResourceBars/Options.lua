@@ -79,8 +79,7 @@ local function lookRows(key)
         slider(key, "height", L["Height"], 4, 60, 1),
         dropdown(key, "texture", L["Bar texture"], ns.MediaStatusbarValues(), 220),
         toggle(key, "showSpark", L["Show the spark"]),
-        slider(key, "borderSize", L["Border size"], 0, 4, 1),
-        color(key, "borderColor", L["Border color"]),
+        ns.BorderRows(rowsFor(key), { size = "borderSize", color = "borderColor" }, { subKeyPrefix = key }),
         color(key, "bgColor", L["Background color"]),
         color(key, "fillColor", L["Fill color"]),
 

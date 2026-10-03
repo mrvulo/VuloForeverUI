@@ -294,8 +294,7 @@ function mod:GetOptions()
         num("rowsBuffs", L["Rows"], 1, 6, 1),
         num("maxBuffs", L["Most icons"], 1, 40, 1),
         num("paddingBuffs", L["Spacing"], 0, 20, 1),
-        num("buffBorderSize", L["Border thickness"], 0, 4, 1),
-        color("buffBorderColor", L["Border color"]),
+        ns.BorderRows(rows, { size = "buffBorderSize", color = "buffBorderColor" }),
     } }
 
     local debuffRows = {
@@ -303,13 +302,12 @@ function mod:GetOptions()
         num("rowsDebuffs", L["Rows"], 1, 6, 1),
         num("maxDebuffs", L["Most icons"], 1, 40, 1),
         num("paddingDebuffs", L["Spacing"], 0, 20, 1),
-        num("debuffBorderSize", L["Border thickness"], 0, 4, 1),
-        color("debuffBorderColor", L["Border color"]),
+        ns.BorderRows(rows, { size = "debuffBorderSize", color = "debuffBorderColor" }),
         flag("dispelColors", L["Color by dispel type"],
              L["The client tints the border of every debuff by its dispel type, a debuff without one in its own color. Which color a debuff gets stays its decision -- the type is never read here."], true),
     }
     if mod.db.dispelColors then
-        debuffRows[#debuffRows + 1] = num("dispelBorderSize", L["Dispel border thickness"], 1, 6, 1)
+        debuffRows[#debuffRows + 1] = num("dispelBorderSize", L["Dispel border size"], 1, 6, 1)
         debuffRows[#debuffRows + 1] = color("dispelMagic", L["Magic"])
         debuffRows[#debuffRows + 1] = color("dispelCurse", L["Curse"])
         debuffRows[#debuffRows + 1] = color("dispelDisease", L["Disease"])

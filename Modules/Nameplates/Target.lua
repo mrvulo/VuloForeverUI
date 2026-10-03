@@ -242,10 +242,11 @@ function Target.PaintBorder(plate)
     local T, H = plate.isTarget, plate.isHover and not plate.isTarget
     local r, g, b
     local bs = db.showBorder and db.borderSize or 0
+    local a = db.borderColor.a or 1
     if T and db.targetGlowBorderColor then
-        local c = db.targetBorderColor; r, g, b = c.r, c.g, c.b
+        local c = db.targetBorderColor; r, g, b, a = c.r, c.g, c.b, c.a or 1
     elseif H and db.hoverGlowBorderColor then
-        local c = db.hoverBorderColor; r, g, b = c.r, c.g, c.b
+        local c = db.hoverBorderColor; r, g, b, a = c.r, c.g, c.b, c.a or 1
     elseif db.borderBarColor and type(plate.lastR) == "number" then
         r, g, b = plate.lastR, plate.lastG, plate.lastB
     else
@@ -266,7 +267,7 @@ function Target.PaintBorder(plate)
     host:ClearAllPoints()
     host:SetPoint("TOPLEFT", plate.health, "TOPLEFT", 0, 0)
     host:SetPoint("BOTTOMRIGHT", wrap and plate.cast or plate.health, "BOTTOMRIGHT", 0, 0)
-    ns.LayoutEdges(plate.border, host, bs, r, g, b, 1)
+    ns.LayoutEdges(plate.border, host, bs, r, g, b, a)
 end
 
 function Target.Apply(plate)

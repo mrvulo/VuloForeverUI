@@ -185,7 +185,7 @@ function Style.Initializer(kind, db, holder)
 
         if bSize > 0 then
             local edges = ns.MakeEdges(button, "OVERLAY")
-            ns.LayoutEdgesAt(edges, button, bSize * px, bColor.r, bColor.g, bColor.b, 1)
+            ns.LayoutEdgesAt(edges, button, bSize * px, bColor.r, bColor.g, bColor.b, bColor.a or 1)
             noSnap(edges)
         end
         -- after the static border, so the tinted ring draws over it
