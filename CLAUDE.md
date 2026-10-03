@@ -29,7 +29,11 @@ the full retail 12.x in-combat addon restrictions, with Classic-style art and a 
    `Core/Namespace.lua`. The checker enforces this.
 5. **Never name another addon** in code, comments, strings or commit messages.
    Commit messages also carry **no `Co-Authored-By:` line and no tool attribution** —
-   the CurseForge changelog is generated from them.
+   they are public on GitHub and the release notes are written from them.
+   **Subject line at most 100 characters**, German, `Bereich: was sich ändert`
+   (e.g. `Minimap: Ortsname mittig in der Kopfleiste`); the why and the details go in
+   the body after one empty line. `tools/hooks/commit-msg` enforces both
+   (`git config core.hooksPath tools/hooks`, already set on the N100).
 6. **Locale keys are English text.** Never evaluate `L[...]` at file scope — the saved
    language override only exists from `ADDON_LOADED`. Use `ns.OnLocaleReady(fn)` for
    file-scope-style blocks.

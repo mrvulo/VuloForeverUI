@@ -1,0 +1,19 @@
+#!/bin/sh
+# Commit message house rules (CLAUDE.md, rule 5):
+#   - subject line at most 100 characters: "Area: what changed"; details go in the body
+#   - no Co-Authored-By line and no tool attribution
+msg="$1"
+subject=$(grep -v '^#' "$msg" | sed -n '1p')
+len=$(printf '%s' "$subject" | wc -m)
+fail=0
+if [ "$len" -gt 100 ]; then
+    echo "commit-msg: subject is $len characters, at most 100."
+    echo "  Keep it to \"Area: what changed\" and put the details in the body,"
+    echo "  separated by one empty line."
+    fail=1
+fi
+if grep -qiE '^(co-authored-by:|.*generated with .*claude)' "$msg"; then
+    echo "commit-msg: no Co-Authored-By line and no tool attribution."
+    fail=1
+fi
+exit $fail
