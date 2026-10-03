@@ -20,7 +20,7 @@ local MAX = {
     outputs  = 30,    -- slash commands, the last run of each
     sessions = 20,
 }
-local MAX_LINES = 300    -- per slash command output
+local MAX_LINES = 600    -- per slash command output; the dumps need room
 local MAX_TEXT  = 2000   -- per string
 
 local issecretvalue = _G.issecretvalue
@@ -195,6 +195,21 @@ function ns.Diag.EndOutput(ok, err)
     push("outputs", c)
 end
 
+-- A line for the running command's output, not for the chat: the dumps in
+-- Core/DiagDump.lua are far too long to print. Outside a command it becomes an
+-- event, so nothing is lost.
+function ns.Diag.Record(text)
+    if capture then
+        if #capture.lines < MAX_LINES then capture.lines[#capture.lines + 1] = clean(text) end
+        return #capture.lines < MAX_LINES
+    end
+    push("events", { t = now(), kind = "record", text = clean(text), session = session })
+    return true
+end
+
+-- Subcommands other files add to /vfdiag: [word] = function(rest).
+ns.Diag.Commands = {}
+
 -- For code that wants something on the record without printing it.
 function ns.Diag.Note(kind, text)
     push("events", { t = now(), kind = kind, text = clean(text), session = session })
@@ -258,7 +273,7 @@ end)
 ---------------------------------------------------------------------------
 ns:RegisterSlash({ key = "DIAG", commands = { "/vfdiag" },
     desc = "Diagnostics log for bug reports: errors, blocked actions and command output.",
-    note = "'/vfdiag note <text>' adds a note, '/vfdiag test' records a test error, '/vfdiag clear' empties the log. It is saved at /reload and logout.",
+    note = "'/vfdiag note <text>' adds a note, '/vfdiag mouse' records every frame and texture under the cursor, '/vfdiag frame <name>' one frame, '/vfdiag db <module>' a module's settings, '/vfdiag test' records a test error, '/vfdiag clear' empties the log. It is saved at /reload and logout.",
 })
 
 ns.Slash.DIAG = function(msg)
@@ -272,6 +287,8 @@ ns.Slash.DIAG = function(msg)
     elseif cmd == "note" and rest ~= "" then
         ns.Diag.Note("note", rest)
         ns:Print("Note saved. /reload writes it to disk.")
+    elseif ns.Diag.Commands[cmd] then
+        ns.Diag.Commands[cmd](rest)
     elseif cmd == "test" then
         C_Timer.After(0, function() error(addonName .. ": /vfdiag test error") end)
         ns:Print("Test error raised. /reload writes it to disk.")

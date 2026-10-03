@@ -2067,5 +2067,5 @@ ns:RegisterLocale("deDE", {
     ["Buy the slots before it first."] = "Erst die Plätze davor kaufen.",
     ["Show the bank tabs"] = "Bankfächer zeigen",
     ["Diagnostics log for bug reports: errors, blocked actions and command output."] = "Diagnoseprotokoll für Fehlerberichte: Fehler, blockierte Aktionen und Befehlsausgaben.",
-    ["'/vfdiag note <text>' adds a note, '/vfdiag test' records a test error, '/vfdiag clear' empties the log. It is saved at /reload and logout."] = "'/vfdiag note <Text>' fügt eine Notiz hinzu, '/vfdiag test' erzeugt einen Testfehler, '/vfdiag clear' leert das Protokoll. Gespeichert wird bei /reload und beim Ausloggen.",
+    ["'/vfdiag note <text>' adds a note, '/vfdiag mouse' records every frame and texture under the cursor, '/vfdiag frame <name>' one frame, '/vfdiag db <module>' a module's settings, '/vfdiag test' records a test error, '/vfdiag clear' empties the log. It is saved at /reload and logout."] = "'/vfdiag note <Text>' fügt eine Notiz hinzu, '/vfdiag mouse' erfasst alle Rahmen und Texturen unter dem Mauszeiger, '/vfdiag frame <Name>' einen Rahmen, '/vfdiag db <Modul>' die Einstellungen eines Moduls, '/vfdiag test' erzeugt einen Testfehler, '/vfdiag clear' leert das Protokoll. Gespeichert wird bei /reload und beim Ausloggen.",
 })

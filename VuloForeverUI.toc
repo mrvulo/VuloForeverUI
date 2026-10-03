@@ -22,6 +22,7 @@ Locales\deDE.lua
 Core\Utils.lua
 Core\Slash.lua
 Core\Diag.lua
+Core\DiagDump.lua
 Core\Secret.lua
 Core\SecretReport.lua
 Core\Database\Load.lua
