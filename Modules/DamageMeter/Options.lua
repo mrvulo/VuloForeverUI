@@ -293,12 +293,7 @@ local function timerOptions()
 
     items[#items + 1] = { type = "spacer", height = 6 }
     items[#items + 1] = timerRows.slider("size", L["Text size"], 10, 40, 1, { after = apply })
-    items[#items + 1] = timerRows.dropdown("outline", L["Outline"], {
-        { value = "INHERIT",      text = L["From the font settings"] },
-        { value = "NONE",         text = L["None"] },
-        { value = "OUTLINE",      text = L["Outline"] },
-        { value = "THICKOUTLINE", text = L["Thick outline"] },
-    }, { after = apply })
+    items[#items + 1] = timerRows.dropdown("outline", L["Outline"], ns.OutlineValues({ value = "INHERIT", text = L["From the font settings"] }), { after = apply })
     items[#items + 1] = timerRows.toggle("decimal", L["Show tenths of a second"], { after = apply })
     items[#items + 1] = timerRows.toggle("useAccent", L["Accent color"], { after = apply })
     items[#items + 1] = timerRows.color("color", L["Text color"], { after = apply })
@@ -474,12 +469,7 @@ local function threatOptions()
 
     items[#items + 1] = { type = "header", text = L["Text"] }
     items[#items + 1] = threatRows.slider("textSize", L["Text size"], 6, 24, 1, { after = apply })
-    items[#items + 1] = threatRows.dropdown("outline", L["Outline"], {
-        { value = "INHERIT",      text = L["From the font settings"] },
-        { value = "NONE",         text = L["None"] },
-        { value = "OUTLINE",      text = L["Outline"] },
-        { value = "THICKOUTLINE", text = L["Thick outline"] },
-    }, { after = apply })
+    items[#items + 1] = threatRows.dropdown("outline", L["Outline"], ns.OutlineValues({ value = "INHERIT", text = L["From the font settings"] }), { after = apply })
     items[#items + 1] = threatRows.toggle("showValue", L["Show the threat value"], { after = apply })
     items[#items + 1] = threatRows.toggle("showPercent", L["Show the percentage"], { after = apply })
 

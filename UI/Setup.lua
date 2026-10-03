@@ -218,11 +218,7 @@ end
 local OUTLINE_VALUES
 
 local function buildStep2(page)
-    OUTLINE_VALUES = OUTLINE_VALUES or {
-        { value = "NONE",         text = L["None"] },
-        { value = "OUTLINE",      text = L["Outline"] },
-        { value = "THICKOUTLINE", text = L["Thick Outline"] },
-    }
+    OUTLINE_VALUES = OUTLINE_VALUES or ns.OutlineValues()
     local function fonts() return (ns.db and ns.db.global and ns.db.global.fonts) or {} end
     local function getScale()
         local v = (C_CVar and C_CVar.GetCVar and C_CVar.GetCVar("uiScale")) or (GetCVar and GetCVar("uiScale"))

@@ -290,11 +290,7 @@ local function displayPage()
 
         { type = "header", text = L["Shared by all of them"] },
         dropdown(nil, "font", L["Font"], ns.MediaFontValues(), { width = 220 }),
-        dropdown(nil, "fontOutline", L["Outline"], {
-            { value = "NONE",         text = L["None"] },
-            { value = "OUTLINE",      text = L["Thin"] },
-            { value = "THICKOUTLINE", text = L["Thick"] },
-        }),
+        dropdown(nil, "fontOutline", L["Outline"], ns.OutlineValues()),
     }
 end
 

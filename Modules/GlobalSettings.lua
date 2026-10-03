@@ -387,11 +387,7 @@ local function fontsOptions()
     local g = ns.db.global
     local fdb = g.fonts
 
-    OUTLINE_VALUES = OUTLINE_VALUES or {
-        { value = "NONE",         text = L["None"] },
-        { value = "OUTLINE",      text = L["Outline"] },
-        { value = "THICKOUTLINE", text = L["Thick Outline"] },
-    }
+    OUTLINE_VALUES = OUTLINE_VALUES or ns.OutlineValues()
 
     local fontRows = {
         { type = "dropdown", label = L["Global Font"], noOverride = true,

@@ -18,6 +18,7 @@
 -- Rows are built per call, never at file load: labels are locale lookups and
 -- the saved language only exists from ADDON_LOADED on.
 local _, ns = ...
+local L = ns.L
 
 local function asExtra(extra)
     if type(extra) == "string" then return { tooltip = extra } end
@@ -153,6 +154,18 @@ function ns.ModuleOptions(mod, tabId)
     local ok, items = pcall(mod.GetOptions, mod, tabId)
     if ok and type(items) == "table" then splice(items) end
     return ok, items
+end
+
+-- The font outline choices, the same words on every page. `first` is an
+-- optional row on top ("from the font settings").
+function ns.OutlineValues(first)
+    local v = {
+        { value = "NONE",         text = L["None"] },
+        { value = "OUTLINE",      text = L["Outline"] },
+        { value = "THICKOUTLINE", text = L["Thick outline"] },
+    }
+    if first then table.insert(v, 1, first) end
+    return v
 end
 
 -- The two layout rows that bind to nothing.

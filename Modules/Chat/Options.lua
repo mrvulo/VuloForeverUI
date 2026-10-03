@@ -55,13 +55,7 @@ end
 
 -- ------------------------------------------------------------- pickers --
 
-local function outlineValues()
-    return {
-        { value = "NONE",         text = L["None"] },
-        { value = "OUTLINE",      text = L["Thin"] },
-        { value = "THICKOUTLINE", text = L["Thick"] },
-    }
-end
+local outlineValues = ns.OutlineValues
 
 -- Shared-media lists all get a "none" entry of their own rather than an empty
 -- first row: "none" is a real choice here (the flat fill, no sound), not the
