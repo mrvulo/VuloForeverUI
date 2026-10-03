@@ -1,43 +1,56 @@
-## 0.8.0
+## 0.9.0
 
 **New**
 
-- **Quality of Life** — a Gold tab. Track the gold of the day: earned, spent,
-  what is left and the balance under the money line of the bags, kept through
-  a reload and a relog. Check a trade partner's gold: beside the trade window,
-  the most gold they ever owned against everything they ever earned
-  themselves; the same check beside a mail with gold.
-- **Quality of Life** — a Quest tab. On the minimap a yellow ! for the quests
-  the game offers in this zone and a yellow ? where a finished quest is handed
-  in; quest progress on the tooltip of items a quest asks for; quest levels in
-  the tracker and at quest givers, an elite quest with a +.
-- **Quality of Life** — quest sounds for objective progress, a finished
-  objective and a quest ready to hand in, each with its own choice; Tell the
-  party sends quest progress to party chat (off by default).
-- **Bags** — the bank gets its own row of bank tabs: the icon of the bag in
-  each tab, its tooltip, bags dragged in, out or swapped, empty bought slots,
-  and the slots still for sale with their price; a click buys the next one
-  through the game's own purchase dialog.
-- **Bags** — Mark profession bag slots: slots in a herb, enchanting, mining or
-  other profession bag are tinted in that bag's colour. On by default.
-- **Bags** — Rounded slots: icons, borders and empty slots get rounded
-  corners. On by default.
-- **Auras** — No dispel type: debuffs without a dispel type get their own
-  border colour, red by default.
+- **Quality of Life** — quest markers on the minimap: every quest you have
+  not finished gets a marker where the game points for its objectives. Hover
+  it for the open objectives and the distance; click it and the game's own
+  waypoint leads you there, click again to stop.
+- **Quality of Life** — the ! of an available quest takes the colour of the
+  quest's level, like in the quest log; daily and repeatable quests show a
+  blue ! (can be switched off), a repeatable hand-in a blue ?. Every quest
+  marker names the quest line and the step, e.g. "Step 3 of 7".
+- **Quality of Life** — a quest journal per character: every quest accepted,
+  handed in and abandoned and every level gained, with date, level, zone and
+  experience. Open it with /vfjournal or from the Quest tab.
+- **Quality of Life** — mark junk yourself: Alt + right click (or Ctrl, your
+  choice) on an item in your bags marks every item of that kind as junk, or
+  unmarks it. Marked items are sold at the merchant together with the greys
+  and carry the junk C in the bags, ours and the game's. A button clears the
+  list.
+- **Quality of Life** — Destroy junk when the bags are full (off by default):
+  when the game says your bags are full, the cheapest grey or marked stack is
+  destroyed to make room. Never in combat; the chat says what went.
+- **Diagnostics** — /vfdiag keeps a log for bug reports: errors, blocked
+  actions and the output of the addon's commands, saved at /reload and
+  logout. '/vfdiag note <text>' adds a note of your own.
 
 **Changed**
 
-- **Bags** — the close button of the bags and the bank is a dark box with a
-  red cross.
-- **Action bars** — Free bag slots on the backpack now also shows with the
-  game's own bag bar, not only with the Classic band.
-- **Nameplates** — the cast bar sits 4 pixels lower by default.
+- **Nameplates** — the execute glow is a soft red glow around the health bar
+  with a red wash over it, pulsing faster; dead targets no longer glow. The
+  threshold is set in percent.
+- **Minimap** — the Classic style shows the map as large as the Standard
+  style and grows with the UI scale and the size slider. The tracking button
+  and the button of the minimap button collection have the size of the
+  standard map, the zone name sits centred in the header, and the zoom
+  buttons are shown by default.
+- **Action bars** — the Classic style is as large as the standard bar and
+  follows the UI scale; on narrow screens it shrinks so the band and the
+  gryphons stay fully visible.
+- **Options** — every opacity is a slider in percent; sliders show their unit,
+  and typed values with % or a decimal comma are understood. The colour
+  picker has an opacity slider wherever the setting keeps one.
+- **Options** — every border has the same set of settings in the same order:
+  show, texture, thickness, offset, colour with opacity, class colour. Font
+  outlines offer the same three choices everywhere.
+- **Nameplates** — the cast bar uses the game's own spark.
+- **Chat, Cooldown Manager** — the whisper sound and the ready sound offer the
+  sounds other addons share instead of two bundled ones.
 
 **Fixed**
 
-- **Auras** — borders and dispel strips are pixel exact, all four sides the
-  same width, also after moving or scaling.
-- **Action bars** — the free bag slot number could end up hidden under the
-  ring of the backpack button.
+- **Options** — resetting a colour also restores its opacity; the opacity can
+  be set while class colour is on.
 
 This version brings new files: restart the game once, a /reload is not enough.
