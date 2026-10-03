@@ -125,6 +125,31 @@ local mod = ns:RegisterModule("qol", {
             x = 0, y = -180, scale = 1,
         },
 
+        -- --------------------------------------------------------------- gold
+        -- The day's numbers live per character (VuloForeverUICharDB.qolGold),
+        -- the trade scans account-wide (ns.db.global.qolTradeScans).
+        gold = {
+            session    = true,
+            tradeCheck = true,
+            mailCheck  = true,
+        },
+
+        -- -------------------------------------------------------------- quest
+        quest = {
+            available = true,
+            turnIn    = true,
+            trivial   = false,
+            tooltip   = true,
+            pinSize   = 14,
+
+            levelsDialog   = true,
+            soundProgress  = 0,
+            soundObjective = 3175,
+            soundComplete  = 878,
+            announce       = false,
+            announceWhat   = "objectives",
+        },
+
         -- --------------------------------------------------------------- mail
         -- The remembered names are NOT here: like the flight times they are
         -- account-wide (ns.db.global.qolMailNames).
@@ -235,6 +260,8 @@ mod.tabs = {
     { id = "loot",    label = "Loot" },
     { id = "display", label = "Display" },
     { id = "trinkets", label = "Trinkets" },
+    { id = "gold",    label = "Gold" },
+    { id = "quest",   label = "Quest" },
 }
 
 -- Re-runs every part. Options call this after a write: a part decides for

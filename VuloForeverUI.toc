@@ -155,6 +155,10 @@ Modules\QoL\Vendor.lua
 Modules\QoL\Loot.lua
 Modules\QoL\Display.lua
 Modules\QoL\Trinkets.lua
+Modules\QoL\Gold.lua
+Modules\QoL\TradeCheck.lua
+Modules\QoL\Quests.lua
+Modules\QoL\QuestExtras.lua
 Modules\QoL\Options.lua
 
 Modules\TooltipIDs.lua

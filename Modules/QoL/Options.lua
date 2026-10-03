@@ -420,7 +420,86 @@ local function trinketsPage()
     return items
 end
 
+-- ------------------------------------------------------------------ gold --
+
+local function goldPage()
+    return {
+        { type = "header", text = L["Today's gold"] },
+        toggle("gold", "session", L["Track the gold of the day"],
+            L["Earned, spent, what is left and the balance, under the money line of the bags. Survives a reload and a relog and starts over on the first login of a new day."]),
+        { type = "button", label = L["Start a new session now"], width = 240,
+          onClick = function() QoL.Gold.Reset() end },
+
+        { type = "header", text = L["Gold check"] },
+        toggle("gold", "tradeCheck", L["Check a trade partner's gold"],
+            L["Beside the trade window: the most gold they ever owned against everything they ever earned themselves. What has no recorded source came by trade or mail."]),
+        toggle("gold", "mailCheck", L["Check the sender of a gold mail"],
+            L["Beside an open mail with gold: a live check when the sender is your target, focus, mouseover or in your group, otherwise your last scan of them. In the inbox a mark shows the result, or an orange ? when you have never scanned the sender."]),
+        { type = "button", label = L["Open the gold check"], width = 240,
+          onClick = function() QoL.TradeCheck.ShowWindow() end },
+        { type = "desc", text = L["|cffaaaaaaThe numbers are the character statistics of the achievement window, read the way its compare view reads them. They need the player in reach, and a guild bank or a generous friend look the same as bought gold -- it is a hint, not proof.|r"] },
+    }
+end
+
+-- ----------------------------------------------------------------- quest --
+
+-- A sound choice that plays the sound it was just set to.
+local function questSound(key, label)
+    local values = {}
+    for _, s in ipairs(QoL.QuestExtras.SOUNDS) do
+        values[#values + 1] = { value = s.value, text = L[s.text] }
+    end
+    return { type = "dropdown", label = label, width = 200, values = values,
+        get = function() return tbl("quest")[key] end,
+        set = function(_, v)
+            tbl("quest")[key] = v
+            apply()
+            QoL.QuestExtras.Play(v)
+        end }
+end
+
+local function questPage()
+    return {
+        { type = "header", text = L["Minimap"] },
+        toggle("quest", "available", L["Show available quests"],
+            L["A yellow ! for every quest the client offers you in this zone -- the same list the world map uses."]),
+        toggle("quest", "trivial", L["Include low level quests"],
+            L["Quests far below your level, greyed out."]),
+        toggle("quest", "turnIn", L["Show where to hand in"],
+            L["A yellow ? where a finished quest is handed in, as long as it is in this zone."]),
+        slider("quest", "pinSize", L["Icon size"], 8, 32, 1),
+
+        { type = "header", text = L["Tooltip"] },
+        toggle("quest", "tooltip", L["Quest progress on items"],
+            L["On an item an open quest asks for: the quest and how many you have. Creatures already show their quest lines from the client."]),
+
+        { type = "header", text = L["Quest levels"] },
+        { type = "toggle", label = L["Quest levels in the tracker"],
+            tooltip = L["The client's own switch: the level in front of every quest in the objective tracker and on the map, e.g. [12]. The quest log always shows it."],
+            get = function() return QoL.QuestExtras.TrackerLevels() end,
+            set = function(_, v) QoL.QuestExtras.SetTrackerLevels(v) end },
+        toggle("quest", "levelsDialog", L["Quest levels at quest givers"],
+            L["The level in front of every quest a quest giver offers or takes back, an elite quest with a +."]),
+
+        { type = "header", text = L["Sounds"] },
+        questSound("soundProgress", L["Objective progress"]),
+        questSound("soundObjective", L["Objective done"]),
+        questSound("soundComplete", L["Quest ready to hand in"]),
+
+        { type = "header", text = L["Group"] },
+        toggle("quest", "announce", L["Tell the party"],
+            L["Quest progress goes to party chat. Never in a raid, and not while the client holds chat back."]),
+        dropdown("quest", "announceWhat", L["What to tell"], {
+            { value = "complete",   text = L["Finished quests"] },
+            { value = "objectives", text = L["Finished objectives and quests"] },
+            { value = "progress",   text = L["Every step"] },
+        }),
+    }
+end
+
 function mod:GetOptions(tabId)
+    if tabId == "gold"    then return goldPage() end
+    if tabId == "quest"   then return questPage() end
     if tabId == "vendor"  then return vendorPage() end
     if tabId == "loot"    then return lootPage() end
     if tabId == "display" then return displayPage() end
