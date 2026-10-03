@@ -42,32 +42,32 @@ end
 
 -- ---------------------------------------------------------------- widgets --
 
+-- Rows of one bar: the db is that bar's table, and subKey keeps two bars'
+-- rows of the same field apart in the change tracking.
+local rowSets = {}
+local function rowsFor(key)
+    local set = rowSets[key]
+    if not set then
+        set = ns.OptionRows(function() return RB.Bar(key) end, apply, { dropdownWidth = 200 })
+        rowSets[key] = set
+    end
+    return set
+end
+
 local function toggle(key, field, label, tooltip)
-    return { type = "toggle", label = label, tooltip = tooltip, subKey = key .. field,
-        get = function() return RB.Bar(key)[field] end,
-        set = function(_, v) RB.Bar(key)[field] = v; apply() end }
+    return rowsFor(key).toggle(field, label, { tooltip = tooltip, subKey = key .. field })
 end
 
 local function slider(key, field, label, min, max, step)
-    return { type = "slider", label = label, min = min, max = max, step = step, subKey = key .. field,
-        get = function() return RB.Bar(key)[field] end,
-        set = function(_, v) RB.Bar(key)[field] = v; apply() end }
+    return rowsFor(key).slider(field, label, min, max, step, { subKey = key .. field })
 end
 
 local function color(key, field, label)
-    return { type = "color", label = label, subKey = key .. field,
-        get = function() return RB.Bar(key)[field] end,
-        set = function(r, g, b)
-            local c = RB.Bar(key)[field]
-            c.r, c.g, c.b = r, g, b
-            apply()
-        end }
+    return rowsFor(key).color(field, label, { subKey = key .. field })
 end
 
 local function dropdown(key, field, label, values, width)
-    return { type = "dropdown", label = label, width = width or 200, values = values, subKey = key .. field,
-        get = function() return RB.Bar(key)[field] end,
-        set = function(_, v) RB.Bar(key)[field] = v; apply() end }
+    return rowsFor(key).dropdown(field, label, values, { width = width, subKey = key .. field })
 end
 
 -- The look every bar shares. Returned as a flat list so a page can put its own

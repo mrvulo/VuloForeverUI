@@ -75,27 +75,8 @@ end
 
 -- ---------------------------------------------------------------- widgets --
 
-local function toggle(label, key, tooltip)
-    return { type = "toggle", label = label, tooltip = tooltip,
-        get = function() return bar()[key] end,
-        set = function(_, v) bar()[key] = v; apply() end }
-end
-
-local function slider(label, key, min, max, step)
-    return { type = "slider", label = label, min = min, max = max, step = step,
-        get = function() return bar()[key] end,
-        set = function(_, v) bar()[key] = v; apply() end }
-end
-
-local function color(label, key)
-    return { type = "color", label = label,
-        get = function() return bar()[key] end,
-        set = function(r, g, b)
-            local c = bar()[key]
-            c.r, c.g, c.b = r, g, b
-            apply()
-        end }
-end
+local rows = ns.OptionRows(bar, apply)
+local toggle, slider, color = rows.toggle, rows.slider, rows.color
 
 -- The kinds a new bar can be started as. Same three the client's own cooldown
 -- viewer keeps, and the same three a fresh profile starts with -- a bar added
@@ -676,9 +657,9 @@ local function layoutPage()
     return {
         { type = "spacer", height = 6 },
         { type = "header", text = L["Layout"] },
-        slider(L["Icon size"], "iconSize", 16, 80, 1),
-        slider(L["Spacing"], "spacing", -1, 20, 1),
-        slider(L["Number of rows"], "rows", 1, 6, 1),
+        slider("iconSize", L["Icon size"], 16, 80, 1),
+        slider("spacing", L["Spacing"], -1, 20, 1),
+        slider("rows", L["Number of rows"], 1, 6, 1),
         { type = "dropdown", label = L["Grow"], width = 200,
           values = {
               { value = "CENTER", text = L["From the centre"] },
@@ -687,21 +668,21 @@ local function layoutPage()
           },
           get = function() return bar().grow end,
           set = function(_, v) bar().grow = v; apply() end },
-        toggle(L["Stand the bar upright"], "vertical"),
-        toggle(L["Split the rows"], "splitRows", L["Puts a gap between the rows, so a double row reads as two."]),
-        slider(L["Gap between the rows"], "splitGap", 0, 40, 1),
-        slider(L["Opacity"], "opacity", 0.1, 1, 0.01),
+        toggle("vertical", L["Stand the bar upright"]),
+        toggle("splitRows", L["Split the rows"], L["Puts a gap between the rows, so a double row reads as two."]),
+        slider("splitGap", L["Gap between the rows"], 0, 40, 1),
+        slider("opacity", L["Opacity"], 0.1, 1, 0.01),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Size limits"] },
         { type = "desc", text = L["|cffaaaaaaA width limit shrinks the icons until the row fits, and stops at the smallest size rather than turning the bar into a line of dots.|r"] },
-        slider(L["Largest width"], "maxWidth", 0, 1200, 10),
-        slider(L["Smallest icon"], "minIconSize", 8, 60, 1),
+        slider("maxWidth", L["Largest width"], 0, 1200, 10),
+        slider("minIconSize", L["Smallest icon"], 8, 60, 1),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Overflow"] },
         { type = "desc", text = L["|cffaaaaaaEverything past the limit is handed to another bar, which keeps a long list one readable row.|r"] },
-        slider(L["Most icons on this bar"], "maxIcons", 0, 24, 1),
+        slider("maxIcons", L["Most icons on this bar"], 0, 24, 1),
         { type = "dropdown", label = L["Hand the rest to"], width = 220, values = overflowValues,
           get = function() return bar().overflowInto or "" end,
           set = function(_, v) bar().overflowInto = v; apply() end },
@@ -726,7 +707,7 @@ local function iconsPage()
     return {
         { type = "spacer", height = 6 },
         { type = "header", text = L["Icon"] },
-        slider(L["Icon zoom"], "iconZoom", 0, 0.2, 0.01),
+        slider("iconZoom", L["Icon zoom"], 0, 0.2, 0.01),
         { type = "dropdown", label = L["Icon shape"], width = 200,
           values = {
               { value = "square",  text = L["Square"] },
@@ -748,16 +729,16 @@ local function iconsPage()
           tooltip = L["A shaped icon brings its own border; this one is for the square shape."],
           get = function() return bar().borderTexture or "" end,
           set = function(_, v) bar().borderTexture = v; apply() end },
-        slider(L["Border size"], "borderSize", 0, 4, 1),
-        slider(L["Border offset"], "borderInset", 0, 10, 1),
-        toggle(L["Class color for the border"], "borderClassColor"),
-        color(L["Border color"], "borderColor"),
-        color(L["Background color"], "bgColor"),
+        slider("borderSize", L["Border size"], 0, 4, 1),
+        slider("borderInset", L["Border offset"], 0, 10, 1),
+        toggle("borderClassColor", L["Class color for the border"]),
+        color("borderColor", L["Border color"]),
+        color("bgColor", L["Background color"]),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["While the spell is on cooldown"] },
-        toggle(L["Show the swipe"], "showSwipe"),
-        slider(L["Swipe darkness"], "swipeAlpha", 0, 1, 0.01),
+        toggle("showSwipe", L["Show the swipe"]),
+        slider("swipeAlpha", L["Swipe darkness"], 0, 1, 0.01),
         { type = "toggle", label = L["Dim the icon"],
           tooltip = L["The client dims it, so it also works while you are in combat."],
           get = function() return bar().desaturateOnCooldown end,
@@ -765,23 +746,23 @@ local function iconsPage()
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Text"] },
-        toggle(L["Show the countdown"], "showCountdown"),
-        slider(L["Countdown size"], "countdownSize", 8, 24, 1),
-        color(L["Countdown color"], "countdownColor"),
-        toggle(L["Show charges"], "showCharges"),
-        slider(L["Charge text size"], "chargeSize", 8, 20, 1),
+        toggle("showCountdown", L["Show the countdown"]),
+        slider("countdownSize", L["Countdown size"], 8, 24, 1),
+        color("countdownColor", L["Countdown color"]),
+        toggle("showCharges", L["Show charges"]),
+        slider("chargeSize", L["Charge text size"], 8, 20, 1),
         { type = "toggle", label = L["Show the key"],
           tooltip = L["The key that casts it, taken from your action bars."],
           get = function() return bar().showKeybind end,
           set = function(_, v) bar().showKeybind = v; apply() end },
-        slider(L["Key text size"], "keybindSize", 6, 20, 1),
-        color(L["Key color"], "keybindColor"),
+        slider("keybindSize", L["Key text size"], 6, 20, 1),
+        color("keybindColor", L["Key color"]),
         { type = "toggle", label = L["Show the count"],
           tooltip = L["How many of an item you carry, and how many stacks a watched buff has."],
           get = function() return bar().showCount end,
           set = function(_, v) bar().showCount = v; apply() end },
-        slider(L["Count text size"], "countSize", 6, 20, 1),
-        color(L["Count color"], "countColor"),
+        slider("countSize", L["Count text size"], 6, 20, 1),
+        color("countColor", L["Count color"]),
     }
 end
 
@@ -800,11 +781,11 @@ local function glowPage()
           },
           get = function() return bar().glowType or "pixel" end,
           set = function(_, v) bar().glowType = v; apply() end },
-        color(L["Glow color"], "glowColor"),
-        toggle(L["Glow when it is ready"], "readyGlow"),
-        toggle(L["Glow on a proc"], "procGlow",
+        color("glowColor", L["Glow color"]),
+        toggle("readyGlow", L["Glow when it is ready"]),
+        toggle("procGlow", L["Glow on a proc"],
             L["The client says which spell lit up. In a fight it sometimes says it secretly, and a proc we cannot place is left alone rather than guessed at."]),
-        slider(L["Glow from this many stacks"], "stackGlow", 0, 10, 1),
+        slider("stackGlow", L["Glow from this many stacks"], 0, 10, 1),
         { type = "desc", text = L["|cffaaaaaaStacks are readable only while auras are open to addons, which in a fight they are not. The glow then waits rather than flickering.|r"] },
     }
 end
@@ -861,8 +842,8 @@ local function visibilityPage()
           },
           get = function() return bar().visibility end,
           set = function(_, v) bar().visibility = v; apply() end },
-        toggle(L["Fade out of combat"], "oocFade"),
-        slider(L["Faded opacity"], "oocAlpha", 0.05, 1, 0.01),
+        toggle("oocFade", L["Fade out of combat"]),
+        slider("oocAlpha", L["Faded opacity"], 0.05, 1, 0.01),
         { type = "spacer", height = 6 },
         { type = "header", text = L["Only under these conditions"] },
         { type = "desc", text = L["|cffaaaaaaPick as many as you like. Every one you pick has to hold, so nothing picked means the bar always follows the rule above.|r"] },

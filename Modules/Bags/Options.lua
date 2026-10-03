@@ -38,55 +38,9 @@ end
 
 local function db() return Bags.db() end
 
-local function toggle(key, label, tooltip, extra)
-    local row = { type = "toggle", label = label, tooltip = tooltip,
-        get = function() return db()[key] end,
-        set = function(_, v) db()[key] = v and true or false; apply() end }
-    if extra then row.inline, row.disabled = extra.inline, extra.disabled end
-    return row
-end
-
-local function slider(key, label, min, max, step, extra)
-    local scale = extra and extra.scale or 1
-    local row = { type = "slider", label = label, min = min, max = max, step = step or 1,
-        tooltip = extra and extra.tooltip,
-        get = function() return (db()[key] or 0) * scale end,
-        set = function(_, v) db()[key] = v / scale; apply() end }
-    if extra then row.inline, row.disabled = extra.inline, extra.disabled end
-    return row
-end
-
-local function dropdown(key, label, values, extra)
-    local row = { type = "dropdown", label = label, values = values,
-        tooltip = extra and extra.tooltip,
-        get = function() return db()[key] end,
-        set = function(_, v) db()[key] = v; apply() end }
-    if extra then
-        row.inline, row.disabled = extra.inline, extra.disabled
-        if extra.get then row.get = extra.get end
-        if extra.set then row.set = extra.set end
-    end
-    return row
-end
-
-local function swatch(key, tooltip, disabled)
-    return { kind = "color", tooltip = tooltip, disabled = disabled,
-        get = function() return db()[key] end,
-        set = function(r, g, b)
-            local c = db()[key]
-            c.r, c.g, c.b = r, g, b
-            apply()
-        end }
-end
-
-local function gear(title, items, disabled)
-    return { kind = "gear", tooltip = title, disabled = disabled,
-        popup = { title = title, width = 300, items = items } }
-end
-
-local function section(title, items)
-    return { type = "section", title = title, items = items }
-end
+local rows = ns.OptionRows(db, apply)
+local toggle, slider, dropdown, swatch = rows.toggle, rows.slider, rows.dropdown, rows.swatch
+local gear, section = ns.OptionGear, ns.OptionSection
 
 -- ---------------------------------------------------------------------------
 -- The two multi-selects. Both write a SET (key -> true), because both answer
@@ -164,27 +118,27 @@ local function bagsPage()
             L["Grey items a vendor pays for get a C in the corner. Sorting puts them at the very end."]),
 
         toggle("splitEquipmentSets", L["Split set gear by set"]),
-        toggle("showSetNames", L["Show set names on gear"], nil, { inline = {
-            swatch("setNameColor", L["Text color"], function() return not d.showSetNames end),
+        toggle("showSetNames", L["Show set names on gear"], { inline = {
+            swatch("setNameColor", { tooltip = L["Text color"], disabled = function() return not d.showSetNames end }),
             gear(L["Set names"], {
                 slider("setNameSize", L["Size"], 6, 16, 1),
                 slider("setNameLetters", L["Letters shown"], 1, 6, 1),
-            }, function() return not d.showSetNames end),
+            }, { disabled = function() return not d.showSetNames end }),
         } }),
 
-        toggle("showBindTags", L["Show BoE / warbound"], nil, { inline = {
-            swatch("bindTagColor", L["BoE color"], function() return not d.showBindTags end),
+        toggle("showBindTags", L["Show BoE / warbound"], { inline = {
+            swatch("bindTagColor", { tooltip = L["BoE color"], disabled = function() return not d.showBindTags end }),
             gear(L["BoE / warbound"], {
                 slider("bindTagSize", L["Size"], 6, 16, 1),
-            }, function() return not d.showBindTags end),
+            }, { disabled = function() return not d.showBindTags end }),
         } }),
 
         slider("categoryTitleSize", L["Category title size"], 8, 20, 1),
         -- The size of this one sits in its own row further down, the way the
         -- page pairs "show it" with "how big": the gear here would be a second
         -- control for the same number.
-        toggle("showItemLevel", L["Show item level"], nil, { inline = {
-            swatch("itemLevelColor", L["Text color"], function() return not d.showItemLevel end),
+        toggle("showItemLevel", L["Show item level"], { inline = {
+            swatch("itemLevelColor", { tooltip = L["Text color"], disabled = function() return not d.showItemLevel end }),
         } }),
 
         categoryRow(),
@@ -300,11 +254,9 @@ local function bankPage()
         section(L["Sidebar"], {
             toggle("bankSidebar", L["Category sidebar"],
                 L["A column of buttons down the left edge: everything, each bank tab, each shelf. A click filters the window to one of them."]),
-            toggle("bankHideTabsInSidebar", L["Hide bank tabs in sidebar"], nil,
-                { disabled = function() return not d.bankSidebar end }),
+            toggle("bankHideTabsInSidebar", L["Hide bank tabs in sidebar"], { disabled = function() return not d.bankSidebar end }),
 
-            toggle("bankHideEmptyWhenGrouped", L["Hide empty slots when grouped"], nil,
-                { disabled = ungrouped }),
+            toggle("bankHideEmptyWhenGrouped", L["Hide empty slots when grouped"], { disabled = ungrouped }),
         }),
     }
 end

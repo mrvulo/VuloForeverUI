@@ -24,27 +24,8 @@ local function apply()
     Chat.Refresh()
 end
 
-local function toggle(key, label, tooltip)
-    return { type = "toggle", label = label, tooltip = tooltip,
-        get = function() return Chat.db()[key] end,
-        set = function(_, v) Chat.db()[key] = v; apply() end }
-end
-
-local function slider(key, label, min, max, step)
-    return { type = "slider", label = label, min = min, max = max, step = step,
-        get = function() return Chat.db()[key] end,
-        set = function(_, v) Chat.db()[key] = v; apply() end }
-end
-
-local function color(key, label)
-    return { type = "color", label = label,
-        get = function() return Chat.db()[key] end,
-        set = function(r, g, b)
-            local c = Chat.db()[key]
-            c.r, c.g, c.b = r, g, b
-            apply()
-        end }
-end
+local rows = ns.OptionRows(function() return Chat.db() end, apply, { dropdownWidth = 200 })
+local toggle, slider, dropdown, color = rows.toggle, rows.slider, rows.dropdown, rows.color
 
 -- A toggle that other rows are greyed out by.
 --
@@ -70,12 +51,6 @@ local function opacity(key, label)
     return { type = "slider", label = label, min = 0, max = 1, step = 0.05,
         get = function() return Chat.db()[key].a end,
         set = function(_, v) Chat.db()[key].a = v; apply() end }
-end
-
-local function dropdown(key, label, values, width)
-    return { type = "dropdown", label = label, width = width or 200, values = values,
-        get = function() return Chat.db()[key] end,
-        set = function(_, v) Chat.db()[key] = v; apply() end }
 end
 
 -- ------------------------------------------------------------- pickers --
@@ -177,7 +152,7 @@ local function chatPage()
         { type = "slider", label = L["Background opacity"], min = 0, max = 1, step = 0.05,
           get = function() return Chat.db().bgColor.a end,
           set = function(_, v) Chat.db().bgColor.a = v; apply() end },
-        dropdown("bgTexture", L["Background texture"], textureValues(), 220),
+        dropdown("bgTexture", L["Background texture"], textureValues(), { width = 220 }),
         fontRow(),
         slider("fontSize", L["Text size"], 8, 24, 1),
         dropdown("fontOutline", L["Outline"], outlineValues()),
@@ -277,7 +252,7 @@ local function tabsPage()
         { type = "desc", text = L["|cffaaaaaaHeight, width and spacing are not here on purpose: a tab of ours is drawn exactly on the client's tab, and moving the drawing off the thing that takes the click means clicking a label and selecting the window next to it.|r"] },
 
         { type = "header", text = L["Typography"] },
-        dropdown("tabFont", L["Tab font"], tabFontValues(), 220),
+        dropdown("tabFont", L["Tab font"], tabFontValues(), { width = 220 }),
         slider("tabFontSize", L["Tab text size"], 6, 20, 1),
         color("tabTextColor", L["Tab text color"]),
         color("tabTextColorActive", L["Active tab text color"]),
@@ -287,7 +262,7 @@ local function tabsPage()
         opacity("tabBgColor", L["Tab background opacity"]),
         color("tabBgColorActive", L["Active tab background color"]),
         opacity("tabBgColorActive", L["Active tab background opacity"]),
-        dropdown("tabTexture", L["Tab texture"], textureValues(), 220),
+        dropdown("tabTexture", L["Tab texture"], textureValues(), { width = 220 }),
         { type = "toggle", label = L["Underline the active tab"],
           get = function() return Chat.db().activeUnderline end,
           set = function(_, v) Chat.db().activeUnderline = v; apply() end,

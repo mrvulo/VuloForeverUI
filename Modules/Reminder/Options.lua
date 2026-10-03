@@ -27,10 +27,10 @@ local function flag(key, label, tooltip)
     return toggle(label, function() return mod.db[key] end, function(v) mod.db[key] = v end, tooltip)
 end
 
+local rows = ns.OptionRows(function() return mod.db end, function() R.Relayout(); R.Queue() end)
+
 local function slider(key, label, min, max, tooltip)
-    return { type = "slider", label = label, tooltip = tooltip, min = min, max = max, step = 1,
-        get = function() return mod.db[key] end,
-        set = function(_, v) mod.db[key] = v; R.Relayout(); R.Queue() end }
+    return rows.slider(key, label, min, max, 1, tooltip)
 end
 
 local function castPicker(cfg, list)

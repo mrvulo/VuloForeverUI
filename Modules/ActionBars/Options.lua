@@ -13,33 +13,8 @@ local function apply()
     AB.RefreshPreview()
 end
 
-local function toggle(key, label, tooltip)
-    return { type = "toggle", label = label, tooltip = tooltip,
-        get = function() return AB.db()[key] end,
-        set = function(_, v) AB.db()[key] = v; apply() end }
-end
-
-local function color(key, label)
-    return { type = "color", label = label,
-        get = function() return AB.db()[key] end,
-        set = function(r, g, b)
-            local c = AB.db()[key]
-            c.r, c.g, c.b = r, g, b
-            apply()
-        end }
-end
-
-local function slider(key, label, min, max, step, tooltip)
-    return { type = "slider", label = label, tooltip = tooltip, min = min, max = max, step = step,
-        get = function() return AB.db()[key] end,
-        set = function(_, v) AB.db()[key] = v; apply() end }
-end
-
-local function dropdown(key, label, values, tooltip)
-    return { type = "dropdown", label = label, tooltip = tooltip, width = 200, values = values,
-        get = function() return AB.db()[key] end,
-        set = function(_, v) AB.db()[key] = v; apply() end }
-end
+local rows = ns.OptionRows(function() return AB.db() end, apply, { dropdownWidth = 200 })
+local toggle, slider, dropdown, color = rows.toggle, rows.slider, rows.dropdown, rows.color
 
 local function pressTypes()
     return {

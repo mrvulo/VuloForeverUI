@@ -27,63 +27,8 @@ local function d() return DM.db() end
 
 -- ---------------------------------------------------------------- helpers --
 
--- A colour row on the profile's {r,g,b} table.
-local function colorRow(label, key, onSet)
-    return { type = "color", label = label,
-        get = function() return d()[key] end,
-        set = function(r, g, b)
-            local c = d()[key]
-            c.r, c.g, c.b = r, g, b
-            if onSet then onSet() end
-        end }
-end
-
-local function toggle(label, key, tooltip, onSet)
-    return { type = "toggle", label = label, tooltip = tooltip,
-        get = function() return d()[key] end,
-        set = function(_, v) d()[key] = v; if onSet then onSet() end end }
-end
-
-local function slider(label, key, min, max, step, onSet, tooltip)
-    return { type = "slider", label = label, tooltip = tooltip, min = min, max = max, step = step,
-        get = function() return d()[key] end,
-        set = function(_, v) d()[key] = v; if onSet then onSet() end end }
-end
-
-local function dropdown(label, key, values, onSet, width)
-    return { type = "dropdown", label = label, width = width or 200, values = values,
-        get = function() return d()[key] end,
-        set = function(_, v) d()[key] = v; if onSet then onSet() end end }
-end
-
--- Sub-table variants for the timer and the cast history.
-local function subToggle(tbl, label, key, tooltip, onSet)
-    return { type = "toggle", label = label, tooltip = tooltip,
-        get = function() return tbl()[key] end,
-        set = function(_, v) tbl()[key] = v; if onSet then onSet() end end }
-end
-
-local function subSlider(tbl, label, key, min, max, step, onSet)
-    return { type = "slider", label = label, min = min, max = max, step = step,
-        get = function() return tbl()[key] end,
-        set = function(_, v) tbl()[key] = v; if onSet then onSet() end end }
-end
-
-local function subDropdown(tbl, label, key, values, onSet, width)
-    return { type = "dropdown", label = label, width = width or 200, values = values,
-        get = function() return tbl()[key] end,
-        set = function(_, v) tbl()[key] = v; if onSet then onSet() end end }
-end
-
-local function subColor(tbl, label, key, onSet)
-    return { type = "color", label = label,
-        get = function() return tbl()[key] end,
-        set = function(r, g, b)
-            local c = tbl()[key]
-            c.r, c.g, c.b = r, g, b
-            if onSet then onSet() end
-        end }
-end
+local rows = ns.OptionRows(d, nil, { dropdownWidth = 200 })
+local toggle, slider, dropdown, color = rows.toggle, rows.slider, rows.dropdown, rows.color
 
 local function restyle() DM.RestyleAll() end
 local function repaint() DM.RefreshAll() end
@@ -159,9 +104,9 @@ local function generalOptions()
         { type = "dropdown", label = L["Show and hide the windows"], width = 200, values = keyValues(),
           get = function() return d().toggleKey end,
           set = function(_, v) d().toggleKey = v; DM.ApplyKeybinds() end },
-        toggle(L["The key also hides the combat timer"], "toggleIncludeTimer"),
-        toggle(L["The key also hides the cast history"], "toggleIncludeSpellHistory"),
-        toggle(L["Hide the reset button"], "hideResetButton", nil, restyle),
+        toggle("toggleIncludeTimer", L["The key also hides the combat timer"]),
+        toggle("toggleIncludeSpellHistory", L["The key also hides the cast history"]),
+        toggle("hideResetButton", L["Hide the reset button"], { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Windows"] },
@@ -204,128 +149,128 @@ end
 local function windowOptions()
     return {
         { type = "header", text = L["Background"] },
-        slider(L["Opacity"], "bgAlpha", 0, 1, 0.01, restyle),
-        colorRow(L["Background color"], "bgColor", restyle),
+        slider("bgAlpha", L["Opacity"], 0, 1, 0.01, { after = restyle }),
+        color("bgColor", L["Background color"], { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Border"] },
-        dropdown(L["Border style"], "windowBorderTexture", borderValues(), restyle),
-        slider(L["Border size"], "windowBorderSize", 0, 8, 1, restyle),
-        colorRow(L["Border color"], "windowBorderColor", restyle),
-        slider(L["Border opacity"], "windowBorderAlpha", 0, 1, 0.01, restyle),
-        slider(L["Border offset X"], "windowBorderOffsetX", -10, 10, 1, restyle),
-        slider(L["Border offset Y"], "windowBorderOffsetY", -10, 10, 1, restyle),
-        toggle(L["Include the header"], "windowBorderIncludeHeader", nil, restyle),
-        toggle(L["Draw behind the bars"], "windowBorderBehind", nil, restyle),
+        dropdown("windowBorderTexture", L["Border style"], borderValues(), { after = restyle }),
+        slider("windowBorderSize", L["Border size"], 0, 8, 1, { after = restyle }),
+        color("windowBorderColor", L["Border color"], { after = restyle }),
+        slider("windowBorderAlpha", L["Border opacity"], 0, 1, 0.01, { after = restyle }),
+        slider("windowBorderOffsetX", L["Border offset X"], -10, 10, 1, { after = restyle }),
+        slider("windowBorderOffsetY", L["Border offset Y"], -10, 10, 1, { after = restyle }),
+        toggle("windowBorderIncludeHeader", L["Include the header"], { after = restyle }),
+        toggle("windowBorderBehind", L["Draw behind the bars"], { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Header"] },
-        slider(L["Header height"], "hdrHeight", 14, 40, 1, restyle),
-        slider(L["Header opacity"], "hdrBgAlpha", 0, 1, 0.01, restyle),
-        colorRow(L["Header color"], "hdrBgColor", restyle),
-        slider(L["Header text size"], "hdrFontSize", 8, 18, 1, restyle),
-        toggle(L["Accent color for the header text"], "hdrTextUseAccent", nil, restyle),
-        colorRow(L["Header text color"], "hdrTextColor", restyle),
-        slider(L["Header text offset X"], "hdrTextOffX", -20, 20, 1, restyle),
-        slider(L["Header text offset Y"], "hdrTextOffY", -20, 20, 1, restyle),
-        slider(L["Bottom border"], "hdrBottomBorderSize", 0, 4, 1, restyle),
-        colorRow(L["Bottom border color"], "hdrBottomBorderColor", restyle),
+        slider("hdrHeight", L["Header height"], 14, 40, 1, { after = restyle }),
+        slider("hdrBgAlpha", L["Header opacity"], 0, 1, 0.01, { after = restyle }),
+        color("hdrBgColor", L["Header color"], { after = restyle }),
+        slider("hdrFontSize", L["Header text size"], 8, 18, 1, { after = restyle }),
+        toggle("hdrTextUseAccent", L["Accent color for the header text"], { after = restyle }),
+        color("hdrTextColor", L["Header text color"], { after = restyle }),
+        slider("hdrTextOffX", L["Header text offset X"], -20, 20, 1, { after = restyle }),
+        slider("hdrTextOffY", L["Header text offset Y"], -20, 20, 1, { after = restyle }),
+        slider("hdrBottomBorderSize", L["Bottom border"], 0, 4, 1, { after = restyle }),
+        color("hdrBottomBorderColor", L["Bottom border color"], { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Header icons"] },
-        slider(L["Icon size"], "hdrIconSize", 16, 32, 1, restyle),
-        toggle(L["Show the icons only on mouseover"], "hdrMouseoverIcons", nil, restyle),
-        toggle(L["Accent color for the icons"], "iconColorUseAccent", nil, restyle),
-        colorRow(L["Icon color"], "iconColor", restyle),
+        slider("hdrIconSize", L["Icon size"], 16, 32, 1, { after = restyle }),
+        toggle("hdrMouseoverIcons", L["Show the icons only on mouseover"], { after = restyle }),
+        toggle("iconColorUseAccent", L["Accent color for the icons"], { after = restyle }),
+        color("iconColor", L["Icon color"], { after = restyle }),
     }
 end
 
 local function barsOptions()
     return {
         { type = "header", text = L["Bars"] },
-        dropdown(L["Bar texture"], "barTexture", ns.MediaStatusbarValues(), restyle, 220),
-        slider(L["Bar height"], "barHeight", 8, 40, 1, restyle),
-        slider(L["Spacing"], "barSpacing", -1, 10, 1, restyle),
-        slider(L["Fill opacity"], "barFillAlpha", 0, 1, 0.01, restyle),
-        toggle(L["Class color"], "showClassColor", nil, restyle),
-        toggle(L["Accent color instead"], "barColorUseAccent", nil, restyle),
-        colorRow(L["Bar color"], "barColor", restyle),
+        dropdown("barTexture", L["Bar texture"], ns.MediaStatusbarValues(), { after = restyle, width = 220 }),
+        slider("barHeight", L["Bar height"], 8, 40, 1, { after = restyle }),
+        slider("barSpacing", L["Spacing"], -1, 10, 1, { after = restyle }),
+        slider("barFillAlpha", L["Fill opacity"], 0, 1, 0.01, { after = restyle }),
+        toggle("showClassColor", L["Class color"], { after = restyle }),
+        toggle("barColorUseAccent", L["Accent color instead"], { after = restyle }),
+        color("barColor", L["Bar color"], { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Bar background"] },
-        slider(L["Background opacity"], "barBgAlpha", 0, 1, 0.01, restyle),
-        toggle(L["Class color for the background"], "barBgUseClassColor", nil, restyle),
-        colorRow(L["Background color"], "barBgColor", restyle),
+        slider("barBgAlpha", L["Background opacity"], 0, 1, 0.01, { after = restyle }),
+        toggle("barBgUseClassColor", L["Class color for the background"], { after = restyle }),
+        color("barBgColor", L["Background color"], { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Icons"] },
-        dropdown(L["Icon style"], "iconStyle", DM.IconStyleValues(), restyle, 220),
+        dropdown("iconStyle", L["Icon style"], DM.IconStyleValues(), { after = restyle, width = 220 }),
         { type = "slider", label = L["Icon zoom"], min = 0, max = 0.2, step = 0.01,
           tooltip = L["Applies to the spec and Blizzard class icons; the other sets are already framed."],
           get = function() return d().classIconZoom end,
           set = function(_, v) d().classIconZoom = v; restyle() end },
-        toggle(L["Border around the icon"], "customIconBorder", nil, restyle),
-        slider(L["Icon border size"], "iconBorderSize", 0, 4, 1, restyle),
-        colorRow(L["Icon border color"], "iconBorderColor", restyle),
+        toggle("customIconBorder", L["Border around the icon"], { after = restyle }),
+        slider("iconBorderSize", L["Icon border size"], 0, 4, 1, { after = restyle }),
+        color("iconBorderColor", L["Icon border color"], { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Bar border"] },
-        dropdown(L["Bar border style"], "borderTexture", borderValues(), restyle),
-        slider(L["Bar border size"], "borderSize", 0, 4, 1, restyle),
-        colorRow(L["Bar border color"], "borderColor", restyle),
-        slider(L["Bar border opacity"], "borderAlpha", 0, 1, 0.01, restyle),
+        dropdown("borderTexture", L["Bar border style"], borderValues(), { after = restyle }),
+        slider("borderSize", L["Bar border size"], 0, 4, 1, { after = restyle }),
+        color("borderColor", L["Bar border color"], { after = restyle }),
+        slider("borderAlpha", L["Bar border opacity"], 0, 1, 0.01, { after = restyle }),
         { type = "toggle", label = L["The border follows the fill"],
           tooltip = L["Wraps only the filled part of a bar instead of the whole row. Always drawn solid."],
           get = function() return d().borderFollowFill end,
           set = function(_, v) d().borderFollowFill = v; restyle() end },
-        toggle(L["Include the icon in that border"], "borderFollowFillIcon", nil, restyle),
+        toggle("borderFollowFillIcon", L["Include the icon in that border"], { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Breakdown"] },
-        toggle(L["Show the breakdown on mouseover"], "showHoverTooltip"),
-        toggle(L["Show the game's spell tooltip"], "showSpellTooltips"),
-        toggle(L["Show fifteen rows instead of eight"], "showAllBreakdownSpells"),
-        dropdown(L["Breakdown texture"], "breakdownBarTexture", (function()
+        toggle("showHoverTooltip", L["Show the breakdown on mouseover"]),
+        toggle("showSpellTooltips", L["Show the game's spell tooltip"]),
+        toggle("showAllBreakdownSpells", L["Show fifteen rows instead of eight"]),
+        dropdown("breakdownBarTexture", L["Breakdown texture"], (function()
             local v = { { value = "match", text = L["Same as the bars"] } }
             for _, e in ipairs(ns.MediaStatusbarValues()) do v[#v + 1] = e end
             return v
-        end)(), repaint, 220),
-        dropdown(L["Breakdown position"], "breakdownAnchorPoint", {
+        end)(), { after = repaint, width = 220 }),
+        dropdown("breakdownAnchorPoint", L["Breakdown position"], {
             { value = "row",    text = L["Above the row"] },
             { value = "center", text = L["Center of the screen"] },
             { value = "left",   text = L["Left of the window"] },
             { value = "right",  text = L["Right of the window"] },
-        }, repaint),
-        slider(L["Breakdown scale"], "hoverTooltipScale", 80, 150, 1, repaint),
+        }, { after = repaint }),
+        slider("hoverTooltipScale", L["Breakdown scale"], 80, 150, 1, { after = repaint }),
     }
 end
 
 local function textOptions()
     return {
         { type = "header", text = L["Numbers"] },
-        dropdown(L["Number format"], "numberFormat", {
+        dropdown("numberFormat", L["Number format"], {
             { value = 0, text = L["Per second"] },
             { value = 1, text = L["Total"] },
             { value = 2, text = L["Total (per second)"] },
             { value = 3, text = L["Total | per second"] },
-        }, repaint, 220),
-        toggle(L["Hide the rank numbers"], "hideNumbers", L["Hides the 1. 2. 3. in front of each name."], restyle),
+        }, { after = repaint, width = 220 }),
+        toggle("hideNumbers", L["Hide the rank numbers"], { tooltip = L["Hides the 1. 2. 3. in front of each name."], after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Left text"] },
-        slider(L["Left text size"], "leftFontSize", 8, 18, 1, restyle),
-        toggle(L["Class color on the left"], "leftTextUseClassColor", nil, restyle),
-        colorRow(L["Left text color"], "leftTextColor", restyle),
-        slider(L["Left offset X"], "leftTextOffsetX", -20, 20, 1, restyle),
-        slider(L["Left offset Y"], "leftTextOffsetY", -20, 20, 1, restyle),
+        slider("leftFontSize", L["Left text size"], 8, 18, 1, { after = restyle }),
+        toggle("leftTextUseClassColor", L["Class color on the left"], { after = restyle }),
+        color("leftTextColor", L["Left text color"], { after = restyle }),
+        slider("leftTextOffsetX", L["Left offset X"], -20, 20, 1, { after = restyle }),
+        slider("leftTextOffsetY", L["Left offset Y"], -20, 20, 1, { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Right text"] },
-        slider(L["Right text size"], "rightFontSize", 8, 18, 1, restyle),
-        toggle(L["Class color on the right"], "rightTextUseClassColor", nil, restyle),
-        colorRow(L["Right text color"], "rightTextColor", restyle),
-        slider(L["Right offset X"], "rightTextOffsetX", -20, 20, 1, restyle),
-        slider(L["Right offset Y"], "rightTextOffsetY", -20, 20, 1, restyle),
+        slider("rightFontSize", L["Right text size"], 8, 18, 1, { after = restyle }),
+        toggle("rightTextUseClassColor", L["Class color on the right"], { after = restyle }),
+        color("rightTextColor", L["Right text color"], { after = restyle }),
+        slider("rightTextOffsetX", L["Right offset X"], -20, 20, 1, { after = restyle }),
+        slider("rightTextOffsetY", L["Right offset Y"], -20, 20, 1, { after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Your own row"] },
@@ -337,6 +282,7 @@ local function textOptions()
 end
 
 local function timerTbl() return DM.db().timer end
+local timerRows = ns.OptionRows(timerTbl, nil, { dropdownWidth = 200 })
 
 local function timerOptions()
     local t = timerTbl()
@@ -356,40 +302,39 @@ local function timerOptions()
     if not t.enabled then return items end
 
     items[#items + 1] = { type = "spacer", height = 6 }
-    items[#items + 1] = subSlider(timerTbl, L["Text size"], "size", 10, 40, 1, apply)
-    items[#items + 1] = subDropdown(timerTbl, L["Outline"], "outline", {
+    items[#items + 1] = timerRows.slider("size", L["Text size"], 10, 40, 1, { after = apply })
+    items[#items + 1] = timerRows.dropdown("outline", L["Outline"], {
         { value = "INHERIT",      text = L["From the font settings"] },
         { value = "NONE",         text = L["None"] },
         { value = "OUTLINE",      text = L["Outline"] },
         { value = "THICKOUTLINE", text = L["Thick outline"] },
-    }, apply)
-    items[#items + 1] = subToggle(timerTbl, L["Show tenths of a second"], "decimal", nil, apply)
-    items[#items + 1] = subToggle(timerTbl, L["Accent color"], "useAccent", nil, apply)
-    items[#items + 1] = subColor(timerTbl, L["Text color"], "color", apply)
-    items[#items + 1] = subDropdown(timerTbl, L["Frame strata"], "strata", {
+    }, { after = apply })
+    items[#items + 1] = timerRows.toggle("decimal", L["Show tenths of a second"], { after = apply })
+    items[#items + 1] = timerRows.toggle("useAccent", L["Accent color"], { after = apply })
+    items[#items + 1] = timerRows.color("color", L["Text color"], { after = apply })
+    items[#items + 1] = timerRows.dropdown("strata", L["Frame strata"], {
         { value = "BACKGROUND", text = "BACKGROUND" }, { value = "LOW", text = "LOW" },
         { value = "MEDIUM", text = "MEDIUM" }, { value = "HIGH", text = "HIGH" },
         { value = "DIALOG", text = "DIALOG" },
-    }, apply)
+    }, { after = apply })
     items[#items + 1] = { type = "spacer", height = 6 }
-    items[#items + 1] = subDropdown(timerTbl, L["Attach to a window"], "anchor", {
+    items[#items + 1] = timerRows.dropdown("anchor", L["Attach to a window"], {
         { value = "free",        text = L["Free"] },
         { value = "topleft",     text = L["Top left"] },
         { value = "topright",    text = L["Top right"] },
         { value = "bottomleft",  text = L["Bottom left"] },
         { value = "bottomright", text = L["Bottom right"] },
-    }, apply)
-    items[#items + 1] = subToggle(timerTbl, L["Align the text left"], "alignLeft", nil, apply)
-    items[#items + 1] = subToggle(timerTbl, L["Lock it in place"], "locked",
-        L["No dragging, and the mouse goes through it."], apply)
+    }, { after = apply })
+    items[#items + 1] = timerRows.toggle("alignLeft", L["Align the text left"], { after = apply })
+    items[#items + 1] = timerRows.toggle("locked", L["Lock it in place"], { tooltip = L["No dragging, and the mouse goes through it."], after = apply })
     items[#items + 1] = { type = "spacer", height = 6 }
-    items[#items + 1] = subToggle(timerTbl, L["Keep it visible out of combat"], "showOOC",
-        L["Shows the last fight's length while you are not fighting."], apply)
-    items[#items + 1] = subToggle(timerTbl, L["Grey it out of combat"], "desatOOC", nil, apply)
+    items[#items + 1] = timerRows.toggle("showOOC", L["Keep it visible out of combat"], { tooltip = L["Shows the last fight's length while you are not fighting."], after = apply })
+    items[#items + 1] = timerRows.toggle("desatOOC", L["Grey it out of combat"], { after = apply })
     return items
 end
 
 local function shTbl() return DM.db().spellHistory end
+local shRows = ns.OptionRows(shTbl, nil, { dropdownWidth = 200 })
 
 local function historyOptions()
     local sh = shTbl()
@@ -406,21 +351,21 @@ local function historyOptions()
           end },
     }
     if sh.iconEnabled then
-        items[#items + 1] = subDropdown(shTbl, L["Grow direction"], "growDirection", DM.SpellHistory.GrowValues(), apply)
-        items[#items + 1] = subSlider(shTbl, L["Icon size"], "iconSize", 20, 60, 1, apply)
-        items[#items + 1] = subSlider(shTbl, L["Icon zoom"], "iconZoom", 0, 0.2, 0.01, apply)
-        items[#items + 1] = subSlider(shTbl, L["Number of icons"], "iconCount", 1, 10, 1, apply)
-        items[#items + 1] = subSlider(shTbl, L["Icon spacing"], "iconSpacing", 0, 10, 1, apply)
-        items[#items + 1] = subSlider(shTbl, L["Icon opacity"], "iconOpacity", 0.1, 1, 0.01, apply)
-        items[#items + 1] = subDropdown(shTbl, L["Animation"], "iconAnimation", DM.SpellHistory.AnimationValues(), apply)
+        items[#items + 1] = shRows.dropdown("growDirection", L["Grow direction"], DM.SpellHistory.GrowValues(), { after = apply })
+        items[#items + 1] = shRows.slider("iconSize", L["Icon size"], 20, 60, 1, { after = apply })
+        items[#items + 1] = shRows.slider("iconZoom", L["Icon zoom"], 0, 0.2, 0.01, { after = apply })
+        items[#items + 1] = shRows.slider("iconCount", L["Number of icons"], 1, 10, 1, { after = apply })
+        items[#items + 1] = shRows.slider("iconSpacing", L["Icon spacing"], 0, 10, 1, { after = apply })
+        items[#items + 1] = shRows.slider("iconOpacity", L["Icon opacity"], 0.1, 1, 0.01, { after = apply })
+        items[#items + 1] = shRows.dropdown("iconAnimation", L["Animation"], DM.SpellHistory.AnimationValues(), { after = apply })
         items[#items + 1] = { type = "slider", label = L["Fade after"], min = 0, max = 60, step = 1,
             tooltip = L["Seconds before an icon fades. The clock pauses while you are fighting. Zero keeps them."],
             get = function() return shTbl().iconFadeTime end,
             set = function(_, v) shTbl().iconFadeTime = v; apply() end }
-        items[#items + 1] = subToggle(shTbl, L["Hide in dungeons"], "iconHideInDungeon", nil, apply)
-        items[#items + 1] = subToggle(shTbl, L["Hide in raids"], "iconHideInRaid", nil, apply)
-        items[#items + 1] = subToggle(shTbl, L["Hide in PvP"], "iconHideInPvP", nil, apply)
-        items[#items + 1] = subToggle(shTbl, L["Hide out of instances"], "iconHideOutOfInstance", nil, apply)
+        items[#items + 1] = shRows.toggle("iconHideInDungeon", L["Hide in dungeons"], { after = apply })
+        items[#items + 1] = shRows.toggle("iconHideInRaid", L["Hide in raids"], { after = apply })
+        items[#items + 1] = shRows.toggle("iconHideInPvP", L["Hide in PvP"], { after = apply })
+        items[#items + 1] = shRows.toggle("iconHideOutOfInstance", L["Hide out of instances"], { after = apply })
     end
 
     items[#items + 1] = { type = "spacer", height = 8 }
@@ -433,28 +378,28 @@ local function historyOptions()
             UI:BuildOptionsPage("damagemeter", "history")
         end }
     if sh.barEnabled then
-        items[#items + 1] = subSlider(shTbl, L["Window width"], "barWidth", 150, 600, 5, apply)
-        items[#items + 1] = subSlider(shTbl, L["Bar height"], "barHeight", 12, 32, 1, apply)
-        items[#items + 1] = subSlider(shTbl, L["Number of bars"], "maxBars", 1, 10, 1, apply)
-        items[#items + 1] = subToggle(shTbl, L["Hide the top bar"], "hideTopBar", nil, apply)
-        items[#items + 1] = subSlider(shTbl, L["Background opacity"], "bgAlpha", 0, 1, 0.01, apply)
-        items[#items + 1] = subColor(shTbl, L["Background color"], "bgColor", apply)
-        items[#items + 1] = subDropdown(shTbl, L["Bar texture"], "barTexture", (function()
+        items[#items + 1] = shRows.slider("barWidth", L["Window width"], 150, 600, 5, { after = apply })
+        items[#items + 1] = shRows.slider("barHeight", L["Bar height"], 12, 32, 1, { after = apply })
+        items[#items + 1] = shRows.slider("maxBars", L["Number of bars"], 1, 10, 1, { after = apply })
+        items[#items + 1] = shRows.toggle("hideTopBar", L["Hide the top bar"], { after = apply })
+        items[#items + 1] = shRows.slider("bgAlpha", L["Background opacity"], 0, 1, 0.01, { after = apply })
+        items[#items + 1] = shRows.color("bgColor", L["Background color"], { after = apply })
+        items[#items + 1] = shRows.dropdown("barTexture", L["Bar texture"], (function()
             local v = { { value = "match", text = L["Same as the bars"] } }
             for _, e in ipairs(ns.MediaStatusbarValues()) do v[#v + 1] = e end
             return v
-        end)(), apply, 220)
-        items[#items + 1] = subToggle(shTbl, L["Class color"], "barColorUseClass", nil, apply)
-        items[#items + 1] = subToggle(shTbl, L["Accent color instead"], "barColorUseAccent", nil, apply)
-        items[#items + 1] = subColor(shTbl, L["Bar color"], "barColor", apply)
-        items[#items + 1] = subSlider(shTbl, L["Bar opacity"], "barOpacity", 0.1, 1, 0.01, apply)
-        items[#items + 1] = subSlider(shTbl, L["Text size"], "textSize", 8, 16, 1, apply)
-        items[#items + 1] = subToggle(shTbl, L["Accent color for the text"], "textColorUseAccent", nil, apply)
-        items[#items + 1] = subColor(shTbl, L["Text color"], "textColor", apply)
-        items[#items + 1] = subToggle(shTbl, L["Hide in dungeons"], "barHideInDungeon", nil, apply)
-        items[#items + 1] = subToggle(shTbl, L["Hide in raids"], "barHideInRaid", nil, apply)
-        items[#items + 1] = subToggle(shTbl, L["Hide in PvP"], "barHideInPvP", nil, apply)
-        items[#items + 1] = subToggle(shTbl, L["Hide out of instances"], "barHideOutOfInstance", nil, apply)
+        end)(), { after = apply, width = 220 })
+        items[#items + 1] = shRows.toggle("barColorUseClass", L["Class color"], { after = apply })
+        items[#items + 1] = shRows.toggle("barColorUseAccent", L["Accent color instead"], { after = apply })
+        items[#items + 1] = shRows.color("barColor", L["Bar color"], { after = apply })
+        items[#items + 1] = shRows.slider("barOpacity", L["Bar opacity"], 0.1, 1, 0.01, { after = apply })
+        items[#items + 1] = shRows.slider("textSize", L["Text size"], 8, 16, 1, { after = apply })
+        items[#items + 1] = shRows.toggle("textColorUseAccent", L["Accent color for the text"], { after = apply })
+        items[#items + 1] = shRows.color("textColor", L["Text color"], { after = apply })
+        items[#items + 1] = shRows.toggle("barHideInDungeon", L["Hide in dungeons"], { after = apply })
+        items[#items + 1] = shRows.toggle("barHideInRaid", L["Hide in raids"], { after = apply })
+        items[#items + 1] = shRows.toggle("barHideInPvP", L["Hide in PvP"], { after = apply })
+        items[#items + 1] = shRows.toggle("barHideOutOfInstance", L["Hide out of instances"], { after = apply })
         items[#items + 1] = { type = "button", label = L["Clear the history"],
             onClick = function() DM.SpellHistory.Clear() end }
     end
@@ -491,6 +436,7 @@ end
 -- ---------------------------------------------------------------- threat --
 
 local function threatTbl() return DM.db().threat end
+local threatRows = ns.OptionRows(threatTbl, nil, { dropdownWidth = 200 })
 
 local function soundValues()
     local v = {}
@@ -516,54 +462,53 @@ local function threatOptions()
     }
     if not t.enabled then return items end
 
-    items[#items + 1] = subDropdown(threatTbl, L["Visibility"], "visibility", {
+    items[#items + 1] = threatRows.dropdown("visibility", L["Visibility"], {
         { value = "always",    text = L["Always shown"] },
         { value = "combat",    text = L["In combat"] },
         { value = "noncombat", text = L["Out of combat"] },
-    }, apply)
+    }, { after = apply })
     items[#items + 1] = { type = "header", text = L["Layout"] }
-    items[#items + 1] = subSlider(threatTbl, L["Width"], "width", 80, 500, 1, function() DM.Threat.Apply(); DM.Threat.Preview() end)
-    items[#items + 1] = subSlider(threatTbl, L["Bar height"], "barHeight", 8, 40, 1, apply)
-    items[#items + 1] = subSlider(threatTbl, L["Bar spacing"], "spacing", 0, 10, 1, apply)
-    items[#items + 1] = subSlider(threatTbl, L["Bars shown"], "maxBars", 1, 40, 1, apply)
-    items[#items + 1] = subToggle(threatTbl, L["Grow upwards"], "growUp", nil, apply)
-    items[#items + 1] = subToggle(threatTbl, L["Show the header"], "showHeader", nil, apply)
-    items[#items + 1] = subToggle(threatTbl, L["Leave out pets"], "ignorePets", nil, apply)
+    items[#items + 1] = threatRows.slider("width", L["Width"], 80, 500, 1, { after = function() DM.Threat.Apply(); DM.Threat.Preview() end })
+    items[#items + 1] = threatRows.slider("barHeight", L["Bar height"], 8, 40, 1, { after = apply })
+    items[#items + 1] = threatRows.slider("spacing", L["Bar spacing"], 0, 10, 1, { after = apply })
+    items[#items + 1] = threatRows.slider("maxBars", L["Bars shown"], 1, 40, 1, { after = apply })
+    items[#items + 1] = threatRows.toggle("growUp", L["Grow upwards"], { after = apply })
+    items[#items + 1] = threatRows.toggle("showHeader", L["Show the header"], { after = apply })
+    items[#items + 1] = threatRows.toggle("ignorePets", L["Leave out pets"], { after = apply })
 
     items[#items + 1] = { type = "header", text = L["Look"] }
-    items[#items + 1] = subDropdown(threatTbl, L["Bar texture"], "texture", ns.MediaStatusbarValues(), apply, 220)
-    items[#items + 1] = subSlider(threatTbl, L["Bar opacity"], "barOpacity", 0, 100, 1, apply)
-    items[#items + 1] = subSlider(threatTbl, L["Background opacity"], "bgAlpha", 0, 1, 0.05, apply)
-    items[#items + 1] = subSlider(threatTbl, L["Border size"], "borderSize", 0, 4, 1, apply)
-    items[#items + 1] = subColor(threatTbl, L["Border color"], "borderColor", apply)
+    items[#items + 1] = threatRows.dropdown("texture", L["Bar texture"], ns.MediaStatusbarValues(), { after = apply, width = 220 })
+    items[#items + 1] = threatRows.slider("barOpacity", L["Bar opacity"], 0, 100, 1, { after = apply })
+    items[#items + 1] = threatRows.slider("bgAlpha", L["Background opacity"], 0, 1, 0.05, { after = apply })
+    items[#items + 1] = threatRows.slider("borderSize", L["Border size"], 0, 4, 1, { after = apply })
+    items[#items + 1] = threatRows.color("borderColor", L["Border color"], { after = apply })
 
     items[#items + 1] = { type = "header", text = L["Text"] }
-    items[#items + 1] = subSlider(threatTbl, L["Text size"], "textSize", 6, 24, 1, apply)
-    items[#items + 1] = subDropdown(threatTbl, L["Outline"], "outline", {
+    items[#items + 1] = threatRows.slider("textSize", L["Text size"], 6, 24, 1, { after = apply })
+    items[#items + 1] = threatRows.dropdown("outline", L["Outline"], {
         { value = "INHERIT",      text = L["From the font settings"] },
         { value = "NONE",         text = L["None"] },
         { value = "OUTLINE",      text = L["Outline"] },
         { value = "THICKOUTLINE", text = L["Thick outline"] },
-    }, apply)
-    items[#items + 1] = subToggle(threatTbl, L["Show the threat value"], "showValue", nil, apply)
-    items[#items + 1] = subToggle(threatTbl, L["Show the percentage"], "showPercent", nil, apply)
+    }, { after = apply })
+    items[#items + 1] = threatRows.toggle("showValue", L["Show the threat value"], { after = apply })
+    items[#items + 1] = threatRows.toggle("showPercent", L["Show the percentage"], { after = apply })
 
     items[#items + 1] = { type = "header", text = L["Colors"] }
-    items[#items + 1] = subToggle(threatTbl, L["Own color for you"], "playerColorOn", nil, apply)
-    items[#items + 1] = subColor(threatTbl, L["Your color"], "playerColor", apply)
-    items[#items + 1] = subToggle(threatTbl, L["Own color for the tank"], "tankColorOn", nil, apply)
-    items[#items + 1] = subColor(threatTbl, L["Tank color"], "tankColor", apply)
-    items[#items + 1] = subToggle(threatTbl, L["Show where you pull aggro"], "pullBar", nil, apply)
-    items[#items + 1] = subColor(threatTbl, L["Pull aggro color"], "pullColor", apply)
+    items[#items + 1] = threatRows.toggle("playerColorOn", L["Own color for you"], { after = apply })
+    items[#items + 1] = threatRows.color("playerColor", L["Your color"], { after = apply })
+    items[#items + 1] = threatRows.toggle("tankColorOn", L["Own color for the tank"], { after = apply })
+    items[#items + 1] = threatRows.color("tankColor", L["Tank color"], { after = apply })
+    items[#items + 1] = threatRows.toggle("pullBar", L["Show where you pull aggro"], { after = apply })
+    items[#items + 1] = threatRows.color("pullColor", L["Pull aggro color"], { after = apply })
 
     items[#items + 1] = { type = "header", text = L["Warning"] }
-    items[#items + 1] = subToggle(threatTbl, L["Warn with a sound"], "warnSound", nil, apply)
+    items[#items + 1] = threatRows.toggle("warnSound", L["Warn with a sound"], { after = apply })
     items[#items + 1] = { type = "dropdown", label = L["Sound"], width = 220, values = soundValues(),
         get = function() return threatTbl().warnSoundKey end,
         set = function(_, v) threatTbl().warnSoundKey = v; DM.Threat.PlayWarning() end }
-    items[#items + 1] = subSlider(threatTbl, L["Warn at threat %"], "warnAt", 50, 100, 1, apply)
-    items[#items + 1] = subToggle(threatTbl, L["Not while you tank"], "warnSkipTank",
-        L["Tank role, Bear or Dire Bear Form, or Defensive Stance."], apply)
+    items[#items + 1] = threatRows.slider("warnAt", L["Warn at threat %"], 50, 100, 1, { after = apply })
+    items[#items + 1] = threatRows.toggle("warnSkipTank", L["Not while you tank"], { tooltip = L["Tank role, Bear or Dire Bear Form, or Defensive Stance."], after = apply })
     return items
 end
 

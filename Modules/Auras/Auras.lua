@@ -213,12 +213,8 @@ end
 -- measured in pixels of the old scale.
 A.QueueRebuild = refresh
 
-local function num(key, label, min, max, step, tooltip)
-    return { type = "slider", label = label, tooltip = tooltip,
-        min = min, max = max, step = step,
-        get = function() return mod.db[key] end,
-        set = function(_, v) mod.db[key] = v; refresh() end }
-end
+local rows = ns.OptionRows(function() return mod.db end, refresh, { dropdownWidth = 200 })
+local num, color, choice = rows.slider, rows.color, rows.dropdown
 
 local function flag(key, label, tooltip, rebuild)
     return { type = "toggle", label = label, tooltip = tooltip,
@@ -230,22 +226,6 @@ local function flag(key, label, tooltip, rebuild)
                 ns.UI:BuildOptionsPage("auras")
             end
         end }
-end
-
-local function color(key, label)
-    return { type = "color", label = label,
-        get = function() return mod.db[key] end,
-        set = function(r, g, b)
-            local c = mod.db[key]
-            c.r, c.g, c.b = r, g, b
-            refresh()
-        end }
-end
-
-local function choice(key, label, values)
-    return { type = "dropdown", label = label, values = values, width = 200,
-        get = function() return mod.db[key] end,
-        set = function(_, v) mod.db[key] = v; refresh() end }
 end
 
 -- Two rows on the page carry the same label; the preview opens each by its key.

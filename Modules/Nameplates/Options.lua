@@ -24,75 +24,14 @@ M.tabs = {
 -- ---------------------------------------------------------------------------
 local function db() return M.db end
 
-local function apply(after)
-    if after then after() else NP.Bump() end
-end
-
-local function toggle(key, label, tooltip, extra)
-    local row = { type = "toggle", label = label, tooltip = tooltip,
-        get = function() return db()[key] end,
-        set = function(_, v) db()[key] = v and true or false; apply(extra and extra.after) end }
-    if extra then row.inline, row.disabled = extra.inline, extra.disabled end
-    return row
-end
-
--- scale: the stored value times `scale` is what the slider shows (alpha 0..1
--- stored, 0..100 shown).
-local function slider(key, label, min, max, step, extra)
-    local scale = extra and extra.scale or 1
-    local row = { type = "slider", label = label, min = min, max = max, step = step or 1,
-        tooltip = extra and extra.tooltip,
-        get = function() return (db()[key] or 0) * scale end,
-        set = function(_, v) db()[key] = v / scale; apply(extra and extra.after) end }
-    if extra then row.inline, row.disabled = extra.inline, extra.disabled end
-    return row
-end
-
-local function dropdown(key, label, values, extra)
-    local row = { type = "dropdown", label = label, values = values,
-        tooltip = extra and extra.tooltip,
-        get = function() return db()[key] end,
-        set = function(_, v) db()[key] = v; apply(extra and extra.after) end }
-    if extra then
-        row.inline, row.disabled = extra.inline, extra.disabled
-        if extra.get then row.get = extra.get end
-        if extra.set then row.set = extra.set end
-    end
-    return row
-end
-
-local function swatch(key, tooltip, disabled)
-    return { kind = "color", tooltip = tooltip, disabled = disabled,
-        get = function() return db()[key] end,
-        set = function(r, g, b)
-            local c = db()[key]
-            c.r, c.g, c.b = r, g, b
-            NP.Bump()
-        end }
-end
-
-local function color(key, label, tooltip, disabled)
-    return { type = "color", label = label, tooltip = tooltip, disabled = disabled,
-        get = function() return db()[key] end,
-        set = function(r, g, b)
-            local c = db()[key]
-            c.r, c.g, c.b = r, g, b
-            NP.Bump()
-        end }
-end
-
-local function gear(title, items, tooltip, disabled)
-    return { kind = "gear", tooltip = tooltip or title, disabled = disabled,
-        popup = { title = title, width = 300, items = items } }
-end
+local rows = ns.OptionRows(db, function() NP.Bump() end)
+local toggle, slider, dropdown = rows.toggle, rows.slider, rows.dropdown
+local color, swatch = rows.color, rows.swatch
+local gear, section = ns.OptionGear, ns.OptionSection
 
 local function resize(title, items, disabled)
     return { kind = "expand", tooltip = title, disabled = disabled,
         popup = { title = title, width = 300, items = items } }
-end
-
-local function section(title, items)
-    return { type = "section", title = title, items = items }
 end
 
 local function textures(withNone)
@@ -340,17 +279,16 @@ local function displayPage()
     for _, e in ipairs(ns.MediaStatusbarValues()) do absorbStyles[#absorbStyles + 1] = e end
 
     local style = section(L["Style"], {
-        toggle("showBorder", L["Border"], nil, { inline = {
+        toggle("showBorder", L["Border"], { inline = {
             swatch("borderColor", L["Border color"]),
             gear(L["Castbar Border"], { toggle("wrapBorderCastbar", L["Wrap Around Castbar"]) }),
         } }),
         slider("borderSize", L["Border Size"], 1, 4, 1, { disabled = function() return not d.showBorder end }),
         toggle("borderBarColor", L["Border in the bar's color"],
-            L["The border takes the health bar's colour: red for hostile, yellow for neutral, the threat colours in a group. A player whose colour cannot be read keeps the border colour."],
-            { disabled = function() return not d.showBorder end }),
+            { tooltip = L["The border takes the health bar's colour: red for hostile, yellow for neutral, the threat colours in a group. A player whose colour cannot be read keeps the border colour."], disabled = function() return not d.showBorder end }),
         slider("bgAlpha", L["Background"], 0, 100, 1, { scale = 100, inline = { swatch("bgColor", L["Background color"]) } }),
         dropdown("absorbStyle", L["Absorb Style"], absorbStyles, { inline = {
-            swatch("absorbColor", L["Absorb color"], function() return d.absorbStyle == "blizzard" end),
+            swatch("absorbColor", { tooltip = L["Absorb color"], disabled = function() return d.absorbStyle == "blizzard" end }),
             gear(L["Absorb Style"], { slider("absorbAlpha", L["Opacity"], 5, 100) }),
         } }),
         dropdown("healthBarTexture", L["Bar Texture"], ns.MediaStatusbarValues()),
@@ -371,7 +309,7 @@ local function displayPage()
         slider("healthBarWidth", L["Health Bar Width"], 100, 250, 1, { after = function() NP.Bump(); NP.ApplyHitbox() end }),
         slider("healthBarHeight", L["Health Bar Height"], 6, 50, 1, { after = function() NP.Bump(); NP.ApplyHitbox() end }),
         slider("castBarHeight", L["Cast Bar Height"], 10, 40),
-        toggle("showCastIcon", L["Spell Icon"], nil, { inline = { gear(L["Spell Icon Settings"], {
+        toggle("showCastIcon", L["Spell Icon"], { inline = { gear(L["Spell Icon Settings"], {
             slider("castIconScale", L["Scale"], 0.5, 2, 0.1),
             slider("castIconOffsetX", L["X Offset"], -50, 50),
             slider("castIconOffsetY", L["Y Offset"], -50, 50),
@@ -407,7 +345,7 @@ local function displayPage()
         color("castBar", L["Interruptible Cast"]),
         color("interruptReady", L["Interrupt on CD"], L["The bar's colour while your interrupt is on cooldown."]),
         color("castBarUninterruptible", L["Uninterruptible Cast"]),
-        toggle("importantCastColorEnabled", L["Important Cast Color"], nil, { inline = { swatch("castBarImportant", L["Important Cast"]) } }),
+        toggle("importantCastColorEnabled", L["Important Cast Color"], { inline = { swatch("castBarImportant", L["Important Cast"]) } }),
         toggle("castBarShieldEnabled", L["Show Shield Icon"]),
         toggle("castBarSparkEnabled", L["Show Spark"]),
         dropdown("kickTickEnabled", L["Kick Ready Mid-Cast Hint"], kickHint, {
@@ -422,12 +360,12 @@ local function displayPage()
                 NP.Bump()
             end,
             inline = {
-                swatch("interruptMidCastColor", L["Bar color"], function() return not d.interruptMidCastEnabled end),
+                swatch("interruptMidCastColor", { tooltip = L["Bar color"], disabled = function() return not d.interruptMidCastEnabled end }),
                 swatch("kickTickColor", L["Tick color"]),
             } }),
-        toggle("importantCastGlow", L["Important Cast Glow"], nil, { inline = { swatch("importantCastGlowColor", L["Glow color"]) } }),
-        toggle("interruptedFlashEnabled", L["Show Interrupted Flash Effect"], nil, { inline = {
-            swatch("interruptedFlashColor", L["Flash color"], function() return not d.interruptedFlashEnabled end) } }),
+        toggle("importantCastGlow", L["Important Cast Glow"], { inline = { swatch("importantCastGlowColor", L["Glow color"]) } }),
+        toggle("interruptedFlashEnabled", L["Show Interrupted Flash Effect"], { inline = {
+            swatch("interruptedFlashColor", { tooltip = L["Flash color"], disabled = function() return not d.interruptedFlashEnabled end }) } }),
     })
 
     local function overlayRow(prefix, label, colorKey, alphaKey)
@@ -437,45 +375,45 @@ local function displayPage()
             table.insert(items, 1, slider(alphaKey, L["Opacity"], 5, 100, 1, { scale = 100 }))
             items[#items + 1] = toggle(prefix .. "OverlayNoTint", L["Don't tint (keep bar's own color)"])
         end
-        local inline = { gear(label, items, nil, none) }
-        if colorKey then table.insert(inline, 1, swatch(colorKey, L["Texture color"], none)) end
+        local inline = { gear(label, items, { disabled = none }) }
+        if colorKey then table.insert(inline, 1, swatch(colorKey, { tooltip = L["Texture color"], disabled = none })) end
         return dropdown(prefix .. "OverlayTexture", label, textures(true), { inline = inline })
     end
 
     local effects = section(L["Target, Focus & Hover Effects"], {
-        toggle("targetGlow", L["Target: Glow"], nil, { inline = {
+        toggle("targetGlow", L["Target: Glow"], { inline = {
             swatch("targetGlowColor", L["Glow color"]),
             gear(L["Target: Glow"], { slider("targetGlowAlpha", L["Glow Opacity"], 0, 100, 1, { scale = 100 }) }),
         } }),
-        toggle("targetGlowBorderColor", L["Target: Border Color"], nil, { inline = { swatch("targetBorderColor", L["Border color"]) } }),
-        toggle("targetGlowBorderSize", L["Target: Border Size"], nil, { inline = {
+        toggle("targetGlowBorderColor", L["Target: Border Color"], { inline = { swatch("targetBorderColor", L["Border color"]) } }),
+        toggle("targetGlowBorderSize", L["Target: Border Size"], { inline = {
             gear(L["Target: Border Size"], { slider("targetBorderSizeValue", L["Border Size"], 0, 4) }) } }),
-        toggle("targetGlowHighlight", L["Target: Highlight"], nil, { inline = {
+        toggle("targetGlowHighlight", L["Target: Highlight"], { inline = {
             swatch("targetHighlightColor", L["Highlight Color"]),
             gear(L["Target: Highlight"], { slider("targetHighlightAlpha", L["Highlight Opacity"], 0, 100, 1, { scale = 100 }) }),
         } }),
-        toggle("showTargetArrows", L["Target Arrows"], nil, { inline = {
-            swatch("targetArrowColor", L["Arrow color"], function() return d.targetArrowClassColor end),
+        toggle("showTargetArrows", L["Target Arrows"], { inline = {
+            swatch("targetArrowColor", { tooltip = L["Arrow color"], disabled = function() return d.targetArrowClassColor end }),
             gear(L["Target Arrows"], {
                 slider("targetArrowScale", L["Scale"], 0.5, 3, 0.1),
                 toggle("targetArrowClassColor", L["Use my class color"]),
             }),
         } }),
-        toggle("targetColorEnabled", L["Enable Target Color"], nil, { inline = { swatch("target", L["Target color"]) } }),
-        toggle("focusColorEnabled", L["Enable Focus Color"], nil, { inline = { swatch("focus", L["Focus color"]) } }),
+        toggle("targetColorEnabled", L["Enable Target Color"], { inline = { swatch("target", L["Target color"]) } }),
+        toggle("focusColorEnabled", L["Enable Focus Color"], { inline = { swatch("focus", L["Focus color"]) } }),
         overlayRow("target", L["Target Texture"], "targetOverlayColor", "targetOverlayAlpha"),
         overlayRow("focus", L["Focus Texture"], "focusOverlayColor", "focusOverlayAlpha"),
         overlayRow("hover", L["Hover Texture"]),
-        toggle("hoverGlowHighlight", L["Hover: Highlight"], nil, { inline = {
+        toggle("hoverGlowHighlight", L["Hover: Highlight"], { inline = {
             swatch("hoverColor", L["Highlight Color"]),
             gear(L["Hover: Highlight"], { slider("hoverAlpha", L["Highlight Opacity"], 0, 100, 1, { scale = 100 }) }),
         } }),
-        toggle("hoverGlow", L["Hover: Glow"], nil, { inline = {
+        toggle("hoverGlow", L["Hover: Glow"], { inline = {
             swatch("hoverGlowColor", L["Glow color"]),
             gear(L["Hover: Glow"], { slider("hoverGlowAlpha", L["Glow Opacity"], 0, 100, 1, { scale = 100 }) }),
         } }),
-        toggle("hoverGlowBorderColor", L["Hover: Border Color"], nil, { inline = { swatch("hoverBorderColor", L["Border color"]) } }),
-        toggle("hoverGlowBorderSize", L["Hover: Border Size"], nil, { inline = {
+        toggle("hoverGlowBorderColor", L["Hover: Border Color"], { inline = { swatch("hoverBorderColor", L["Border color"]) } }),
+        toggle("hoverGlowBorderSize", L["Hover: Border Size"], { inline = {
             gear(L["Hover: Border Size"], { slider("hoverBorderSizeValue", L["Border Size"], 0, 4) }) } }),
     })
 
@@ -506,7 +444,7 @@ local function displayPage()
             set = castTextSide("castTargetSide", "castNameSide"),
             disabled = function() return d.castCombineNameTarget end,
             inline = {
-                swatch("castTargetColor", L["Text color"], function() return d.castTargetClassColor end),
+                swatch("castTargetColor", { tooltip = L["Text color"], disabled = function() return d.castTargetClassColor end }),
                 resize(L["Spell Target"], {
                     slider("castTargetSize", L["Size"], 6, 20),
                     slider("castTargetOffsetX", L["X Offset"], -300, 300),
@@ -538,34 +476,31 @@ local function colorsPage()
         color("neutral", L["Neutral"]),
         color("tapped", L["Tapped"], L["Enemies another player has tagged."]),
         toggle("mobTypesInInstancesOnly", L["Enemy types in instances only"],
-            L["Outside dungeons and raids every enemy wears the enemy colour; casters, elites and bosses are told apart in instances only. Grey then means one thing: tagged by someone else."],
-            { after = function() NP.Colors.RefreshAll() end }),
-        toggle("darkenEnemiesOOC", L["Darken Enemies Out of Combat"], nil, { inline = {
+            { tooltip = L["Outside dungeons and raids every enemy wears the enemy colour; casters, elites and bosses are told apart in instances only. Grey then means one thing: tagged by someone else."], after = function() NP.Colors.RefreshAll() end }),
+        toggle("darkenEnemiesOOC", L["Darken Enemies Out of Combat"], { inline = {
             gear(L["Out of Combat"], {
                 toggle("darkenOOCRecolor", L["Change Color Instead"]),
-                color("darkenOOCColor", L["Out of Combat Color"], nil, function() return not d.darkenOOCRecolor end),
+                color("darkenOOCColor", L["Out of Combat Color"], { disabled = function() return not d.darkenOOCRecolor end }),
             }) } }),
         toggle("questMobEnabled", L["Quest Mob Marker"],
-            L["Puts a quest marker on a mob one of your quests needs."],
-            { after = function() NP.Extras.ForgetQuest(); NP.Bump() end }),
-        toggle("questMobColorEnabled", L["Color Quest Mobs"], nil, { inline = {
-            swatch("questMobColor", L["Quest Mob Color"],
-                function() return not d.questMobColorEnabled end) } }),
-        toggle("enemyNameTextReactionColor", L["Color Name by Reaction"], nil, { inline = {
-            swatch("enemyNameNeutralColor", L["Neutral Color"], function() return not d.enemyNameTextReactionColor end),
-            swatch("enemyNameHostileColor", L["Hostile Color"], function() return not d.enemyNameTextReactionColor end),
+            { tooltip = L["Puts a quest marker on a mob one of your quests needs."], after = function() NP.Extras.ForgetQuest(); NP.Bump() end }),
+        toggle("questMobColorEnabled", L["Color Quest Mobs"], { inline = {
+            swatch("questMobColor", { tooltip = L["Quest Mob Color"], disabled = function() return not d.questMobColorEnabled end }) } }),
+        toggle("enemyNameTextReactionColor", L["Color Name by Reaction"], { inline = {
+            swatch("enemyNameNeutralColor", { tooltip = L["Neutral Color"], disabled = function() return not d.enemyNameTextReactionColor end }),
+            swatch("enemyNameHostileColor", { tooltip = L["Hostile Color"], disabled = function() return not d.enemyNameTextReactionColor end }),
         } }),
     })
 
     local recolor = { after = function() NP.Colors.RefreshAll() end }
     local threat = section(L["Threat Colors (Groups Only)"], {
         { type = "desc", text = L["|cffaaaaaaThreat colours apply while you are in a party or raid.|r"] },
-        toggle("assumeTank", L["I am the tank"], L["Use the tank colours. The game has no tank role to read on this client."], recolor),
+        toggle("assumeTank", L["I am the tank"], { tooltip = L["Use the tank colours. The game has no tank role to read on this client."], after = recolor.after }),
         color("tankLosingAggro", L["Tank: Losing Aggro"]),
         color("tankNoAggro", L["Tank: No Aggro"]),
         color("dpsHasAggro", L["Non-Tank: Has Aggro"]),
         color("dpsNearAggro", L["Non-Tank: Near Aggro"]),
-        toggle("dpsNoAggroEnabled", L["DPS: Show Special \"No Aggro\" Color"], nil, { inline = {
+        toggle("dpsNoAggroEnabled", L["DPS: Show Special \"No Aggro\" Color"], { inline = {
             swatch("dpsNoAggro", L["No Aggro"]),
             gear(L["No Aggro"], {
                 toggle("dpsNoAggroOverrideMiniBoss", L["Override Elite colors"]),
@@ -573,16 +508,15 @@ local function colorsPage()
                 toggle("dpsNoAggroOverrideBoss", L["Override Boss colors"]),
             }),
         } }),
-        toggle("classicTankAggro", L["Classic Tank Aggro"], L["Every enemy you hold takes the \"Has Aggro\" colour, whatever its type."],
-            { inline = { swatch("tankHasAggro", L["Has Aggro"]) } }),
-        toggle("tankHasAggroEnabled", L["Tank: Show Special \"Has Aggro\" Color"], nil, { inline = {
+        toggle("classicTankAggro", L["Classic Tank Aggro"], { tooltip = L["Every enemy you hold takes the \"Has Aggro\" colour, whatever its type."], inline = { swatch("tankHasAggro", L["Has Aggro"]) } }),
+        toggle("tankHasAggroEnabled", L["Tank: Show Special \"Has Aggro\" Color"], { inline = {
             swatch("tankHasAggro", L["Has Aggro"]),
             gear(L["Has Aggro"], {
                 toggle("tankHasAggroOverrideMobType", L["Override Elite and Caster colors"]),
                 toggle("tankHasAggroOverrideBoss", L["Override Boss colors"]),
             }),
         } }),
-        toggle("offTankAggroEnabled", L["Tank: Show Special \"Off-Tank\" Color"], nil, { inline = { swatch("offTankAggro", L["Off-Tank"]) } }),
+        toggle("offTankAggroEnabled", L["Tank: Show Special \"Off-Tank\" Color"], { inline = { swatch("offTankAggro", L["Off-Tank"]) } }),
     })
     return { enemy, threat }
 end
@@ -597,17 +531,16 @@ local function friendlySection()
     local notNameOnly = function() return not (d.showFriendlyPlayers and d.friendlyNameOnly) end
     return section(L["Friendly Nameplates"], {
         { type = "desc", text = L["|cffaaaaaaIn name-only mode the game draws these plates itself and only the font changes -- which is also the only thing that still works inside a dungeon, where friendly plates are closed to addons.|r"] },
-        toggle("showFriendlyPlayers", L["Show Friendly Players"], nil, refresh),
+        toggle("showFriendlyPlayers", L["Show Friendly Players"], refresh),
         toggle("friendlyNameOnly", L["Name Only"],
-            L["Just the name, drawn by the game. Switch it off for a full plate with a health bar."],
-            { after = refresh.after, disabled = off }),
+            { tooltip = L["Just the name, drawn by the game. Switch it off for a full plate with a health bar."], after = refresh.after, disabled = off }),
         slider("friendlyNameSize", L["Friendly Name Size"], 8, 30, 1,
             { after = function() NP.Friendly.Apply() end, disabled = notNameOnly }),
-        toggle("classColorFriendly", L["Class Color"], nil, { after = refresh.after, disabled = off,
-            inline = { swatch("friendlyBarColor", L["Bar color"], function() return d.classColorFriendly end) } }),
-        toggle("showFriendlyNPCs", L["Show Friendly NPCs"], nil, { after = refresh.after,
-            inline = { swatch("friendlyNPCColor", L["NPC Color"], function() return not d.showFriendlyNPCs end) } }),
-        toggle("friendlyClickThrough", L["Friendly Names Not Clickable"], nil, refresh),
+        toggle("classColorFriendly", L["Class Color"], { after = refresh.after, disabled = off,
+            inline = { swatch("friendlyBarColor", { tooltip = L["Bar color"], disabled = function() return d.classColorFriendly end }) } }),
+        toggle("showFriendlyNPCs", L["Show Friendly NPCs"], { after = refresh.after,
+            inline = { swatch("friendlyNPCColor", { tooltip = L["NPC Color"], disabled = function() return not d.showFriendlyNPCs end }) } }),
+        toggle("friendlyClickThrough", L["Friendly Names Not Clickable"], refresh),
     })
 end
 
@@ -615,8 +548,7 @@ local function generalPage()
     local d = db()
     local hitbox = { after = function() NP.ApplyHitbox() end }
     local spacing = section(L["Nameplate Spacing"], {
-        toggle("stackingEnabled", L["Stacking Nameplates"], L["Enemy nameplates move apart instead of overlapping."],
-            { after = function() NP.ApplyCVars(); NP.Bump() end }),
+        toggle("stackingEnabled", L["Stacking Nameplates"], { tooltip = L["Enemy nameplates move apart instead of overlapping."], after = function() NP.ApplyCVars(); NP.Bump() end }),
         slider("stackSpacingScale", L["Stacked Nameplate Spacing"], 50, 200, 5),
         slider("hitboxScaleX", L["Hitbox Size X"], 50, 250, 5, hitbox),
         slider("hitboxScaleY", L["Hitbox Size Y"], 50, 250, 5, hitbox),
@@ -624,13 +556,13 @@ local function generalPage()
     })
 
     local targetFocus = section(L["Target and Focus Effects"], {
-        toggle("hashLineEnabled", L["Show Hash Line on Target at Percent"], nil, { inline = { swatch("hashLineColor", L["Line color"]) } }),
+        toggle("hashLineEnabled", L["Show Hash Line on Target at Percent"], { inline = { swatch("hashLineColor", L["Line color"]) } }),
         slider("hashLinePercent", L["Hash Line Location"], 0, 100, 1, { disabled = function() return not d.hashLineEnabled end }),
         slider("targetScale", L["Scale Target Nameplate (Percent)"], 50, 200, 5),
         slider("nonTargetAlpha", L["Non-Target Opacity"], 0, 100, 1, { inline = {
             gear(L["Non-Target Opacity"], { toggle("nonTargetKeepFocus", L["Keep Focus Full Opacity"]) }) } }),
         slider("focusCastHeight", L["Focus Cast Height"], 100, 200, 5),
-        toggle("focusLetterEnabled", L["Focus Letter"], nil, { inline = { gear(L["Focus Letter"], {
+        toggle("focusLetterEnabled", L["Focus Letter"], { inline = { gear(L["Focus Letter"], {
             dropdown("focusLetterAnchor", L["Anchor"], ns.AnchorPointValues()),
             slider("focusLetterSize", L["Size"], 6, 40),
             slider("focusLetterX", L["X Offset"], -100, 100),
@@ -641,26 +573,23 @@ local function generalPage()
     local extras = {
         slider("castScale", L["Scale Nameplate On Cast"], 50, 200, 5),
         toggle("hideEnemyNameWhileCasting", L["Hide Enemy Name While Casting"]),
-        toggle("nameRaidMarkerEnabled", L["Name Raid Marker"], L["A small raid marker next to the name."], { inline = {
+        toggle("nameRaidMarkerEnabled", L["Name Raid Marker"], { tooltip = L["A small raid marker next to the name."], inline = {
             gear(L["Name Raid Marker"], { slider("nameRaidMarkerSize", L["Size"], 6, 32) }) } }),
         toggle("executeEnabled", L["Execute Glow"],
-            L["Lights the plate up once the enemy is low enough to finish."],
-            { inline = {
+            { tooltip = L["Lights the plate up once the enemy is low enough to finish."], inline = {
                 gear(L["Execute Glow"], {
                     slider("executeThreshold", L["Execute Threshold"], 5, 50),
                     slider("executeGlowSize", L["Size"], 2, 16),
                 }),
             } }),
         toggle("questObjectiveText", L["Quest progress instead of the marker"],
-            L["Shows how far the quest is (3/8, 40%) where the quest marker would be. A mob whose line carries no count keeps the marker."],
-            { disabled = function() return not d.questMobEnabled end,
+            { tooltip = L["Shows how far the quest is (3/8, 40%) where the quest marker would be. A mob whose line carries no count keeps the marker."], disabled = function() return not d.questMobEnabled end,
               after = function() NP.Bump() end,
               inline = { gear(L["Quest progress instead of the marker"], {
                   slider("questObjectiveTextSize", L["Size"], 8, 24),
               }) } }),
         toggle("comboEnabled", L["Combo Points"],
-            L["Shows your combo points under the plate of your target."],
-            { inline = {
+            { tooltip = L["Shows your combo points under the plate of your target."], inline = {
                 swatch("comboColor", L["Bar color"]),
                 gear(L["Combo Points"], {
                     slider("comboHeight", L["Pip Height"], 2, 16),
@@ -668,8 +597,8 @@ local function generalPage()
                     slider("comboOffset", L["Y Offset"], -20, 20),
                 }),
             } }),
-        toggle("showEnemyPets", L["Show Enemy Pet Nameplates"], nil, { after = function() NP.ApplyCVars() end }),
-        toggle("hideEnemyPlatesOOC", L["Hide Enemy Nameplates out of Combat"], nil, { after = function() NP.ApplyShowEnemies() end }),
+        toggle("showEnemyPets", L["Show Enemy Pet Nameplates"], { after = function() NP.ApplyCVars() end }),
+        toggle("hideEnemyPlatesOOC", L["Hide Enemy Nameplates out of Combat"], { after = function() NP.ApplyShowEnemies() end }),
     }
     -- A pure client setting with no copy in the profile; only offered when
     -- this client has it.

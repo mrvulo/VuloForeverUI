@@ -19,33 +19,21 @@ local function tbl(sub)
     return sub and db[sub] or db
 end
 
-local function toggle(sub, key, label, tooltip)
-    return { type = "toggle", label = label, tooltip = tooltip,
-        get = function() return tbl(sub)[key] end,
-        set = function(_, v) tbl(sub)[key] = v; apply() end }
+-- One row set per sub-table, made on first use.
+local rowSets = {}
+local function rowsFor(sub)
+    local set = rowSets[sub or false]
+    if not set then
+        set = ns.OptionRows(function() return tbl(sub) end, apply, { dropdownWidth = 200 })
+        rowSets[sub or false] = set
+    end
+    return set
 end
 
-local function slider(sub, key, label, min, max, step, tooltip)
-    return { type = "slider", label = label, min = min, max = max, step = step, tooltip = tooltip,
-        get = function() return tbl(sub)[key] end,
-        set = function(_, v) tbl(sub)[key] = v; apply() end }
-end
-
-local function color(sub, key, label)
-    return { type = "color", label = label,
-        get = function() return tbl(sub)[key] end,
-        set = function(r, g, b)
-            local c = tbl(sub)[key]
-            c.r, c.g, c.b = r, g, b
-            apply()
-        end }
-end
-
-local function dropdown(sub, key, label, values, width)
-    return { type = "dropdown", label = label, width = width or 200, values = values,
-        get = function() return tbl(sub)[key] end,
-        set = function(_, v) tbl(sub)[key] = v; apply() end }
-end
+local function toggle(sub, ...)   return rowsFor(sub).toggle(...) end
+local function slider(sub, ...)   return rowsFor(sub).slider(...) end
+local function dropdown(sub, ...) return rowsFor(sub).dropdown(...) end
+local function color(sub, ...)    return rowsFor(sub).color(...) end
 
 -- Where the flight bar's two texts can sit (Flight.lua, TEXT_POS).
 local function flightTextPositions()
@@ -148,14 +136,14 @@ local function generalPage()
             L["Beside the bar. The ride ends at the next stop; a ride ended that way is not remembered as the route's time."]),
         slider("flight", "width", L["Bar width"], 120, 480, 5),
         slider("flight", "height", L["Bar height"], 8, 40, 1),
-        dropdown("flight", "texture", L["Bar texture"], ns.MediaStatusbarValues(), 220),
+        dropdown("flight", "texture", L["Bar texture"], ns.MediaStatusbarValues(), { width = 220 }),
         slider("flight", "borderSize", L["Border size"], 0, 4, 1),
         color("flight", "borderColor", L["Border color"]),
         dropdown("flight", "font", L["Font"], (function()
             local v = { { value = "", text = L["Module font"] } }
             for _, e in ipairs(ns.MediaFontValues()) do v[#v + 1] = e end
             return v
-        end)(), 220),
+        end)(), { width = 220 }),
         slider("flight", "fontSize", L["Size"], 0, 24, 1, L["0 follows the bar height."]),
         dropdown("flight", "labelPos", L["Label position"], flightTextPositions()),
         slider("flight", "labelX", L["X Offset"], -100, 100, 1),
@@ -303,7 +291,7 @@ local function displayPage()
         { type = "desc", text = L["|cffaaaaaaThe warning stays hidden during a fight: there is nothing you could do about it there.|r"] },
 
         { type = "header", text = L["Shared by all of them"] },
-        dropdown(nil, "font", L["Font"], ns.MediaFontValues(), 220),
+        dropdown(nil, "font", L["Font"], ns.MediaFontValues(), { width = 220 }),
         dropdown(nil, "fontOutline", L["Outline"], {
             { value = "NONE",         text = L["None"] },
             { value = "OUTLINE",      text = L["Thin"] },
