@@ -91,6 +91,8 @@ keyword({ "pinned", "pin", "angeheftet" },
     function(_, info) return Bags.Marks.IsPinned(info.itemID) end)
 keyword({ "set", "equipmentset", "ausrüstungsset", "ausruestungsset" },
     function(entry) return Bags.Items.SetName(entry.bag, entry.slot) ~= nil end)
+keyword({ "upgrade", "verbesserung", "besser" },
+    function(entry, info) return Bags.Items.IsUpgrade(entry.bag, entry.slot, info) end)
 keyword({ "gear", "ausrüstung", "ausruestung", "equipment" },
     function(_, info) return Bags.Categories.IsGear(info) end)
 
@@ -244,7 +246,7 @@ function Search.ShowHelp(owner)
         { "#boe  #bop  #warbound", L["Binding"] },
         { "#grau #weiß #grün #blau #lila", L["Quality"] },
         { "#waffe #rüstung #trank #stoff …", L["Type, subtype or slot"] },
-        { "#neu  #angeheftet  #set  #schrott", L["Marks"] },
+        { "#neu  #angeheftet  #set  #schrott  #upgrade", L["Marks"] },
         { ">30   <=50   20-40", L["Item level (gear)"] },
         { "a b   a | b   !a", L["All of / either / not"] },
     }

@@ -106,3 +106,97 @@ end
 function Items.Forget(itemID)
     if type(itemID) == "number" then facts[itemID] = nil end
 end
+
+-- ---------------------------------------------------------------- upgrade --
+
+-- Where an equip location is worn. Two slots for rings, trinkets and a
+-- one-hand weapon: the bag item is an upgrade when it beats the WEAKER of the
+-- two, because that is the one it would replace.
+local MAIN, OFF = 16, 17
+local WORN = {
+    INVTYPE_HEAD = { 1 }, INVTYPE_NECK = { 2 }, INVTYPE_SHOULDER = { 3 },
+    INVTYPE_CHEST = { 5 }, INVTYPE_ROBE = { 5 }, INVTYPE_WAIST = { 6 },
+    INVTYPE_LEGS = { 7 }, INVTYPE_FEET = { 8 }, INVTYPE_WRIST = { 9 },
+    INVTYPE_HAND = { 10 }, INVTYPE_FINGER = { 11, 12 }, INVTYPE_TRINKET = { 13, 14 },
+    INVTYPE_CLOAK = { 15 },
+    INVTYPE_WEAPON = { MAIN, OFF }, INVTYPE_2HWEAPON = { MAIN },
+    INVTYPE_WEAPONMAINHAND = { MAIN }, INVTYPE_WEAPONOFFHAND = { OFF },
+    INVTYPE_HOLDABLE = { OFF }, INVTYPE_SHIELD = { OFF },
+}
+
+-- This client has no ranged slot of its own: a bow, a wand or a gun is worn
+-- in the main hand.
+local RANGED = {
+    INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true,
+    INVTYPE_THROWN = true, INVTYPE_RELIC = true,
+}
+
+local function mainIsTwoHanded()
+    local id = GetInventoryItemID("player", MAIN)
+    if type(id) ~= "number" then return false end
+    local _, _, _, loc = C_Item.GetItemInfoInstant(id)
+    return loc == "INVTYPE_2HWEAPON" or (loc ~= nil and RANGED[loc] == true)
+end
+
+-- The slots a bag item would go into. An off hand only counts while it can
+-- be worn at all: not beside a two-hander, and a one-hand weapon goes there
+-- only for a character that can wield two.
+local function slotsFor(loc)
+    if RANGED[loc] then return { MAIN } end
+    if loc == "INVTYPE_WEAPON" then
+        if CanDualWield() and not mainIsTwoHanded() then return { MAIN, OFF } end
+        return { MAIN }
+    end
+    local slots = WORN[loc]
+    if slots and slots[1] == OFF and mainIsTwoHanded() then return nil end
+    return slots
+end
+
+-- What is worn, by slot: its item level, or false for an empty slot. Asked
+-- once per slot until the equipment changes.
+local worn = {}
+
+local function wornLevel(invSlot)
+    local cached = worn[invSlot]
+    if cached ~= nil then return cached end
+    local loc = ItemLocation:CreateFromEquipmentSlot(invSlot)
+    local value = false
+    if C_Item.DoesItemExist(loc) then
+        local ok, level = pcall(C_Item.GetCurrentItemLevel, loc)
+        value = (ok and type(level) == "number") and level or 0
+    end
+    worn[invSlot] = value
+    return value
+end
+
+function Items.ForgetWorn()
+    wipe(worn)
+end
+
+-- Would the player be better off wearing this? Judged by item level alone,
+-- and only for gear this character can wear today: the client's own "can use"
+-- covers class and armour type, the level requirement is checked here.
+function Items.IsUpgrade(bagID, slotID, info)
+    if not (info and type(info.itemID) == "number") then return false end
+    local loc = Items.EquipLoc(info)
+    local targets = loc and slotsFor(loc)
+    if not targets then return false end
+    if not C_Item.IsEquippableItem(info.itemID) then return false end
+    if C_PlayerInfo.CanUseItem and not C_PlayerInfo.CanUseItem(info.itemID) then return false end
+    local minLevel = select(5, C_Item.GetItemInfo(info.itemID))
+    if type(minLevel) == "number" and minLevel > UnitLevel("player") then return false end
+
+    local here = ItemLocation:CreateFromBagAndSlot(bagID, slotID)
+    local ok, level = pcall(C_Item.GetCurrentItemLevel, here)
+    if not (ok and type(level) == "number") then return false end
+
+    local weakest
+    for _, invSlot in ipairs(targets) do
+        local w = wornLevel(invSlot)
+        if w == false then return true end
+        if not weakest or w < weakest then weakest = w end
+    end
+    -- A two-hander replaces the off hand as well, but comparing it against
+    -- the main hand alone is the honest guess an item level allows.
+    return weakest ~= nil and level > weakest
+end

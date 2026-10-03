@@ -18,6 +18,7 @@ local mod = Bags.mod
 
 mod.tabs = {
     { id = "bags", label = "Bags" },
+    { id = "categories", label = "Categories" },
     { id = "bank", label = "Bank" },
 }
 mod.optionsGrid = true
@@ -164,6 +165,8 @@ local function bagsPage()
 
         toggle("showPinned", L["Show pinned items"],
             L["Pinned items get a shelf of their own. The pin button in the window's tool row sets them."]),
+        toggle("contextFade", L["Fade what cannot be used here"],
+            L["At a merchant, items it pays nothing for are faded; at the mailbox, a trade or the auction house, soulbound items."]),
         toggle("showRecent", L["Show recent items"],
             L["Anything just picked up gets a shelf and a border, until the mouse has been over it or the time below runs out."]),
         slider("recentMinutes", L["Recent for (minutes)"], 1, 30, 1,
@@ -204,6 +207,27 @@ local function bagsPage()
         end },
     })
 
+    -- Where each mark sits on the icon. Two marks in one corner sit side by
+    -- side, the first in the list nearest the corner.
+    local function corner(key, label, disabled)
+        return dropdown(key, label, {
+            { value = "TOPLEFT",     text = L["Top left"] },
+            { value = "TOPRIGHT",    text = L["Top right"] },
+            { value = "BOTTOMLEFT",  text = L["Bottom left"] },
+            { value = "BOTTOMRIGHT", text = L["Bottom right"] },
+        }, { disabled = disabled })
+    end
+    local corners = section(L["Icon corners"], {
+        toggle("showUpgrades", L["Show upgrade arrows"],
+            L["A green arrow on gear with a higher item level than what you wear in that slot, if this character can wear it now."]),
+        corner("cornerUpgrade", L["Upgrade arrow"], function() return not d.showUpgrades end),
+        corner("cornerLevel", L["Item level"], function() return not d.showItemLevel end),
+        corner("cornerPin", L["Pin"], function() return not d.showPinned end),
+        corner("cornerBind", L["BoE / warbound"], function() return not d.showBindTags end),
+        corner("cornerSet", L["Set names"], function() return not d.showSetNames end),
+        corner("cornerJunk", L["Junk C"], function() return d.markJunk == false end),
+    })
+
     -- The view first, on its own: which way the window lays the bags out is the
     -- first thing anyone looks for, and inside the display list it was lost
     -- between the gear switches.
@@ -216,6 +240,7 @@ local function bagsPage()
         { type = "desc", text = L["|cffaaaaaaHold shift and drag to move the bag window. Clicking an item in the window uses it, exactly as it does in the client's own bags -- the pin and split tools sit in the window's own tool row because of that.|r"] },
         view,
         display,
+        corners,
         extras,
     }
 end
@@ -261,7 +286,96 @@ local function bankPage()
     }
 end
 
+-- ---------------------------------------------------------------------------
+-- The categories page
+--
+-- The player's own shelves: a name and a search in the search box's own
+-- language. The list order is the order they are asked in and drawn in, so an
+-- item that fits two lands on the first.
+-- ---------------------------------------------------------------------------
+local function rebuildCategories()
+    -- Deferred: rebuilding inside a setter hands the widget's own write-back
+    -- to whatever pooled widget the rebuild gave out.
+    ns.NextFrame(function() ns.UI:BuildOptionsPage("bags", "categories") end)
+end
+
+local function trim(v) return (tostring(v or ""):gsub("^%s+", ""):gsub("%s+$", "")) end
+
+local function nameTaken(list, name, except)
+    for i, c in ipairs(list) do
+        if i ~= except and c.name == name then return true end
+    end
+    return false
+end
+
+local newName, newQuery = "", ""
+
+local function categoriesPage()
+    local list = db().customCategories
+    if type(list) ~= "table" then list = {}; db().customCategories = list end
+
+    local items = {
+        { type = "desc", text = L["Your own categories, each made from a search -- the same words the search box understands (hover it for the list). They come before the built-in categories, in this order; an item that fits two goes to the first. They show while \"Sort into categories\" is on."] },
+    }
+
+    for i, c in ipairs(list) do
+        local entry = c
+        items[#items + 1] = { type = "header", text = entry.name }
+        items[#items + 1] = { type = "editbox", label = L["Name"], width = 240, commitOnFocusLost = true,
+            get = function() return entry.name end,
+            set = function(_, v)
+                v = trim(v)
+                if v == "" or nameTaken(list, v, i) then rebuildCategories(); return end
+                entry.name = v
+                Bags.Refresh()
+                rebuildCategories()
+            end }
+        items[#items + 1] = { type = "editbox", label = L["Search"], width = 240, commitOnFocusLost = true,
+            get = function() return entry.query end,
+            set = function(_, v)
+                entry.query = trim(v)
+                Bags.Refresh()
+            end }
+        if i > 1 then
+            items[#items + 1] = { type = "button", label = L["Move up"], width = 140,
+                onClick = function()
+                    list[i], list[i - 1] = list[i - 1], list[i]
+                    Bags.Refresh()
+                    rebuildCategories()
+                end }
+        end
+        items[#items + 1] = { type = "button", label = L["Remove"], width = 140,
+            onClick = function()
+                table.remove(list, i)
+                Bags.Refresh()
+                rebuildCategories()
+            end }
+    end
+
+    local function add()
+        local name, query = trim(newName), trim(newQuery)
+        if name == "" or query == "" or nameTaken(list, name) then return end
+        list[#list + 1] = { name = name, query = query }
+        newName, newQuery = "", ""
+        Bags.Refresh()
+        rebuildCategories()
+    end
+
+    items[#items + 1] = { type = "header", text = L["New category"] }
+    items[#items + 1] = { type = "editbox", label = L["Name"], width = 240, commitOnFocusLost = true,
+        get = function() return newName end,
+        set = function(_, v) newName = tostring(v or "") end }
+    items[#items + 1] = { type = "editbox", label = L["Search"], width = 240, commitOnFocusLost = true,
+        get = function() return newQuery end,
+        set = function(_, v) newQuery = tostring(v or "") end,
+        onEnter = function() add() end }
+    items[#items + 1] = { type = "button", label = L["Add category"], width = 160, primary = true,
+        onClick = function() add() end }
+    return items
+end
+
 function mod:GetOptions(tabId)
     if tabId == "bank" then return bankPage() end
+    if tabId == "categories" then return categoriesPage() end
     return bagsPage()
 end

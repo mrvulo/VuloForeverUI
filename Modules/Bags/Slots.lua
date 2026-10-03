@@ -232,6 +232,18 @@ local function makeSlot(owner)
     local junk = button:CreateFontString(nil, "OVERLAY")
     slot.junk = junk
 
+    -- The upgrade arrow: the client's own green bag arrow where it has one,
+    -- the old green stream arrow otherwise.
+    local upgrade = button:CreateTexture(nil, "OVERLAY")
+    if C_Texture.GetAtlasInfo("bags-greenarrow") then
+        upgrade:SetAtlas("bags-greenarrow")
+    else
+        upgrade:SetTexture("Interface\\Buttons\\UI-MicroStream-Green")
+    end
+    upgrade:SetSize(12, 12)
+    upgrade:Hide()
+    slot.upgrade = upgrade
+
     local pin = button:CreateTexture(nil, "OVERLAY")
     pin:SetAtlas("PetJournal-FavoritesIcon")
     pin:SetSize(10, 10)
@@ -402,6 +414,53 @@ local function familyColor(bagID)
 end
 Slots.FamilyColor = familyColor
 
+-- ---------------------------------------------------------------- corners --
+--
+-- Every mark goes to the corner the options give it. Two in one corner sit
+-- side by side, in this order outward from the corner; in the bottom right
+-- the client's stack count is already there, so the row starts left of it.
+local CORNER_ORDER = {
+    { "pin", "cornerPin", "TOPRIGHT" },
+    { "upgrade", "cornerUpgrade", "TOPRIGHT" },
+    { "junk", "cornerJunk", "BOTTOMRIGHT" },
+    { "level", "cornerLevel", "TOPLEFT" },
+    { "tag", "cornerBind", "BOTTOMLEFT" },
+    { "setName", "cornerSet", "BOTTOMRIGHT" },
+}
+local INSET = {
+    TOPLEFT = { 2, -2 }, TOPRIGHT = { -2, -2 },
+    BOTTOMLEFT = { 2, 2 }, BOTTOMRIGHT = { -2, 2 },
+}
+
+local function placeCorners(slot, button, db)
+    local last = {}
+    for _, e in ipairs(CORNER_ORDER) do
+        local region = slot[e[1]]
+        if region and region:IsShown() then
+            local corner = db[e[2]]
+            if not INSET[corner] then corner = e[3] end
+            local prev = last[corner]
+            if not prev and corner == "BOTTOMRIGHT" then
+                local count = button.Count or button.count
+                if count and count:IsShown() and (count:GetText() or "") ~= "" then prev = count end
+            end
+            region:ClearAllPoints()
+            if prev then
+                local edge = corner:find("^TOP") and "TOP" or "BOTTOM"
+                if corner:find("RIGHT$") then
+                    region:SetPoint(edge .. "RIGHT", prev, edge .. "LEFT", -1, 0)
+                else
+                    region:SetPoint(edge .. "LEFT", prev, edge .. "RIGHT", 1, 0)
+                end
+            else
+                local o = INSET[corner]
+                region:SetPoint(corner, button, corner, o[1], o[2])
+            end
+            last[corner] = region
+        end
+    end
+end
+
 function Slots.Paint(slot, bagID, slotID, info)
     local db = Bags.db()
     local button, frame = slot.button, slot.frame
@@ -496,14 +555,6 @@ function Slots.Paint(slot, bagID, slotID, info)
         ns.UI.FontFor("bags", slot.junk, math.max(9, (db.countSize or 11)), "OUTLINE")
         slot.junk:SetTextColor(0.93, 0.64, 0.35)
         slot.junk:SetText("C")
-        slot.junk:ClearAllPoints()
-        local count = button.Count or button.count
-        local stacked = info and (tonumber(slot.mergedCount or info.stackCount) or 1) > 1 and db.showCount ~= false
-        if count and stacked then
-            slot.junk:SetPoint("BOTTOMRIGHT", count, "BOTTOMLEFT", -1, 0)
-        else
-            slot.junk:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -2, 2)
-        end
         slot.junk:Show()
     else
         slot.junk:Hide()
@@ -577,6 +628,9 @@ function Slots.Paint(slot, bagID, slotID, info)
     -- neither asks the item anything.
     local id = info and info.itemID
     slot.pin:SetShown(db.showPinned and Bags.Marks.IsPinned(id) or false)
+    slot.upgrade:SetShown(db.showUpgrades and info and Bags.Categories.IsGear(info)
+        and Bags.Items.IsUpgrade(bagID, slotID, info) or false)
+    placeCorners(slot, button, db)
     if db.showRecent and Bags.Marks.IsRecent(bagID, slotID) then
         local c = db.recentColor
         if slot.isRound then

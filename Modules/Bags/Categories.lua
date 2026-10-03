@@ -55,6 +55,7 @@ function Categories.Label(key)
     local kind, rest = tostring(key):match("^(%a+):(.+)$")
     if kind == "set"  then return rest end
     if kind == "slot" then return Bags.Items.EquipLocLabel(rest) end
+    if kind == "custom" then return rest end
     return key
 end
 
@@ -120,6 +121,33 @@ function Categories.Rules(winKey)
     }
 end
 
+-- The player's own shelves: a name and a search, asked in list order. A
+-- shelf with an empty search catches nothing rather than everything.
+function Categories.Custom()
+    local list = Bags.db().customCategories
+    if type(list) ~= "table" then return {} end
+    return list
+end
+
+local function customFor(entry)
+    for _, c in ipairs(Categories.Custom()) do
+        if type(c) == "table" and type(c.name) == "string" and c.name ~= ""
+            and type(c.query) == "string" and c.query:find("%S")
+            and Bags.Search.Matches(entry, c.query) then
+            return "custom:" .. c.name
+        end
+    end
+    return nil
+end
+
+-- Where a custom shelf sits among the others: in the player's order.
+local function customIndex(name)
+    for i, c in ipairs(Categories.Custom()) do
+        if type(c) == "table" and c.name == name then return i end
+    end
+    return 99
+end
+
 -- Is this window grouped at all? "Hide empty slots when grouped" hangs on
 -- this, and so does the sidebar: an ungrouped window has one shelf and a bar
 -- with one button on it would be furniture.
@@ -138,6 +166,12 @@ function Categories.For(entry, rules)
 
     if rules.pinned and Bags.Marks.IsPinned(id) then return "pinned" end
     if rules.recent and Bags.Marks.IsRecent(entry.bag, entry.slot) then return "recent" end
+    -- The player's own shelves come before every rule of ours: somebody who
+    -- made a shelf for "#trank" wants the potions there, grey or not.
+    if rules.categories then
+        local custom = customFor(entry)
+        if custom then return custom end
+    end
 
     local class = classOf(info)
     if class == "junk" then
@@ -193,6 +227,8 @@ local function rankOf(key)
     -- made those), then armour slots in character-sheet order.
     if kind == "set"  then return RANK.equipment or 1, -1, rest end
     if kind == "slot" then return RANK.equipment or 1, SLOT_RANK[rest] or 99, rest end
+    -- The player's own shelves come first, after pinned and recent.
+    if kind == "custom" then return 0, customIndex(rest), rest end
     return 50, 0, tostring(key)
 end
 
@@ -227,6 +263,11 @@ function Categories.ViewValues()
         { value = "allbags", text = L["All bags"] },
         { value = "perbag", text = L["Per bag"] },
     }
+    for _, c in ipairs(Categories.Custom()) do
+        if type(c) == "table" and type(c.name) == "string" and c.name ~= "" then
+            values[#values + 1] = { value = "custom:" .. c.name, text = c.name }
+        end
+    end
     for _, key in ipairs(Categories.ORDER) do
         values[#values + 1] = { value = key, text = Categories.Label(key) }
     end

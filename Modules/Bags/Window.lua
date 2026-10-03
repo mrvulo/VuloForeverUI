@@ -635,7 +635,7 @@ function Window.Layout(win)
             slot.mergedCount = entry.merged
             Bags.Slots.Paint(slot, entry.bag, entry.slot, entry.info)
             Bags.Slots.ApplyMode(slot, entry.bag, entry.slot, entry.info)
-            local filtered = not matches(entry, win.filter)
+            local filtered = not matches(entry, win.filter) or Bags.Context.Fades(entry.info)
             Bags.Slots.SetFiltered(slot, filtered)
             win.placed[#win.placed + 1] = { slot = slot, bag = entry.bag, slotID = entry.slot, filtered = filtered }
 

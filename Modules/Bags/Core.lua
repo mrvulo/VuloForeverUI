@@ -98,6 +98,19 @@ local mod = ns:RegisterModule("bags", {
         bankShowBagBar = false,
         recentColor    = { r = 0.3, g = 0.8, b = 1 },
         recentMinutes  = 5,
+        -- fade what is of no use at the merchant, mailbox, trade, auction house
+        contextFade    = true,
+        showUpgrades   = true,
+        -- which corner of the icon each mark sits in (Slots.lua)
+        cornerLevel    = "TOPLEFT",
+        cornerPin      = "TOPRIGHT",
+        cornerUpgrade  = "TOPRIGHT",
+        cornerBind     = "BOTTOMLEFT",
+        cornerSet      = "BOTTOMRIGHT",
+        cornerJunk     = "BOTTOMRIGHT",
+        -- { { name = "Potions", query = "#trank" }, ... }: shelves made from a
+        -- search, asked before the fixed ones, in this order
+        customCategories = {},
         pinnedTips     = true,
         goldTracking   = true,
         moveWithoutShift = false,
@@ -231,6 +244,16 @@ function mod:OnEnable()
     -- What only changed an ITEM gets a repaint. These two fire constantly --
     -- every cooldown that starts, twice for every item picked up.
     self:RegisterEvent("ITEM_LOCK_CHANGED", function() Bags.Repaint() end)
+    -- What is worn decides the upgrade arrows.
+    self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function()
+        Bags.Items.ForgetWorn()
+        Bags.Repaint()
+    end)
+    self:RegisterEvent("PLAYER_LEVEL_UP", function()
+        Bags.Items.ForgetWorn()
+        Bags.Repaint()
+    end)
+    Bags.Context.Register(self)
     self:RegisterEvent("BAG_UPDATE_COOLDOWN", function() Bags.Repaint() end)
 
     self:RegisterEvent("BANKFRAME_OPENED", function()

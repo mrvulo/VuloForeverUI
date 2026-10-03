@@ -47,6 +47,7 @@ local function iconFor(key)
     if fixed then return fixed end
     local kind = tostring(key):match("^(%a+):")
     if kind == "set" or kind == "slot" then return "bags-icon-equipment" end
+    if kind == "custom" then return "bags-icon-multiple" end
     return "bags-icon-multiple"
 end
 

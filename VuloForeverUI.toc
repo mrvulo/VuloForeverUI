@@ -179,6 +179,7 @@ Modules\Bags\Marks.lua
 Modules\Bags\Gold.lua
 Modules\Bags\Categories.lua
 Modules\Bags\Search.lua
+Modules\Bags\Context.lua
 Modules\Bags\Sort.lua
 Modules\Bags\Slots.lua
 Modules\Bags\Sidebar.lua
