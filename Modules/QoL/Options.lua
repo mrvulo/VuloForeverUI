@@ -474,6 +474,12 @@ local function questPage()
         questSound("soundObjective", L["Objective done"]),
         questSound("soundComplete", L["Quest ready to hand in"]),
 
+        { type = "header", text = L["Quest journal"] },
+        toggle("quest", "journal", L["Keep a quest journal"],
+            L["Every quest accepted, handed in and abandoned and every level gained, with date, level and zone, per character. /vfjournal opens it."]),
+        { type = "button", label = L["Open the quest journal"], width = 200,
+          onClick = function() QoL.Journal.Open() end },
+
         { type = "header", text = L["Group"] },
         toggle("quest", "announce", L["Tell the party"],
             L["Quest progress goes to party chat. Never in a raid, and not while the client holds chat back."]),

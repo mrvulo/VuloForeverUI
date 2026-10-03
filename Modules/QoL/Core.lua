@@ -142,6 +142,7 @@ local mod = ns:RegisterModule("qol", {
             repeatable = true,
             difficulty = true,
             objectives = true,
+            journal    = true,
             tooltip   = true,
             pinSize   = 14,
 
