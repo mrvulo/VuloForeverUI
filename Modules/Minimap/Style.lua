@@ -66,7 +66,7 @@ local mod = ns:RegisterModule("minimapstyle", {
         visHideNoTarget = false,
         visHideNoEnemy = false,
 
-        hideZoom     = true,
+        hideZoom     = false,
         hideTracking = false,
         hideMail     = false,
         hideClock    = true,            -- the client's own clock; ours is an element

@@ -637,8 +637,14 @@ local function updatePosition()
         x = math.max(-w, math.min(x * diagW, w))
         y = math.max(-h, math.min(y * diagH, h))
     end
+    -- The size it has on the standard map, whatever look the map wears; the
+    -- offsets are in the opener's own units, so they take the scale out.
+    local MM = ns.MM
+    local s = (MM and MM.MapButtonScale and MM.MapButtonScale()) or 1
+    if s <= 0 then s = 1 end
+    opener:SetScale(s)
     opener:ClearAllPoints()
-    opener:SetPoint("CENTER", Minimap, "CENTER", x, y)
+    opener:SetPoint("CENTER", Minimap, "CENTER", x / s, y / s)
 end
 
 mod.UpdatePosition = updatePosition

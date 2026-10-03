@@ -26,6 +26,20 @@ local function classicFactor()
     return k
 end
 
+-- The scale a button on the map's edge wears so it comes out the size it has
+-- on the standard map: the classic cluster is scaled up by classicFactor, and
+-- the standard map's container carries a scale of its own that the classic
+-- look sets to 1. Used by the button collector's opener.
+function MM.MapButtonScale()
+    if not (mod.active and mod.db.style == "classic") then return 1 end
+    local c = P.savedOf("container")
+    return ((c and ns.Num(c.scale)) or 1) / classicFactor()
+end
+
+-- The zone name's own justification, read once before the classic look
+-- centres it, so the standard look can hand it back.
+local zoneJustify
+
 -- Masks are TEXTURE PATHS. The round one the client itself uses is an atlas,
 -- which SetMaskTexture does take, but the classic look wants the old circular
 -- alpha mask -- the same one portraits use.
@@ -175,6 +189,11 @@ local function applyStandard()
     restore(Minimap, "map")
     restore(MinimapBackdrop, "backdrop")
     restore(cluster and cluster.ZoneTextButton, "zonebtn")
+    local zoneText = cluster and cluster.ZoneTextButton and cluster.ZoneTextButton.Text
+    if zoneText then
+        restore(zoneText, "zonetext")
+        if zoneJustify then pcall(zoneText.SetJustifyH, zoneText, zoneJustify) end
+    end
     restore(Minimap.ZoomIn, "zoomin")
     restore(Minimap.ZoomOut, "zoomout")
     restore(cluster, "cluster")
@@ -354,6 +373,15 @@ local function applyClassic()
         cluster.ZoneTextButton:SetSize(CLASSIC_MAP, 12)
         cluster.ZoneTextButton:ClearAllPoints()
         cluster.ZoneTextButton:SetPoint("CENTER", cluster, "TOP", 0, -12)
+        -- The name centred in the bar, not starting at the button's left end.
+        local text = cluster.ZoneTextButton.Text
+        if text then
+            remember(text, "zonetext")
+            zoneJustify = zoneJustify or text:GetJustifyH()
+            text:ClearAllPoints()
+            text:SetAllPoints(cluster.ZoneTextButton)
+            text:SetJustifyH("CENTER")
+        end
     end
 
     -- Anything sitting over the map edge must be above it to take a click.
@@ -397,8 +425,14 @@ local function applyClassic()
         tracking:SetParent(backdrop)
         tracking:SetFrameLevel(above)
         tracking:SetSize(32, 32)
+        -- At the size it has on the standard map: the cluster is scaled up by
+        -- classicFactor, the button scaled back down by the same. The ring's
+        -- centre (36, -72 from the backdrop's corner at 1.x size) stays put;
+        -- the offsets are in the button's own, smaller units.
+        local k = classicFactor()
+        tracking:SetScale(1 / k)
         tracking:ClearAllPoints()
-        tracking:SetPoint("TOPLEFT", backdrop, "TOPLEFT", 9, -45)
+        tracking:SetPoint("TOPLEFT", backdrop, "TOPLEFT", 36 * k - 27, -72 * k + 27)
         local ring = region(tracking, "ring", "BORDER")
         ring:SetTexture(TRACK_BORDER)
         ring:SetSize(54, 54)

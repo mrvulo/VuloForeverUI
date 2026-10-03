@@ -210,6 +210,9 @@ function mod:OnDisable()
     applyStandard()
     applyClutter()
     scaleQueue(1)
+    -- the collector's opener wore the classic map's size; give it back
+    local m = ns.modules and ns.modules.minimapcollector
+    if m and m.active and m.UpdatePosition then pcall(m.UpdatePosition) end
 end
 
 -- ---------------------------------------------------------------------------
