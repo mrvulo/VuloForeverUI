@@ -264,6 +264,10 @@ local function makeSlot(owner)
     -- field to the button and takes no click.
     button:HookScript("OnEnter", function(self)
         local db = Bags.db()
+        local parent = self:GetParent()
+        if parent then
+            Bags.Marks.Acknowledge(C_Container.GetContainerItemID(parent:GetID(), self:GetID()))
+        end
         if not db.pinnedTips then return end
         if not (GameTooltip and GameTooltip:IsShown() and GameTooltip:GetOwner() == self) then return end
         GameTooltip:AddLine(" ")

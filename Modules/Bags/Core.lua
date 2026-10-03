@@ -97,6 +97,7 @@ local mod = ns:RegisterModule("bags", {
         showBagBar     = false,
         bankShowBagBar = false,
         recentColor    = { r = 0.3, g = 0.8, b = 1 },
+        recentMinutes  = 5,
         pinnedTips     = true,
         goldTracking   = true,
         moveWithoutShift = false,

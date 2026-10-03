@@ -165,7 +165,9 @@ local function bagsPage()
         toggle("showPinned", L["Show pinned items"],
             L["Pinned items get a shelf of their own. The pin button in the window's tool row sets them."]),
         toggle("showRecent", L["Show recent items"],
-            L["Anything picked up in the last half hour gets a shelf and a border."]),
+            L["Anything just picked up gets a shelf and a border, until the mouse has been over it or the time below runs out."]),
+        slider("recentMinutes", L["Recent for (minutes)"], 1, 30, 1,
+            { disabled = function() return not d.showRecent end }),
 
         toggle("pinnedTips", L["Show pinned & recent tips"]),
         toggle("hideBagWarnings", L["Hide the bag warnings"],

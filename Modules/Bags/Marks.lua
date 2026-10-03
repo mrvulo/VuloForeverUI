@@ -19,6 +19,7 @@ local seen = {}        -- itemID -> count at the last scan
 local fresh = {}       -- itemID -> when it appeared
 local primed = false   -- the first scan only fills `seen`
 local quietUntil = 0   -- scans before this only fill `seen`, too
+local goneAt = {}      -- itemID -> when it went missing from a scan
 
 -- ---------------------------------------------------------------- pinned --
 
@@ -51,20 +52,35 @@ end
 
 -- ---------------------------------------------------------------- recent --
 
--- How long something counts as new. Long enough to still be new after a walk
--- back to town, short enough that a bag is not permanently half highlighted.
-local RECENT_WINDOW = 30 * 60
+-- How long something counts as new, in minutes, from the options. Hovering
+-- the item ends it sooner: once the player has looked at it, it is not news.
+local function window()
+    return (tonumber(Bags.db().recentMinutes) or 5) * 60
+end
 
 function Marks.IsRecent(itemID)
     if type(itemID) ~= "number" then return false end
     local at = fresh[itemID]
     if not at then return false end
-    if GetTime() - at > RECENT_WINDOW then
+    if GetTime() - at > window() then
         fresh[itemID] = nil
         return false
     end
     return true
 end
+
+-- The item under the mouse has been seen. Its border goes now; the shelf it
+-- sits on follows at the next layout, not under the cursor.
+function Marks.Acknowledge(itemID)
+    if type(itemID) ~= "number" or not fresh[itemID] then return end
+    fresh[itemID] = nil
+    Bags.Repaint()
+end
+
+-- How long an item may be missing from a scan and still count as the same
+-- stack when it shows up again. Using a potion can leave its slot out of a
+-- pass for a moment; without this the stack came back as "picked up".
+local GRACE = 10
 
 -- One pass over the bags: anything whose count went UP is new, anything that
 -- is gone is forgotten. The first pass after a login only primes the snapshot,
@@ -94,6 +110,22 @@ function Marks.Scan()
     end
     for id in pairs(fresh) do
         if not counts[id] then fresh[id] = nil end
+    end
+
+    -- What went missing keeps its old count for a few seconds, so a stack
+    -- that drops out of one pass and comes back smaller is not new.
+    for id, count in pairs(seen) do
+        if not counts[id] then
+            local at = goneAt[id] or now
+            if now - at < GRACE then
+                counts[id] = count
+                goneAt[id] = at
+            else
+                goneAt[id] = nil
+            end
+        elseif goneAt[id] then
+            goneAt[id] = nil
+        end
     end
 
     seen = counts
