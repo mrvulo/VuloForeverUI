@@ -23,6 +23,7 @@ ignore:
   - tools
   - docs
   - CLAUDE.md
+  - .claude
   - .pkgmeta
   - .gitignore
   - "*.zip"
