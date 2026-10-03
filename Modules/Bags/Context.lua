@@ -6,26 +6,39 @@
 -- the same way the search fades what it did not find, so the eye lands on
 -- what can actually be sold or sent.
 --
--- The client says when each window opens and closes, and that is all this
--- needs: one word for the place, set by the events and cleared by them.
+-- The place is ASKED of the client, never remembered. An earlier version set
+-- it from the open events and cleared it from the close events, and a close
+-- event that never came left the bags faded long after the mailbox was gone.
+-- The events below only say "look again".
 local _, ns = ...
 local Bags = ns.Bags
 
 local Context = {}
 Bags.Context = Context
 
-local place = nil   -- "merchant" | "mail" | "trade" | "auction" | nil
-
-local OPEN = {
-    MERCHANT_SHOW = "merchant", MAIL_SHOW = "mail",
-    TRADE_SHOW = "trade", AUCTION_HOUSE_SHOW = "auction",
-}
-local CLOSE = {
-    MERCHANT_CLOSED = "merchant", MAIL_CLOSED = "mail",
-    TRADE_CLOSED = "trade", AUCTION_HOUSE_CLOSED = "auction",
+local T = Enum.PlayerInteractionType or {}
+local PLACES = {
+    { T.Merchant, "merchant" },
+    { T.MailInfo, "mail" },
+    { T.TradePartner, "trade" },
+    { T.Auctioneer, "auction" },
 }
 
-function Context.Place() return place end
+-- Asked once per frame: the layout asks per slot, the answer cannot change
+-- between two slots of one draw.
+local askedAt, place = -1, nil
+
+function Context.Place()
+    local now = GetTime()
+    if now ~= askedAt then
+        askedAt, place = now, nil
+        local ask = C_PlayerInteractionManager.IsInteractingWithNpcOfType
+        for _, p in ipairs(PLACES) do
+            if p[1] and ask(p[1]) then place = p[2]; break end
+        end
+    end
+    return place
+end
 
 -- Bound for good: soulbound, and not to the account. A warbound item still
 -- goes by mail to the player's other characters.
@@ -35,26 +48,24 @@ end
 
 -- Is this item of no use where the player is standing?
 function Context.Fades(info)
-    if not place or not info or not Bags.db().contextFade then return false end
-    if place == "merchant" then return info.hasNoValue and true or false end
+    if not info or not Bags.db().contextFade then return false end
+    local where = Context.Place()
+    if not where then return false end
+    if where == "merchant" then return info.hasNoValue and true or false end
     return stuck(info) and true or false
 end
 
+local EVENTS = {
+    "PLAYER_INTERACTION_MANAGER_FRAME_SHOW", "PLAYER_INTERACTION_MANAGER_FRAME_HIDE",
+    "MERCHANT_SHOW", "MERCHANT_CLOSED", "MAIL_SHOW", "MAIL_CLOSED",
+    "TRADE_SHOW", "TRADE_CLOSED", "AUCTION_HOUSE_SHOW", "AUCTION_HOUSE_CLOSED",
+}
+
 function Context.Register(mod)
-    for event, where in pairs(OPEN) do
+    for _, event in ipairs(EVENTS) do
         mod:RegisterEvent(event, function()
-            place = where
+            askedAt = -1
             Bags.Refresh()
-        end)
-    end
-    for event, where in pairs(CLOSE) do
-        mod:RegisterEvent(event, function()
-            -- Only the window that set the place may clear it: closing a
-            -- mailbox that was left behind for a merchant keeps the merchant.
-            if place == where then
-                place = nil
-                Bags.Refresh()
-            end
         end)
     end
 end
