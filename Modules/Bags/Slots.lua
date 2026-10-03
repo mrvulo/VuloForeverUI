@@ -266,7 +266,7 @@ local function makeSlot(owner)
         local db = Bags.db()
         local parent = self:GetParent()
         if parent then
-            Bags.Marks.Acknowledge(C_Container.GetContainerItemID(parent:GetID(), self:GetID()))
+            Bags.Marks.Acknowledge(parent:GetID(), self:GetID())
         end
         if not db.pinnedTips then return end
         if not (GameTooltip and GameTooltip:IsShown() and GameTooltip:GetOwner() == self) then return end
@@ -577,7 +577,7 @@ function Slots.Paint(slot, bagID, slotID, info)
     -- neither asks the item anything.
     local id = info and info.itemID
     slot.pin:SetShown(db.showPinned and Bags.Marks.IsPinned(id) or false)
-    if db.showRecent and Bags.Marks.IsRecent(id) then
+    if db.showRecent and Bags.Marks.IsRecent(bagID, slotID) then
         local c = db.recentColor
         if slot.isRound then
             ns.LayoutEdges(slot.freshEdges, button, 0, 1, 1, 1, 1)

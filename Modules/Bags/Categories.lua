@@ -137,7 +137,7 @@ function Categories.For(entry, rules)
     local id = info.itemID
 
     if rules.pinned and Bags.Marks.IsPinned(id) then return "pinned" end
-    if rules.recent and Bags.Marks.IsRecent(id) then return "recent" end
+    if rules.recent and Bags.Marks.IsRecent(entry.bag, entry.slot) then return "recent" end
 
     local class = classOf(info)
     if class == "junk" then
