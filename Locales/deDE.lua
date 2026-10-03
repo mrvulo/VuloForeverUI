@@ -1262,7 +1262,7 @@ ns:RegisterLocale("deDE", {
 
     -- Core/Container.lua
 
-    -- Core/Database.lua
+    -- Core/Database/
     ["|cffff5555Settings migration %s failed:|r %s"] = "|cffff5555Die Umstellung der Einstellungen %s ist fehlgeschlagen:|r %s",
     ["Settings migrated to profile system (all settings are in profile '%s')."] = "Die Einstellungen sind auf Profile umgestellt (alles liegt jetzt im Profil '%s').",
     ["No saved settings were found at this login, so the addon started from defaults."] = "Bei diesem Login wurden keine gespeicherten Einstellungen gefunden, darum startet das Addon mit den Voreinstellungen.",
@@ -1321,7 +1321,7 @@ ns:RegisterLocale("deDE", {
     ["|cffff5555Error disabling '%s':|r %s"] = "|cffff5555Fehler beim Ausschalten von '%s':|r %s",
     ["Module '%s' disabled. /reload recommended for full effect."] = "Modul '%s' ausgeschaltet. Für die volle Wirkung ist ein /reload empfohlen.",
 
-    -- Core/Mover.lua
+    -- Core/Mover/
 
     -- Core/Profiler.lua
     ["Nothing measured yet: no module event handler or ticker has run since measuring started. With only the framework modules loaded that is expected."] = "Noch nichts gemessen: seit dem Start der Messung lief kein Ereignis und kein Ticker eines Moduls. Wenn nur die Rahmenmodule geladen sind, ist das zu erwarten.",
@@ -1565,7 +1565,7 @@ ns:RegisterLocale("deDE", {
     ["Recently changed"] = "Zuletzt geändert",
     ["Modules by area"] = "Module nach Bereich",
 
-    -- UI/EditMode.lua
+    -- UI/EditMode/
     ["EDIT MODE"] = "EDIT MODE",
     ["Keep the current arrangement and carry on editing. Discard then returns to this point instead of to how things looked when Edit Mode opened."] = "Behält die jetzige Anordnung und lässt dich weiterarbeiten. Verwerfen kehrt danach hierher zurück statt zum Stand beim Öffnen des Edit Mode.",
     ["Window positions saved."] = "Fensterpositionen gespeichert.",
@@ -1631,7 +1631,7 @@ ns:RegisterLocale("deDE", {
     ["Export"] = "Exportieren",
     ["Save your window arrangement, then load or share it any time."] = "Sichere deine Fensteranordnung und lade oder teile sie jederzeit.",
 
-    -- UI/MainFrame.lua
+    -- UI/MainFrame/
     ["|cff888888%.2f ms/frame |cff666666(%.1f%% of ours, peak %.1f ms)|r|r"] = "|cff888888%.2f ms/Bild |cff666666(%.1f%% von uns, Spitze %.1f ms)|r|r",
     ["|cff666666CPU: off|r"] = "|cff666666CPU: aus|r",
     ["|cff888888CPU: measuring...|r"] = "|cff888888CPU: misst...|r",
@@ -1647,7 +1647,7 @@ ns:RegisterLocale("deDE", {
     ["Copy the link with Ctrl+C:"] = "Kopiere den Link mit Strg+C:",
     ["Click: copy link"] = "Klick: Link kopieren",
 
-    -- UI/OptionsBuilder.lua
+    -- UI/OptionsBuilder/
     ["Mouseover"] = "Bei Mauszeiger",
     ["Differs from the default"] = "Weicht vom Standard ab",
     ["Default: %s"] = "Standard: %s",
@@ -1686,7 +1686,7 @@ ns:RegisterLocale("deDE", {
     ["Partial string: anything missing is taken from your active profile."] = "Teilzeichenkette: was darin fehlt, kommt aus deinem aktiven Profil.",
     ["Unticked parts keep your current settings."] = "Nicht angehakte Teile behalten deine jetzigen Einstellungen.",
 
-    -- UI/Widgets.lua
+    -- UI/Widgets/
     ["Reset to default"] = "Auf Standard zurücksetzen",
 
     -- declarative fields (module names, descriptions, anchor points)

@@ -21,7 +21,7 @@ local function rgb(r, g, b, a) return { r = r, g = g, b = b, a = a } end
 --             color, a table = fixed
 --   art       "classic" = UIPanelButton, UICheckButton and UISlider art;
 --             "modern" = the same button with the minimal checkbox and slider
---             knob of Blizzard's own settings panel (UI/Widgets.lua)
+--             knob of Blizzard's own settings panel (UI/Widgets/)
 --   window    { layout = NineSlice layout name, bgFile? } for the settings
 --             window (UI.ApplyWindowArt)
 --   listArt   the sidebar's selected and hover rows use the settings panel's

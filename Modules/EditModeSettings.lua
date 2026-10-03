@@ -2,8 +2,8 @@
 -- under Global Settings.
 --
 -- There is no module here in the usual sense -- no lifecycle, nothing to
--- switch off. Edit Mode is a session the whole suite shares (UI/EditMode.lua
--- owns it, Core/Mover.lua owns the boxes); this file is the page that drives
+-- switch off. Edit Mode is a session the whole suite shares (UI/EditMode/
+-- owns it, Core/Mover/ owns the boxes); this file is the page that drives
 -- it, and it exists as a module only because that is what puts a row in the
 -- sidebar. Every switch writes ns.db.profile.editmode.grid, the one table the
 -- session reads, and then asks a running session to pick the change up.
@@ -22,7 +22,7 @@ local mod = ns:RegisterModule("editmode", {
     defaults    = { enabled = true },
 })
 
--- The session itself is built on demand by UI/EditMode.lua. What lives here is
+-- The session itself is built on demand by UI/EditMode/. What lives here is
 -- the box for the quest tracker: a Blizzard frame no module of ours owns.
 -- Pinned by its TOP-left corner, because the list grows downwards.
 function mod:OnEnable()

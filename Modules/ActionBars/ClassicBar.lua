@@ -1,4 +1,4 @@
--- VuloForeverUI / Modules / ActionBars / ClassicBar
+-- VuloForeverUI / Modules / ActionBars / ClassicBar: the 1.x band's measurements, art, anchoring helpers and movers
 --
 -- The 1.x main bar: a 1024 x 53 stone band across the bottom of the screen
 -- with a gryphon on each end, and the client's own buttons put back in their
@@ -30,6 +30,11 @@ local AB = ns.AB
 
 local Classic = {}
 AB.ClassicBar = Classic
+
+-- Private to the band's files (ClassicBar, ClassicBarLayout, ClassicBarDress,
+-- ClassicBarApply): the state they share, the measurements and the helpers.
+AB._classic = AB._classic or {}
+local P = AB._classic
 
 local ART_W, ART_H = 1024, 53
 local BAND_H, STRIP_H = 43, 10
@@ -94,12 +99,9 @@ local PIECES = {
     { x = 768, file = "keyring", v = { 0.1640625, 0.5 } },
 }
 
-local art, applied = nil, false
+P.art, P.applied = nil, false
 local missingArt = false
 
--- Forward: the watch is written after the layout it calls, and Apply installs
--- it before that.
-local watch
 
 -- What a frame's anchors were before we moved it, kept OFF the frame.
 local original = setmetatable({}, { __mode = "k" })
@@ -149,7 +151,7 @@ end
 -- or squeezes the whole row. The ratio between the two scales divides it back
 -- out, and the same for any size we set.
 local function ratio(frame)
-    local fs = (frame:GetEffectiveScale() or 1) / ((art and art:GetEffectiveScale()) or 1)
+    local fs = (frame:GetEffectiveScale() or 1) / ((P.art and P.art:GetEffectiveScale()) or 1)
     if not fs or fs <= 0 then return 1 end
     return fs
 end
@@ -163,7 +165,7 @@ local placed = setmetatable({}, { __mode = "k" })
 -- keeps its parent, and with it everything the client does to it.
 local function anchor(frame, point, bandPoint, x, y, w, h, on)
     if not frame then return end
-    on = on or art
+    on = on or P.art
     remember(frame)
     placed[frame] = on
     local fs = ratio(frame)
@@ -177,48 +179,48 @@ end
 -- ---------------------------------------------------------------- band --
 
 local function build()
-    if art then return art end
-    art = CreateFrame("Frame", "VuloForeverUIClassicBar", UIParent)
-    art:SetSize(ART_W, ART_H)
-    art:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 0)
-    art:SetFrameStrata("MEDIUM")
-    art:SetFrameLevel(1)
-    art:SetScale(BAND_SCALE)
+    if P.art then return P.art end
+    P.art = CreateFrame("Frame", "VuloForeverUIClassicBar", UIParent)
+    P.art:SetSize(ART_W, ART_H)
+    P.art:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 0)
+    P.art:SetFrameStrata("MEDIUM")
+    P.art:SetFrameLevel(1)
+    P.art:SetScale(BAND_SCALE)
 
-    art.pieces = {}
+    P.art.pieces = {}
     for i, piece in ipairs(PIECES) do
-        local tex = art:CreateTexture(nil, "BACKGROUND")
+        local tex = P.art:CreateTexture(nil, "BACKGROUND")
         tex:SetSize(256, BAND_H)
-        tex:SetPoint("BOTTOMLEFT", art, "BOTTOMLEFT", piece.x, 0)
-        art.pieces[i] = tex
+        tex:SetPoint("BOTTOMLEFT", P.art, "BOTTOMLEFT", piece.x, 0)
+        P.art.pieces[i] = tex
     end
 
     -- The gryphons are one sheet, drawn twice: the sheet is the LEFT one, and
     -- the right one is it with its horizontal coordinates swapped.
-    art.leftCap = art:CreateTexture(nil, "OVERLAY", nil, 5)
-    art.leftCap:SetSize(CAP_SIZE, CAP_SIZE)
-    art.leftCap:SetPoint("BOTTOM", art, "BOTTOM", -544, 0)
-    art.rightCap = art:CreateTexture(nil, "OVERLAY", nil, 5)
-    art.rightCap:SetSize(CAP_SIZE, CAP_SIZE)
-    art.rightCap:SetPoint("BOTTOM", art, "BOTTOM", 544, 0)
-    return art
+    P.art.leftCap = P.art:CreateTexture(nil, "OVERLAY", nil, 5)
+    P.art.leftCap:SetSize(CAP_SIZE, CAP_SIZE)
+    P.art.leftCap:SetPoint("BOTTOM", P.art, "BOTTOM", -544, 0)
+    P.art.rightCap = P.art:CreateTexture(nil, "OVERLAY", nil, 5)
+    P.art.rightCap:SetSize(CAP_SIZE, CAP_SIZE)
+    P.art.rightCap:SetPoint("BOTTOM", P.art, "BOTTOM", 544, 0)
+    return P.art
 end
 
 -- Paint the band, and say once if the client no longer ships the art.
 local function paint()
     local ok = true
     for i, piece in ipairs(PIECES) do
-        local tex = art.pieces[i]
+        local tex = P.art.pieces[i]
         -- SetTexture answers false for a file that is not there, which is the
         -- only way to ask this question.
         if tex:SetTexture(TEX[piece.file]) == false then ok = false end
         tex:SetTexCoord(0, 1, piece.v[1], piece.v[2])
         tex:Show()
     end
-    if art.leftCap:SetTexture(TEX.cap) == false then ok = false end
-    art.leftCap:SetTexCoord(0, 1, 0, 1)
-    art.rightCap:SetTexture(TEX.cap)
-    art.rightCap:SetTexCoord(1, 0, 0, 1)
+    if P.art.leftCap:SetTexture(TEX.cap) == false then ok = false end
+    P.art.leftCap:SetTexCoord(0, 1, 0, 1)
+    P.art.rightCap:SetTexture(TEX.cap)
+    P.art.rightCap:SetTexCoord(1, 0, 0, 1)
 
     if not ok and not missingArt then
         missingArt = true
@@ -233,12 +235,12 @@ end
 -- offsets inside it can be written in 1.x pixels no matter what size the
 -- buttons are wearing.
 local function Row(index)
-    art.rows = art.rows or {}
-    local row = art.rows[index]
+    P.art.rows = P.art.rows or {}
+    local row = P.art.rows[index]
     if not row then
-        row = CreateFrame("Frame", nil, art)
+        row = CreateFrame("Frame", nil, P.art)
         row:SetSize(1, 1)
-        art.rows[index] = row
+        P.art.rows[index] = row
     end
     return row
 end
@@ -250,19 +252,6 @@ local function matchScale(frame, scale)
     pcall(frame.SetScale, frame, scale)
 end
 
--- THE BUTTONS ARE NOT WHAT MOVES.
---
--- Each of the client's action buttons sits in a CONTAINER frame, and the
--- client's own layout positions those containers -- which is why anchoring the
--- buttons themselves achieved nothing that survived the next layout pass, and
--- why the row came out at the client's spacing rather than ours.
---
--- So the container is what is moved and what carries the size: scaled so its
--- 45 pixel button comes out at the 36 the art was drawn for. The step between
--- them is then read IN THE CONTAINER'S OWN SPACE, which is why the pitch is
--- divided by that same scale before it is used.
--- Every bar laid on a row of ours, with that row's number, for the watch.
-local laid = setmetatable({}, { __mode = "k" })
 
 -- ---------------------------------------------------------------- movers --
 --
@@ -326,7 +315,7 @@ local function moverChanged(key)
     elseif db.x then
         db.moved = true
     end
-    if applied then Classic.Apply() end
+    if P.applied then Classic.Apply() end
 end
 
 -- One mover per key, made once; its db follows the profile on every pass.
@@ -368,962 +357,15 @@ local function placeRow(row, key, point, rel, relPoint, x, y)
     if key then ensureMover(row, key) end
 end
 
-local function layoutBarButtons(bar, rowIndex, x, y, pitch, target)
-    if not (bar and bar.actionButtons) then return 0 end
-    laid[bar] = rowIndex
-
-    local first = bar.actionButtons[1]
-    local size = (first and first:GetWidth()) or 45
-    if not size or size == 0 then size = 45 end
-    -- Both measured against the band: the container's parent does not wear
-    -- the band's scale, so band pixels are converted through the two.
-    local first_container = first and first.container
-    local parent = first_container and first_container:GetParent()
-    local k = art:GetEffectiveScale() / ((parent and parent:GetEffectiveScale()) or 1)
-    local scale = (target or BUTTON_SIZE) * k / size
-    if scale <= 0 then scale = 1 end
-    local step = (pitch or BUTTON_PITCH) * k / scale
-
-    -- The bar frame keeps the plain scale: the client puts the icon size on
-    -- the buttons and leaves the frame alone, and the frame is what Edit Mode
-    -- draws its box around -- scaling it too would count the size twice.
-    matchScale(bar, 1)
-
-    local row = Row(rowIndex)
-    row:SetScale(1)
-    local shown = 0
-    for _, button in ipairs(bar.actionButtons) do
-        if button.container then shown = shown + 1 end
-    end
-    row:SetSize(math.max(1, (shown - 1) * (pitch or BUTTON_PITCH) + (target or BUTTON_SIZE)),
-        target or BUTTON_SIZE)
-    placeRow(row, ROW_KEY[bar:GetName() or ""], "BOTTOMLEFT", art, "BOTTOMLEFT", x, y)
-
-    local count = 0
-    for i, button in ipairs(bar.actionButtons) do
-        local container = button.container
-        if container then
-            count = i
-            remember(container)
-            pcall(function()
-                container:SetScale(scale)
-                container:ClearAllPoints()
-                container:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", (i - 1) * step, 0)
-            end)
-        end
-    end
-
-    -- The bar's own rectangle becomes exactly the buttons it shows, so Edit
-    -- Mode's box sits on them instead of around where they used to be.
-    if count > 0 then
-        local slot = target or BUTTON_SIZE
-        local along = (count - 1) * (pitch or BUTTON_PITCH) + slot
-        if math.abs((bar:GetWidth() or 0) - along) > 0.5 or math.abs((bar:GetHeight() or 0) - slot) > 0.5 then
-            remember(bar)
-            local fs = ratio(bar)
-            pcall(bar.SetSize, bar, along / fs, slot / fs)
-        end
-        -- And it stands where they stand. The bars above are chained to THIS
-        -- frame, not to its buttons, so a frame left at the client's place
-        -- pulls bars 2 and 3 and the stance bar off to one side of the row.
-        remember(bar)
-        pcall(function()
-            bar:ClearAllPoints()
-            bar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 0, 0)
-        end)
-    end
-    return count
-end
-
--- One of the right-hand columns: the same containers, stepped DOWN from a row
--- frame hung off the screen's bottom right corner instead of the band.
-local function layoutColumn(bar, rowIndex, right, top, pitch, target)
-    if not (bar and bar.actionButtons) then return 0 end
-    laid[bar] = rowIndex
-
-    local first = bar.actionButtons[1]
-    local size = (first and first:GetWidth()) or 45
-    if not size or size == 0 then size = 45 end
-    local container1 = first and first.container
-    local parent = container1 and container1:GetParent()
-    local k = art:GetEffectiveScale() / ((parent and parent:GetEffectiveScale()) or 1)
-    local scale = target * k / size
-    if scale <= 0 then scale = 1 end
-    local step = pitch * k / scale
-
-    matchScale(bar, 1)
-    local row = Row(rowIndex)
-    row:SetScale(1)
-    row:SetSize(target, 11 * pitch + target)
-    placeRow(row, ROW_KEY[bar:GetName() or ""], "TOPRIGHT", UIParent, "BOTTOMRIGHT", right, top)
-
-    local count = 0
-    for i, button in ipairs(bar.actionButtons) do
-        local container = button.container
-        if container then
-            count = i
-            remember(container)
-            pcall(function()
-                container:SetScale(scale)
-                container:ClearAllPoints()
-                container:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, -(i - 1) * step)
-            end)
-        end
-    end
-    if count > 0 then
-        remember(bar)
-        local fs = ratio(bar)
-        pcall(function()
-            bar:SetSize(target / fs, ((count - 1) * pitch + target) / fs)
-            bar:ClearAllPoints()
-            bar:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, 0)
-        end)
-    end
-    return count
-end
-
--- The shaman's totem bar, when it is asked for: on the small row after
--- whichever of the stance, possess and pet bars show, and moved whole -- its
--- slot, page and summon buttons are anchored to each other inside it, so the
--- frame is what goes onto the row. Off, it is handed back to the client's
--- place, and the watch is told to stop looking after it.
-local totemHooked = false
-
-local function layoutTotem(x)
-    local totem = _G.MultiCastActionBarFrame
-    if not totem then return end
-    local _, class = UnitClass("player")
-    local want = AB.db().classicTotemBar and class == "SHAMAN"
-    -- The bar shows only once the client counts the totem slots, which is
-    -- after the band's first pass: when it comes up unplaced, the band is
-    -- laid again (after the fight, if one is on).
-    if want and not totemHooked and totem.UpdateShownState then
-        totemHooked = true
-        hooksecurefunc(totem, "UpdateShownState", function(self)
-            if not (applied and AB.mod.active and AB.db().classicTotemBar) then return end
-            if self:IsShown() and not placed[self] then
-                -- a frame later: not from inside the client's own update
-                ns.NextFrame(function()
-                    ns:RunOutOfCombatOnce("actionbars.totem", function()
-                        if applied then Classic.Apply() end
-                    end)
-                end)
-            end
-        end)
-    end
-    if want and totem:IsShown() then
-        local row = Row(HOLDER.totem)
-        row:SetScale(1)
-        local fs = ratio(totem)
-        local w, h = totem:GetSize()
-        row:SetSize(math.max(1, (w or 1) * fs), math.max(1, (h or 1) * fs))
-        placeRow(row, "totem", "BOTTOMLEFT", art, "BOTTOMLEFT", x, SMALL_Y)
-        anchor(totem, "BOTTOMLEFT", "BOTTOMLEFT", 0, 0, nil, nil, row)
-    elseif not want and placed[totem] then
-        restoreFrame(totem)
-        placed[totem], original[totem] = nil, nil
-    end
-end
-
-local function layoutButtons()
-    -- The main bar first; its twelve buttons are the row the band was drawn
-    -- around. A client that keeps its buttons somewhere other than
-    -- bar.actionButtons falls back to the flat list, which at least places
-    -- them even if their containers are not where we expect.
-    local bar = _G.MainActionBar
-    if bar and bar.actionButtons then
-        layoutBarButtons(bar, 1, ROW_X, ROW_Y, BUTTON_PITCH, BUTTON_SIZE)
-        for _, upper in ipairs(UPPER_BARS) do
-            local ub = _G[upper.name]
-            if ub and ub:IsShown() then
-                layoutBarButtons(ub, upper.row, upper.x, UPPER_Y, BUTTON_PITCH, BUTTON_SIZE)
-            end
-        end
-        -- Stance or possess first, the pet bar after whichever of them shows.
-        local x = SMALL_X
-        for i, name in ipairs({ "StanceBar", "PossessActionBar", "PetActionBar" }) do
-            local sb = _G[name]
-            if sb and sb:IsShown() then
-                if name == "PetActionBar" then x = math.max(36, x) end
-                local n = layoutBarButtons(sb, 3 + i, x, SMALL_Y, SMALL_PITCH, SMALL_BUTTON)
-                if n > 0 then x = x + n * SMALL_PITCH + 6 end
-            end
-        end
-        layoutTotem(x)
-        -- Bar 4 outermost; bar 5 takes the outer column when bar 4 is off.
-        local right = SIDE_RIGHT
-        local screenH = (UIParent:GetHeight() or 768) / BAND_SCALE
-        local top = math.max(SIDE_TOP_MIN, math.min(screenH - 40, screenH * SIDE_TOP_SHARE))
-        for _, side in ipairs(SIDE_BARS) do
-            local sb = _G[side.name]
-            if sb and sb:IsShown() then
-                layoutColumn(sb, side.row, right, top, BUTTON_PITCH, BUTTON_SIZE)
-                right = right - SIDE_COLUMN
-            end
-        end
-        local y = EXTRA_Y
-        for _, extra in ipairs(EXTRA_BARS) do
-            local eb = _G[extra.name]
-            if eb and eb:IsShown() then
-                layoutBarButtons(eb, extra.row, ROW_X, y, BUTTON_PITCH, BUTTON_SIZE)
-                y = y + BUTTON_PITCH
-            end
-        end
-        return
-    end
-    for i = 1, 12 do
-        local b = _G["ActionButton" .. i]
-        if b then
-            anchor(b, "BOTTOMLEFT", "BOTTOMLEFT",
-                ROW_X + (i - 1) * BUTTON_PITCH, ROW_Y, BUTTON_SIZE, BUTTON_SIZE)
-        end
-    end
-end
-
--- The page number and its two arrows, on the band's corner past the twelfth
--- button, at the 32 pixels 1.x drew them; the art is set in dress().
-local pageWasShown
-
-local function layoutPageArrows()
-    local bar = _G.MainActionBar
-    local pn = bar and bar.ActionBarPageNumber
-    if not pn then return end
-    local midY = (PAGE_UP_Y + PAGE_DOWN_Y) / 2
-    local holder = Row(HOLDER.page)
-    holder:SetScale(1)
-    holder:SetSize(48, 76)
-    placeRow(holder, "page", "CENTER", art, "TOPLEFT", PAGE_X + 8, midY)
-
-    anchor(pn, "CENTER", "CENTER", -8, 0, 32, 76, holder)
-    -- Shown by us, so hidden again by us if the client had it hidden.
-    if pageWasShown == nil then pageWasShown = pn:IsShown() end
-    pcall(pn.Show, pn)
-    for _, entry in ipairs({ { pn.UpButton, PAGE_UP_Y }, { pn.DownButton, PAGE_DOWN_Y } }) do
-        local button, y = entry[1], entry[2]
-        if button then
-            anchor(button, "CENTER", "CENTER", -8, y - midY, 32, 32, holder)
-            pcall(button.SetHitRectInsets, button, 6, 6, 7, 7)
-        end
-    end
-    if pn.Text then
-        local fs = ratio(pn)
-        remember(pn.Text)
-        pcall(function()
-            pn.Text:ClearAllPoints()
-            pn.Text:SetPoint("CENTER", holder, "CENTER", 12 / fs, 0.5 / fs)
-        end)
-    end
-end
-
--- THE MICRO MENU AND THE BAGS ARE SCALED, NOT SIZED.
---
--- This client's micro and bag buttons carry their art on child textures sized
--- to the 45 pixel button. SetSize shrinks the button and leaves that art at
--- full size, which is the pile of overlapping gold frames the first version
--- of this band showed. SetScale takes the art along. The anchor offsets stay
--- in band pixels because anchor() divides by the ratio, scale included.
-local function fitTo(frame, width)
-    local w = frame:GetWidth()
-    if not w or w <= 0 then return 1 end
-    -- Measured in band pixels, so a second pass over a frame already at the
-    -- right size asks for the scale it already has.
-    local scale = (frame:GetScale() or 1) * width / (w * ratio(frame))
-    matchScale(frame, scale)
-    return (frame:GetHeight() or 0) * width / w
-end
-
--- The bags, chained right to left from the backpack, on their own holder.
--- Measured first -- the holder is as wide as the chain -- then placed from the
--- holder's right edge. Answers the band x where the chain begins.
--- bagsLaying: our own SetPoints on the bag buttons, which hookBags must not
--- answer.
-local bagsLaying = false
-
-local function layoutBags()
-    local seats = {}
-    local right, lastLeft = BAG_RIGHT, BAG_RIGHT
-    local function seat(b, width, bottom)
-        if not (b and b:IsShown()) then return false end
-        local h = fitTo(b, width)
-        seats[#seats + 1] = { b, right, bottom or ((BAND_H - h) / 2) }
-        lastLeft = right - width
-        return true
-    end
-    if seat(_G.MainMenuBarBackpackButton, BAG_SIZE, BAG_BOTTOM) then
-        right = lastLeft + (BAG_SIZE - BAG_PITCH)
-    end
-    for n = 0, 3 do
-        if seat(_G["CharacterBag" .. n .. "Slot"], BAG_SIZE, BAG_BOTTOM) then
-            right = lastLeft + (BAG_SIZE - BAG_PITCH)
-        end
-    end
-    right = lastLeft - 2
-    seat(_G.CharacterReagentBag0Slot, REAGENT_SIZE, BAG_BOTTOM + (BAG_SIZE - REAGENT_SIZE) / 2)
-    right = lastLeft - KEYRING_GAP
-    seat(_G.KeyRingButton, KEYRING_W)
-
-    local holder = Row(HOLDER.bags)
-    holder:SetScale(1)
-    holder:SetSize(math.max(1, BAG_RIGHT - lastLeft), BAND_H)
-    placeRow(holder, "bags", "BOTTOMRIGHT", art, "BOTTOMLEFT", BAG_RIGHT, 0)
-    bagsLaying = true
-    for _, s in ipairs(seats) do
-        anchor(s[1], "BOTTOMRIGHT", "BOTTOMRIGHT", s[2] - BAG_RIGHT, s[3], nil, nil, holder)
-    end
-    bagsLaying = false
-    return lastLeft
-end
-
--- The micro menu: every button the client shows but the shop, in the
--- client's own order, 28 wide at a step of 25 -- the row shrunk as a whole
--- when there are more than its room holds.
-local skipped = setmetatable({}, { __mode = "k" })
-
-local function layoutMicro(stopAt)
-    local menu = _G.MicroMenu
-    if not menu then return end
-    local buttons = {}
-    for _, child in ipairs({ menu:GetChildren() }) do
-        if child:GetObjectType() == "Button" then
-            local name = child:GetName()
-            if name and MICRO_SKIP[name] then
-                skipped[child] = true
-                pcall(child.SetAlpha, child, 0)
-                pcall(child.EnableMouse, child, false)
-            elseif child:IsShown() then
-                buttons[#buttons + 1] = child
-            end
-        end
-    end
-    if #buttons == 0 then return end
-    table.sort(buttons, function(a, b)
-        local la, lb = a.layoutIndex, b.layoutIndex
-        if type(la) == "number" and type(lb) == "number" then return la < lb end
-        return (a:GetLeft() or 0) < (b:GetLeft() or 0)
-    end)
-
-    -- The row runs up to the bags: fewer buttons than the room was drawn for
-    -- grow a little (never past a fifth) instead of leaving a gap.
-    local room = math.min(MICRO_ROOM, (stopAt or ART_W) - 3 - MICRO_X)
-    local rs = math.min(1.2, room / (#buttons * MICRO_STEP + 3))
-    local holder = Row(HOLDER.micro)
-    holder:SetScale(1)
-    holder:SetSize(math.max(1, (#buttons * MICRO_STEP + 3) * rs), BAND_H)
-    placeRow(holder, "micro", "BOTTOMLEFT", art, "BOTTOMLEFT", MICRO_X, 0)
-    for i, b in ipairs(buttons) do
-        fitTo(b, MICRO_W * rs)
-        anchor(b, "BOTTOMLEFT", "BOTTOMLEFT", (i - 1) * MICRO_STEP * rs, MICRO_Y, nil, nil, holder)
-    end
-end
-
-local function unskipMicro()
-    for b in pairs(skipped) do
-        pcall(b.SetAlpha, b, 1)
-        pcall(b.EnableMouse, b, true)
-        skipped[b] = nil
-    end
-end
-
--- The experience bar along the band's top edge, where 1.x kept it.
-local XP_CONTAINERS = { "MainStatusTrackingBarContainer", "SecondaryStatusTrackingBarContainer" }
-local xpBusy = false
-
-local function placeExperience()
-    local holder = Row(HOLDER.xp)
-    holder:SetScale(1)
-    holder:SetSize(ART_W - 4, STRIP_H)
-    placeRow(holder, "xp", "BOTTOM", art, "TOP", 0, -STRIP_H - 1)
-end
-
-local function layoutExperience()
-    if xpBusy then return end
-    xpBusy = true
-    for _, name in ipairs(XP_CONTAINERS) do
-        local container = _G[name]
-        if container then
-            -- The client sizes its bars to their CONTAINER in its own
-            -- ResizeContainerBars; so the container gets the band's width,
-            -- at the band's scale, and the client's own call fills it.
-            matchScale(container, (container:GetScale() or 1) / ratio(container))
-            anchor(container, "BOTTOM", "BOTTOM", 0, 0, nil, nil, Row(HOLDER.xp))
-            pcall(container.SetWidth, container, (ART_W - 4) / ratio(container))
-            if type(container.ResizeContainerBars) == "function" then
-                pcall(container.ResizeContainerBars, container)
-            end
-            if not InCombatLockdown() and type(container.UpdateDividers) == "function"
-                and type(container.GetExpectedSegments) == "function" then
-                pcall(container.UpdateDividers, container, container:GetExpectedSegments())
-            end
-        end
-    end
-    xpBusy = false
-end
-
-local function restoreExperience()
-    for _, name in ipairs(XP_CONTAINERS) do
-        local container = _G[name]
-        if container and type(container.GetExpectedWidth) == "function" then
-            pcall(container.SetWidth, container, container:GetExpectedWidth())
-            if type(container.ResizeContainerBars) == "function" then
-                pcall(container.ResizeContainerBars, container)
-            end
-        end
-    end
-end
-
--- The client lays these bars out again on its own events -- a new target, a
--- panel opened from the micro menu, a reputation change -- and every one of
--- those puts them back at its own width and place. Its layout calls are
--- followed, not replaced: right after each, the band lays them again. These
--- bars are not protected, so this also works in a fight.
-local xpHooked = false
-
-local function hookExperience()
-    if xpHooked then return end
-    xpHooked = true
-    local function again()
-        if applied then layoutExperience() end
-    end
-    local manager = _G.StatusTrackingBarManager
-    if manager then
-        for _, method in ipairs({ "UpdateBarsShown", "CheckForLayoutChange" }) do
-            if type(manager[method]) == "function" then hooksecurefunc(manager, method, again) end
-        end
-    end
-    for _, name in ipairs(XP_CONTAINERS) do
-        local container = _G[name]
-        if container then
-            for _, method in ipairs({ "ApplySystemAnchor", "UpdateShownState", "SetShownBar" }) do
-                if type(container[method]) == "function" then hooksecurefunc(container, method, again) end
-            end
-        end
-    end
-    -- The bars are managed frames: whenever ANY frame in the bottom managed
-    -- container shows or hides -- a target, a panel -- the client lays every
-    -- one of them out again. Following that Layout is what stops the flicker.
-    local managed = _G.BottomManagedFrameContainer
-    for _, frame in ipairs({ managed, managed and managed.BottomManagedLayoutContainer }) do
-        if frame and type(frame.Layout) == "function" then hooksecurefunc(frame, "Layout", again) end
-    end
-end
-
--- The bags on the band hold still.
---
--- The client folds its bag bar away and out again on its own: an item on the
--- cursor unfolds it, putting the item down folds it (MainMenuBarBagManager's
--- OnCursorChanged -> SetExpandBarAuto). Folding HIDES the four bag slots
--- (SetBarExpanded), and every fold ends in BagsBar:Layout, which anchors the
--- buttons back into the client's own row. A bag sort moves every item through
--- the cursor, so the bags jumped between the band and the client's row on
--- every single move. On the band the slots stay shown, and after each of the
--- client's layout passes the band lays bags and micro menu again. The bag
--- buttons are plain buttons, so this also works in a fight.
---
--- Hooking BagsBar.Layout alone is not enough: the bar registers that Layout
--- as a callback on MainMenuBarManager.OnExpandChanged when it loads, so the
--- fold on every pickup and drop calls the ORIGINAL function and never reaches
--- a hook on the field. What every path has in common is the SetPoint on the
--- buttons, so that is where the band answers -- inside the client's own call,
--- before anything is drawn.
-local bagsHooked = false
-local BAG_BUTTONS = {
-    "MainMenuBarBackpackButton", "CharacterBag0Slot", "CharacterBag1Slot",
-    "CharacterBag2Slot", "CharacterBag3Slot", "CharacterReagentBag0Slot",
-    "KeyRingButton",
-}
-
-local function hookBags()
-    if bagsHooked then return end
-    bagsHooked = true
-    local function again()
-        if applied and not bagsLaying then layoutMicro(layoutBags()) end
-    end
-    local bar = _G.BagsBar
-    if bar and type(bar.Layout) == "function" then hooksecurefunc(bar, "Layout", again) end
-    for _, name in ipairs(BAG_BUTTONS) do
-        local b = _G[name]
-        if b then hooksecurefunc(b, "SetPoint", again) end
-    end
-    for n = 0, 3 do
-        local b = _G["CharacterBag" .. n .. "Slot"]
-        if b and type(b.SetBarExpanded) == "function" then
-            hooksecurefunc(b, "SetBarExpanded", function(self)
-                if applied and not self:IsShown() then pcall(self.Show, self) end
-            end)
-        end
-    end
-end
-
--- The client's own modern bar art, out of the way.
---
--- Its REGIONS are walked rather than named: the parentKeys of that art differ
--- between builds, and a list of names is a list that is wrong on the build it
--- was not written for. A frame's own textures are safe to fade -- the buttons
--- are children, not regions, so nothing that answers a click is touched.
-local function hideModernArt(hide)
-    for _, name in ipairs({ "MainActionBar", "StatusTrackingBarManager", "BagsBar", "MicroMenu" }) do
-        local frame = _G[name]
-        if frame and frame.GetRegions then
-            for _, region in ipairs({ frame:GetRegions() }) do
-                if region.GetObjectType and region:GetObjectType() == "Texture" then
-                    pcall(region.SetAlpha, region, hide and 0 or 1)
-                end
-            end
-        end
-    end
-    -- The client's gryphons are not regions of the bar but a child FRAME of
-    -- it, so the walk above never reaches them. Alpha rather than Hide: the
-    -- client shows them again itself on every Edit Mode exit, and an alpha
-    -- survives that where a Hide does not.
-    local bar = _G.MainActionBar
-    local caps = bar and bar.EndCaps
-    if caps then pcall(caps.SetAlpha, caps, hide and 0 or 1) end
-end
-
--- ---------------------------------------------------------------- dress --
---
--- The bags keep the client's frames but wear the 1.x art. They are plain
--- buttons, not secure action buttons, so their textures are ours to set, and
--- the client's own texture pass puts its art back on restore.
-
--- The bags: the 1.x ring around a square icon. The client re-dresses a bag
--- button in its own UpdateTextures whenever that bag changes, so the dress is
--- hooked onto that call, once per button, and does nothing while the band is
--- off.
-local BAG_RING = "Interface\\Buttons\\UI-Quickslot2"
-local bagHooked = setmetatable({}, { __mode = "k" })
-
-local function bagButtons()
-    local out = {}
-    for _, name in ipairs({ "MainMenuBarBackpackButton", "CharacterBag0Slot", "CharacterBag1Slot",
-        "CharacterBag2Slot", "CharacterBag3Slot", "CharacterReagentBag0Slot", "KeyRingButton" }) do
-        if _G[name] then out[#out + 1] = _G[name] end
-    end
-    return out
-end
-
--- The key ring was never a bag slot in 1.x but a tall narrow post.
-local KEYRING_ART = "Interface\\Buttons\\UI-Button-KeyRing"
-local KEYRING_COORDS = { 0, 0.5625, 0, 0.609375 }
-local KEYRING_H = 39
-
-local function dressKeyRing(b)
-    local fs = ratio(b)
-    local function post(tex, file)
-        if not tex then return end
-        pcall(function()
-            tex:SetTexture(file)
-            tex:SetTexCoord(unpack(KEYRING_COORDS))
-            tex:ClearAllPoints()
-            tex:SetPoint("CENTER", b, "CENTER")
-            tex:SetSize(KEYRING_W / fs, KEYRING_H / fs)
-        end)
-    end
-    post(b:GetNormalTexture(), KEYRING_ART)
-    post(b:GetPushedTexture(), KEYRING_ART .. "-Down")
-    post(b:GetHighlightTexture(), KEYRING_ART .. "-Highlight")
-    if b.icon then pcall(b.icon.SetAlpha, b.icon, 0) end
-end
-
-local function dressBag(b)
-    if not applied then return end
-    if b == _G.KeyRingButton then return dressKeyRing(b) end
-    local w = b:GetWidth() or 45
-    if w <= 0 then w = 45 end
-    local ring = w * 64 / 37
-    for _, tex in ipairs({ b:GetNormalTexture(), b:GetPushedTexture() }) do
-        pcall(function()
-            tex:SetTexture(BAG_RING)
-            tex:SetTexCoord(0, 1, 0, 1)
-            tex:ClearAllPoints()
-            tex:SetPoint("CENTER", b, "CENTER", 0, -w / 37)
-            tex:SetSize(ring, ring)
-        end)
-    end
-    -- The rounded mask is what made the icon a porthole; 1.x bags are square.
-    if b.icon and b.SquareMask then pcall(b.icon.RemoveMaskTexture, b.icon, b.SquareMask) end
-end
-
--- The free bag slots on the backpack, in the 1.x place (bottom right). The
--- client writes the same number into the backpack's own Count, but on the
--- band that string ended up out of sight under the ring; a font string of
--- ours on a frame ABOVE the button is on top whatever the client's layers do.
--- The backpack is a plain button, so a child frame of ours on it is allowed.
--- Not tied to the band: the number is wanted on the client's own bag bar just
--- as much, so the action bar module switches it on whatever the bar style.
-local freeHost, freeText, freeWanted
-local freeEvents = CreateFrame("Frame")
-
-local function paintFree()
-    if not freeText then return end
-    local on = freeWanted and AB.db().backpackFreeSlots ~= false
-    freeHost:SetShown(on)
-    local own = _G.MainMenuBarBackpackButton and _G.MainMenuBarBackpackButton.Count
-    if own then pcall(own.SetAlpha, own, on and 0 or 1) end
-    if not on then return end
-    -- Re-asserted on every paint: the band's layout and the client's bag bar
-    -- both re-level the button after we built the host, and a host left at its
-    -- old level ends up under the ring with the number out of sight.
-    local b = _G.MainMenuBarBackpackButton
-    if b then
-        freeHost:SetFrameStrata(b:GetFrameStrata())
-        freeHost:SetFrameLevel(b:GetFrameLevel() + 5)
-    end
-    local free = C_Container.CalculateTotalNumberOfFreeBagSlots()
-    freeText:SetText(type(free) == "number" and tostring(free) or "")
-end
-
-freeEvents:SetScript("OnEvent", paintFree)
-
-local function dressFreeSlots(on)
-    freeWanted = on
-    local b = _G.MainMenuBarBackpackButton
-    if not b then return end
-    if on and not freeHost then
-        freeHost = CreateFrame("Frame", nil, b)
-        freeHost:SetAllPoints(b)
-        freeHost:SetFrameLevel(b:GetFrameLevel() + 5)
-        freeText = freeHost:CreateFontString(nil, "OVERLAY", "NumberFontNormal", 7)
-        freeText:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -3, 3)
-        freeText:SetJustifyH("RIGHT")
-    end
-    if on then
-        freeEvents:RegisterEvent("BAG_UPDATE_DELAYED")
-        freeEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
-        if not freeHost.hooked then
-            freeHost.hooked = true
-            hooksecurefunc(b, "SetFrameLevel", paintFree)
-            b:HookScript("OnShow", paintFree)
-        end
-    else
-        freeEvents:UnregisterAllEvents()
-    end
-    paintFree()
-end
-
--- For a look from the chat when the number does not show:
--- /run print(VuloForeverUI.AB.ClassicBar.FreeSlotsState())
--- Called by the module on every apply and on disable.
-function Classic.FreeSlots(on)
-    dressFreeSlots(on and AB.db().backpackFreeSlots ~= false)
-end
-
-function Classic.FreeSlotsState()
-    local b = _G.MainMenuBarBackpackButton
-    return "applied", applied, "setting", AB.db().backpackFreeSlots,
-        "host", freeHost ~= nil, freeHost and freeHost:IsVisible(), freeHost and freeHost:GetFrameLevel(),
-        "button", b and b:GetFrameLevel(), b and b:GetEffectiveScale(),
-        "text", freeText and freeText:GetText(), freeText and freeText:IsVisible(),
-        freeText and freeText:GetStringWidth(), freeText and freeText:GetAlpha()
-end
-
-local function dressBags(on)
-    for _, b in ipairs(bagButtons()) do
-        if on then
-            if not bagHooked[b] and type(b.UpdateTextures) == "function" then
-                bagHooked[b] = true
-                hooksecurefunc(b, "UpdateTextures", dressBag)
-            end
-            dressBag(b)
-            -- No drag off the band: a slot dragged by accident lifts the
-            -- whole bag onto the cursor. Clicking still opens the bag and
-            -- still drops a bag held on the cursor into the slot.
-            pcall(b.RegisterForDrag, b)
-        else
-            pcall(b.RegisterForDrag, b, "LeftButton")
-            if b.icon and b.SquareMask then pcall(b.icon.AddMaskTexture, b.icon, b.SquareMask) end
-            if b.icon then pcall(b.icon.SetAlpha, b.icon, 1) end
-            -- The client's pass adds a TOPLEFT point without clearing ours
-            -- first; two points would override its size, so ours go.
-            for _, tex in ipairs({ b:GetNormalTexture(), b:GetPushedTexture(), b:GetHighlightTexture() }) do
-                if tex then pcall(tex.ClearAllPoints, tex) end
-            end
-            -- The client's own pass puts its art, size and anchor back.
-            if type(b.UpdateTextures) == "function" then pcall(b.UpdateTextures, b) end
-        end
-    end
-end
-
--- The page arrows: the 1.x sheets, 32 pixel squares with the arrow in the
--- middle. A client without them keeps its own atlases.
-local ARROW_ART = {
-    up   = { file = "Interface\\MainMenuBar\\UI-MainMenu-ScrollUpButton",
-             atlas = "ui-hud-actionbar-pageuparrow" },
-    down = { file = "Interface\\MainMenuBar\\UI-MainMenu-ScrollDownButton",
-             atlas = "ui-hud-actionbar-pagedownarrow" },
-}
-
-local function dressArrow(button, arrow, on)
-    if not button then return end
-    local normal = button:GetNormalTexture()
-    local classic = on and normal and normal:SetTexture(arrow.file .. "-Up") ~= false
-    pcall(function()
-        if classic then
-            button:SetPushedTexture(arrow.file .. "-Down")
-            button:SetDisabledTexture(arrow.file .. "-Disabled")
-            button:SetHighlightTexture(arrow.file .. "-Highlight", "ADD")
-        else
-            button:SetNormalAtlas(arrow.atlas .. "-up")
-            button:SetPushedAtlas(arrow.atlas .. "-down")
-            button:SetDisabledAtlas(arrow.atlas .. "-disabled")
-            button:SetHighlightAtlas(arrow.atlas .. "-mouseover")
-        end
-        if not on then
-            button:SetSize(17, 14)
-            button:SetHitRectInsets(0, 0, 0, 0)
-        end
-    end)
-end
-
-local function dress(on)
-    local bar = _G.MainActionBar
-    local pn = bar and bar.ActionBarPageNumber
-    if pn then
-        dressArrow(pn.UpButton, ARROW_ART.up, on)
-        dressArrow(pn.DownButton, ARROW_ART.down, on)
-    end
-    dressBags(on)
-    if not on then unskipMicro() end
-end
-
--- ---------------------------------------------------------------- pass --
-
--- Is the client's own Edit Mode open? While it is, it owns these frames.
-local function editModeOpen()
-    local f = _G.EditModeManagerFrame
-    return f and f.IsShown and f:IsShown() and true or false
-end
-
--- The client's own edit mode: the band hands everything back while it is open
--- (it moves these same frames) and lays them again the moment it closes.
-local editHooked = false
-
-local function hookEditMode()
-    if editHooked or not (EventRegistry and EventRegistry.RegisterCallback) then return end
-    editHooked = true
-    EventRegistry:RegisterCallback("EditMode.Enter", function()
-        if applied then Classic.Restore() end
-    end, "VuloForeverUI_ClassicBarEnter")
-    EventRegistry:RegisterCallback("EditMode.Exit", function()
-        if AB.mod.active then AB.Apply() end
-    end, "VuloForeverUI_ClassicBarExit")
-end
-
-function Classic.Apply()
-    hookEditMode()
-    if InCombatLockdown() then return false end
-    if editModeOpen() then
-        Classic.Restore()
-        return false
-    end
-    build()
-    if not paint() then
-        art:Hide()
-        return false
-    end
-
-    art:Show()
-    if not art.watching then
-        art.watching = true
-        art:SetScript("OnUpdate", watch)
-    end
-    -- The band at its chosen place, or on the bottom edge's centre.
-    placeRow(art, "band", "BOTTOM", UIParent, "BOTTOM", 0, 0)
-    hideModernArt(true)
-    layoutButtons()
-    layoutPageArrows()
-    layoutMicro(layoutBags())
-    hookExperience()
-    hookBags()
-    placeExperience()
-    layoutExperience()
-    applied = true
-    -- After the flag: the bag hook dresses only while the band is applied.
-    dress(true)
-    return true
-end
-
-function Classic.Restore()
-    if not applied then
-        if art then art:Hide() end
-        return
-    end
-    if InCombatLockdown() then return end
-    applied = false
-
-    if art then art:Hide() end
-    hideModernArt(false)
-    dress(false)
-    restoreExperience()
-    local pn = _G.MainActionBar and _G.MainActionBar.ActionBarPageNumber
-    if pn and pageWasShown == false then pcall(pn.Hide, pn) end
-    pageWasShown = nil
-    for frame in pairs(original) do
-        restoreFrame(frame)
-    end
-    -- Not asking the client to lay its bars out again: UpdateGridLayout only
-    -- runs when its cached settings changed, which they did not, and when it
-    -- does run it writes fields on a secure bar from our code. The snapshot
-    -- above already put every container, bar and size back where it was.
-end
-
--- ---------------------------------------------------------------- watch --
---
--- The client lays its own bar out again whenever almost anything happens --
--- a setting, a page, a form, Edit Mode closing -- and every one of those puts
--- the containers back where IT wants them. There is no single function to
--- hook for it, so the band simply checks, twice a second, that its row is
--- still its row, and lays it again when it is not.
-local WATCH_EVERY = 0.5
-
-function watch(self, elapsed)
-    -- The experience bar every frame, and in a fight too: it is not protected,
-    -- and a half second of the client's own bar is exactly the flicker seen.
-    if applied then
-        for _, name in ipairs(XP_CONTAINERS) do
-            local c = _G[name]
-            if c and c:IsShown() then
-                -- Its place, its width, and the width of the bars inside: the
-                -- client resets the last two on its own after a loading
-                -- screen, with the anchor left where the band put it.
-                local ok, _, rel = pcall(c.GetPoint, c, 1)
-                local w = c:GetWidth() or 0
-                local stale = (ok and rel ~= placed[c]) or math.abs(w * ratio(c) - (ART_W - 4)) > 1
-                local bars = not stale and c.bars
-                if type(bars) == "table" then
-                    for _, child in pairs(bars) do
-                        if child:IsShown() and (child:GetWidth() or 0) > w + 1 then stale = true break end
-                    end
-                end
-                if stale then layoutExperience() break end
-            end
-        end
-    end
-    self.wait = (self.wait or 0) + elapsed
-    if self.wait < WATCH_EVERY then return end
-    self.wait = 0
-    if not applied or InCombatLockdown() or not AB.mod.active then return end
-    -- One comparison per bar is enough: if its first container is no longer
-    -- sitting on our row, the client has been through here.
-    local function moved(bar, rowIndex)
-        local first = bar and bar:IsShown() and bar.actionButtons and bar.actionButtons[1]
-        local container = first and first.container
-        local row = art and art.rows and art.rows[rowIndex]
-        if not (container and row) then return false end
-        local ok, _, rel = pcall(container.GetPoint, container, 1)
-        return ok and rel ~= row
-    end
-    local bar = _G.MainActionBar
-    if not bar then return end
-    local okBar, _, barRel = pcall(bar.GetPoint, bar, 1)
-    local stale = moved(bar, 1) or (okBar and barRel ~= (art.rows and art.rows[1]))
-    for laidBar, rowIndex in pairs(laid) do
-        stale = stale or moved(laidBar, rowIndex)
-    end
-    if not stale then
-        for frame in pairs(placed) do
-            if frame:IsShown() then
-                local ok, _, rel = pcall(frame.GetPoint, frame, 1)
-                if ok and rel ~= placed[frame] then stale = true break end
-            end
-        end
-    end
-    if stale then Classic.Apply() end
-end
-
-function Classic.IsApplied() return applied end
-
--- ---------------------------------------------------------------- report --
---
--- What the client actually answers, printed on demand.
---
--- This exists because the alternative is guessing from screenshots. The three
--- things that decide whether the Classic bar can work at all -- does the old
--- art still ship, what scale is each piece wearing, and does the client re-lay
--- out its own bar after we have -- are all questions only the client can
--- answer, and none of them shows up in a picture.
-function Classic.Report()
-    local A, R = ns.C.accent, ns.C.r
-    ns:Print(A .. "Classic bar" .. R)
-
-    local probe = UIParent:CreateTexture()
-    for key, path in pairs(TEX) do
-        local ok = probe:SetTexture(path)
-        ns:Print("  art %s: %s", key, (ok == false) and (ns.C.neg .. "missing" .. R) or "ok")
-    end
-    probe:SetTexture(nil)
-
-    local function scaleOf(frame)
-        if not frame then return "-" end
-        return ("%.3f"):format(frame:GetEffectiveScale() or 0)
-    end
-    ns:Print("  scale  UIParent %s, MainActionBar %s, ActionButton1 %s, band %s",
-        scaleOf(UIParent), scaleOf(_G.MainActionBar), scaleOf(_G.ActionButton1), scaleOf(art))
-
-    local b = _G.ActionButton1
-    if b then
-        local w, h = b:GetWidth(), b:GetHeight()
-        ns:Print("  ActionButton1 size %.1f x %.1f, points %d",
-            w or 0, h or 0, b:GetNumPoints() or 0)
-        local point, rel, relPoint, x, y = b:GetPoint(1)
-        if ns.CanRead(point) then
-            ns:Print("    1: %s of %s %s at %.1f, %.1f", tostring(point),
-                (rel and rel.GetName and rel:GetName()) or "?", tostring(relPoint), x or 0, y or 0)
-        end
-    end
-    local b2 = _G.ActionButton2
-    if b and b2 then
-        local x1, x2 = b:GetLeft(), b2:GetLeft()
-        if x1 and x2 then ns:Print("  pitch on screen: %.1f", x2 - x1) end
-    end
-
-    -- The slot art of a filled and an empty button, and the bar's own art:
-    -- which of them is on, at what alpha, wearing which atlas.
-    local function texLine(label, tex)
-        if not tex then ns:Print("    %s: none", label) return end
-        local layer, sub = tex:GetDrawLayer()
-        ns:Print("    %s: %s, alpha %.2f, %s %s, %s", label,
-            tex:IsShown() and "shown" or (ns.C.neg .. "hidden" .. R), tex:GetAlpha() or 0,
-            tostring(layer), tostring(sub),
-            tostring(tex.GetAtlas and tex:GetAtlas() or tex:GetTexture()))
-    end
-    for _, name in ipairs({ "ActionButton1", "ActionButton4" }) do
-        local btn = _G[name]
-        if btn then
-            ns:Print("  %s (bar art %s)", name,
-                (btn.bar and btn.bar.hideBarArt) and "hidden" or "on")
-            texLine("SlotArt", btn.SlotArt)
-            texLine("SlotBackground", btn.SlotBackground)
-            texLine("Normal", btn:GetNormalTexture())
-        end
-    end
-    for _, name in ipairs({ "MainActionBar" }) do
-        local frame = _G[name]
-        if frame then
-            ns:Print("  %s regions", name)
-            for i, region in ipairs({ frame:GetRegions() }) do
-                if region:GetObjectType() == "Texture" then texLine("#" .. i, region) end
-            end
-            for key, child in pairs(frame) do
-                if type(key) == "string" and key:find("Art") and type(child) == "table"
-                    and child.GetObjectType then
-                    ns:Print("    child %s: %s, alpha %.2f", key,
-                        child:IsShown() and "shown" or "hidden", child:GetAlpha() or 0)
-                end
-            end
-        end
-    end
-
-    -- Which of the client's own layout calls exist. One of these putting the
-    -- buttons back is the likeliest reason a row we placed does not stay
-    -- placed, and the fix is a hook on whichever one is really there.
-    local bar = _G.MainActionBar
-    if bar then
-        local found = {}
-        for _, name in ipairs({ "UpdateGridLayout", "UpdateShownButtons", "Layout",
-            "ApplySystemAnchor", "UpdateSystemSettingIconSize", "MarkDirty" }) do
-            if type(bar[name]) == "function" then found[#found + 1] = name end
-        end
-        ns:Print("  MainActionBar methods: %s", (#found > 0) and table.concat(found, ", ") or "none of the usual")
-    end
-end
+-- What the band's other files take from here.
+P.ART_W, P.BAND_H, P.STRIP_H, P.BUTTON_PITCH, P.BAND_SCALE = ART_W, BAND_H, STRIP_H, BUTTON_PITCH, BAND_SCALE
+P.BUTTON_SIZE, P.ROW_X, P.ROW_Y, P.PAGE_X, P.PAGE_UP_Y = BUTTON_SIZE, ROW_X, ROW_Y, PAGE_X, PAGE_UP_Y
+P.PAGE_DOWN_Y, P.UPPER_Y, P.UPPER_BARS, P.SMALL_Y, P.SMALL_X = PAGE_DOWN_Y, UPPER_Y, UPPER_BARS, SMALL_Y, SMALL_X
+P.SMALL_BUTTON, P.SMALL_PITCH, P.SIDE_TOP_MIN, P.SIDE_TOP_SHARE, P.SIDE_RIGHT = SMALL_BUTTON, SMALL_PITCH, SIDE_TOP_MIN, SIDE_TOP_SHARE, SIDE_RIGHT
+P.SIDE_COLUMN, P.EXTRA_Y, P.EXTRA_BARS, P.HOLDER, P.SIDE_BARS = SIDE_COLUMN, EXTRA_Y, EXTRA_BARS, HOLDER, SIDE_BARS
+P.MICRO_X, P.MICRO_Y, P.MICRO_W, P.MICRO_STEP, P.MICRO_ROOM = MICRO_X, MICRO_Y, MICRO_W, MICRO_STEP, MICRO_ROOM
+P.MICRO_SKIP, P.BAG_SIZE, P.BAG_PITCH, P.BAG_BOTTOM, P.BAG_RIGHT = MICRO_SKIP, BAG_SIZE, BAG_PITCH, BAG_BOTTOM, BAG_RIGHT
+P.KEYRING_W, P.KEYRING_GAP, P.REAGENT_SIZE, P.TEX, P.original = KEYRING_W, KEYRING_GAP, REAGENT_SIZE, TEX, original
+P.remember, P.restoreFrame, P.ratio, P.placed, P.anchor = remember, restoreFrame, ratio, placed, anchor
+P.build, P.paint, P.Row, P.matchScale, P.ROW_KEY = build, paint, Row, matchScale, ROW_KEY
+P.placeRow = placeRow

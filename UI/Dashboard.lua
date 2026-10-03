@@ -547,7 +547,7 @@ function UI:ShowDashboard()
 
     -- ---- recently changed -------------------------------------------------
     -- What was touched last, with a way back to it. The list the settings
-    -- pages write into (UI/OptionsBuilder.lua); entries whose module is gone
+    -- pages write into (UI/OptionsBuilder/); entries whose module is gone
     -- are skipped rather than shown as dead links.
     UI._dashChangeRows = UI._dashChangeRows or {}
     for _, r in ipairs(UI._dashChangeRows) do r:Hide() end
