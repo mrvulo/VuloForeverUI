@@ -141,7 +141,7 @@ local M = ns:RegisterModule("nameplates", {
         focusCastHeight = 100,
 
         -- cast bar
-        castBarHeight = 20, castBarOffsetY = 0,
+        castBarHeight = 20, castBarOffsetY = -4,
         castBar = c(.624, .749, 1), castBarUninterruptible = c(.486, .486, .486),
         interruptReady = c(.78, .78, .78),
         interruptMidCastEnabled = false, interruptMidCastColor = c(.318, .82, .357),
