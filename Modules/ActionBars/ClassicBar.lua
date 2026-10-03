@@ -40,7 +40,8 @@ local ART_W, ART_H = 1024, 53
 local BAND_H, STRIP_H = 43, 10
 local CAP_SIZE = 128
 local BUTTON_PITCH = 42
--- The band at its 1.x size, the buttons at the 36 its sockets were drawn for.
+-- The buttons at the 36 the band's sockets were drawn for. The band itself
+-- is drawn at the size of the client's own main bar (see bandScale below).
 local BAND_SCALE = 1
 local BUTTON_SIZE = 36
 local ROW_X, ROW_Y = 8, 4                   -- first button from the band's corner
@@ -177,6 +178,20 @@ local function anchor(frame, point, bandPoint, x, y, w, h, on)
 end
 
 -- ---------------------------------------------------------------- band --
+
+-- The band as big as the client's Standard bar, so switching the style keeps
+-- the size: that bar stands its 45 pixel buttons 47 apart (45 + 2 padding)
+-- where the 1.x art has 42, and the whole band is scaled by that ratio. Both
+-- hang from UIParent, so the UI scale grows and shrinks them alike.
+-- Capped so the band and the gryphons' overhang (1216 wide) stay on screen.
+local STANDARD_PITCH = 47
+local FULL_W = 1216
+local function bandScale()
+    local s = STANDARD_PITCH / BUTTON_PITCH
+    local w = UIParent:GetWidth()
+    if w and w > 0 then s = math.min(s, w / FULL_W) end
+    return s
+end
 
 local function build()
     if P.art then return P.art end
@@ -368,4 +383,5 @@ P.MICRO_SKIP, P.BAG_SIZE, P.BAG_PITCH, P.BAG_BOTTOM, P.BAG_RIGHT = MICRO_SKIP, B
 P.KEYRING_W, P.KEYRING_GAP, P.REAGENT_SIZE, P.TEX, P.original = KEYRING_W, KEYRING_GAP, REAGENT_SIZE, TEX, original
 P.remember, P.restoreFrame, P.ratio, P.placed, P.anchor = remember, restoreFrame, ratio, placed, anchor
 P.build, P.paint, P.Row, P.matchScale, P.ROW_KEY = build, paint, Row, matchScale, ROW_KEY
+P.bandScale = bandScale
 P.placeRow = placeRow

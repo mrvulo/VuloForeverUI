@@ -51,6 +51,9 @@ function Classic.Apply()
         return false
     end
 
+    -- Out of combat only (checked above): the client's secure buttons hang
+    -- from the band, and its scale moves them.
+    P.art:SetScale(P.bandScale())
     P.art:Show()
     if not P.art.watching then
         P.art.watching = true
@@ -71,6 +74,15 @@ function Classic.Apply()
     dress(true)
     return true
 end
+
+-- A new UI scale or window size changes how much room the screen has, and
+-- with it the cap on the band's size (bandScale): lay it out again.
+local resized = CreateFrame("Frame")
+resized:RegisterEvent("UI_SCALE_CHANGED")
+resized:RegisterEvent("DISPLAY_SIZE_CHANGED")
+resized:SetScript("OnEvent", function()
+    if P.applied and AB.mod.active and not InCombatLockdown() then AB.Apply() end
+end)
 
 function Classic.Restore()
     if not P.applied then

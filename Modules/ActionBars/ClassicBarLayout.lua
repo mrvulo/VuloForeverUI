@@ -213,7 +213,7 @@ local function layoutButtons()
         layoutTotem(x)
         -- Bar 4 outermost; bar 5 takes the outer column when bar 4 is off.
         local right = SIDE_RIGHT
-        local screenH = (UIParent:GetHeight() or 768) / BAND_SCALE
+        local screenH = (UIParent:GetHeight() or 768) / (P.art:GetScale() or BAND_SCALE)
         local top = math.max(SIDE_TOP_MIN, math.min(screenH - 40, screenH * SIDE_TOP_SHARE))
         for _, side in ipairs(SIDE_BARS) do
             local sb = _G[side.name]
