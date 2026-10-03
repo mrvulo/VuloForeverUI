@@ -693,8 +693,6 @@ ns:RegisterLocale("deDE", {
     ["Show recent items"] = "Aktuelle Gegenstände anzeigen",
     ["Anything just picked up gets a shelf and a border, until the mouse has been over it or the time below runs out."] = "Alles, was gerade dazugekommen ist, bekommt ein Fach und einen Rahmen, bis die Maus darüber war oder die Zeit darunter abläuft.",
     ["Recent for (minutes)"] = "Neu für (Minuten)",
-    ["%d free"] = "%d frei",
-    ["+%d profession"] = "+%d Beruf",
     ["Categories"] = "Kategorien",
     ["Icon corners"] = "Icon-Ecken",
     ["Show upgrade arrows"] = "Upgrade-Pfeile anzeigen",

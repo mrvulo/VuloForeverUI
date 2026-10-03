@@ -450,10 +450,10 @@ end
 local function headerText(win, bagIDs, db)
     local parts = {}
     if db.showFreeSlots then
-        local free, _, special = Bags.CountSlots(bagIDs)
-        local text = L["%d free"]:format(free)
-        if special > 0 then
-            text = text .. "  |cff66cccc" .. L["+%d profession"]:format(special) .. "|r"
+        local free, total, specialFree, specialTotal = Bags.CountSlots(bagIDs)
+        local text = ("%d/%d"):format(free, total)
+        if specialTotal > 0 then
+            text = text .. "  |cff66cccc" .. ("%d/%d"):format(specialFree, specialTotal) .. "|r"
         end
         parts[#parts + 1] = text
     end

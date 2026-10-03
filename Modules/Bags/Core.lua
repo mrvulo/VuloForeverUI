@@ -154,24 +154,23 @@ function Bags.BankBags()
     return usable
 end
 
--- How many slots are free across a set of bags, and how many there are. The
--- free ones come back twice: in ordinary bags, which take anything, and in
+-- How many slots are free across a set of bags, and how many there are. Both
+-- come back twice: in ordinary bags, which take anything, and in
 -- profession bags, which only take their own kind -- an herb bag with room
 -- left is no room for a sword.
 function Bags.CountSlots(bagIDs)
-    local free, total, special = 0, 0, 0
+    local free, total, specialFree, specialTotal = 0, 0, 0, 0
     for _, id in ipairs(bagIDs) do
         local slots = C_Container.GetContainerNumSlots(id) or 0
-        total = total + slots
         local f, family = C_Container.GetContainerNumFreeSlots(id)
         f = tonumber(f) or 0
         if type(family) == "number" and family > 0 then
-            special = special + f
+            specialFree, specialTotal = specialFree + f, specialTotal + slots
         else
-            free = free + f
+            free, total = free + f, total + slots
         end
     end
-    return free, total, special
+    return free, total, specialFree, specialTotal
 end
 
 -- ---------------------------------------------------------------- refresh --
