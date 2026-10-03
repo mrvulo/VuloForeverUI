@@ -1021,9 +1021,10 @@ local function makeInlineColor(parent)
         local cfg = self._cfg
         if not (cfg and cfg.get) then return end
         local c = cfg.get() or {}
-        ns:ShowColorPicker({ r = c.r or 1, g = c.g or 1, b = c.b or 1,
-            onChange = function(r, g, bl)
-                if cfg.set then cfg.set(r, g, bl) end
+        ns:ShowColorPicker({ r = c.r or 1, g = c.g or 1, b = c.b or 1, a = c.a or 1,
+            hasAlpha = cfg.hasAlpha,
+            onChange = function(r, g, bl, a)
+                if cfg.set then cfg.set(r, g, bl, a) end
                 local nc = cfg.get() or {}
                 self._fill:SetColorTexture(nc.r or 1, nc.g or 1, nc.b or 1, 1)
             end })

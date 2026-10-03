@@ -2541,7 +2541,8 @@ function UI:CreatePowerButton(parent, config)
     return b
 end
 
--- ColorSwatch config: { label, get() -> {r,g,b} or {r=,g=,b=}, set(r,g,b), width? }
+-- ColorSwatch config: { label, get() -> {r,g,b} or {r=,g=,b=}, set(r,g,b[,a]), width?, hasAlpha? }
+-- hasAlpha: the picker shows an opacity bar and set receives the alpha too.
 function UI:CreateColorSwatch(parent, config)
     local b = CreateFrame("Button", nil, parent)
 
@@ -2589,11 +2590,15 @@ function UI:CreateColorSwatch(parent, config)
     end
     local function open()
         local r, g, bl = curRGB()
-        ns:ShowColorPicker({ r = r, g = g, b = bl, onChange = function(nr, ng, nb)
-            local cfg = b._vcConfig
-            if cfg and cfg.set then cfg.set(nr, ng, nb) end
-            refresh()
-        end })
+        local cfg = b._vcConfig
+        local c = cfg and cfg.get and cfg.get()
+        ns:ShowColorPicker({ r = r, g = g, b = bl, a = c and (c.a or c[4]) or 1,
+            hasAlpha = cfg and cfg.hasAlpha,
+            onChange = function(nr, ng, nb, na)
+                local cur = b._vcConfig
+                if cur and cur.set then cur.set(nr, ng, nb, na) end
+                refresh()
+            end })
     end
     b:SetScript("OnClick", open)
     sw:SetScript("OnClick", open)

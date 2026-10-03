@@ -11,7 +11,8 @@
 -- Every builder takes (key, label, ...) and ends in `extra`, which is either
 -- the tooltip string or a table:
 --   { tooltip, inline, disabled, width, subKey, after, get, set,
---     scale = n }      slider only: shown value = stored value * scale
+--     scale = n,       slider only: shown value = stored value * scale
+--     hasAlpha = true } colour only: the picker shows an opacity bar, .a is saved
 --
 -- Rows are built per call, never at file load: labels are locale lookups and
 -- the saved language only exists from ADDON_LOADED on.
@@ -37,6 +38,7 @@ function ns.OptionRows(db, apply, opts)
         row.inline, row.disabled = extra.inline, extra.disabled
         if extra.width then row.width = extra.width end
         if extra.subKey then row.subKey = extra.subKey end
+        if extra.hasAlpha then row.hasAlpha = true end
         if extra.get then row.get = extra.get end
         if extra.set then row.set = extra.set end
         return row
@@ -74,9 +76,10 @@ function ns.OptionRows(db, apply, opts)
     end
 
     local function setColor(key, extra)
-        return function(r, g, b)
+        return function(r, g, b, a)
             local c = db()[key]
             c.r, c.g, c.b = r, g, b
+            if a and extra and extra.hasAlpha then c.a = a end
             changed(extra)
         end
     end

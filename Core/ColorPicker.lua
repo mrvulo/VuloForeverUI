@@ -1,4 +1,5 @@
 -- Custom HSV colour picker singleton, replacing Blizzard's ColorPickerFrame; onChange fires live while dragging, Cancel/click-away restores via onChange.
+-- opts.hasAlpha adds an opacity bar beside the hue bar; onChange then receives (r, g, b, a).
 local _, ns = ...
 local L = ns.L
 
@@ -63,10 +64,12 @@ local function build()
     if picker then return picker end
     local accent = ns.COLORS.accent
     local W = PAD + SV + 12 + BARW + 22 + RIGHTW + PAD
+    local widths = { W, W + 12 + BARW }
     local H = TITLE_H + SV + 42
 
     local f = CreateFrame("Frame", "VFUIColorPicker", UIParent)
     f:SetSize(W, H)
+    f._widths = widths
     f:SetPoint("CENTER")
     f:SetFrameStrata("FULLSCREEN_DIALOG")
     f:SetFrameLevel(500)
@@ -107,7 +110,7 @@ local function build()
     closeBtn:SetScript("OnLeave", function() cx:SetTextColor(ns.TC("textDim")) end)
     closeBtn:SetScript("OnClick", function() f._cancel() end)
 
-    f._h, f._s, f._v = 0, 1, 1
+    f._h, f._s, f._v, f._a = 0, 1, 1, 1
     f._suppress = false
 
     local svPad = CreateFrame("Frame", nil, f)
@@ -184,6 +187,35 @@ local function build()
     end)
     hueBar:SetScript("OnMouseUp", function(self) self:SetScript("OnUpdate", nil) end)
 
+    -- Opacity: the current colour fading from opaque (top) to clear (bottom),
+    -- over a mid grey so a dark colour at low opacity still reads.
+    local alphaBar = CreateFrame("Frame", nil, f)
+    alphaBar:SetSize(BARW, SV)
+    alphaBar:SetPoint("TOPLEFT", hueBar, "TOPRIGHT", 12, 0)
+    alphaBar:EnableMouse(true)
+    local alphaBg = alphaBar:CreateTexture(nil, "BACKGROUND"); alphaBg:SetAllPoints(); alphaBg:SetColorTexture(0.45, 0.45, 0.45, 1)
+    local alphaFill = alphaBar:CreateTexture(nil, "BORDER"); alphaFill:SetAllPoints()
+    addBorder(alphaBar, 1, 1, 1, 0.10)
+    local alphaInd = alphaBar:CreateTexture(nil, "OVERLAY"); alphaInd:SetSize(BARW + 6, 2); alphaInd:SetColorTexture(1, 1, 1, 0.95)
+    f._alphaBar = alphaBar
+    f._setAlphaBar = function(r, g, b, a)
+        ns.UI.SetGradient(alphaFill, "VERTICAL", r, g, b, 0, r, g, b, 1)
+        alphaInd:ClearAllPoints(); alphaInd:SetPoint("CENTER", alphaBar, "TOP", 0, -(1 - a) * SV)
+    end
+    local function alphaFromCursor()
+        local _, cyp = GetCursorPosition()
+        cyp = cyp / alphaBar:GetEffectiveScale()
+        return max(0, min(1, 1 - (alphaBar:GetTop() - cyp) / SV))
+    end
+    alphaBar:SetScript("OnMouseDown", function(self)
+        f._a = alphaFromCursor(); f._updateAll()
+        self:SetScript("OnUpdate", function()
+            if not IsMouseButtonDown("LeftButton") then self:SetScript("OnUpdate", nil); return end
+            f._a = alphaFromCursor(); f._updateAll()
+        end)
+    end)
+    alphaBar:SetScript("OnMouseUp", function(self) self:SetScript("OnUpdate", nil) end)
+
     local rx = -PAD  -- anchored from TOPRIGHT
     local newLbl = font(f:CreateFontString(nil, "OVERLAY"), 12)
     newLbl:SetPoint("TOPRIGHT", f, "TOPRIGHT", rx - RIGHTW + 2, -(TITLE_H + 2))
@@ -200,7 +232,10 @@ local function build()
     end
     local newSw = swatch(-(TITLE_H + 18), 36); f._newTex = newSw._tex
     local prevSw = swatch(-(TITLE_H + 58), 36); f._prevTex = prevSw._tex
-    prevSw:SetScript("OnClick", function() f._setFromRGB(f._prev[1], f._prev[2], f._prev[3]) end)
+    prevSw:SetScript("OnClick", function()
+        f._a = f._prev[4]
+        f._setFromRGB(f._prev[1], f._prev[2], f._prev[3])
+    end)
 
     local prevLbl = font(f:CreateFontString(nil, "OVERLAY"), 12)
     prevLbl:SetPoint("TOPRIGHT", prevSw, "BOTTOMRIGHT", 0, -3)
@@ -251,7 +286,9 @@ local function build()
         svHue:SetColorTexture(hr, hg, hb, 1)
         f._setCrosshair(f._s, f._v)
         f._setHueInd(f._h)
-        f._newTex:SetColorTexture(r, g, b, 1)
+        local a = f._hasAlpha and f._a or 1
+        f._newTex:SetColorTexture(r, g, b, a)
+        if f._hasAlpha then f._setAlphaBar(r, g, b, a) end
         if not hexBox:HasFocus() then
             hexBox:SetText(string.format("%02X%02X%02X", floor(r * 255 + 0.5), floor(g * 255 + 0.5), floor(b * 255 + 0.5)))
         end
@@ -260,7 +297,9 @@ local function build()
         -- picking one, but the notification runs straight into the option's
         -- setter. Gating the whole function instead would leave the picker
         -- showing nothing.
-        if f._onChange and not f._suppress then f._onChange(r, g, b) end
+        if f._onChange and not f._suppress then
+            if f._hasAlpha then f._onChange(r, g, b, a) else f._onChange(r, g, b) end
+        end
     end
 
     f._setFromRGB = function(r, g, b)
@@ -277,7 +316,8 @@ local function build()
             local changed = math.abs((f._r or 0) - f._prev[1]) > 0.001
                          or math.abs((f._g or 0) - f._prev[2]) > 0.001
                          or math.abs((f._b or 0) - f._prev[3]) > 0.001
-            if changed then f._onChange(f._prev[1], f._prev[2], f._prev[3]) end
+                         or (f._hasAlpha and math.abs((f._a or 1) - f._prev[4]) > 0.001)
+            if changed then f._onChange(f._prev[1], f._prev[2], f._prev[3], f._prev[4]) end
         end
         if f._onCancel then f._onCancel() end
     end
@@ -295,10 +335,14 @@ function ns:ShowColorPicker(opts)
     local f = build()
     f._onChange = opts.onChange
     f._onCancel = opts.onCancel
-    f._prev = { opts.r or 1, opts.g or 1, opts.b or 1 }
-    f._prevTex:SetColorTexture(f._prev[1], f._prev[2], f._prev[3], 1)
+    f._hasAlpha = opts.hasAlpha and true or false
+    f._prev = { opts.r or 1, opts.g or 1, opts.b or 1, f._hasAlpha and opts.a or 1 }
+    f._prevTex:SetColorTexture(f._prev[1], f._prev[2], f._prev[3], f._prev[4])
+    f._alphaBar:SetShown(f._hasAlpha)
+    f:SetWidth(f._widths[f._hasAlpha and 2 or 1])
 
     f._suppress = true
+    f._a = f._prev[4]
     f._setFromRGB(f._prev[1], f._prev[2], f._prev[3])
     f._suppress = false
 
