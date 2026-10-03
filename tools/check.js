@@ -430,6 +430,7 @@ const GLOBAL_OK = [
     /^BINDING_/,                  // keybinding headers, likewise
     /^Trinkets/,                  // the embedded engine's own namespace
     /^VuloForeverUI(Char)?DB$/,   // our saved variables, declared in the TOC
+    /^VuloForeverUIDiag$/,        // the diagnostics log, likewise (Core/Diag.lua)
     // Button libraries read this one by name, so it has to be global. It is
     // allowed here only because it captures the previous definition and hands
     // back to it when our module is off - see Modules/Minimap/Style.lua.

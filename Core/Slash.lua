@@ -72,7 +72,11 @@ function ns:RegisterSlash(opts)
         end
         -- A command is typed by a person; an error in one must not read as a
         -- broken addon with no hint of which command caused it.
+        -- The output goes on the diagnostics record too (Core/Diag.lua), so a
+        -- report run at the PC can be read without a screenshot.
+        if ns.Diag then ns.Diag.BeginOutput(opts.commands[1], msg) end
         local ok, err = pcall(fn, msg, editBox)
+        if ns.Diag then ns.Diag.EndOutput(ok, err) end
         if not ok then
             ns:Print("|cffff5555%s:|r %s", opts.commands[1], tostring(err))
         end
