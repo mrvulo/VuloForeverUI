@@ -196,6 +196,7 @@ Modules\QoL\StackSplit.lua
 Modules\QoL\Flight.lua
 Modules\QoL\Mail.lua
 Modules\QoL\Vendor.lua
+Modules\QoL\Junk.lua
 Modules\QoL\Loot.lua
 Modules\QoL\Display.lua
 Modules\QoL\Trinkets.lua

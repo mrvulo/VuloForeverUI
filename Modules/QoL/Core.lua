@@ -53,6 +53,9 @@ local mod = ns:RegisterModule("qol", {
 
         -- ------------------------------------------------------------ vendor
         sellJunk        = true,
+        junkClick       = true,
+        junkModifier    = "ALT",
+        junkDiscard     = false,
         repairAll       = true,
         repairGuild     = true,
         repairCoinIcons = true,

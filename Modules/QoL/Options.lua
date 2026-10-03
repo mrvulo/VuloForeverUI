@@ -181,6 +181,21 @@ local function vendorPage()
         { type = "header", text = L["At the merchant"] },
         toggle(nil, "sellJunk", L["Sell grey items"],
             L["The client drops sell requests past its own rate limit, so the greys are counted again after every pass and the sweep runs until the count stops falling."]),
+        toggle(nil, "junkClick", L["Mark junk with a modified right click"],
+            L["A right click with the key below on an item in your bags marks every item of that kind as junk, or unmarks it. Marked items are sold with the greys and carry the junk mark in the bags."]),
+        dropdown(nil, "junkModifier", L["Key for marking junk"], {
+            { value = "ALT",  text = L["Alt"] },
+            { value = "CTRL", text = L["Ctrl"] },
+        }, L["Ctrl also opens the dressing room on gear, so Alt is the default."]),
+        toggle(nil, "junkDiscard", L["Destroy junk when the bags are full"],
+            L["When the game says your bags are full, the cheapest grey or marked stack is destroyed to make room. Never in combat. The chat says what went."]),
+        { type = "button", label = L["Clear the junk list"], width = 200,
+          tooltip = L["Unmarks every item you marked as junk. Greys stay junk."],
+          onClick = function()
+              local n = QoL.Junk.Count()
+              QoL.Junk.Clear()
+              ns:Print(L["%d marked item(s) are no longer junk."], n)
+          end },
         toggle(nil, "repairAll", L["Repair everything"]),
         toggle(nil, "repairGuild", L["Use the guild bank when it may"],
             L["The server pays what the allowance covers and charges you the rest; it never refuses the repair for want of guild funds."]),

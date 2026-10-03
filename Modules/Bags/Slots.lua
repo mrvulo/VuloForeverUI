@@ -506,7 +506,8 @@ function Slots.Paint(slot, bagID, slotID, info)
     end
 
     -- Grey items go quiet so the rest of the bag can be read.
-    local isJunk = info and type(info.quality) == "number" and info.quality == POOR
+    local isJunk = info and ((type(info.quality) == "number" and info.quality == POOR)
+        or (ns.Junk and ns.Junk.IsMarked(info.itemID)))
     callSetter(button, "SetItemButtonDesaturated", (db.dimJunk and isJunk) and true or false)
 
     -- The cooldown swirl, driven by the client's own numbers.

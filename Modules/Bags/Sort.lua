@@ -78,6 +78,8 @@ end
 -- client. Shared with the "C" mark on the slot, so the two can never disagree.
 function Sort.IsVendorJunk(info)
     if not info then return false end
+    -- marked by hand in Quality of Life (Modules/QoL/Junk.lua)
+    if ns.Junk and ns.Junk.IsMarked(info.itemID) then return true end
     if type(info.quality) ~= "number" or info.quality ~= 0 then return false end
     return not info.hasNoValue
 end
