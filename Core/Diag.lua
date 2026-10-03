@@ -82,6 +82,21 @@ end
 
 -- Every error goes in, not only ours: a Blizzard error that our taint caused
 -- names Blizzard's file, not ours. "ours" marks the ones that name us.
+-- The stack at the fault, not at this handler: the same arithmetic as the
+-- client's own handler (Blizzard_ScriptErrors).
+local function faultStack()
+    local level = 3
+    local errHeight = GetErrorCallstackHeight and GetErrorCallstackHeight()
+    if errHeight and GetCallstackHeight then
+        level = GetCallstackHeight() - (errHeight - 1)
+    end
+    return debugstack(level) or ""
+end
+
+local function captureError(msg)
+    recordError(clean(msg), clean(faultStack()))
+end
+
 local prevHandler
 local inHandler = false
 local function errorHandler(msg, ...)
@@ -89,8 +104,7 @@ local function errorHandler(msg, ...)
     -- Returning breaks the loop; the first pass already recorded the error.
     if inHandler then return end
     inHandler = true
-    local stack = debugstack and debugstack(2) or ""
-    pcall(recordError, clean(msg), clean(stack))
+    pcall(captureError, msg)
     local prev = prevHandler
     local ok, res = true, nil
     if prev then ok, res = pcall(prev, msg, ...) end
@@ -98,13 +112,28 @@ local function errorHandler(msg, ...)
     if ok then return res end
 end
 
+-- Whoever calls seterrorhandler after us replaces this handler, and on the
+-- first test nothing was recorded at all. So the handler takes its place back
+-- and chains to the newcomer -- noting who it was. Capped, so two addons that
+-- both insist on going last cannot trade places forever.
+local reclaims, reclaiming = 0, false
 local function installHandler()
     local current = geterrorhandler()
     if current == errorHandler then return end
     prevHandler = current
+    reclaiming = true
     seterrorhandler(errorHandler)
+    reclaiming = false
 end
 installHandler()
+
+hooksecurefunc("seterrorhandler", function(h)
+    if reclaiming or h == errorHandler or reclaims >= 10 then return end
+    reclaims = reclaims + 1
+    local by = (debugstack(3, 1, 0) or ""):match("^[^\n]*") or "?"
+    if ns.Diag then ns.Diag.Note("handler", "error handler replaced by " .. by) end
+    installHandler()
+end)
 
 ---------------------------------------------------------------------------
 -- Chat lines and slash command output
@@ -228,7 +257,8 @@ ns.Slash.DIAG = function(msg)
             if e.ours then ours = ours + 1 end
         end
         ns:Print("Diagnostics log, session %d: %d errors (%d naming this addon), "
-            .. "%d events, %d command outputs. /reload writes it to disk.",
-            session, #errors, ours, #list("events"), #list("outputs"))
+            .. "%d events, %d command outputs, error hook %s. /reload writes it to disk.",
+            session, #errors, ours, #list("events"), #list("outputs"),
+            geterrorhandler() == errorHandler and "active" or "REPLACED")
     end
 end
