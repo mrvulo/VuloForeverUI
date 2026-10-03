@@ -189,11 +189,8 @@ local function applyStandard()
     restore(Minimap, "map")
     restore(MinimapBackdrop, "backdrop")
     restore(cluster and cluster.ZoneTextButton, "zonebtn")
-    local zoneText = cluster and cluster.ZoneTextButton and cluster.ZoneTextButton.Text
-    if zoneText then
-        restore(zoneText, "zonetext")
-        if zoneJustify then pcall(zoneText.SetJustifyH, zoneText, zoneJustify) end
-    end
+    local zoneText = zoneFontString()
+    if zoneText and zoneJustify then pcall(zoneText.SetJustifyH, zoneText, zoneJustify) end
     restore(Minimap.ZoomIn, "zoomin")
     restore(Minimap.ZoomOut, "zoomout")
     restore(cluster, "cluster")
@@ -373,13 +370,11 @@ local function applyClassic()
         cluster.ZoneTextButton:SetSize(CLASSIC_MAP, 12)
         cluster.ZoneTextButton:ClearAllPoints()
         cluster.ZoneTextButton:SetPoint("CENTER", cluster, "TOP", 0, -12)
-        -- The name centred in the bar, not starting at the button's left end.
-        local text = cluster.ZoneTextButton.Text
+        -- The name centred in the bar. The client's font string (MinimapZoneText,
+        -- no parentKey) is already centred on the button but justified LEFT.
+        local text = zoneFontString()
         if text then
-            remember(text, "zonetext")
             zoneJustify = zoneJustify or text:GetJustifyH()
-            text:ClearAllPoints()
-            text:SetAllPoints(cluster.ZoneTextButton)
             text:SetJustifyH("CENTER")
         end
     end
