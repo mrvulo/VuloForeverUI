@@ -129,7 +129,7 @@ local function build()
     f.stamp = f:CreateFontString(nil, "OVERLAY")
     f.stamp:SetPoint("LEFT", f.title, "RIGHT", 8, 0)
     f.stamp:SetTextColor(0.55, 0.55, 0.6)
-    f.close = ns.UI:CreateCloseX(f, function() f:Hide() end)
+    f.close = ns.UI:CreateCloseX(f, function() f:Hide() end, "box")
     if type(_G.UISpecialFrames) == "table" then table.insert(_G.UISpecialFrames, f:GetName()) end
 
     local scroll = CreateFrame("ScrollFrame", nil, f)

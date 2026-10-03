@@ -150,6 +150,8 @@ local function bagsPage()
     local display = section(L["Display"], {
         slider("scale", L["Window scale"], 60, 160, 1, { scale = 100 }),
         slider("iconZoom", L["Icon zoom"], 0, 0.2, 0.01),
+        toggle("roundSlots", L["Rounded slots"],
+            L["Icons, borders and empty slots get rounded corners."]),
 
         toggle("hideEmptyCategories", L["Hide categories with 0 items"]),
         toggle("autoSize", L["Size automatically"],
@@ -236,6 +238,8 @@ local function bagsPage()
 
         toggle("search", L["Show the search box"]),
         toggle("qualityBorder", L["Colour the border by quality"]),
+        toggle("markBagFamily", L["Mark profession bag slots"],
+            L["Slots in a herb, enchanting, mining or other profession bag are tinted in that bag's colour, so they stand apart from the normal bag space."]),
 
         toggle("showFreeSlots", L["Show the free slots"]),
         toggle("showMoney", L["Show your money"]),

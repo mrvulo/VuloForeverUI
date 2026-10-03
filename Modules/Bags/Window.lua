@@ -117,7 +117,7 @@ local function build(win)
     -- The house close button rather than a font string with a multiplication
     -- sign in it: that glyph only exists if the chosen font happens to carry
     -- it, and this is the shape every other window here already uses.
-    f.close = ns.UI:CreateCloseX(f, function() win.Close() end)
+    f.close = ns.UI:CreateCloseX(f, function() win.Close() end, "box")
 
     -- Escape closes it, like every window the client owns.
     if type(_G.UISpecialFrames) == "table" then
@@ -138,9 +138,15 @@ local function build(win)
         Bags.Slots.SetMode("split")
     end)
     -- The bags themselves, one button each, in a row of their own (BagBar.lua).
-    f.bagBar = toolButton(f, "bag-main", "icon", L["Show the bags"], function()
+    -- The bank gets the same row, one button per bank tab.
+    f.bagBar = toolButton(f, "bag-main", "icon",
+        win.key == "bank" and L["Show the bank tabs"] or L["Show the bags"], function()
         win.showBagBar = not win.showBagBar
-        Bags.db().showBagBar = win.showBagBar
+        if win.key == "bank" then
+            Bags.db().bankShowBagBar = win.showBagBar
+        else
+            Bags.db().showBagBar = win.showBagBar
+        end
         win.Refresh()
     end)
     -- The bank as it was at the last visit, from anywhere (BankView.lua).
@@ -700,7 +706,7 @@ function Window.LayoutTools(win)
         { button = f.sort,  on = db.showSortButton },
         { button = f.pin,   on = db.showPinned,    mode = "pin" },
         { button = f.split, on = db.stackSplitter, mode = "split" },
-        { button = f.bagBar, on = win.key == "bags", lit = win.showBagBar },
+        { button = f.bagBar, on = win.key == "bags" or win.key == "bank", lit = win.showBagBar },
         { button = f.bankView, on = win.key == "bags" },
         { button = f.options, on = true },
     }
@@ -760,7 +766,11 @@ function Window.New(key, bagsFn)
         -- filtered to one shelf would hide the rest of a player's belongings
         -- behind a setting made for something else.
         win.view = (win.key == "bags") and (Bags.db().defaultView or "all") or "all"
-        win.showBagBar = win.key == "bags" and Bags.db().showBagBar == true
+        if win.key == "bank" then
+            win.showBagBar = Bags.db().bankShowBagBar == true
+        else
+            win.showBagBar = win.key == "bags" and Bags.db().showBagBar == true
+        end
         placeWindow(win)
         Window.Layout(win)
         win.frame:Show()

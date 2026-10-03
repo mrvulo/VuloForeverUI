@@ -53,8 +53,35 @@ function UI.SetGradient(tex, orient, r1, g1, b1, a1, r2, g2, b2, a2)
 end
 
 -- The dark "x" close button in a window's top-right corner (bags, bank, guild bank).
-function UI:CreateCloseX(f, onClick)
+-- style "box": the client's red cross on a dark square with a thin frame.
+function UI:CreateCloseX(f, onClick, style)
     local close = CreateFrame("Button", nil, f)
+    if style == "box" then
+        close:SetSize(18, 18)
+        close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -7, -7)
+        local bg = close:CreateTexture(nil, "BACKGROUND")
+        bg:SetAllPoints(close); bg:SetColorTexture(0.06, 0.06, 0.07, 0.95)
+        local border = CreateFrame("Frame", nil, close, BackdropTemplateMixin and "BackdropTemplate")
+        border:SetAllPoints(close)
+        local function edge(r, g, b)
+            if border.SetBackdropBorderColor then border:SetBackdropBorderColor(r, g, b, 1) end
+        end
+        if border.SetBackdrop then
+            border:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+        end
+        edge(0.32, 0.32, 0.36)
+        local x = close:CreateTexture(nil, "ARTWORK")
+        x:SetPoint("TOPLEFT", close, "TOPLEFT", 3, -3)
+        x:SetPoint("BOTTOMRIGHT", close, "BOTTOMRIGHT", -3, 3)
+        x:SetAtlas("communities-icon-redx")
+        close:SetScript("OnEnter", function()
+            edge(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b)
+            x:SetVertexColor(1, 0.6, 0.6)
+        end)
+        close:SetScript("OnLeave", function() edge(0.32, 0.32, 0.36); x:SetVertexColor(1, 1, 1) end)
+        close:SetScript("OnClick", onClick)
+        return close
+    end
     close:SetSize(20, 20)
     close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -6, -7)
     local cx = close:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")

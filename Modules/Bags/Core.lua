@@ -52,6 +52,8 @@ local mod = ns:RegisterModule("bags", {
         showFreeSlots = true,
 
         qualityBorder = true,
+        markBagFamily = true,
+        roundSlots    = true,
         showCount     = true,
         countSize     = 11,
         showItemLevel = true,
@@ -93,6 +95,7 @@ local mod = ns:RegisterModule("bags", {
         showPinned     = true,
         showRecent     = true,
         showBagBar     = false,
+        bankShowBagBar = false,
         recentColor    = { r = 0.3, g = 0.8, b = 1 },
         pinnedTips     = true,
         goldTracking   = true,
@@ -229,6 +232,8 @@ function mod:OnEnable()
     -- icon from the client, so it has to be asked again.
     self:RegisterEvent("BANK_TAB_SETTINGS_UPDATED", function() Bags.Refresh() end)
     self:RegisterEvent("BANK_TABS_CHANGED", function() Bags.Refresh() end)
+    -- a bag put into or taken out of a bank tab
+    self:RegisterEvent("BAG_CONTAINER_UPDATE", function() Bags.Refresh() end)
     self:RegisterEvent("PLAYER_MONEY", function()
         Bags.Gold.Record()
         Bags.Refresh()

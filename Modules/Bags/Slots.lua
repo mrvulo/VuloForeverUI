@@ -31,6 +31,15 @@ Bags.Slots = Slots
 -- itself out of the bags' slots and the bags would go blank. Each window keeps
 -- its own list and its own cursor into it.
 local pools, host = {}, nil
+
+-- The rounded look: the house's rounded-square mask, a one-pixel ring cut to
+-- the same outline, and the thicker ring for the just-picked-up mark. All
+-- three files leave 10 of their 128 pixels transparent on every side, so they
+-- are stretched past the slot by that much to make the shape fill it.
+local MASK_ROUND = "Interface\\AddOns\\VuloForeverUI\\Media\\Masks\\csquare_mask.tga"
+local RING_THIN  = "Interface\\AddOns\\VuloForeverUI\\Media\\Masks\\csquare_ring.tga"
+local RING_THICK = "Interface\\AddOns\\VuloForeverUI\\Media\\Buttons\\csquare_border.tga"
+local ROUND_MARGIN = 10 / 108
 local WARM_TARGET = 160     -- a full set of bags plus room to grow
 
 local function poolFor(owner)
@@ -115,12 +124,63 @@ local function skinButton(slot)
         t:SetTexture("Interface\\Buttons\\WHITE8X8")
         slot.edges[side] = t
     end
+
+    -- The rounded parts, made once and switched on by the setting. The masks
+    -- are regions: one on the button for its icon and washes, one on our
+    -- parent for the ground. Neither writes a field on the button.
+    slot.iconMask = button:CreateMaskTexture()
+    slot.iconMask:SetTexture(MASK_ROUND, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    slot.groundMask = parent:CreateMaskTexture()
+    slot.groundMask:SetTexture(MASK_ROUND, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    slot.roundRing = ring:CreateTexture(nil, "OVERLAY")
+    slot.roundRing:SetTexture(RING_THIN)
+    slot.roundRing:Hide()
+    slot.roundFresh = ring:CreateTexture(nil, "OVERLAY", nil, 1)
+    slot.roundFresh:SetTexture(RING_THICK)
+    slot.roundFresh:Hide()
+end
+
+-- Rounded or square, as the setting says. The masks are added and taken off
+-- only when that changes; the stretch past the slot follows its size.
+local function applyRound(slot, round)
+    local button = slot.button
+    local regions = {
+        button.icon or button.Icon,
+        button.GetHighlightTexture and button:GetHighlightTexture(),
+        button.GetPushedTexture and button:GetPushedTexture(),
+    }
+    if slot.isRound ~= round then
+        local fn = round and "AddMaskTexture" or "RemoveMaskTexture"
+        for _, r in ipairs(regions) do
+            if r and r[fn] then pcall(r[fn], r, slot.iconMask) end
+        end
+        pcall(slot.ground[fn], slot.ground, slot.groundMask)
+        slot.isRound = round
+    end
+    if not round then
+        slot.roundRing:Hide()
+        slot.roundFresh:Hide()
+        return
+    end
+    local e = (slot.frame:GetWidth() or 37) * ROUND_MARGIN
+    for _, t in ipairs({ slot.iconMask, slot.groundMask, slot.roundRing, slot.roundFresh }) do
+        t:ClearAllPoints()
+        t:SetPoint("TOPLEFT", slot.frame, "TOPLEFT", -e, e)
+        t:SetPoint("BOTTOMRIGHT", slot.frame, "BOTTOMRIGHT", e, -e)
+    end
 end
 
 -- The inside border, one physical pixel wide. Laid out at paint time, when the
 -- slot is on screen and its scale is the real one.
 local function layoutRing(slot, r, g, b, a)
     local e, ring = slot.edges, slot.ring
+    if slot.isRound then
+        for _, t in pairs(e) do t:Hide() end
+        slot.roundRing:SetVertexColor(r, g, b, a)
+        slot.roundRing:Show()
+        return
+    end
+    for _, t in pairs(e) do t:Show() end
     local px = ns:Pixel(ring, 1)
     if not (px and px > 0) then px = 1 end
     e.top:ClearAllPoints(); e.top:SetPoint("TOPLEFT", ring, "TOPLEFT"); e.top:SetPoint("TOPRIGHT", ring, "TOPRIGHT"); e.top:SetHeight(px)
@@ -307,6 +367,37 @@ end
 -- One slot, bound to one place in one bag. The two ids are what the client's
 -- secure click reads, and they are set with the frame's own setter -- which is
 -- not a custom field and is therefore allowed.
+-- Profession bags by the bag family the client reports for them: one colour
+-- each, from the lowest bit that is set. 0 is a normal bag, which keeps the
+-- plain look.
+local FAMILY_COLORS = {
+    [0x0001] = { 0.80, 0.65, 0.40 },  -- quiver
+    [0x0002] = { 0.80, 0.65, 0.40 },  -- ammo pouch
+    [0x0004] = { 0.65, 0.35, 0.90 },  -- soul bag
+    [0x0008] = { 0.75, 0.50, 0.30 },  -- leatherworking
+    [0x0010] = { 0.45, 0.70, 0.95 },  -- inscription
+    [0x0020] = { 0.35, 0.85, 0.35 },  -- herbs
+    [0x0040] = { 0.75, 0.45, 0.95 },  -- enchanting
+    [0x0080] = { 0.95, 0.65, 0.25 },  -- engineering
+    [0x0200] = { 0.95, 0.40, 0.65 },  -- gems
+    [0x0400] = { 0.70, 0.70, 0.75 },  -- mining
+    [0x1000] = { 0.35, 0.70, 0.90 },  -- fishing
+    [0x2000] = { 0.95, 0.55, 0.40 },  -- cooking
+}
+local FAMILY_DEFAULT = { 0.40, 0.80, 0.80 }
+
+local function familyColor(bagID)
+    local _, family = C_Container.GetContainerNumFreeSlots(bagID)
+    if type(family) ~= "number" or family <= 0 then return nil end
+    local mask = 1
+    while mask <= family do
+        if family % (mask * 2) >= mask then return FAMILY_COLORS[mask] or FAMILY_DEFAULT end
+        mask = mask * 2
+    end
+    return FAMILY_DEFAULT
+end
+Slots.FamilyColor = familyColor
+
 function Slots.Paint(slot, bagID, slotID, info)
     local db = Bags.db()
     local button, frame = slot.button, slot.frame
@@ -314,6 +405,7 @@ function Slots.Paint(slot, bagID, slotID, info)
     frame:SetID(bagID)
     button:SetID(slotID)
     frame:SetSize(db.slotSize or 37, db.slotSize or 37)
+    applyRound(slot, db.roundSlots ~= false)
 
     button:Show()
 
@@ -374,15 +466,22 @@ function Slots.Paint(slot, bagID, slotID, info)
     -- Empty slots are a dark square with a faint edge; full ones sit on the
     -- same ground and carry their quality colour, or a neutral grey when the
     -- setting is off or the item is plain.
+    -- A slot of a profession bag takes that bag's colour: tinted ground and
+    -- edge while empty, the edge alone under an item the quality leaves plain.
+    local fam = db.markBagFamily ~= false and familyColor(bagID) or nil
     if info then
         slot.ground:SetVertexColor(0.02, 0.02, 0.03, 0.9)
         local r, g, b = 0.25, 0.25, 0.27
+        if fam then r, g, b = fam[1], fam[2], fam[3] end
         local q = info.quality
         if db.qualityBorder ~= false and type(q) == "number" and q >= 2 and C_Item.GetItemQualityColor then
             local ok, qr, qg, qb = pcall(C_Item.GetItemQualityColor, q)
             if ok and type(qr) == "number" then r, g, b = qr, qg, qb end
         end
         layoutRing(slot, r, g, b, 1)
+    elseif fam then
+        slot.ground:SetVertexColor(fam[1] * 0.35, fam[2] * 0.35, fam[3] * 0.35, 0.7)
+        layoutRing(slot, fam[1], fam[2], fam[3], 0.8)
     else
         slot.ground:SetVertexColor(0.08, 0.08, 0.09, 0.55)
         layoutRing(slot, 0, 0, 0, 0.45)
@@ -475,20 +574,33 @@ function Slots.Paint(slot, bagID, slotID, info)
     slot.pin:SetShown(db.showPinned and Bags.Marks.IsPinned(id) or false)
     if db.showRecent and Bags.Marks.IsRecent(id) then
         local c = db.recentColor
-        ns.LayoutEdges(slot.freshEdges, button, 2, c.r, c.g, c.b, 1, 0)
+        if slot.isRound then
+            ns.LayoutEdges(slot.freshEdges, button, 0, 1, 1, 1, 1)
+            slot.roundFresh:SetVertexColor(c.r, c.g, c.b, 1)
+            slot.roundFresh:Show()
+        else
+            ns.LayoutEdges(slot.freshEdges, button, 2, c.r, c.g, c.b, 1, 0)
+            slot.roundFresh:Hide()
+        end
     else
         ns.LayoutEdges(slot.freshEdges, button, 0, 1, 1, 1, 1)
+        slot.roundFresh:Hide()
     end
 
     -- A locked item -- one that is on the cursor or being moved -- is drawn
     -- faded, the way the client draws it in its own bags.
+    -- An empty profession-bag slot tints the client's empty-slot art as well.
     local locked = info and info.isLocked
     local shade = locked and 0.5 or 1
+    local sr, sg, sb = shade, shade, shade
+    if fam and not info then
+        sr, sg, sb = 0.35 + 0.65 * fam[1], 0.35 + 0.65 * fam[2], 0.35 + 0.65 * fam[3]
+    end
     if type(button.SetItemButtonTextureVertexColor) == "function" then
-        pcall(button.SetItemButtonTextureVertexColor, button, shade, shade, shade)
+        pcall(button.SetItemButtonTextureVertexColor, button, sr, sg, sb)
     else
         local tex = button.icon or button.Icon
-        if tex then tex:SetVertexColor(shade, shade, shade) end
+        if tex then tex:SetVertexColor(sr, sg, sb) end
     end
 
     frame:Show()

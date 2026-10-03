@@ -80,7 +80,15 @@ end
 -- to be logged in.
 function Gold.Lines()
     local lines, total = {}, 0
+    -- The day's session from Quality of Life -> Gold, when it is on. It
+    -- survives a reload and replaces the plain "this session" line below.
+    local day = ns.QoL and ns.QoL.Gold and ns.QoL.Gold.SessionLines(Gold.Text)
+    if day then
+        for _, line in ipairs(day) do lines[#lines + 1] = line end
+        lines[#lines + 1] = " "
+    end
     local t, key = global(), me()
+    local chars = 0
     if t then
         local list = {}
         for name, entry in pairs(t) do
@@ -90,16 +98,17 @@ function Gold.Lines()
             end
         end
         table.sort(list, function(a, b) return a.money > b.money end)
+        chars = #list
         for _, row in ipairs(list) do
             local label = row.name
             if label == key then label = "|cffffd100" .. label .. "|r" end
             lines[#lines + 1] = { label, right = Gold.Text(row.money) }
         end
     end
-    if #lines > 1 then
+    if chars > 1 then
         lines[#lines + 1] = { L["Total"], right = Gold.Text(total) }
     end
-    local change = delta(Gold.SessionChange())
+    local change = (not day) and delta(Gold.SessionChange())
     if change then
         lines[#lines + 1] = { L["This session"], right = change }
     end
