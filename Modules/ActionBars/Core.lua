@@ -239,6 +239,7 @@ function AB.Apply()
         if not mod.active then return end
         AB.Skin.ApplyAll()
         AB.Paging.Apply()
+        AB.ClassicBar.FreeSlots(true)
     end)
 end
 
@@ -302,6 +303,7 @@ function mod:OnDisable()
     end
     AB.Skin.RestoreAll()
     AB.Paging.Release()
+    AB.ClassicBar.FreeSlots(false)
 end
 
 -- The style names, built lazily so the saved language is the one that answers.

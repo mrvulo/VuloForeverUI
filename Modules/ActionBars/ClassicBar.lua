@@ -949,16 +949,26 @@ end
 -- band that string ended up out of sight under the ring; a font string of
 -- ours on a frame ABOVE the button is on top whatever the client's layers do.
 -- The backpack is a plain button, so a child frame of ours on it is allowed.
-local freeHost, freeText
+-- Not tied to the band: the number is wanted on the client's own bag bar just
+-- as much, so the action bar module switches it on whatever the bar style.
+local freeHost, freeText, freeWanted
 local freeEvents = CreateFrame("Frame")
 
 local function paintFree()
     if not freeText then return end
-    local on = applied and AB.db().backpackFreeSlots ~= false
+    local on = freeWanted and AB.db().backpackFreeSlots ~= false
     freeHost:SetShown(on)
     local own = _G.MainMenuBarBackpackButton and _G.MainMenuBarBackpackButton.Count
     if own then pcall(own.SetAlpha, own, on and 0 or 1) end
     if not on then return end
+    -- Re-asserted on every paint: the band's layout and the client's bag bar
+    -- both re-level the button after we built the host, and a host left at its
+    -- old level ends up under the ring with the number out of sight.
+    local b = _G.MainMenuBarBackpackButton
+    if b then
+        freeHost:SetFrameStrata(b:GetFrameStrata())
+        freeHost:SetFrameLevel(b:GetFrameLevel() + 5)
+    end
     local free = C_Container.CalculateTotalNumberOfFreeBagSlots()
     freeText:SetText(type(free) == "number" and tostring(free) or "")
 end
@@ -966,23 +976,45 @@ end
 freeEvents:SetScript("OnEvent", paintFree)
 
 local function dressFreeSlots(on)
+    freeWanted = on
     local b = _G.MainMenuBarBackpackButton
     if not b then return end
     if on and not freeHost then
         freeHost = CreateFrame("Frame", nil, b)
         freeHost:SetAllPoints(b)
         freeHost:SetFrameLevel(b:GetFrameLevel() + 5)
-        freeText = freeHost:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+        freeText = freeHost:CreateFontString(nil, "OVERLAY", "NumberFontNormal", 7)
         freeText:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -3, 3)
         freeText:SetJustifyH("RIGHT")
     end
     if on then
         freeEvents:RegisterEvent("BAG_UPDATE_DELAYED")
         freeEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
+        if not freeHost.hooked then
+            freeHost.hooked = true
+            hooksecurefunc(b, "SetFrameLevel", paintFree)
+            b:HookScript("OnShow", paintFree)
+        end
     else
         freeEvents:UnregisterAllEvents()
     end
     paintFree()
+end
+
+-- For a look from the chat when the number does not show:
+-- /run print(VuloForeverUI.AB.ClassicBar.FreeSlotsState())
+-- Called by the module on every apply and on disable.
+function Classic.FreeSlots(on)
+    dressFreeSlots(on and AB.db().backpackFreeSlots ~= false)
+end
+
+function Classic.FreeSlotsState()
+    local b = _G.MainMenuBarBackpackButton
+    return "applied", applied, "setting", AB.db().backpackFreeSlots,
+        "host", freeHost ~= nil, freeHost and freeHost:IsVisible(), freeHost and freeHost:GetFrameLevel(),
+        "button", b and b:GetFrameLevel(), b and b:GetEffectiveScale(),
+        "text", freeText and freeText:GetText(), freeText and freeText:IsVisible(),
+        freeText and freeText:GetStringWidth(), freeText and freeText:GetAlpha()
 end
 
 local function dressBags(on)
@@ -1051,7 +1083,6 @@ local function dress(on)
         dressArrow(pn.DownButton, ARROW_ART.down, on)
     end
     dressBags(on)
-    dressFreeSlots(on)
     if not on then unskipMicro() end
 end
 

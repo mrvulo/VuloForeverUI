@@ -221,7 +221,7 @@ function mod:GetOptions()
               rebuild()
           end },
         toggle("backpackFreeSlots", L["Free bag slots on the backpack"],
-            L["The classic bar writes how many bag slots are still free on the backpack button."]),
+            L["How many bag slots are still free, on the backpack button -- with the classic band and with the client's own bag bar."]),
         toggle("skinPetStance", L["Skin the pet and stance buttons too"]),
     }
     -- Shamans only: the client's totem bar on the classic band.
