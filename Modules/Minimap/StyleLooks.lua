@@ -10,6 +10,22 @@ local ours, region, hideOurs = P.ours, P.region, P.hideOurs
 
 local CLASSIC_CLUSTER, CLASSIC_MAP = 192, 140
 
+-- The classic look draws the map at its 1.x size of 140. The client's own map
+-- is bigger, so the whole classic cluster is scaled by the ratio between the
+-- two: switching looks keeps the map the same size, and the UI scale and the
+-- size slider grow both alike. Read from the snapshot taken before any look
+-- touched the map (the map's size times its container's scale). A reading
+-- that cannot be right keeps the plain 1.x size.
+local function classicFactor()
+    local m, c = P.savedOf("map"), P.savedOf("container")
+    local w = m and ns.Num(m.w)
+    if not w or w <= 0 then return 1 end
+    local s = (c and ns.Num(c.scale)) or 1
+    local k = w * s / CLASSIC_MAP
+    if k < 0.5 or k > 3 then return 1 end
+    return k
+end
+
 -- Masks are TEXTURE PATHS. The round one the client itself uses is an atlas,
 -- which SetMaskTexture does take, but the classic look wants the old circular
 -- alpha mask -- the same one portraits use.
@@ -492,7 +508,7 @@ local function applyClassic()
 
     if _G.AddonCompartmentFrame then _G.AddonCompartmentFrame:Hide() end
     skinCalendar()
-    cluster:SetScale(mod.db.scale)
+    cluster:SetScale(mod.db.scale * classicFactor())
 end
 
 local function applyModern()

@@ -225,6 +225,8 @@ local function hideOurs(parent)
 end
 
 P.remember          = remember
+-- The snapshot taken of a frame before any look changed it, or nil.
+P.savedOf           = function(key) return saved[key] end
 P.restore           = restore
 P.rememberButtonArt = rememberButtonArt
 P.restoreButtonArt  = restoreButtonArt
