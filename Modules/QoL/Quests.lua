@@ -6,9 +6,17 @@
 --              this zone -- the same list the world map draws its offers from
 --              (C_QuestLine.GetAvailableQuestLines, filled after
 --              RequestQuestLinesForMap and announced by QUESTLINE_UPDATE)
+--              Coloured like the quest log colours the quest's level, daily
+--              and repeatable quests blue, low level ones grey
 --   turn-in    a yellow ? where a finished quest is handed in: the quest's map
 --              point (C_QuestLog.GetQuestsOnMap) is the quest giver once the
 --              objectives are done
+--   objective  the same map point for a quest still running is where the game
+--              points for its objectives: a marker there, the open objectives
+--              and the distance on hover, a click hands it to the game's own
+--              waypoint (C_SuperTrack)
+--   quest line every pin's tooltip names the quest line the quest belongs to
+--              and the step it is (C_QuestLine.GetQuestLineInfo / Quests)
 --   tooltip    on an item an open quest asks for, the quest and how many you
 --              have; units carry their quest lines from the client already
 --
@@ -28,7 +36,7 @@ QoL.Quests = Q
 
 local registered, hookedTooltip
 local mapID, mapW, mapH
-local offers, turnins = {}, {}
+local offers, turnins, running = {}, {}, {}
 local pins, used = {}, 0
 local holder
 local itemObjectives = {}
@@ -70,24 +78,40 @@ local function collectOffers()
     for _, info in ipairs(list) do
         local id, x, y = readable(info.questID), readable(info.x), readable(info.y)
         local trivial = isTrue(info.isHidden)
-        if id and x and y and (db().trivial or not trivial)
+        local repeatable = id and (isTrue(info.isDaily) or isTrue(C_QuestLog.IsRepeatableQuest(id)))
+        if id and x and y and (db().trivial or not trivial) and (db().repeatable or not repeatable)
             and not isTrue(C_QuestLog.IsOnQuest(id)) then
+            local okL, level = pcall(C_QuestLog.GetQuestDifficultyLevel, id)
+            level = okL and readable(level) or nil
             offers[#offers + 1] = { id = id, x = x, y = y, trivial = trivial,
-                name = readable(info.questName), daily = isTrue(info.isDaily) }
+                name = readable(info.questName), daily = repeatable,
+                level = (type(level) == "number" and level > 0) and level or nil }
         end
     end
 end
 
-local function collectTurnins()
+-- One list for both: a finished quest's point is its quest giver, an
+-- unfinished one's is where the game sends you for the objectives.
+local function collectMapQuests()
     wipe(turnins)
-    if not (db().turnIn and mapID and C_QuestLog.GetQuestsOnMap) then return end
+    wipe(running)
+    if not ((db().turnIn or db().objectives) and mapID and C_QuestLog.GetQuestsOnMap) then return end
     local ok, list = pcall(C_QuestLog.GetQuestsOnMap, mapID)
     if not (ok and type(list) == "table") then return end
     for _, info in ipairs(list) do
         local id, x, y = readable(info.questID), readable(info.x), readable(info.y)
-        if id and x and y and isTrue(C_QuestLog.IsComplete(id)) then
-            turnins[#turnins + 1] = { id = id, x = x, y = y, turnin = true,
-                name = readable(C_QuestLog.GetTitleForQuestID(id)) }
+        if id and x and y then
+            local okL, level = pcall(C_QuestLog.GetQuestDifficultyLevel, id)
+            level = okL and readable(level) or nil
+            local d = { id = id, x = x, y = y, name = readable(C_QuestLog.GetTitleForQuestID(id)),
+                        daily = isTrue(C_QuestLog.IsRepeatableQuest(id)),
+                        level = (type(level) == "number" and level > 0) and level or nil }
+            if isTrue(C_QuestLog.IsComplete(id)) then
+                if db().turnIn then d.turnin = true; turnins[#turnins + 1] = d end
+            elseif db().objectives then
+                d.objective = true
+                running[#running + 1] = d
+            end
         end
     end
 end
@@ -116,19 +140,80 @@ end
 
 -- ----------------------------------------------------------------- pins --
 
+local function tracked(id)
+    local ok, cur = pcall(C_SuperTrack.GetSuperTrackedQuestID)
+    return ok and ns.CanRead(cur) and cur == id
+end
+
+-- "Quest line: <name>", "Step 3 of 7" -- or nothing, when the quest stands
+-- alone or the client has not loaded its line.
+local function addQuestLine(id)
+    local ok, info = pcall(C_QuestLine.GetQuestLineInfo, id, mapID)
+    if not (ok and type(info) == "table") then return end
+    local name, line = readable(info.questLineName), readable(info.questLineID)
+    if type(name) ~= "string" or name == "" then return end
+    GameTooltip:AddLine(L["Quest line: %s"]:format(name), 0.6, 0.8, 1)
+    local okQ, quests = pcall(C_QuestLine.GetQuestLineQuests, line)
+    if not (okQ and type(quests) == "table") then return end
+    for i, q in ipairs(quests) do
+        if readable(q) == id then
+            GameTooltip:AddLine(L["Step %d of %d"]:format(i, #quests), 0.6, 0.8, 1)
+            return
+        end
+    end
+end
+
+local function addObjectives(id)
+    local objs = C_QuestLog.GetQuestObjectives(id)
+    for _, o in ipairs(objs or {}) do
+        local text = readable(o.text)
+        if type(text) == "string" and text ~= "" then
+            if isTrue(o.finished) then
+                GameTooltip:AddLine(text, 0.5, 0.5, 0.5)
+            else
+                GameTooltip:AddLine(text, 1, 1, 1)
+            end
+        end
+    end
+    local ok, distSq = pcall(C_QuestLog.GetDistanceSqToQuest, id)
+    distSq = ok and readable(distSq)
+    if type(distSq) == "number" and distSq > 0 then
+        GameTooltip:AddLine(L["%d yards away"]:format(math.floor(math.sqrt(distSq) + 0.5)), 0.6, 0.6, 0.6)
+    end
+end
+
 local function pinEnter(self)
     local d = self.data
     if not d then return end
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:SetText(d.name or L["Quest"], 1, 0.82, 0)
+    local title = d.name or L["Quest"]
+    if d.level then title = "[" .. d.level .. "] " .. title end
+    GameTooltip:SetText(title, 1, 0.82, 0)
     if d.turnin then
         GameTooltip:AddLine(L["Ready to hand in"], 0.35, 0.85, 0.4)
+    elseif d.objective then
+        addObjectives(d.id)
     elseif d.trivial then
         GameTooltip:AddLine(L["Available quest (low level)"], 0.6, 0.6, 0.6)
+    elseif d.daily then
+        GameTooltip:AddLine(L["Available quest (repeatable)"], 0.4, 0.7, 1)
     else
         GameTooltip:AddLine(L["Available quest"], 1, 1, 1)
     end
+    addQuestLine(d.id)
+    if d.turnin or d.objective then
+        GameTooltip:AddLine(tracked(d.id) and L["Click: stop the waypoint"]
+            or L["Click: the game's waypoint leads you there"], 0.6, 0.6, 0.6)
+    end
     GameTooltip:Show()
+end
+
+-- Only quests in the log can be tracked; an offer's pin has nothing to do.
+local function pinClick(self)
+    local d = self.data
+    if not (d and (d.turnin or d.objective)) then return end
+    pcall(C_SuperTrack.SetSuperTrackedQuestID, tracked(d.id) and 0 or d.id)
+    if GameTooltip:IsOwned(self) then pinEnter(self) end
 end
 
 local function pinLeave() GameTooltip:Hide() end
@@ -140,6 +225,7 @@ local function pin(i)
     p.icon = p:CreateTexture(nil, "OVERLAY")
     p.icon:SetAllPoints()
     p:SetScript("OnEnter", pinEnter)
+    p:SetScript("OnClick", pinClick)
     p:SetScript("OnLeave", pinLeave)
     pins[i] = p
     return p
@@ -152,13 +238,33 @@ local function assign()
         used = used + 1
         local p = pin(used)
         p.data = d
-        p:SetSize(size, size)
-        p.icon:SetAtlas(d.turnin and "QuestTurnin" or (d.daily and "QuestDaily" or "QuestNormal"))
-        p.icon:SetDesaturated(d.trivial and true or false)
+        p:SetFrameLevel(holder:GetFrameLevel() + used)
+        local s = (d.objective or d.turnin) and tracked(d.id) and size * 1.3 or size
+        p:SetSize(s, s)
+        if d.turnin then
+            p.icon:SetAtlas(d.daily and "QuestRepeatableTurnin" or "QuestTurnin")
+        elseif d.objective then
+            p.icon:SetAtlas("QuestObjective")
+        else
+            p.icon:SetAtlas(d.daily and "QuestDaily" or "QuestNormal")
+        end
+        -- the level's colour on a greyed ! reads as that colour; a blue or a
+        -- low level ! keeps what it says on its own
+        local c = db().difficulty and d.level and not (d.trivial or d.daily)
+            and GetQuestDifficultyColor(d.level)
+        if c then
+            p.icon:SetDesaturated(true)
+            p.icon:SetVertexColor(c.r, c.g, c.b)
+        else
+            p.icon:SetDesaturated(d.trivial and true or false)
+            p.icon:SetVertexColor(1, 1, 1)
+        end
         p.icon:SetAlpha(d.trivial and 0.6 or 1)
     end
-    for _, d in ipairs(turnins) do add(d) end
+    -- drawn in this order, so a hand-in sits on top of everything else
     for _, d in ipairs(offers) do add(d) end
+    for _, d in ipairs(running) do add(d) end
+    for _, d in ipairs(turnins) do add(d) end
     for i = used + 1, #pins do pins[i]:Hide(); pins[i].data = nil end
 end
 
@@ -223,7 +329,7 @@ local function refresh()
         end
     end
     collectOffers()
-    collectTurnins()
+    collectMapQuests()
     collectObjectives()
     assign()
     place()
@@ -281,11 +387,12 @@ local EVENTS = {
     QUEST_ACCEPTED = queue,
     QUEST_TURNED_IN = queue,
     PLAYER_LEVEL_UP = queue,
+    SUPER_TRACKING_CHANGED = queue,
 }
 
 local function wanted()
     local d = db()
-    return QoL.mod.active and (d.available or d.turnIn or d.tooltip) and true or false
+    return QoL.mod.active and (d.available or d.turnIn or d.objectives or d.tooltip) and true or false
 end
 
 local function ensureHolder()
@@ -328,5 +435,5 @@ end
 -- For the options: how many offers the client gave for this zone, so a
 -- player can tell "no quests here" from "this client gives no offers".
 function Q.Counts()
-    return #offers, #turnins
+    return #offers, #turnins, #running
 end

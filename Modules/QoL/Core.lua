@@ -139,6 +139,9 @@ local mod = ns:RegisterModule("qol", {
             available = true,
             turnIn    = true,
             trivial   = false,
+            repeatable = true,
+            difficulty = true,
+            objectives = true,
             tooltip   = true,
             pinSize   = 14,
 
