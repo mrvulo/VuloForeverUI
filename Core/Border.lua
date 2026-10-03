@@ -107,8 +107,9 @@ end
 --   classColor  toggle, the player's class colour instead of `color`
 -- opts: { minSize = 0, maxSize = 4, minOffset = -4, maxOffset = 4,
 --         flatValue = "solid", noAlpha = true, disabled = fn, after = fn,
---         subKeyPrefix = "..." (keeps rows of two tables apart in the
---                               change tracking when they share a page),
+--         subKeyPrefix = "..." (rows are told apart by their saved key; the
+--                               prefix also keeps two TABLES with the same
+--                               keys apart when they share a page),
 --         tooltips = { size = "...", ... } }
 -- after runs instead of the row set's apply, as on any single row.
 -- Returns a row list (ns.RowList): it stands in a page like the rows written
@@ -123,7 +124,10 @@ function ns.BorderRows(rows, keys, opts)
         local e = more or {}
         e.tooltip = e.tooltip or tips[part]
         e.after = opts.after
-        if opts.subKeyPrefix and keys[part] then e.subKey = opts.subKeyPrefix .. keys[part] end
+        -- Identified by its saved key, not its label: two borders on one page
+        -- share every label, and search, reveal and "recently changed" would
+        -- otherwise find only one of them.
+        if keys[part] then e.subKey = (opts.subKeyPrefix or "") .. keys[part] end
         if disabledFn and part ~= "show" and part ~= "hide" then
             local own = e.disabled
             e.disabled = own and function() return own() or disabledFn() end or disabledFn
@@ -166,11 +170,6 @@ function ns.BorderRows(rows, keys, opts)
 
     if keys.color then
         local more = extra("color", { hasAlpha = not opts.noAlpha })
-        if keys.classColor then
-            -- The class colour replaces this one while it is on.
-            local ck, own = keys.classColor, more.disabled
-            more.disabled = function() return (own and own()) or rows.db()[ck] end
-        end
         if keys.alpha then
             -- The opacity lives in its own key: the row shows and saves it
             -- as part of the colour so the page has one place for both.

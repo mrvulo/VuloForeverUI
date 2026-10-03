@@ -59,8 +59,8 @@ local function pToggle(key, label, tooltip)
         set = function(_, v) pset(key, v) end }
 end
 
-local function pSlider(key, label, min, max, step, tooltip)
-    return { type = "slider", label = label, tooltip = tooltip, min = min, max = max, step = step,
+local function pSlider(key, label, min, max, step, tooltip, suffix)
+    return { type = "slider", label = label, tooltip = tooltip, min = min, max = max, step = step, suffix = suffix,
         get = function() return pget(key) end,
         set = function(_, v) pset(key, v) end }
 end
@@ -133,7 +133,7 @@ local function modernOptions(page)
     add(pSlider("iconZoom", L["Icon zoom"], 0, 10, 0.5,
         L["Trims the icon's rim. 0 shows the whole icon with its drawn frame."]))
     add(pSlider("iconBgOpacity", L["Icon background"], 0, 100, 5,
-        L["The dark ground behind the icon, seen on empty slots and around see-through icons."]))
+        L["The dark ground behind the icon, seen on empty slots and around see-through icons."], "%"))
     add(pColor("iconBgColor", L["Icon background color"]))
     add(pToggle("outOfRange", L["Out of range coloring"],
         L["Tints the icon while your target is out of range of that action."]))

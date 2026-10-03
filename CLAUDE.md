@@ -46,12 +46,14 @@ the full retail 12.x in-combat addon restrictions, with Classic-style art and a 
 ## Layout
 
 ```
-Core/      framework: namespace, db/profiles, module + slash registry, events,
-           scheduler, mover, media, secret-value layer
-UI/        settings window, widgets, options builder, own Edit Mode HUD
-Modules/   feature modules: single files (GlobalSettings, Profiles, BarSetups,
-           Minimap); a module of several files gets its own folder
-           (Modules/UnitFrames/)
+Core/      framework: namespace, db/profiles (Core/Database/), module + slash
+           registry, events, scheduler, movers (Core/Mover/), media, borders
+           (Core/Border.lua), secret-value layer (+ /vfsecrets report)
+UI/        settings window (UI/MainFrame/), widgets (UI/Widgets/), option rows
+           (UI/OptionRows.lua), options builder (UI/OptionsBuilder/), own Edit
+           Mode HUD (UI/EditMode/)
+Modules/   feature modules: single files (GlobalSettings, Profiles, BarSetups);
+           a module of several files gets its own folder (Modules/UnitFrames/)
 Media/     fonts, textures, icons
 Libs/      LibStub, CallbackHandler, LibSharedMedia, LibDataBroker, LibDeflate
 tools/     node check.js — syntax, locals cap, locale coverage, house rules, TOC,
@@ -59,6 +61,11 @@ tools/     node check.js — syntax, locals cap, locale coverage, house rules, T
            API-existence lint (apilint.js, snapshot forever-api.json)
 docs/      client research
 ```
+
+A file that grows past ~600 lines is split into a folder of topic files. Their
+shared state lives on ONE private table (`UI._W`, `UI._OB`, `ns._MV`, ...);
+anything reassigned after load is read through that table, never copied into a
+local.
 
 ## Adding a module
 
@@ -75,8 +82,22 @@ local M = ns:RegisterModule("mymodule", {
 
 function M:OnEnable()  self:RegisterEvent("PLAYER_ENTERING_WORLD", function() end) end
 function M:OnDisable() end
-function M:GetOptions() return { { type = "slider", key = "scale", label = L["Scale"], min = 0.5, max = 2 } } end
+function M:GetOptions()
+    local rows = ns.OptionRows(function() return M.db end, function() M:Apply() end)
+    return {
+        rows.slider("scale", L["Scale"], 0.5, 2, 0.05),
+        rows.opacity("alpha", L["Opacity"]),                    -- saved 0..1, shown in %
+        ns.BorderRows(rows, { size = "borderSize", color = "borderColor" }),
+    }
+end
 ```
+
+Options rows come from `ns.OptionRows(db, apply)` (UI/OptionRows.lua): every
+builder takes `(key, label, ..., extra)`, where `extra` is a tooltip string or
+`{ tooltip, after, disabled, inline, width, ... }`. Opacity is always a percent
+row (`rows.opacity`), a border always `ns.BorderRows` mapped onto the module's
+own saved keys, a font outline list always `ns.OutlineValues()`. Do not
+hand-roll these per module.
 
 Then add the file to `VuloForeverUI.toc` (the checker verifies the list matches disk) and
 run `cd tools && node check.js`.

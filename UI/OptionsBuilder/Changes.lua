@@ -227,7 +227,7 @@ local function resetRow(item, widget)
     local ok, err
     if item.type == "color" then
         local c = type(d) == "table" and d or {}
-        ok, err = pcall(item.set, c.r or c[1] or 1, c.g or c[2] or 1, c.b or c[3] or 1)
+        ok, err = pcall(item.set, c.r or c[1] or 1, c.g or c[2] or 1, c.b or c[3] or 1, c.a or c[4])
     elseif item.type == "toggle" or item.type == "checkbox" then
         ok, err = pcall(item.set, widget, d and true or false)
     else

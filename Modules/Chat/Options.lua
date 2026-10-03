@@ -48,9 +48,9 @@ end
 -- and nothing else, so without this a colour whose alpha is zero is a control
 -- that visibly does nothing however often it is changed.
 local function opacity(key, label)
-    return { type = "slider", label = label, min = 0, max = 1, step = 0.05,
-        get = function() return Chat.db()[key].a end,
-        set = function(_, v) Chat.db()[key].a = v; apply() end }
+    return { type = "slider", label = label, min = 0, max = 100, step = 1, suffix = "%",
+        get = function() return (Chat.db()[key].a or 0) * 100 end,
+        set = function(_, v) Chat.db()[key].a = v / 100; apply() end }
 end
 
 -- ------------------------------------------------------------- pickers --

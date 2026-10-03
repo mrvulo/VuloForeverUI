@@ -337,6 +337,23 @@ local function eSlider(label, key, min, max, step, fallbackKey)
         end }
 end
 
+-- The per-spell opacity, in per cent like the bar's own row; saved 0..1.
+local function eOpacity(label, key)
+    return { type = "slider", label = label, min = 0, max = 100, step = 1, suffix = "%",
+        get = function()
+            local e = entry()
+            local v = e and e[key]
+            if v == nil then v = bar()[key] or 0 end
+            return v * 100
+        end,
+        set = function(_, v)
+            local e = entry()
+            if not e then return end
+            e[key] = v / 100
+            eApply()
+        end }
+end
+
 local function eColor(label, key, default)
     return { type = "color", label = label,
         get = function()
@@ -389,7 +406,7 @@ local function spellPage()
         { type = "spacer", height = 6 },
         { type = "header", text = L["Swipe and countdown"] },
         eTri(L["Show the swipe"], "showSwipe"),
-        eSlider(L["Swipe darkness"], "swipeAlpha", 0, 1, 0.01),
+        eOpacity(L["Swipe darkness"], "swipeAlpha"),
         eTri(L["Show the countdown"], "showCountdown"),
         eTri(L["Dim the icon"], "desaturateOnCooldown"),
 

@@ -352,7 +352,8 @@ function UI:CreateSlider(parent, config)
 
     valueText:SetScript("OnEnterPressed", function(self)
         -- The unit may be typed along ("50%"); only the number counts.
-        local typed = tonumber((self:GetText() or ""):match("^%s*(-?[%d%.]+)"))
+        -- A decimal comma counts as a point ("1,5" is 1.5 on a German keyboard).
+        local typed = tonumber(((self:GetText() or ""):gsub(",", ".")):match("^%s*(-?[%d%.]+)"))
         if typed then
             -- Clamp before snapping: typing 9999 into a 0..100 slider should
             -- land on 100, not be refused without a word.
