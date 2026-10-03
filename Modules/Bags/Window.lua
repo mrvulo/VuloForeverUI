@@ -605,10 +605,16 @@ function Window.Layout(win)
         head:SetPoint("TOPLEFT", f, "TOPLEFT", left, -y)
         if key == "free" then
             head:SetFormattedText("%s (%d)", L["Free"], #list)
-        elseif key == "allbags" or key:match("^bagsec:") then
-            local used = 0
-            for _, e in ipairs(list) do if e.info then used = used + 1 end end
-            head:SetFormattedText("%s (%d / %d)", Window.BagLabel(key), used, #list)
+        elseif key == "allbags" then
+            -- The free slots are in the header already; one block of all bags
+            -- would only say the same thing again, the other way round.
+            head:SetText(Window.BagLabel(key))
+        elseif key:match("^bagsec:") then
+            -- Per bag the same count as the header -- free of total -- so the
+            -- two never read as different numbers for the same thing.
+            local free = 0
+            for _, e in ipairs(list) do if not e.info then free = free + 1 end end
+            head:SetFormattedText("%s (%d/%d)", Window.BagLabel(key), free, #list)
         elseif key == "all" then
             head:SetText("")
         else
