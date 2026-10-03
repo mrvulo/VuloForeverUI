@@ -22,6 +22,7 @@ Locales\deDE.lua
 Core\Utils.lua
 Core\Slash.lua
 Core\Secret.lua
+Core\SecretReport.lua
 Core\Database.lua
 Core\Modules.lua
 Core\Events.lua

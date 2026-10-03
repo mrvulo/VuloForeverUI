@@ -742,7 +742,7 @@ end
 function Sort.Run(kind)
     if running or InCombatLockdown() or CursorHasItem() then return end
     local isBank = (kind == "bank")
-    local bagIDs = isBank and Bags.BankBags() or Bags.CarriedBags()
+    local bagIDs = isBank and Bags.BankBags() or ns.CarriedBags()
     if #bagIDs == 0 then return end
     local db = Bags.db()
     local method = ORDERS[db.sortMethod] and db.sortMethod or "type"

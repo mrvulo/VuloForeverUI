@@ -327,11 +327,7 @@ local OUTLINE_VALUES  -- built lazily: labels are locale lookups
 local MODULE_FONT_DEFS  -- built lazily: labels are locale lookups
 
 local function moduleFontValues()
-    local v = { { value = "", text = L["Global Font"] } }
-    for _, e in ipairs(ns.MediaFontValues and ns.MediaFontValues() or {}) do
-        v[#v + 1] = e
-    end
-    return v
+    return ns.MediaFontValues({ value = "", text = L["Global Font"] })
 end
 
 local function moduleFontsSection()

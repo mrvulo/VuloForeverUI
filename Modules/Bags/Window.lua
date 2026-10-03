@@ -868,4 +868,4 @@ function Window.New(key, bagsFn)
     return win
 end
 
-Bags.Window = Window.New("bags", function() return Bags.CarriedBags() end)
+Bags.Window = Window.New("bags", ns.CarriedBags)

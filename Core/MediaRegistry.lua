@@ -114,8 +114,9 @@ function ns.MediaFontValid(name)
     return (hash and hash[name] and hash[name] ~= "") and true or false
 end
 
-function ns.MediaFontValues()
-    local v, seen = {}, {}
+-- `first` is an optional row put on top, e.g. "use the global font".
+function ns.MediaFontValues(first)
+    local v, seen = { first }, {}
     for _, n in ipairs(BUNDLED_FONTS) do
         v[#v + 1] = { value = n, text = n }; seen[n] = true
     end

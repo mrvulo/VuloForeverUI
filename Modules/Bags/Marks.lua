@@ -71,7 +71,7 @@ end
 -- because otherwise every item a player owns would be "just picked up".
 function Marks.Scan()
     local now, counts = GetTime(), {}
-    for _, bag in ipairs(Bags.CarriedBags()) do
+    for _, bag in ipairs(ns.CarriedBags()) do
         local slots = C_Container.GetContainerNumSlots(bag) or 0
         for slot = 1, slots do
             local info = C_Container.GetContainerItemInfo(bag, slot)

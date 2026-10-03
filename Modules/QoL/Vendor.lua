@@ -54,12 +54,7 @@ local BASE_DELAY, MAX_DELAY = 0.4, 1.6
 local MAX_PASSES, MAX_STALLS = 12, 3
 local pending, passes, lastCount, stalls, warned, delay
 
-local function carriedBags()
-    if ns.Bags and ns.Bags.CarriedBags then return ns.Bags.CarriedBags() end
-    local out = { 0 }
-    for i = 1, (NUM_BAG_SLOTS or 4) do out[#out + 1] = i end
-    return out
-end
+local carriedBags = ns.CarriedBags
 
 local function countJunk()
     local junk, unknown = 0, 0

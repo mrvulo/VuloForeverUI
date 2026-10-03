@@ -123,23 +123,6 @@ function Bags.db() return mod.db end
 
 -- ---------------------------------------------------------------- bags --
 
--- The bags a player carries. Asked of the client rather than assumed: this
--- build may or may not have a reagent bag, and a bag id that does not exist
--- answers with no slots, which is the same as not being there.
-function Bags.CarriedBags()
-    local out = {}
-    local idx = Enum.BagIndex
-    local ids = { (idx and idx.Backpack) or 0 }
-    for i = 1, (NUM_BAG_SLOTS or 4) do ids[#ids + 1] = i end
-    if idx and idx.ReagentBag then ids[#ids + 1] = idx.ReagentBag end
-
-    for _, id in ipairs(ids) do
-        local slots = C_Container.GetContainerNumSlots(id)
-        if type(slots) == "number" and slots > 0 then out[#out + 1] = id end
-    end
-    return out
-end
-
 -- The bank's containers: numbered character TABS, nine on 1.60.1.
 function Bags.BankBags()
     local out = {}

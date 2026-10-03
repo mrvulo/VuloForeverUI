@@ -97,11 +97,7 @@ end
 -- global font settings keep it -- this row is a second way into the same
 -- setting, not a second setting. The gear next to it leads to the rest of them.
 local function fontValues()
-    local v = { { value = "", text = L["Global Font"] } }
-    for _, e in ipairs(ns.MediaFontValues and ns.MediaFontValues() or {}) do
-        v[#v + 1] = e
-    end
-    return v
+    return ns.MediaFontValues({ value = "", text = L["Global Font"] })
 end
 
 local function fontRow()
