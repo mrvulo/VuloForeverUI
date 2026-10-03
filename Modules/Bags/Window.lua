@@ -182,6 +182,8 @@ local function build(win)
         win.filter = self:GetText()
         win.Refresh()
     end)
+    search:SetScript("OnEnter", function(self) Bags.Search.ShowHelp(self) end)
+    search:SetScript("OnLeave", function() GameTooltip:Hide() end)
     f.search = search
 
     -- Dragged by its own body, and the place it lands is remembered. Nothing
@@ -429,15 +431,9 @@ local function merge(items)
     return out
 end
 
--- Does this entry survive the search box? The item's name is the only thing
--- asked about, and only when there is something to ask.
+-- Does this entry survive the search box? Search.lua decides.
 local function matches(entry, filter)
-    if not filter or filter == "" then return true end
-    local link = entry.info and entry.info.hyperlink
-    if type(link) ~= "string" then return false end
-    local name = C_Item.GetItemNameByID and C_Item.GetItemNameByID(link)
-    if type(name) ~= "string" then name = link end
-    return name:lower():find(filter:lower(), 1, true) ~= nil
+    return Bags.Search.Matches(entry, filter)
 end
 
 -- How wide the window should be when it is left to decide for itself: as near
