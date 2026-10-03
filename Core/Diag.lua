@@ -126,6 +126,28 @@ local function installHandler()
     reclaiming = false
 end
 installHandler()
+-- An error-collecting addon may own the handler outright: it swaps
+-- seterrorhandler for its own and never calls the client's handler again.
+-- The call above then returns without effect. Kept on the record per session
+-- so a report says which path did the work.
+local handlerTook = geterrorhandler() == errorHandler
+
+-- The second path, for when the handler is the client's own but not ours: it
+-- (Blizzard_ScriptErrors, HandleLuaError) passes every error it may read to
+-- C_Log.LogErrorMessage as "Lua Error: <message>\n<stack>". A secure post-hook
+-- sees it without touching the caller's taint. Under an error-collecting addon
+-- that owns the handler neither path sees anything; its own saved file does. Skipped while our own
+-- handler runs, which calls the client's and would record the error twice.
+if C_Log and C_Log.LogErrorMessage then
+    hooksecurefunc(C_Log, "LogErrorMessage", function(text)
+        if inHandler then return end
+        pcall(function()
+            local t = clean(text)
+            local msg, stack = t:match("^Lua Error: (.-)\n(.*)$")
+            recordError(msg or t, stack or "")
+        end)
+    end)
+end
 
 hooksecurefunc("seterrorhandler", function(h)
     if reclaiming or h == errorHandler or reclaims >= 10 then return end
@@ -217,6 +239,8 @@ frame:SetScript("OnEvent", function(_, event, a, b)
         local s = list("sessions")
         local cur = s[#s]
         if cur and cur.id == session then
+            cur.handlerAtLoad = handlerTook
+            cur.handlerAtLogin = geterrorhandler() == errorHandler
             local _, class = UnitClass("player")
             cur.char = clean(UnitName("player")) .. "-" .. clean(GetRealmName())
             cur.class = class
@@ -257,8 +281,8 @@ ns.Slash.DIAG = function(msg)
             if e.ours then ours = ours + 1 end
         end
         ns:Print("Diagnostics log, session %d: %d errors (%d naming this addon), "
-            .. "%d events, %d command outputs, error hook %s. /reload writes it to disk.",
+            .. "%d events, %d command outputs, errors %s. /reload writes it to disk.",
             session, #errors, ours, #list("events"), #list("outputs"),
-            geterrorhandler() == errorHandler and "active" or "REPLACED")
+            geterrorhandler() == errorHandler and "owned" or "via client log")
     end
 end
