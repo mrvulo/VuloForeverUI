@@ -69,11 +69,7 @@ local function textureValues()
 end
 
 local function soundValues()
-    local v = { { value = "", text = L["None"] } }
-    for _, name in ipairs(ns.BUNDLED_SOUNDS or {}) do
-        v[#v + 1] = { value = name, text = name }
-    end
-    return v
+    return ns.MediaSoundValues(L["None"])
 end
 
 -- The tab font is the module's own setting, not the account-wide one: it is a

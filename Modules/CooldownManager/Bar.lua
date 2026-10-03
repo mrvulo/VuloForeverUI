@@ -113,19 +113,9 @@ local function belowThreshold(duration, seconds)
     return res
 end
 
--- The file behind a sound name: ours first, then whatever other addons have
--- registered as shared media. An unknown name plays nothing rather than the
--- wrong thing.
-function CM.SoundPath(name)
-    if type(name) ~= "string" or name == "" then return nil end
-    local own = ns.MediaSound(name)
-    if own then return own end
-    local LSM = ns.LSM
-    local hash = LSM and LSM:HashTable("sound")
-    local path = hash and hash[name]
-    if type(path) == "string" and path ~= "" then return path end
-    return nil
-end
+-- The file behind a sound name, from shared media. An unknown name plays
+-- nothing rather than the wrong thing.
+CM.SoundPath = ns.MediaSoundPath
 
 -- ---------------------------------------------------------------- icons --
 

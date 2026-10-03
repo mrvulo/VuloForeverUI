@@ -151,34 +151,27 @@ function ns.MediaBorderValues()
     return v
 end
 
--- Sounds. The 118-file pack that used to live here was dropped because nothing
--- in the addon played any of it; these are the ones a feature actually asks
--- for, and they are registered as shared media as well so a boss mod or an
--- aura can reach them.
---
--- Bundled rather than a client sound ID: the seal twist hit confirmation needs
--- a sharp crack, and the client has no sound kit that is one.
-local SOUNDS = {
-    { "Sniper", "sniper.ogg" },
-    -- Rifle is the outdoor one: crack, body, and three distinct slaps coming
-    -- back off the distance. Sniper is the dry, short version -- kept, because
-    -- a shorter cue is the better one when the setting fires often.
-    { "Rifle",  "rifle.ogg"  },
-}
-local BUNDLED_SOUNDS = {}
-for i, e in ipairs(SOUNDS) do
-    BUNDLED_SOUNDS[i] = e[1]
-    if LSM then LSM:Register("sound", e[1], BASE .. "Sounds\\" .. e[2]) end
-end
-ns.BUNDLED_SOUNDS = BUNDLED_SOUNDS
-
--- Path for a bundled sound by name, for the code paths that play a file
--- directly instead of going through shared media.
-function ns.MediaSound(name)
-    for _, e in ipairs(SOUNDS) do
-        if e[1] == name then return BASE .. "Sounds\\" .. e[2] end
-    end
+-- Sounds come entirely from shared media -- this addon bundles none. A sound
+-- setting lists whatever other addons have registered and plays nothing when
+-- the saved name is gone.
+function ns.MediaSoundPath(name)
+    if not (LSM and type(name) == "string" and name ~= "") then return nil end
+    local hash = LSM:HashTable("sound")
+    local path = hash and hash[name]
+    if type(path) == "string" and path ~= "" then return path end
     return nil
+end
+
+-- The dropdown list: our own "no sound" row first, then every shared-media
+-- sound. The library's own "None" is left out; it would be a second no-sound.
+function ns.MediaSoundValues(noneText)
+    local v = { { value = "", text = noneText } }
+    if LSM then
+        for _, n in ipairs(LSM:List("sound") or {}) do
+            if n ~= "None" then v[#v + 1] = { value = n, text = n } end
+        end
+    end
+    return v
 end
 
 ns.LSM = LSM

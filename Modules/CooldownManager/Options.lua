@@ -370,17 +370,7 @@ local function eColor(label, key, default)
 end
 
 local function soundValues()
-    local values = { { value = "", text = L["No sound"] } }
-    local seen = {}
-    for _, name in ipairs(ns.BUNDLED_SOUNDS or {}) do
-        seen[name] = true
-        values[#values + 1] = { value = name, text = name }
-    end
-    local LSM = ns.LSM
-    for _, name in ipairs((LSM and LSM:List("sound")) or {}) do
-        if not seen[name] then values[#values + 1] = { value = name, text = name } end
-    end
-    return values
+    return ns.MediaSoundValues(L["No sound"])
 end
 
 local function spellPage()

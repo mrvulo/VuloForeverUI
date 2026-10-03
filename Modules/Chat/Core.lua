@@ -281,7 +281,7 @@ function mod:OnEnable()
         if not mod.active then return end
         local name = Chat.db().whisperSound
         if not name or name == "" then return end
-        local file = ns.MediaSound and ns.MediaSound(name)
+        local file = ns.MediaSoundPath(name)
         if file then PlaySoundFile(file, "Master") end
     end
     self:RegisterEvent("CHAT_MSG_WHISPER", whisper)

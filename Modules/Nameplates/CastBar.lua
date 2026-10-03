@@ -29,7 +29,7 @@ local Cast = {}
 NP.Cast = Cast
 
 local WHITE = "Interface\\Buttons\\WHITE8X8"
-local SPARK = "Interface\\AddOns\\VuloForeverUI\\Media\\Castbar\\CastingBarSpark"
+local SPARK = "Interface\\CastingBar\\UI-CastingBar-Spark"
 local ELAPSED   = Enum.StatusBarTimerDirection and Enum.StatusBarTimerDirection.ElapsedTime or 0
 local REMAINING = Enum.StatusBarTimerDirection and Enum.StatusBarTimerDirection.RemainingTime or 1
 local IMMEDIATE = Enum.StatusBarInterpolation and Enum.StatusBarInterpolation.Immediate or 0
