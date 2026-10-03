@@ -51,8 +51,8 @@ end
 --
 -- A debuff's dispel type is aura data, so it is secret and we never ask for it.
 -- Instead the engine is handed textures plus a colour PER TYPE NAME, and it
--- decides in C which button gets which colour, and whether it gets one at all
--- (an untyped debuff gets none).
+-- decides in C which button gets which colour. "None" is the engine's key for
+-- a debuff without a type, which the client's own row paints red.
 -- ---------------------------------------------------------------------------
 local DISPEL_KEYS = {
     { token = "Magic",   key = "dispelMagic" },
@@ -60,6 +60,7 @@ local DISPEL_KEYS = {
     { token = "Disease", key = "dispelDisease" },
     { token = "Poison",  key = "dispelPoison" },
     { token = "Bleed",   key = "dispelBleed" },
+    { token = "None",    key = "dispelNone" },
 }
 Style.DISPEL_KEYS = DISPEL_KEYS
 
@@ -84,14 +85,25 @@ end
 -- ring is as legal as a one-piece one -- and a cropped band goes sub-texel at
 -- large icon sizes, where it fades to alpha < 1 and lets the static border
 -- bleed through the tint. Solid strips never sample.
-local function addDispelStrips(button, db)
+-- Pixel-exact edges: placed on whole physical pixels, and the client must not
+-- round them a second time -- its own snapping is what turns a one-pixel line
+-- into a two-pixel or a missing one on some sides.
+local function noSnap(edges)
+    for _, t in pairs(edges) do
+        if t.SetSnapToPixelGrid then t:SetSnapToPixelGrid(false) end
+        if t.SetTexelSnappingBias then t:SetTexelSnappingBias(0) end
+    end
+end
+
+local function addDispelStrips(button, db, px)
     local add = button.AddDispelTypeTexture
     local st  = dispelStyle()
     local map = dispelColorMap(db)
     if not (add and st ~= nil and map) then return end
     local strips = ns.MakeEdges(button, "OVERLAY")
     if not strips then return end
-    ns.LayoutEdges(strips, button, db.dispelBorderSize, 1, 1, 1, 1)
+    ns.LayoutEdgesAt(strips, button, db.dispelBorderSize * px, 1, 1, 1, 1)
+    noSnap(strips)
     -- HIDDEN until the engine shows them. A texture is shown by default and
     -- LayoutEdges shows it white; if a registration below is refused, an
     -- unhidden set would sit on the icon as a plain white ring for the rest of
@@ -102,6 +114,7 @@ local function addDispelStrips(button, db)
         style            = st,
         showWhenHarmful  = true,
         showWhenHelpful  = false,
+        showWithoutDispelType = true,
         customDispelColorMap = map,
     }
     for _, t in pairs(strips) do
@@ -121,7 +134,7 @@ end
 -- settings table, read HERE and only here, because the container carries the
 -- callback and a changed setting means a new container.
 -- ---------------------------------------------------------------------------
-function Style.Initializer(kind, db)
+function Style.Initializer(kind, db, holder)
     local buffs = (kind == "buffs")
 
     return function(button)
@@ -129,7 +142,11 @@ function Style.Initializer(kind, db)
         -- button -- never captured when the container was built. The engine
         -- creates its buttons in batches, so a later batch would otherwise
         -- come out half in the old style and half in the new one.
-        local size   = db.iconSize
+        -- One physical pixel in the holder's units. Measured on the holder,
+        -- not the button: the engine may hand the button over before it sits
+        -- in the container, and its own scale would then be UIParent's.
+        local px     = ns:Pixel(holder or button, 1)
+        local size   = math.max(px, ns:PixelSnap(db.iconSize, holder or button))
         local zoom   = (buffs and db.buffZoom or db.debuffZoom) / 100
         local bSize  = buffs and db.buffBorderSize or db.debuffBorderSize
         local bColor = buffs and db.buffBorderColor or db.debuffBorderColor
@@ -168,10 +185,11 @@ function Style.Initializer(kind, db)
 
         if bSize > 0 then
             local edges = ns.MakeEdges(button, "OVERLAY")
-            ns.LayoutEdges(edges, button, bSize, bColor.r, bColor.g, bColor.b, 1)
+            ns.LayoutEdgesAt(edges, button, bSize * px, bColor.r, bColor.g, bColor.b, 1)
+            noSnap(edges)
         end
         -- after the static border, so the tinted ring draws over it
-        if wantDispel then addDispelStrips(button, db) end
+        if wantDispel then addDispelStrips(button, db, px) end
 
         local font = ns.ModuleFontPath("auras")
 

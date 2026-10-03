@@ -66,6 +66,7 @@ local mod = ns:RegisterModule("auras", {
         dispelDisease    = { r = 0.671, g = 0.384, b = 0.098 },
         dispelPoison     = { r = 0.000, g = 0.706, b = 0.286 },
         dispelBleed      = { r = 0.750, g = 0.150, b = 0.150 },
+        dispelNone       = { r = 0.800, g = 0.000, b = 0.000 },
 
         buffs   = { x = 0, y = -20,  scale = 1 },
         debuffs = { x = 0, y = -120, scale = 1 },
@@ -208,6 +209,10 @@ local function refresh()
     end)
 end
 
+-- Bars.lua asks for one when the rows were rescaled: their borders were
+-- measured in pixels of the old scale.
+A.QueueRebuild = refresh
+
 local function num(key, label, min, max, step, tooltip)
     return { type = "slider", label = label, tooltip = tooltip,
         min = min, max = max, step = step,
@@ -321,7 +326,7 @@ function mod:GetOptions()
         num("debuffBorderSize", L["Border thickness"], 0, 4, 1),
         color("debuffBorderColor", L["Border color"]),
         flag("dispelColors", L["Color by dispel type"],
-             L["The client tints the border of a debuff it knows a dispel type for. Which debuff that is stays its decision -- the type is never read here."], true),
+             L["The client tints the border of every debuff by its dispel type, a debuff without one in its own color. Which color a debuff gets stays its decision -- the type is never read here."], true),
     }
     if mod.db.dispelColors then
         debuffRows[#debuffRows + 1] = num("dispelBorderSize", L["Dispel border thickness"], 1, 6, 1)
@@ -330,6 +335,7 @@ function mod:GetOptions()
         debuffRows[#debuffRows + 1] = color("dispelDisease", L["Disease"])
         debuffRows[#debuffRows + 1] = color("dispelPoison", L["Poison"])
         debuffRows[#debuffRows + 1] = color("dispelBleed", L["Bleed"])
+        debuffRows[#debuffRows + 1] = color("dispelNone", L["No dispel type"])
     end
     items[#items + 1] = { type = "section", title = L["Debuffs"], items = debuffRows }
 

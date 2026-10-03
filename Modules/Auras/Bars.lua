@@ -77,9 +77,16 @@ local CORNER = {
     rightup   = "BOTTOMLEFT", leftup  = "BOTTOMRIGHT",
 }
 
-local function applyLayout(container, kind, db)
+-- Icon size and spacing on whole physical pixels of the holder, so every icon
+-- and every border edge starts on a pixel and all four sides come out equal.
+local function snapped(kind, db, frame)
+    local size = math.max(ns:Pixel(frame, 1), ns:PixelSnap(db.iconSize, frame))
+    return size, ns:PixelSnap(padOf(kind, db), frame)
+end
+
+local function applyLayout(container, kind, db, holder)
     local dir = AnchorUtil and AnchorUtil.FlowDirection
-    local size, pad = db.iconSize, padOf(kind, db)
+    local size, pad = snapped(kind, db, holder)
     if container.SetFlowLayoutPadding then
         pcall(container.SetFlowLayoutPadding, container, 0, 0, 0, 0)
     end
@@ -103,12 +110,55 @@ end
 local function sizeHolder(kind, db)
     local b = bars[kind]
     if not b then return end
-    local size, pad = db.iconSize, padOf(kind, db)
+    local size, pad = snapped(kind, db, b.holder)
     local w = perRow(kind, db) * (size + pad) - pad
     local h = rowsOf(kind, db) * (size + pad) - pad
     b.holder:SetSize(math.max(w, size), math.max(h, size))
+end
+
+-- The holder sits wherever the mover put it, usually between two pixels. The
+-- container is anchored at the corner the icons grow from, moved by the
+-- fraction of a pixel that puts that corner on the grid.
+local function placeContainer(kind)
+    local b = bars[kind]
+    if not (b and b.container and b.db) then return end
+    local holder, db = b.holder, b.db
+    local corner = CORNER[(db.growthX or "right") .. (db.growthY or "down")] or "TOPLEFT"
+    local px = ns:Pixel(holder, 1)
+    local l, r, t, bt = holder:GetLeft(), holder:GetRight(), holder:GetTop(), holder:GetBottom()
+    local dx, dy = 0, 0
+    if l and r and t and bt and px > 0 then
+        local x = corner:find("LEFT") and l or r
+        local y = corner:find("TOP") and t or bt
+        dx = (math.floor(x / px + 0.5) - x / px) * px
+        dy = (math.floor(y / px + 0.5) - y / px) * px
+    end
     b.container:ClearAllPoints()
-    b.container:SetAllPoints(b.holder)
+    b.container:SetPoint(corner, holder, corner, dx, dy)
+    b.container:SetSize(holder:GetWidth(), holder:GetHeight())
+end
+
+-- Re-placed after every move, resize or rescale of the holder; one frame
+-- later, when the new position can be read back.
+local function watchHolder(kind)
+    local b = bars[kind]
+    if b.watched then return end
+    b.watched = true
+    local queued
+    local function queue()
+        if queued then return end
+        queued = true
+        C_Timer.After(0, function() queued = false; placeContainer(kind) end)
+    end
+    hooksecurefunc(b.holder, "SetPoint", queue)
+    hooksecurefunc(b.holder, "SetSize", queue)
+    hooksecurefunc(b.holder, "SetScale", function()
+        queue()
+        -- the borders were measured in pixels of the old scale
+        if b.builtScale and b.holder:GetEffectiveScale() ~= b.builtScale and A.QueueRebuild then
+            A.QueueRebuild()
+        end
+    end)
 end
 
 -- ---------------------------------------------------------------------------
@@ -123,11 +173,11 @@ local function newContainer(holder, kind, db)
     local ok, c = pcall(CreateFrame, "AuraContainer", nil, holder,
         "CustomAuraContainerTemplate")
     if not ok or not c then return nil end
-    local size, pad = db.iconSize, padOf(kind, db)
+    local size, pad = snapped(kind, db, holder)
     local opts = {
         maxFrameCount   = countFor(kind, db),
         sortDirection   = _G.AuraContainerSortDirection and _G.AuraContainerSortDirection.Normal,
-        initializeFrame = A.Style.Initializer(kind, db),
+        initializeFrame = A.Style.Initializer(kind, db, holder),
         layout = { elementWidth = size, elementHeight = size,
                    elementSpacing = pad, lineSpacing = pad },
     }
@@ -181,6 +231,9 @@ function A.Build(mod)
             })
             ns:ApplyMover(b.mover)
         end
+        b.db = db
+        b.builtScale = b.holder:GetEffectiveScale()
+        watchHolder(kind)
         b.container = newContainer(b.holder, kind, db)
         if not b.container then
             -- NOT `available = false`: the widget itself answered for this
@@ -191,7 +244,8 @@ function A.Build(mod)
             return false
         end
         sizeHolder(kind, db)
-        applyLayout(b.container, kind, db)
+        placeContainer(kind)
+        applyLayout(b.container, kind, db, b.holder)
         -- the scale is the mover's business (opts.scalable); setting it here
         -- as well would fight ApplyMover below
         b.holder:Show()
@@ -199,6 +253,7 @@ function A.Build(mod)
         pcall(b.container.SetUnit, b.container, "player")
         ns:RefreshMoverGeometry(b.mover)
         ns:ApplyMover(b.mover)
+        placeContainer(kind)
     end
     return true
 end

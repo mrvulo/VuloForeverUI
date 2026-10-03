@@ -31,9 +31,10 @@ local DEBUFF_ART = {
     "Interface\\Icons\\Ability_Creature_Disease_02",
     "Interface\\Icons\\Spell_Nature_CorrosiveBreath",
     "Interface\\Icons\\Ability_Gouge",
+    "Interface\\Icons\\Ability_Warrior_WarCry",
 }
 -- The dispel type each sample debuff stands for, in DEBUFF_ART's order.
-local DEBUFF_TYPE = { "dispelMagic", "dispelCurse", "dispelDisease", "dispelPoison", "dispelBleed" }
+local DEBUFF_TYPE = { "dispelMagic", "dispelCurse", "dispelDisease", "dispelPoison", "dispelBleed", "dispelNone" }
 local TIMES  = { "58m", "12s", "2h", "4s", "27m", "9s" }
 local STACKS = { "", "3", "", "", "5", "" }
 
