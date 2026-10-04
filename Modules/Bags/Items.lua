@@ -169,13 +169,51 @@ local function wornLevel(invSlot)
     return value
 end
 
-function Items.ForgetWorn()
-    wipe(worn)
+-- An item's stats as the client lists them (armour, attributes, weapon DPS),
+-- by link, so the same piece is asked once until the equipment changes.
+local statsOf = {}
+
+local function stats(link)
+    if type(link) ~= "string" then return nil end
+    local cached = statsOf[link]
+    if cached ~= nil then return cached or nil end
+    local ok, t = pcall(C_Item.GetItemStats, link)
+    -- an item the client has not loaded yet answers nothing: ask again later
+    if not (ok and type(t) == "table") then return nil end
+    statsOf[link] = t
+    return t
 end
 
--- Would the player be better off wearing this? Judged by item level alone,
--- and only for gear this character can wear today: the client's own "can use"
--- covers class and armour type, the level requirement is checked here.
+-- Does every listed stat go the same way? 1 = only gains, -1 = only losses,
+-- 0 = mixed or nothing to compare -- the item level decides those.
+local function statVerdict(new, old)
+    if not (new and old) then return 0 end
+    local gain, loss = false, false
+    for key, v in pairs(new) do
+        local o = old[key]
+        o = type(o) == "number" and o or 0
+        if type(v) == "number" then
+            if v > o then gain = true elseif v < o then loss = true end
+        end
+    end
+    for key, o in pairs(old) do
+        if new[key] == nil and type(o) == "number" and o > 0 then loss = true end
+    end
+    if gain and not loss then return 1 end
+    if loss and not gain then return -1 end
+    return 0
+end
+
+function Items.ForgetWorn()
+    wipe(worn)
+    wipe(statsOf)
+end
+
+-- Would the player be better off wearing this? Only for gear this character
+-- can wear today: the client's own "can use" covers class and armour type,
+-- the level requirement is checked here. The stats decide when they all point
+-- the same way -- a higher item level with less armour and nothing else is no
+-- upgrade -- and the item level decides the rest.
 function Items.IsUpgrade(bagID, slotID, info)
     if not (info and type(info.itemID) == "number") then return false end
     local loc = Items.EquipLoc(info)
@@ -190,13 +228,15 @@ function Items.IsUpgrade(bagID, slotID, info)
     local ok, level = pcall(C_Item.GetCurrentItemLevel, here)
     if not (ok and type(level) == "number") then return false end
 
-    local weakest
+    -- Better than either of two worn pieces is enough: it would replace that
+    -- one. A two-hander replaces the off hand as well, but comparing it against
+    -- the main hand alone is the honest guess the data allows.
+    local mine = stats(info.hyperlink or C_Container.GetContainerItemLink(bagID, slotID))
     for _, invSlot in ipairs(targets) do
         local w = wornLevel(invSlot)
         if w == false then return true end
-        if not weakest or w < weakest then weakest = w end
+        local verdict = statVerdict(mine, stats(GetInventoryItemLink("player", invSlot)))
+        if verdict > 0 or (verdict == 0 and level > w) then return true end
     end
-    -- A two-hander replaces the off hand as well, but comparing it against
-    -- the main hand alone is the honest guess an item level allows.
-    return weakest ~= nil and level > weakest
+    return false
 end
