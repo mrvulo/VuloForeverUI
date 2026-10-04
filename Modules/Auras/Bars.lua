@@ -133,10 +133,26 @@ local function placeContainer(kind)
         dx = (math.floor(x / px + 0.5) - x / px) * px
         dy = (math.floor(y / px + 0.5) - y / px) * px
     end
+    -- Kept for the weapon enchants (Enchants.lua), which start the buff row
+    -- from the same corner on the same pixel grid.
+    b.corner, b.dx, b.dy = corner, dx, dy
+    -- The enchants take the first places of the buff row, so the buffs start
+    -- that many places further in -- and their rows are as much shorter, so
+    -- the block keeps to its box.
+    local used = (kind == "buffs" and A.EnchantSlots) and A.EnchantSlots() or 0
+    local size, pad = snapped(kind, db, holder)
+    local shift = used * (size + pad)
+    if corner:find("RIGHT") then shift = -shift end
+    if b.container.SetFlowLayoutMaximumLineSize then
+        pcall(b.container.SetFlowLayoutMaximumLineSize, b.container,
+            math.max(1, perRow(kind, db) - used) * (size + pad))
+    end
     b.container:ClearAllPoints()
-    b.container:SetPoint(corner, holder, corner, dx, dy)
+    b.container:SetPoint(corner, holder, corner, dx + shift, dy)
     b.container:SetSize(holder:GetWidth(), holder:GetHeight())
+    if kind == "buffs" and A.PlaceEnchants then A.PlaceEnchants() end
 end
+A.PlaceContainer = placeContainer
 
 -- Re-placed after every move, resize or rescale of the holder; one frame
 -- later, when the new position can be read back.
@@ -211,26 +227,133 @@ function A.IsBuilt()
     return true
 end
 
+-- ---------------------------------------------------------------------------
+-- Home: beside the minimap
+--
+-- A block nobody has moved stands at its home: the buffs with their top-right
+-- corner at the minimap's top-left, the debuffs under them, right edges flush. Home is worked out from where the minimap stands NOW and
+-- written back as the mover's centre offset, so the editor, a nudge and the
+-- layouts all see the real place. Once the player drags a block it counts as
+-- moved and stays where it was put; a reset in the editor sends it home again.
+-- ---------------------------------------------------------------------------
+local HOME_GAP = 10
+local CHAIN = { "buffs", "debuffs" }
+
+local holders = {}       -- key -> { holder, mover, pos }, one per block
+A.Holders = holders
+local homeOf = {}        -- key -> { x, y } of its home on the last pass
+local placing            -- set while the homes are laid, so their own moves are not "moved"
+local queueHomes         -- forward
+
+local function moverChanged(key)
+    local h = holders[key]
+    if not h then return end
+    local pos = h.pos
+    if ns._inMoverReset then
+        pos.moved = nil
+    elseif not placing then
+        -- no home measured yet: the first build is still putting it together
+        local home = homeOf[key]
+        if home and pos.x then
+            pos.moved = (math.abs(pos.x - home[1]) > 1 or math.abs((pos.y or 0) - home[2]) > 1) or nil
+        end
+    end
+    -- a block under this one may have to follow it
+    if not placing then queueHomes() end
+end
+
+-- The frame a block hangs under, and at which of its points.
+local function homeParent(key)
+    for i = #CHAIN, 1, -1 do
+        if CHAIN[i] == key then
+            for j = i - 1, 1, -1 do
+                local h = holders[CHAIN[j]]
+                if h and h.holder:IsShown() then return h.holder, "BOTTOMRIGHT", 0, -HOME_GAP end
+            end
+            break
+        end
+    end
+    local mm = _G.MinimapCluster
+    if mm and mm:GetLeft() then return mm, "TOPLEFT", -HOME_GAP, -HOME_GAP end
+    return UIParent, "TOPRIGHT", -200, -HOME_GAP
+end
+
+local function placeHomes()
+    placing = true
+    for _, key in ipairs(CHAIN) do
+        local h = holders[key]
+        if h and h.holder:IsShown() and not h.pos.moved and not ns:GetMoverLink(h.mover.key) then
+            local rel, relPoint, x, y = homeParent(key)
+            h.holder:ClearAllPoints()
+            h.holder:SetPoint("TOPRIGHT", rel, relPoint, x, y)
+            local cx, cy = ns:GetCenterOffsets(h.holder)
+            if cx then
+                h.pos.x, h.pos.y = cx, cy
+                homeOf[key] = { cx, cy }
+            end
+            ns:ApplyMover(h.mover)
+        end
+    end
+    placing = false
+end
+A.PlaceHomes = placeHomes
+
+local homesQueued
+queueHomes = function()
+    if homesQueued then return end
+    homesQueued = true
+    C_Timer.After(0, function()
+        homesQueued = false
+        placeHomes()
+    end)
+end
+
+-- The minimap is laid out again at login, after a loading screen and whenever
+-- the editor moves it; the blocks still at home go with it.
+local minimapHooked
+local function hookMinimap()
+    if minimapHooked or not _G.MinimapCluster then return end
+    minimapHooked = true
+    hooksecurefunc(_G.MinimapCluster, "SetPoint", queueHomes)
+    hooksecurefunc(_G.MinimapCluster, "SetScale", queueHomes)
+end
+
+-- One holder and its mover per block, made once; `pos` follows the profile.
+function A.EnsureHolder(key, label, pos)
+    local h = holders[key]
+    if not h then
+        local holder = CreateFrame("Frame", "VuloForeverUI_Aura_" .. key, UIParent)
+        holder:SetSize(200, 40)
+        h = { holder = holder }
+        h.mover = ns:CreateMover(holder, {
+            key      = "auras_" .. key,
+            label    = label,
+            db       = pos,
+            width    = 200,
+            height   = 40,
+            scalable = true,
+            onMove   = function() moverChanged(key) end,
+        })
+        holders[key] = h
+    end
+    h.pos = pos
+    h.mover.opts.db = pos
+    hookMinimap()
+    return h
+end
+
 function A.Build(mod)
     if not canBuild() then return false end
     local db = mod.db
     for _, kind in ipairs(KINDS) do
         local b = bars[kind]
         if not b then
-            local holder = CreateFrame("Frame", "VuloForeverUI_Aura_" .. kind, UIParent)
-            holder:SetSize(200, 40)
-            b = { holder = holder }
+            local h = A.EnsureHolder(kind, LABELS[kind], db[kind])
+            b = { holder = h.holder, mover = h.mover }
             bars[kind] = b
-            b.mover = ns:CreateMover(holder, {
-                key      = "auras_" .. kind,
-                label    = LABELS[kind],
-                db       = db[kind],
-                width    = 200,
-                height   = 40,
-                scalable = true,
-            })
             ns:ApplyMover(b.mover)
         end
+        A.EnsureHolder(kind, LABELS[kind], db[kind])
         b.db = db
         b.builtScale = b.holder:GetEffectiveScale()
         watchHolder(kind)
@@ -255,6 +378,8 @@ function A.Build(mod)
         ns:ApplyMover(b.mover)
         placeContainer(kind)
     end
+    if A.BuildEnchants then A.BuildEnchants(mod) end
+    placeHomes()
     return true
 end
 
@@ -264,6 +389,7 @@ function A.Hide()
         local b = bars[kind]
         if b then b.holder:Hide() end
     end
+    if A.HideEnchants then A.HideEnchants() end
 end
 
 -- A setting changed: the containers are thrown away and made again. The

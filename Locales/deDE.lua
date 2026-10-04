@@ -1167,6 +1167,8 @@ ns:RegisterLocale("deDE", {
     ["Downwards"] = "Nach unten",
     ["Upwards"] = "Nach oben",
     ["Use our own aura rows"] = "Eigene Auren-Reihen benutzen",
+    ["Show weapon enchants"] = "Waffenverzauberungen zeigen",
+    ["Imbues, poisons and stones on your weapons are no auras. They take the first places of the buff row, as in the game's own row."] = "Waffenzauber, Gifte und Steine auf deinen Waffen sind keine Auren. Sie stehen auf den ersten Plätzen der Buff-Reihe, wie in der Reihe des Spiels.",
     ["Replaces the client's buff and debuff rows with ours. Leaving this off again needs a reload before the client's come back."] = "Ersetzt die Buff- und Debuff-Reihen des Clients durch unsere. Wer das wieder abschaltet, braucht ein Neuladen, bis die Reihen des Clients zurück sind.",
     ["|cffaaaaaaThe client's own rows are showing. Only the wording of the times below applies to them.|r"] = "|cffaaaaaaEs werden die Reihen des Clients angezeigt. Für sie gilt nur die Schreibweise der Zeiten weiter unten.|r",
     ["The client's rows"] = "Die Reihen des Clients",

@@ -68,8 +68,14 @@ local mod = ns:RegisterModule("auras", {
         dispelBleed      = { r = 0.750, g = 0.150, b = 0.150 },
         dispelNone       = { r = 0.800, g = 0.000, b = 0.000 },
 
-        buffs   = { x = 0, y = -20,  scale = 1 },
-        debuffs = { x = 0, y = -120, scale = 1 },
+        -- Temporary weapon enchants are no auras; they take the first places
+        -- of the buff row (Enchants.lua).
+        weaponEnchants = true,
+
+        -- Only used once a block has been moved: until then it stands beside
+        -- the minimap (Bars.lua, "Home"), whatever these say.
+        buffs    = { x = 0, y = -20,  scale = 1 },
+        debuffs  = { x = 0, y = -120, scale = 1 },
     },
 })
 
@@ -295,6 +301,8 @@ function mod:GetOptions()
         num("maxBuffs", L["Most icons"], 1, 40, 1),
         num("paddingBuffs", L["Spacing"], 0, 20, 1),
         ns.BorderRows(rows, { size = "buffBorderSize", color = "buffBorderColor" }),
+        flag("weaponEnchants", L["Show weapon enchants"],
+             L["Imbues, poisons and stones on your weapons are no auras. They take the first places of the buff row, as in the game's own row."]),
     } }
 
     local debuffRows = {

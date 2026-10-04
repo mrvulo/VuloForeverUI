@@ -104,6 +104,7 @@ Modules\Minimap\StyleOptions.lua
 Modules\Minimap\Elements.lua
 Modules\Auras\Style.lua
 Modules\Auras\Bars.lua
+Modules\Auras\Enchants.lua
 Modules\Auras\Auras.lua
 Modules\Auras\Preview.lua
 Modules\UnitFrames\Skins.lua
