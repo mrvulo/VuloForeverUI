@@ -427,19 +427,86 @@ function Bags.HookBlizzard()
     for _, frame in ipairs(blizzardFrames()) do
         frame:HookScript("OnShow", function(self)
             if not (mod.active and Bags.db().replaceBlizzard) then return end
-            ns.NextFrame(function() pcall(self.Hide, self) end)
+            Bags.StashBlizzard(self)
+        end)
+        -- Closed by the client itself, securely: from here on it may be
+        -- hidden and parked again without running any of its scripts.
+        frame:HookScript("OnHide", function(self)
+            if Bags.UnstashBlizzard(self) then ns.NextFrame(Bags.ParkBlizzard) end
         end)
         installed = installed + 1
+    end
+    -- The client re-anchors every shown bag after any bag opens or closes; a
+    -- stashed one would land back on screen, invisible but still in the way.
+    if type(_G.UpdateContainerFrameAnchors) == "function" then
+        hooksecurefunc("UpdateContainerFrameAnchors", function() Bags.RestashBlizzard() end)
     end
 
     Bags.hooked = installed > 0
     Bags.ParkBlizzard()
 end
 
+-- WHY A VISIBLE CLIENT BAG IS NEVER HIDDEN BY US
+--
+-- Hide() on a VISIBLE bag runs the client's own OnHide in OUR execution, and
+-- that OnHide rewrites ContainerFrameSettingsManager.bagsShown. That field is
+-- then tainted, and under our park nothing of the client's ever rewrites it
+-- securely again. The next secure pass that reads it -- the bank's OnShow
+-- opening all bags, right before it buys the free first bank tab -- runs
+-- tainted, and the purchase is forbidden. SetParent onto the hidden park does
+-- the same, through the same OnHide.
+--
+-- So only a bag that is NOT visible (parked, or closed) is hidden or parked.
+-- A visible one is STASHED: no alpha, off the screen. That runs no script of
+-- the client's at all, and the client closes it itself on its next toggle,
+-- after which it is parked like the rest.
+local stashed = {}
+
+local function moveAway(frame)
+    if not stashed[frame] then return end
+    frame:ClearAllPoints()
+    frame:SetPoint("TOPRIGHT", UIParent, "BOTTOMLEFT", -4000, -4000)
+end
+
+function Bags.StashBlizzard(frame)
+    if not frame:IsVisible() then return end
+    stashed[frame] = true
+    frame:SetAlpha(0)
+    -- A bag frame is protected in a fight and refuses to move.
+    if InCombatLockdown() then
+        ns:RunOutOfCombatOnce("bags.stash", Bags.RestashBlizzard)
+    else
+        moveAway(frame)
+    end
+end
+
+function Bags.RestashBlizzard()
+    if InCombatLockdown() then return end
+    for frame in pairs(stashed) do
+        if frame:IsVisible() then moveAway(frame) end
+    end
+end
+
+-- True when the frame had been stashed. Its position is left off screen: the
+-- client anchors a bag anew every time it opens one.
+function Bags.UnstashBlizzard(frame)
+    if not stashed[frame] or frame:IsVisible() then return false end
+    stashed[frame] = nil
+    frame:SetAlpha(1)
+    return true
+end
+
 function Bags.HideBlizzard()
-    -- In combat a protected frame refuses to be hidden and says nothing about
-    -- it, so the attempt is wrapped and simply left for the next try.
-    for _, frame in ipairs(blizzardFrames()) do pcall(frame.Hide, frame) end
+    for _, frame in ipairs(blizzardFrames()) do
+        if frame:IsVisible() then
+            Bags.StashBlizzard(frame)
+        elseif frame:IsShown() and not InCombatLockdown() then
+            -- Shown under the park: invisible already, so hiding it runs no
+            -- script -- it only keeps the bag from turning up should the
+            -- client hand it back to UIParent.
+            frame:Hide()
+        end
+    end
 end
 
 -- The client's bag frames, PARKED under a frame of ours that is never shown.
@@ -471,8 +538,14 @@ function Bags.ParkBlizzard()
     for _, frame in ipairs(blizzardFrames()) do
         local parent = frame:GetParent()
         if parent ~= park then
-            parkedFrom[frame] = parent or UIParent
-            frame:SetParent(park)
+            if frame:IsVisible() then
+                -- See above: a visible bag is stashed, and parked once the
+                -- client has closed it.
+                Bags.StashBlizzard(frame)
+            else
+                parkedFrom[frame] = parent or UIParent
+                frame:SetParent(park)
+            end
         end
     end
 end
@@ -486,12 +559,19 @@ function Bags.UnparkBlizzard()
     for frame, parent in pairs(parkedFrom) do
         if frame:GetParent() == park then
             -- Shown under the park means "open" to the client, and would
-            -- turn up the moment it is back: it comes back closed.
-            pcall(frame.Hide, frame)
+            -- turn up the moment it is back: it comes back closed. Under the
+            -- hidden park it is not visible, so this runs none of its scripts.
+            frame:Hide()
             frame:SetParent(parent)
         end
     end
     wipe(parkedFrom)
+    -- A stashed bag gets its alpha back; it stays open off screen until the
+    -- client's next toggle closes it and anchors it anew.
+    for frame in pairs(stashed) do
+        stashed[frame] = nil
+        frame:SetAlpha(1)
+    end
 end
 
 -- The label of a category or a window, built lazily: a locale key read while
