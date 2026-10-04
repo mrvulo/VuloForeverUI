@@ -7,6 +7,7 @@
 ## SavedVariablesPerCharacter: VuloForeverUICharDB
 ## IconTexture: Interface\AddOns\VuloForeverUI\Media\Icons\ui\vui4
 ## X-Curse-Project-ID: 1704138
+## X-Wago-ID: v63QBkGb
 
 
 Libs\LibStub\LibStub.lua
