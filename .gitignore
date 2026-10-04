@@ -4,3 +4,7 @@ tools/node_modules/
 
 # Editor
 .vscode/
+
+# Claude Code (bleibt lokal)
+CLAUDE.md
+.claude/
