@@ -358,6 +358,9 @@ local function xpPage()
             { value = "percent",      text = L["Percent"] },
             { value = "percentquest", text = L["Percent, with finished quests"] },
         }, 240),
+        slider(key, "leftX", L["Left text sideways"], -600, 600, 1),
+        slider(key, "centerX", L["Middle text sideways"], -600, 600, 1),
+        slider(key, "rightX", L["Right text sideways"], -600, 600, 1),
     })
     -- Our own bar has these in its look rows further down.
     if client then

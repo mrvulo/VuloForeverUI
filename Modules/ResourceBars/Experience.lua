@@ -334,17 +334,39 @@ local function join(...)
     return table.concat(out, SEP)
 end
 
--- The two sides may only use what the middle text leaves free; whatever does
--- not fit is cut with an ellipsis rather than written over the middle.
-local function fitSides(frame)
+-- Where the three texts sit: their home on the bar (4 px in from each end,
+-- the middle in the middle) plus the player's sideways shift.
+local function placeTexts(frame, bar)
+    local lx, cx, rx = bar.leftX or 0, bar.centerX or 0, bar.rightX or 0
+    frame.left:ClearAllPoints()
+    frame.left:SetPoint("LEFT", frame, "LEFT", 4 + lx, 0)
+    frame.center:ClearAllPoints()
+    frame.center:SetPoint("CENTER", frame, "CENTER", cx, 0)
+    frame.right:ClearAllPoints()
+    frame.right:SetPoint("RIGHT", frame, "RIGHT", -4 + rx, 0)
+end
+
+-- The two sides may only use what the middle text leaves free on their side;
+-- whatever does not fit is cut with an ellipsis rather than written over the
+-- middle. With the middle empty, each side may run to the bar's centre line
+-- (shifted with the middle text), so the two still never meet.
+local GAP = 10
+
+local function fitSides(frame, bar)
     local total = frame:GetWidth() or 0
+    local lx, cx, rx = bar.leftX or 0, bar.centerX or 0, bar.rightX or 0
     local mid = (frame.center:GetText() or "") ~= "" and frame.center:GetStringWidth() or 0
-    local room = math.max(20, (total - mid) / 2 - 12)
-    for _, fs in ipairs({ frame.left, frame.right }) do
+    local midLeft  = total / 2 + cx - mid / 2
+    local midRight = total / 2 + cx + mid / 2
+    local rooms = {
+        [frame.left]  = midLeft - (4 + lx) - GAP,
+        [frame.right] = (total - 4 + rx) - midRight - GAP,
+    }
+    for fs, room in pairs(rooms) do
         fs:SetWordWrap(false)
         fs:SetWidth(0)
         local w = fs:GetStringWidth() or 0
-        fs:SetWidth(math.min(w + 2, room))
+        fs:SetWidth(math.max(20, math.min(w + 2, room)))
     end
 end
 
@@ -402,7 +424,8 @@ function XP.PaintExtras(frame, bar, d, texture)
     end
     frame.center:SetText(centerText(bar, d))
     frame.center:Show()
-    fitSides(frame)
+    placeTexts(frame, bar)
+    fitSides(frame, bar)
 end
 
 -- Our own bar, built by RB.BuildRegions and dressed by RB.PaintLook: the real
@@ -435,6 +458,15 @@ local function clientExpBar()
         local expBar = container and container.bars and container.bars[index]
         if expBar and expBar:IsShown() then return expBar end
     end
+    return nil
+end
+
+-- The width of the client's bar, for the settings preview: the texts are cut
+-- to the room they have, so the preview has to have the same room.
+function XP.ClientBarWidth()
+    local expBar = clientExpBar()
+    local w = expBar and expBar.StatusBar and expBar.StatusBar:GetWidth()
+    if type(w) == "number" and w > 50 then return w end
     return nil
 end
 

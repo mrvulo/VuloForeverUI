@@ -161,6 +161,9 @@ RB.EXTRA_DEFAULTS = {
         incompleteColor = { r = 1.0, g = 0.82, b = 0.31 },
         overlayOpacity  = 0.45,
         centerText      = "valuemaxrest",
+        leftX           = 0,       -- sideways shift of the three texts
+        centerX         = 0,
+        rightX          = 0,
         showRate        = true,
         showQuestRested = true,
         showLevelTime   = true,
@@ -190,7 +193,7 @@ function RB.db() return mod.db end
 -- Raised when BAR_DEFAULTS or EXTRA_DEFAULTS grow a key, so a bar saved by an
 -- older build is filled again rather than reaching the paint pass with a hole
 -- in it.
-RB.DEFAULTS_VERSION = 4
+RB.DEFAULTS_VERSION = 5
 
 local function presetFor(key)
     for _, def in ipairs(RB.BARS) do
