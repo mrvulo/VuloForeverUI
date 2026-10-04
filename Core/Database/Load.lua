@@ -23,7 +23,7 @@ ns.defaults = {
         -- Fonts and custom colors are a LOOK, not a playstyle: account-wide on
         -- purpose, like the edit layouts above. Colors hold only overrides --
         -- an absent token means "client default".
-        fonts = { font = "Expressway", outline = "NONE", gameText = false },
+        fonts = { font = "Expressway", outline = "NONE", gameText = false, damageText = "" },
         classColors = {},
         powerColors = {},
         -- Per-profile hotkeys are account-wide bindings, not profile data.

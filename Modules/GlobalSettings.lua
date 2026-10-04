@@ -257,6 +257,33 @@ local function applyGameTextFont()
     end
 end
 
+-- The numbers the game floats over a target -- damage, heals, "Miss" -- are
+-- drawn by the engine in the font DAMAGE_TEXT_FONT names. The engine reads it
+-- when the world loads, so it is set at ADDON_LOADED, long before that, and a
+-- change only shows after the next login. Empty means the client's own font,
+-- and then the variable is not touched at all.
+local function applyDamageFont()
+    local db = ns.db and ns.db.global and ns.db.global.fonts
+    local name = db and db.damageText
+    if type(name) ~= "string" or name == "" or not ns.MediaFont then return end
+    local path = ns.MediaFont(name)
+    if path then _G.DAMAGE_TEXT_FONT = path end
+end
+
+local function relogPopup()
+    if not StaticPopupDialogs["VFUI_RELOG_DAMAGE_FONT"] then
+        StaticPopupDialogs["VFUI_RELOG_DAMAGE_FONT"] = {
+            text = L["Damage number font changed. It applies after you log out and back in."],
+            button1 = OKAY,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+    end
+    StaticPopup_Show("VFUI_RELOG_DAMAGE_FONT")
+end
+
 -- In-place field mutation, never table replacement: every consumer in this
 -- addon reads ns.CLASS_COLORS / ns.POWER_COLORS at paint time and may cache a
 -- reference, so rewriting the fields recolors everything on its next repaint.
@@ -301,6 +328,7 @@ end
 ns.OnLocaleReady(function()
     applyGlobalFont()
     applyCustomColors()
+    applyDamageFont()
 end)
 -- One hook for the profile import: a string carrying look data applies it
 -- through this instead of waiting for the next login.
@@ -420,6 +448,16 @@ local function fontsOptions()
               else
                   StaticPopup_Show("VFUI_RELOAD_FONT")
               end
+          end },
+
+        { type = "dropdown", label = L["Damage number font"], noOverride = true,
+          tooltip = L["The numbers the game floats over your target: damage, heals, misses.\n\n|cffaaaaaaApplies after you log out and back in.|r"],
+          values = ns.MediaFontValues and ns.MediaFontValues({ value = "", text = L["Game default"] }) or {},
+          get = function() return fdb.damageText or "" end,
+          set = function(_, v)
+              fdb.damageText = v or ""
+              applyDamageFont()
+              relogPopup()
           end },
     }
 
