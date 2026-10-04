@@ -10,6 +10,14 @@
 #   * a repository secret CF_API_KEY, from
 #     https://legacy.curseforge.com/account/api-tokens
 #     (GitHub: Settings -> Secrets and variables -> Actions -> New secret)
+#   * Wago Addons, the same way: `## X-Wago-ID: <id>` in the TOC (the ID on
+#     the project's page at addons.wago.io) and a secret WAGO_API_TOKEN, from
+#     https://addons.wago.io/account/apikeys
+#   * WoWInterface, the same way: `## X-WoWI-ID: <id>` in the TOC (the number
+#     in the addon's URL on wowinterface.com) and a secret WOWI_API_TOKEN, from
+#     https://www.wowinterface.com/downloads/filecpl.php?action=apitokens
+#   Each upload runs only when both its TOC line and its secret exist, so a
+#   site that is not set up yet is simply skipped.
 #
 # GITHUB_TOKEN is provided by Actions itself; nothing to set up for that.
 name: Release
@@ -37,4 +45,6 @@ jobs:
         uses: BigWigsMods/packager@v2
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
