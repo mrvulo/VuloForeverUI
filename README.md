@@ -1,82 +1,108 @@
 # VuloForeverUI
 
-Modular UI suite for **World of Warcraft: Forever** (client 1.60.1, interface `16001`).
+A complete, modular UI suite for **World of Warcraft: Forever** (client 1.60.1, interface `16001`).
 
-Successor to VuloClassicUI, which targets Classic Era / Anniversary / Wrath. This is a
-separate product, not a port: Forever belongs to Blizzard's **Mainline family** (internal
-game type `camelot`), so this addon is written against the retail API, retail Edit Mode
-and the retail in-combat restrictions. See
-[docs/forever-client-research.md](docs/forever-client-research.md) for how that was
-established and what it costs.
+Unit frames, action bars, nameplates, bags, chat, minimap, damage meter, cooldowns and a long
+list of small conveniences — one settings window, one look, live previews for everything.
+Every module can be switched off, and off means it registers no events at all.
 
-Version 0.1.0, and the client it targets is a beta — expect both to move.
+Fully in **English and German**.
+
+## Install
+
+- **CurseForge:** [VuloForeverUI](https://www.curseforge.com/projects/1704138), or through the CurseForge app
+- **GitHub:** the zip from [Releases](https://github.com/mrvulo/VuloForeverUI/releases),
+  unpacked into the Forever client's `Interface/AddOns/` folder
+
+In game, `/vfui` opens the settings. On first start a short setup asks for the basics.
+
+The client is still young and moves with every build; so does this addon. Bug reports are
+welcome as [issues](https://github.com/mrvulo/VuloForeverUI/issues) — `/vfdiag` collects
+errors and blocked actions into a log you can paste along.
 
 ## What is in it
 
-Eighteen modules on top of the framework. Every module can be switched off per character,
-and off means it registers no events at all.
+### Unit frames and HUD
 
-| Sidebar group | Modules |
-|---|---|
-| Global | Global Settings (theme, fonts, colours, UI scale, graphics preset), Edit Mode, Locales |
-| Unit Frames | Unit Frames — Blizzard's own with extras, a Classic reskin, or our flat Modern frame |
-| General | Chat, Bags, Quality of Life (vendor, looting, readouts) |
-| HUD | Action Bars, Auras, Cooldown Manager, Damage Meter, Minimap, Minimap Button Collector, Nameplates, Resource Bars |
-| Tabs of Global Settings | Profiles (per class, per character, import/export), Bar Setups |
-| No row of its own | Minimap Button — switched from Global Settings |
+- **Unit Frames** — player, target, focus and target of target in three looks: Blizzard's
+  own with extras, the Classic art, or a flat Modern frame. Class colours, aggro, class icon.
+- **Action Bars** — dresses the client's own bars: the look they came with, the old 1.x
+  stone band, or flat square icons. Per-bar settings, out-of-range tint, free bag slots on
+  the backpack, totem bar for Shamans.
+- **Nameplates** — enemy plates with health, cast bar, spell target, threat colours, target
+  and hover effects, execute glow, quest progress (3/8, 40%), aura groups for buffs,
+  debuffs and crowd control.
+- **Resource Bars** — free-standing power, cast and swing timer bars, each placed on its own.
+  Shows a spell's cost while you cast it.
+- **Cooldown Manager** — icon bars for your own cooldowns; the swipe and countdown are drawn
+  by the client, so they keep running in combat. Optional ready sound.
+- **Auras** — your buffs and debuffs in rows of your own, dispel-type borders, right-click
+  to cancel a buff.
+- **Damage Meter** — damage, healing, interrupts, dispels and deaths in up to five windows,
+  breakdown per player, a threat tab, and a Classic window style.
+- **Minimap** — three looks (Standard, classic ring, flat Modern), movable readouts, quest
+  markers for your open objectives with distance and waypoint on click.
+- **Minimap Button Collector** — every other addon's minimap button in one box.
 
-The framework underneath: the settings window with sidebar, search and live previews;
-the options builder; profiles with per-class assignment and keybinds; import/export
-strings; the first-time setup; the addon's own Edit Mode HUD for its own frames; the
-module and slash registries; and `Core/Secret.lua`, which is the reason the rest works at
-all — see below.
+### General
+
+- **Bags** — one window for all bags and the bank, sorted into categories, with your own
+  categories on top. A search that understands `#epic`, `#boe`, `#upgrade`, `#potion`,
+  item level ranges (`20-40`), and / or / not. Upgrade arrows, new-item glow, items you
+  cannot use where you stand faded out, bank viewable from anywhere, own sort order.
+- **Chat** — the chat in the suite's style: own tabs with unread glow, side buttons, a
+  movable frame, and a scrollback that survives a reload.
+- **Quality of Life** — sell junk and repair at the merchant, mark junk yourself, faster
+  looting, Train all, mail recipients one click away, flight time bar, zone levels on the
+  world map, quest colours and quest-line steps, a quest journal per character, a gold
+  tracker, trinket slots, auto-answers to the prompts you always click the same way.
+- **Reminders** — an icon when one of your own buffs or a weapon enchant is missing; click
+  it to cast. Hidden in combat.
+- **Tooltip IDs** — spell, item, NPC, quest and many other IDs in tooltips.
+
+### Global
+
+- **Global Settings** — theme, five window styles, fonts, colours, class colours, UI scale,
+  graphics preset.
+- **Edit Mode** (`/vedit`) — unlock every window of the suite and place it: grid, snapping,
+  opacity in and out of combat per window.
+- **Profiles** — per character or per class, assigned automatically on login, with
+  import/export strings.
+- **Bar Setups** — named snapshots of your action bars, macros and keybindings, restored with
+  one click.
+- **Locales** — English or German, or follow the game client.
 
 ## Commands
 
 | Command | Does |
 |---|---|
-| `/vfui`, `/vulo` | open the settings window; add `help`, `modules`, `client`, `setup`, `debug` or `reset` |
+| `/vfui`, `/vulo` | open the settings; add `help`, `modules`, `client`, `setup`, `debug` or `reset` |
 | `/vedit` | Edit Mode: unlock the windows and place them |
-| `/vfsecrets` | which combat values this client lets the addon read **right now** |
-| `/vfuiprof` | which of our modules cost the most time in handlers and tickers |
-| `/vfcd`, `/vfbars`, `/vfbars2`, `/vfchat`, `/vfbags`, `/vfmeter` | jump to that module's page (`/vfmeter reset` clears the data) |
-| `/vfmmtex` | which classic minimap textures this client ships |
+| `/vfbags`, `/vfchat`, `/vfbars`, `/vfbars2`, `/vfcd`, `/vfmeter` | jump to that module's page (`/vfmeter reset` clears the data) |
+| `/vfjournal` | the quest journal |
+| `/vfdiag` | diagnostics log for bug reports |
+| `/vfsecrets` | which combat values the client lets addons read right now |
+| `/vfuiprof` | which modules cost the most time |
 | `/rl`, `/reloadui` | reload, refused in combat |
 
-`/vfsecrets` is the one to run first in the beta, in three places: standing in a city,
-mid-fight solo, and in a raid. The restriction state differs, and what it prints decides
-which modules are even buildable.
+## Built for Forever, not ported
 
-## The one rule
+Forever looks like Classic but runs Blizzard's **Mainline** code (internal game type
+`camelot`): retail FrameXML, retail Edit Mode and the full retail in-combat addon
+restrictions. Classic addons do not run on it, and this one is not a Classic addon with a
+patch — it is written against the retail API from the ground up. The research behind that
+is in [docs/forever-client-research.md](docs/forever-client-research.md).
 
-Forever hands addons **secret values** for combat data. A secret can be displayed but not
-reasoned about: no arithmetic, no comparison, no concatenation, no use as a table key.
-Even a truth test throws — `value or fallback` is a crash, not a fallback.
+What that means in practice:
 
-> **Display a secret, never decide on one.**
-
-`Core/Secret.lua` holds the helpers (`ns.IsSecret`, `ns.CanRead`, `ns.Num`,
-`ns:SetHealthFill`, `ns:SetPowerFill`, `ns:SetSpellCooldown`, `ns.AurasRestricted`, and
-the `SecretUtil` wrappers). Blizzard's own unit frames pass `UnitHealth()` straight into
-`StatusBar:SetValue()`; every module here does the same.
-
-**The combat log is not readable at all.** `CombatLogGetCurrentEventInfo` is nil and
-`COMBAT_LOG_EVENT_UNFILTERED` is restricted, so anything that used to count damage, track
-other players' casts, watch diminishing returns or drive a swing timer from it needs a
-different source or cannot exist. `PLAYER_SWING` + `C_SwingTimer` replace the swing timer;
-`C_DamageMeter` replaces the meter.
-
-**Auras are stricter than the rest.** `C_UnitAuras.GetAuraDataByIndex` does not return a
-secret in restricted content, it *throws* — aura code has to ask
-`ns.AurasRestricted()` first. Cooldowns come back secret; threat stays readable.
-
-## Languages
-
-Keys are English text, so a missing translation shows the original rather than a blank.
-English and German both ship complete: every `L[...]` key and every declarative label has
-a German entry, and `tools/check.js` fails the build if that stops being true. The
-language is picked under **Global → Locales** (Auto follows the game client) and takes
-full effect after a `/reload`. More languages need only their own file in `Locales/`.
+- **Combat data arrives as secret values.** A secret can be shown, but not compared,
+  calculated with or even tested for truth. Every module here passes such values straight
+  into the client's own widgets and never decides on them — that is why the frames keep
+  working in combat. `Core/Secret.lua` holds the helpers.
+- **There is no combat log.** Swing timer, damage meter and threat use the client's own
+  sources (`C_SwingTimer`, `C_DamageMeter`) instead.
+- **Auras are stricter still** — in restricted content reading them throws, so aura code
+  asks first.
 
 ## Development
 
@@ -84,26 +110,21 @@ full effect after a `/reload`. More languages need only their own file in `Local
 cd tools && npm install && node check.js
 ```
 
-`check.js` must print `RESULT: OK` before anything ships. It runs, in order: Lua 5.1
-syntax and the 200-local cap per chunk, local functions read before their definition,
-locale coverage for both `L[...]` keys and declarative fields, locale keys nothing
-reaches, ASCII quotes inside German values, third-party addon names, writes to bare
-globals, module defaults nothing reads, `L[...]` resolved at file load, format specifiers
-across locales, the TOC file list against what is on disk, release notes, and last the
-secret-value lint (`tools/secretlint.js`, baseline in `tools/secret-lint-baseline.json`),
-which follows a value across a whole file and fails on anything new.
+`check.js` must print `RESULT: OK` before anything ships. It checks Lua 5.1 syntax and the
+200-local cap, locals read before their definition, locale coverage and dead locale keys,
+writes to bare globals, unused module defaults, locale lookups at file load, format
+specifiers across locales, the TOC file list against disk, the release notes, and last a
+secret-value lint that follows a value across a whole file and fails on anything new since
+`tools/secret-lint-baseline.json`.
 
-Adding a module: one call to `ns:RegisterModule`, an `OnEnable`/`OnDisable` pair and a
-`GetOptions`; a module of several files gets its own folder under `Modules/`. The file
-then goes into `VuloForeverUI.toc` — the checker verifies that list against disk.
+Adding a module is one `ns:RegisterModule` call, an `OnEnable`/`OnDisable` pair and a
+`GetOptions`; the file then goes into `VuloForeverUI.toc`. Locale keys are English text, so
+a missing translation shows the original instead of a blank; a new language needs only its
+own file in `Locales/`.
 
-## Still open in the client
+Releases are built by the packager from a tag and go to CurseForge and GitHub at the same
+time; the player-facing notes are in [CHANGELOG.md](CHANGELOG.md).
 
-1. Which power types stay readable, per class and per situation — `/vfsecrets` answers it
-   for the character you are on, and the answers differ.
-2. How much of the restriction behaviour is intended. Blizzard has already called some of
-   it unintentional, so what `/vfsecrets` prints today may not be what it prints next build.
+## License
 
-Confirmed in the client and no longer in question: client detection via
-`GetBuildInfo()` + `C_SwingTimer`, a plain `.toc` with `## Interface: 16001` loading,
-`ReloadUI()` from our own button, and the classic unit-frame art being present.
+MIT — see [LICENSE](LICENSE).
