@@ -196,23 +196,48 @@ end
 
 -- ---------------------------------------------------------------- regions --
 
--- The parts only this bar has, added to a frame RB.BuildRegions made. Lazy, so
--- the preview's pooled frames get them the first time they show this bar.
+-- The client's own bar texture, for the stretches laid over the client's bar.
+local CLIENT_TEXTURE = "Interface\\TargetingFrame\\UI-StatusBar"
+
+local function isClientStyle(bar)
+    return (bar.xpStyle or "client") == "client"
+end
+XP.IsClientStyle = isClientStyle
+
+-- The parts only this bar has. On our own bar (built by RB.BuildRegions) they
+-- join the fill and the text holder that are already there; on the frame laid
+-- over the client's bar, which has neither, the frame itself carries them.
+-- Lazy, so the preview's pooled frames get them the first time they show it.
 local function ensureRegions(frame)
     if frame.xpQuest then return end
-    local fill = frame.fill
-    -- On the fill's own frame, under its texture: they start where the fill
-    -- ends, so the order only matters where a rounding pixel overlaps.
-    frame.xpQuest      = fill:CreateTexture(nil, "BORDER", nil, 1)
-    frame.xpIncomplete = fill:CreateTexture(nil, "BORDER", nil, 2)
-    frame.xpRested     = fill:CreateTexture(nil, "BORDER", nil, 3)
+    local under = frame.fill or frame
+    -- Under the fill's texture on our own bar: they start where the fill ends,
+    -- so the order only matters where a rounding pixel overlaps.
+    frame.xpQuest      = under:CreateTexture(nil, "BORDER", nil, 1)
+    frame.xpIncomplete = under:CreateTexture(nil, "BORDER", nil, 2)
+    frame.xpRested     = under:CreateTexture(nil, "BORDER", nil, 3)
 
-    local center = frame.textHolder:CreateFontString(nil, "OVERLAY")
+    local holder = frame.textHolder
+    if not holder then
+        holder = CreateFrame("Frame", nil, frame)
+        holder:SetAllPoints(frame)
+        frame.textHolder = holder
+    end
+    if not frame.left then
+        frame.left = holder:CreateFontString(nil, "OVERLAY")
+        frame.left:SetPoint("LEFT", frame, "LEFT", 4, 0)
+        frame.left:SetJustifyH("LEFT")
+        frame.right = holder:CreateFontString(nil, "OVERLAY")
+        frame.right:SetPoint("RIGHT", frame, "RIGHT", -4, 0)
+        frame.right:SetJustifyH("RIGHT")
+    end
+
+    local center = holder:CreateFontString(nil, "OVERLAY")
     center:SetPoint("CENTER", frame, "CENTER", 0, 0)
     center:SetJustifyH("CENTER")
     frame.center = center
 
-    local info = frame.textHolder:CreateFontString(nil, "OVERLAY")
+    local info = holder:CreateFontString(nil, "OVERLAY")
     info:SetJustifyH("CENTER")
     frame.xpInfo = info
 end
@@ -220,7 +245,7 @@ XP.EnsureRegions = ensureRegions
 
 -- A stretch of the bar that starts `from` and is `width` long, both in
 -- experience; clipped to the end of the bar.
-local function stretch(tex, frame, from, width, max, color, alpha)
+local function stretch(tex, frame, from, width, max, color, alpha, texture)
     if not (max and max > 0 and width and width > 0 and from < max) then tex:Hide(); return end
     local barW = frame:GetWidth() or 0
     local x1 = barW * from / max
@@ -230,7 +255,7 @@ local function stretch(tex, frame, from, width, max, color, alpha)
     tex:SetPoint("TOPLEFT", frame, "TOPLEFT", x1, 0)
     tex:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", x1, 0)
     tex:SetWidth(x2 - x1)
-    tex:SetTexture(frame.fill:GetStatusBarTexture():GetTexture() or RB.WHITE)
+    tex:SetTexture(texture or RB.WHITE)
     tex:SetVertexColor(color.r, color.g, color.b, alpha)
     tex:Show()
 end
@@ -291,11 +316,57 @@ local function infoText(bar, d)
     return table.concat(parts, "     ")
 end
 
--- Draws `d` onto any frame built by RB.BuildRegions and dressed by
--- RB.PaintLook: the real bar and the settings page's preview alike.
-function XP.Paint(frame, bar, d)
+-- Overlays, texts and the info line, on our own bar or on the frame over the
+-- client's. `texture` is what the stretches are drawn with.
+function XP.PaintExtras(frame, bar, d, texture)
     ensureRegions(frame)
 
+    -- After the fill, in this order: finished quests, unfinished quests, rest.
+    local cur, max = d.cur, d.max
+    local alpha = bar.overlayOpacity or 0.45
+    if cur and max and not d.maxLevel then
+        local at = cur
+        local qc = bar.showQuest and (d.questComplete or 0) or 0
+        stretch(frame.xpQuest, frame, at, qc, max, bar.questColor, alpha, texture)
+        at = at + qc
+        local qi = (bar.showQuest and bar.showIncomplete) and (d.questIncomplete or 0) or 0
+        stretch(frame.xpIncomplete, frame, at, qi, max, bar.incompleteColor, alpha, texture)
+        at = at + qi
+        stretch(frame.xpRested, frame, at, bar.showRested and d.rested or 0, max, bar.restedFillColor, alpha, texture)
+    else
+        frame.xpQuest:Hide(); frame.xpIncomplete:Hide(); frame.xpRested:Hide()
+    end
+
+    local size, c = bar.fontSize or 11, bar.textColor
+    for _, fs in ipairs({ frame.left, frame.center, frame.right }) do
+        UI.FontFor("resourcebars", fs, size, "OUTLINE")
+        fs:SetTextColor(c.r, c.g, c.b)
+    end
+    UI.FontFor("resourcebars", frame.xpInfo, bar.infoSize or 11, "OUTLINE")
+    frame.xpInfo:SetTextColor(c.r, c.g, c.b)
+
+    -- Above or below the bar. "auto" is above on the client's bar, which sits
+    -- right on top of the action bars, and below on our own.
+    local where = bar.infoAnchor or "auto"
+    if where == "auto" then where = isClientStyle(bar) and "above" or "below" end
+    frame.xpInfo:ClearAllPoints()
+    if where == "above" then
+        frame.xpInfo:SetPoint("BOTTOM", frame, "TOP", 0, 3)
+    else
+        frame.xpInfo:SetPoint("TOP", frame, "BOTTOM", 0, -3)
+    end
+
+    frame.left:SetText(leftText(bar, d))
+    frame.center:SetText(centerText(bar, d))
+    frame.right:SetText(rightText(bar, d))
+    frame.xpInfo:SetText(infoText(bar, d))
+    frame.center:Show()
+    frame.xpInfo:Show()
+end
+
+-- Our own bar, built by RB.BuildRegions and dressed by RB.PaintLook: the real
+-- one and the settings page's preview alike.
+function XP.Paint(frame, bar, d)
     local color = (bar.useRestColor ~= false and d.isRested) and bar.restedFillColor or bar.fillColor
     frame.fill:SetStatusBarColor(color.r, color.g, color.b)
 
@@ -307,91 +378,96 @@ function XP.Paint(frame, bar, d)
         frame.fill:SetMinMaxValues(0, d.rawMax or d.max or 1)
         frame.fill:SetValue(d.rawCur or d.cur or 0)
     end
-
-    -- After the fill, in this order: finished quests, unfinished quests, rest.
-    local cur, max = d.cur, d.max
-    local alpha = bar.overlayOpacity or 0.45
-    if cur and max and not d.maxLevel then
-        local at = cur
-        local qc = bar.showQuest and (d.questComplete or 0) or 0
-        stretch(frame.xpQuest, frame, at, qc, max, bar.questColor, alpha)
-        at = at + qc
-        local qi = (bar.showQuest and bar.showIncomplete) and (d.questIncomplete or 0) or 0
-        stretch(frame.xpIncomplete, frame, at, qi, max, bar.incompleteColor, alpha)
-        at = at + qi
-        stretch(frame.xpRested, frame, at, bar.showRested and d.rested or 0, max, bar.restedFillColor, alpha)
-    else
-        frame.xpQuest:Hide(); frame.xpIncomplete:Hide(); frame.xpRested:Hide()
-    end
-
-    local size = bar.fontSize or 11
-    UI.FontFor("resourcebars", frame.center, size, "OUTLINE")
-    frame.center:SetTextColor(bar.textColor.r, bar.textColor.g, bar.textColor.b)
-    UI.FontFor("resourcebars", frame.xpInfo, bar.infoSize or 11, "OUTLINE")
-    frame.xpInfo:SetTextColor(bar.textColor.r, bar.textColor.g, bar.textColor.b)
-    frame.xpInfo:ClearAllPoints()
-    frame.xpInfo:SetPoint("TOP", frame, "BOTTOM", 0, -3)
-
-    frame.left:SetText(leftText(bar, d))
-    frame.center:SetText(centerText(bar, d))
-    frame.right:SetText(rightText(bar, d))
-    frame.xpInfo:SetText(infoText(bar, d))
-    frame.center:Show()
-    frame.xpInfo:Show()
-end
-
--- ---------------------------------------------------------------- live --
-
-local ticker
-
-local function wantsClock(bar)
-    return bar.showRate or bar.showLevelTime or bar.showSessionTime
-end
-
-function XP.Update()
-    local frame, bar = RB.frames[KEY], RB.Bar(KEY)
-    if not (frame and bar) then return end
-    local d = XP.Read()
-    XP.Paint(frame, bar, d)
-    frame.maxValue = d.max
-
-    -- Nothing to show at the top, or with experience switched off -- unless the
-    -- player wants the bar there anyway.
-    local suppressed = d.disabled or (d.maxLevel and not bar.showAtMaxLevel)
-    if frame.suppressed ~= suppressed then
-        frame.suppressed = suppressed
-        RB.UpdateVisibility(KEY)
-    end
-
-    -- The clock texts move by the second; nothing else does, so the ticker
-    -- only runs while one of them is on.
-    local want = RB.mod.active and bar.enabled and wantsClock(bar)
-    if want and not ticker then
-        ticker = C_Timer.NewTicker(1, XP.Update)
-    elseif not want and ticker then
-        ticker:Cancel(); ticker = nil
-    end
-    if want and bar.showLevelTime and not played.stamp then requestPlayed() end
-
-    XP.ApplyBlizzard()
-end
-
-function XP.Stop()
-    if ticker then ticker:Cancel(); ticker = nil end
-    XP.ApplyBlizzard(true)
+    local tex = frame.fill:GetStatusBarTexture()
+    XP.PaintExtras(frame, bar, d, tex and tex:GetTexture() or RB.WHITE)
 end
 
 -- ---------------------------------------------------------------- client bar --
 
--- Hiding the client's own experience bar. The CONTAINER is left alone: its
--- alpha is what the client's own fade logic reads to decide what to show next.
--- Only the experience bar inside it goes transparent, and it comes back the
--- moment the setting or the module is switched off.
+-- The client's experience bar, in whichever of its two containers shows it.
+local function clientExpBar()
+    local enum = StatusTrackingBarInfo and StatusTrackingBarInfo.BarsEnum
+    local index = enum and enum.Experience
+    if not index then return nil end
+    for _, name in ipairs({ "MainStatusTrackingBarContainer", "SecondaryStatusTrackingBarContainer" }) do
+        local container = _G[name]
+        local expBar = container and container.bars and container.bars[index]
+        if expBar and expBar:IsShown() then return expBar end
+    end
+    return nil
+end
+
+-- Everything of the client's we made transparent, and how to give it back.
+local touched = {}
+
+local function setClientAlpha(region, alpha)
+    if not region then return end
+    if alpha < 1 then
+        region:SetAlpha(alpha)
+        touched[region] = true
+    elseif touched[region] then
+        region:SetAlpha(1)
+        touched[region] = nil
+    end
+end
+
+local function releaseClient()
+    for region in pairs(touched) do region:SetAlpha(1) end
+    wipe(touched)
+end
+
+-- The frame over the client's bar. A child of the client's StatusBar, so it
+-- moves, scales, fades and hides with it -- wherever the action bars put that
+-- bar, this goes along. It never takes the mouse: the client's tooltip on its
+-- own bar keeps working underneath.
+local over
+
+local function updateClientBar(bar, d, want)
+    local expBar = want and clientExpBar() or nil
+    if not (expBar and expBar.StatusBar) then
+        if over then over:Hide() end
+        releaseClient()
+        return
+    end
+    if not over then
+        over = CreateFrame("Frame", nil, expBar.StatusBar)
+        over:EnableMouse(false)
+        -- The texts over the client's own, which sit on MEDIUM.
+        over.textHolder = CreateFrame("Frame", nil, over)
+        over.textHolder:SetAllPoints(over)
+        over.textHolder:SetFrameStrata("MEDIUM")
+        over.textHolder:EnableMouse(false)
+    end
+    if over:GetParent() ~= expBar.StatusBar then over:SetParent(expBar.StatusBar) end
+    over:ClearAllPoints()
+    over:SetAllPoints(expBar.StatusBar)
+    over:SetFrameLevel(expBar.StatusBar:GetFrameLevel() + 2)
+    over.textHolder:SetFrameLevel((expBar.OverlayFrame and expBar.OverlayFrame:GetFrameLevel() or over:GetFrameLevel()) + 5)
+    over:Show()
+
+    XP.PaintExtras(over, bar, d, CLIENT_TEXTURE)
+
+    -- The client draws its own rest from the fill onward; ours starts after
+    -- the quests, so only one of the two may show.
+    local ours = bar.showRested and 0 or 1
+    setClientAlpha(expBar.ExhaustionLevelFillBar, ours)
+    setClientAlpha(expBar.ExhaustionTick, ours)
+    -- Its "7511 / 8800" would sit right under our middle text.
+    local text = expBar.OverlayFrame and expBar.OverlayFrame.Text
+    local anyText = (bar.leftText or "level") ~= "none" or (bar.centerText or "valuemax") ~= "none"
+        or (bar.rightText or "percentquest") ~= "none"
+    setClientAlpha(text, anyText and 0 or 1)
+end
+
+-- Our own style's switch to hide the client's bar. The CONTAINER is left
+-- alone: its alpha is what the client's own fade logic reads to decide what
+-- to show next. Only the experience bar inside it goes transparent.
 local hiddenBars = {}
 
 function XP.ApplyBlizzard(release)
     local bar = RB.Bar(KEY)
-    local hide = not release and RB.mod.active and bar and bar.enabled and bar.hideBlizzard
+    local hide = not release and RB.mod.active and bar and bar.enabled
+        and bar.hideBlizzard and not isClientStyle(bar)
     local enum = StatusTrackingBarInfo and StatusTrackingBarInfo.BarsEnum
     local index = enum and enum.Experience
     if not index then return end
@@ -410,9 +486,78 @@ function XP.ApplyBlizzard(release)
     end
 end
 
+-- ---------------------------------------------------------------- live --
+
+local ticker
+
+local function wantsClock(bar)
+    return bar.showRate or bar.showLevelTime or bar.showSessionTime
+end
+
+function XP.Update()
+    local frame, bar = RB.frames[KEY], RB.Bar(KEY)
+    if not (frame and bar) then return end
+    local d = XP.Read()
+    local client = isClientStyle(bar)
+    local on = RB.mod.active and bar.enabled and true or false
+
+    -- Our own bar under the client style is not hidden, it does not exist --
+    -- Edit Mode must not offer it either (RB.UpdateVisibility).
+    local suppressed = d.disabled or (d.maxLevel and not bar.showAtMaxLevel)
+    if frame.disabledByStyle ~= client or frame.suppressed ~= suppressed then
+        frame.disabledByStyle = client
+        frame.suppressed = suppressed
+        RB.UpdateVisibility(KEY)
+    end
+    if not client then
+        XP.Paint(frame, bar, d)
+        frame.maxValue = d.max
+    end
+    updateClientBar(bar, d, on and client and not d.disabled)
+
+    -- The clock texts move by the second; nothing else does, so the ticker
+    -- only runs while one of them is on.
+    local want = on and wantsClock(bar)
+    if want and not ticker then
+        ticker = C_Timer.NewTicker(1, XP.Update)
+    elseif not want and ticker then
+        ticker:Cancel(); ticker = nil
+    end
+    if want and bar.showLevelTime and not played.stamp then requestPlayed() end
+
+    XP.ApplyBlizzard()
+end
+
+function XP.Stop()
+    if ticker then ticker:Cancel(); ticker = nil end
+    if over then over:Hide() end
+    releaseClient()
+    XP.ApplyBlizzard(true)
+end
+
+-- The client swaps the bar a container shows (experience, reputation, ...)
+-- on its own; the frame over it follows at once rather than a second later.
+local hookedClient = false
+
+function XP.HookClient()
+    if hookedClient then return end
+    local enum = StatusTrackingBarInfo and StatusTrackingBarInfo.BarsEnum
+    if not enum then return end
+    hookedClient = true
+    for _, name in ipairs({ "MainStatusTrackingBarContainer", "SecondaryStatusTrackingBarContainer" }) do
+        local container = _G[name]
+        if container and type(container.ApplyPendingBarToShow) == "function" then
+            hooksecurefunc(container, "ApplyPendingBarToShow", function()
+                if RB.mod.active then XP.Update() end
+            end)
+        end
+    end
+end
+
 -- ---------------------------------------------------------------- events --
 
 function XP.RegisterEvents(mod)
+    XP.HookClient()
     mod:RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isLogin)
         if isLogin then
             resetSession(ns.Num(UnitXP("player")), ns.Num(UnitXPMax("player")))

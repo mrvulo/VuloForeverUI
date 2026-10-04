@@ -297,22 +297,43 @@ end
 
 local function xpPage()
     local key = "xp"
+    local client = RB.XP.IsClientStyle(RB.Bar(key))
     local rows = {
         enabledRow(key),
-        toggle(key, "showAtMaxLevel", L["Show at the highest level"],
-            L["Once you reach the highest level the bar stays, full, instead of going away."]),
-        toggle(key, "hideBlizzard", L["Hide the client's experience bar"],
-            L["Only the experience bar itself is hidden; the reputation bar the client shows in its place keeps working."]),
+        { type = "dropdown", label = L["Where the bar sits"], width = 260, subKey = "xpStyle",
+          values = {
+              { value = "client", text = L["In the client's experience bar"] },
+              { value = "own",    text = L["A bar of its own"] },
+          },
+          get = function() return RB.Bar(key).xpStyle end,
+          set = function(_, v)
+              RB.Bar(key).xpStyle = v
+              apply()
+              rebuild("xp")
+          end },
+    }
+    local function add(list) for _, row in ipairs(list) do rows[#rows + 1] = row end end
 
-        { type = "header", text = L["Colours"] },
-        toggle(key, "useRestColor", L["Blue while rested"],
-            L["The fill takes the rested colour while you have rested experience, exactly like the client's own bar."]),
-        color(key, "restedFillColor", L["Rested color"]),
-        color(key, "fillColor", L["Normal color"]),
+    if client then
+        add({ { type = "desc", text = L["|cffaaaaaaThe client's own bar keeps its place, its look and its colours -- blue while rested, purple otherwise. The quests, the rest, the texts and the info line are laid over it.|r"] } })
+    else
+        add({
+            toggle(key, "showAtMaxLevel", L["Show at the highest level"],
+                L["Once you reach the highest level the bar stays, full, instead of going away."]),
+            toggle(key, "hideBlizzard", L["Hide the client's experience bar"],
+                L["Only the experience bar itself is hidden; the reputation bar the client shows in its place keeps working."]),
+            { type = "header", text = L["Colours"] },
+            toggle(key, "useRestColor", L["Blue while rested"],
+                L["The fill takes the rested colour while you have rested experience, exactly like the client's own bar."]),
+            color(key, "fillColor", L["Normal color"]),
+        })
+    end
 
+    add({
         { type = "header", text = L["After the fill"] },
         toggle(key, "showRested", L["Show rested experience"],
             L["The stretch of the bar that will earn double experience, in the rested colour."]),
+        color(key, "restedFillColor", L["Rested color"]),
         toggle(key, "showQuest", L["Show finished quests"],
             L["The experience the quests ready to hand in will bring, right after the fill."]),
         color(key, "questColor", L["Finished quests color"]),
@@ -337,8 +358,22 @@ local function xpPage()
             { value = "percent",      text = L["Percent"] },
             { value = "percentquest", text = L["Percent, with finished quests"] },
         }, 240),
+    })
+    -- Our own bar has these in its look rows further down.
+    if client then
+        add({
+            slider(key, "fontSize", L["Text size"], 6, 24, 1),
+            color(key, "textColor", L["Text color"]),
+        })
+    end
 
-        { type = "header", text = L["Info line under the bar"] },
+    add({
+        { type = "header", text = L["Info line"] },
+        dropdown(key, "infoAnchor", L["Info line position"], {
+            { value = "auto",  text = L["Automatic"] },
+            { value = "above", text = L["Above the bar"] },
+            { value = "below", text = L["Below the bar"] },
+        }),
         toggle(key, "showRate", L["Time to level and experience per hour"],
             L["Measured over this session. A /reload keeps the session, a new login starts one."]),
         toggle(key, "showQuestRested", L["Finished quests and rested, in percent"]),
@@ -346,14 +381,16 @@ local function xpPage()
             L["Asked from the client once per login; the chat message the client would print for it is held back."]),
         toggle(key, "showSessionTime", L["Time played this session"]),
         slider(key, "infoSize", L["Info text size"], 6, 24, 1),
-    }
-    for _, row in ipairs(tickRows(key)) do rows[#rows + 1] = row end
-    for _, row in ipairs(lookRows(key, true)) do rows[#rows + 1] = row end
+    })
+    if not client then
+        add(tickRows(key))
+        add(lookRows(key, true))
+    end
 
     return {
-        { type = "desc", text = L["|cffaaaaaaYour experience as a bar of its own: blue while rested, the rested stretch and the quests ready to hand in after the fill, and an info line underneath. Move it with /vedit.|r"] },
+        { type = "desc", text = L["|cffaaaaaaYour experience with what the client's bar leaves out: the rested stretch and the quests ready to hand in after the fill, the level and percent on the bar, and an info line with rate and time played.|r"] },
         section(key, rows),
-        { type = "button", label = L["Open Edit Mode"], onClick = function() ns:SetEditMode(true) end },
+        not client and { type = "button", label = L["Open Edit Mode"], onClick = function() ns:SetEditMode(true) end } or nil,
     }
 end
 

@@ -105,6 +105,28 @@ local function clearXP(f)
     f.center:Hide(); f.xpInfo:Hide()
 end
 
+-- The client style draws on the client's bar, which is not ours to put on a
+-- settings page. The preview stands in for it with the client's shape and its
+-- two colours, under the player's own overlay and text settings.
+local CLIENT_LOOK = {
+    width = 520, height = 11, texture = "Blizzard", showSpark = false,
+    fillColor = { r = 0.58, g = 0.0, b = 0.55 },
+    bgColor = { r = 0.04, g = 0.03, b = 0.05, a = 0.9 },
+    borderSize = 1, borderColor = { r = 0, g = 0, b = 0, a = 1 },
+    useRestColor = true,
+    ticks = "10,20,30,40,50,60,70,80,90", tickPercent = true,
+    tickColor = { r = 0, g = 0, b = 0, a = 0.6 }, tickWidth = 1,
+    opacity = 1, scale = 1, textLayer = "top",
+}
+
+local function lookFor(key, bar)
+    if key ~= "xp" or not RB.XP.IsClientStyle(bar) then return bar end
+    return setmetatable({}, { __index = function(_, k)
+        if CLIENT_LOOK[k] ~= nil then return CLIENT_LOOK[k] end
+        return bar[k]
+    end })
+end
+
 local function paint(f, key, bar)
     RB.PaintLook(f, bar)
     if key == "xp" then
@@ -151,13 +173,16 @@ local function spots(i, f, key, tab)
     local center = key == "xp" and f.center and (f.center:GetText() or "") ~= "" and f.center or nil
     header:Spot("center" .. i, center, target("centerText", L["Middle text"]), 2)
     local info = key == "xp" and f.xpInfo and (f.xpInfo:GetText() or "") ~= "" and f.xpInfo or nil
-    header:Spot("info" .. i, info, target("showRate", L["Info line under the bar"]), 2)
+    header:Spot("info" .. i, info, target("showRate", L["Info line"]), 2)
 end
 
--- Room the experience bar's info line takes under the bar itself.
-function RB.PreviewBelow(f, bar)
-    if not (f.xpInfo and f.xpInfo:IsShown() and (f.xpInfo:GetText() or "") ~= "") then return 0 end
-    return (bar.infoSize or 11) + 5
+-- Room the experience bar's info line takes above and below the bar itself.
+local function infoRoom(f, bar)
+    if not (f.xpInfo and f.xpInfo:IsShown() and (f.xpInfo:GetText() or "") ~= "") then return 0, 0 end
+    local h = (bar.infoSize or 11) + 5
+    local _, _, relPoint = f.xpInfo:GetPoint(1)
+    if relPoint == "TOP" then return h, 0 end
+    return 0, h
 end
 
 -- `force`: the page build, before the header is on screen.
@@ -174,12 +199,13 @@ function RB.RefreshPreview(force)
     local wide, high, left, right = 0, 0, 0, 0
     local list = {}
     for i, key in ipairs(keys) do
-        local bar = RB.Bar(key)
+        local bar = lookFor(key, RB.Bar(key))
         local f = frameFor(i)
         local iconW, iconRight = paint(f, key, bar)
         if iconRight then right = math.max(right, iconW) else left = math.max(left, iconW) end
         wide = math.max(wide, bar.width)
-        high = high + bar.height + (i > 1 and GAP or 0) + RB.PreviewBelow(f, bar)
+        local above, below = infoRoom(f, bar)
+        high = high + bar.height + (i > 1 and GAP or 0) + above + below
         list[i] = { f = f, key = key, bar = bar }
     end
     for i = #keys + 1, #frames do
@@ -203,10 +229,12 @@ function RB.RefreshPreview(force)
 
     local y = 0
     for i, e in ipairs(list) do
+        local above, below = infoRoom(e.f, e.bar)
+        y = y + above
         e.f:ClearAllPoints()
         e.f:SetPoint("TOP", holder, "TOP", (left - right) / 2, -y)
         e.f:Show()
-        y = y + e.bar.height + GAP + RB.PreviewBelow(e.f, e.bar)
+        y = y + e.bar.height + GAP + below
         spots(i, e.f, e.key, currentTab)
     end
     return header:SetStageHeight(high * scale)

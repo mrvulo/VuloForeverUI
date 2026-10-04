@@ -148,6 +148,10 @@ RB.EXTRA_DEFAULTS = {
     swingOff    = { showRange = true, outOfRangeColor = { r = 0.8, g = 0.25, b = 0.25 } },
     swingRanged = { showRange = true, outOfRangeColor = { r = 0.8, g = 0.25, b = 0.25 } },
     xp = {
+        -- client: overlays and texts laid over the client's own experience
+        -- bar, where the action bars put it; own: a free-standing bar
+        xpStyle         = "client",
+        infoAnchor      = "auto",      -- auto | above | below
         useRestColor    = true,    -- blue fill while rested, as the client does it
         restedFillColor = { r = 0.0, g = 0.39, b = 0.88 },
         showRested      = true,
@@ -186,7 +190,7 @@ function RB.db() return mod.db end
 -- Raised when BAR_DEFAULTS or EXTRA_DEFAULTS grow a key, so a bar saved by an
 -- older build is filled again rather than reaching the paint pass with a hole
 -- in it.
-RB.DEFAULTS_VERSION = 3
+RB.DEFAULTS_VERSION = 4
 
 local function presetFor(key)
     for _, def in ipairs(RB.BARS) do
