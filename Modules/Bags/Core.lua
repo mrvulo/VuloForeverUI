@@ -382,6 +382,7 @@ function Bags.HookBlizzard()
         elseif close then
             Bags.Window.Close()
         end
+        Bags.CheckTaint("bag toggle")
     end
     local function request(kind)
         if not (mod.active and Bags.db().replaceBlizzard) then return end
@@ -432,7 +433,12 @@ function Bags.HookBlizzard()
         -- Closed by the client itself, securely: from here on it may be
         -- hidden and parked again without running any of its scripts.
         frame:HookScript("OnHide", function(self)
-            if Bags.UnstashBlizzard(self) then ns.NextFrame(Bags.ParkBlizzard) end
+            if Bags.UnstashBlizzard(self) then
+            ns.NextFrame(function()
+                Bags.ParkBlizzard()
+                Bags.CheckTaint("park after the client closed a bag")
+            end)
+        end
         end)
         installed = installed + 1
     end
@@ -461,6 +467,22 @@ end
 -- the client's at all, and the client closes it itself on its next toggle,
 -- after which it is parked like the rest.
 local stashed = {}
+
+-- The measurement behind the rule above, on the record (/vfdiag, saved
+-- variables): whether the client's list of shown bags is still its own after
+-- a pass of ours. Once per session is enough to know.
+local taintNoted = false
+
+function Bags.CheckTaint(where)
+    if taintNoted or type(issecurevariable) ~= "function" then return end
+    local manager = _G.ContainerFrameSettingsManager
+    if type(manager) ~= "table" then return end
+    local secure, by = issecurevariable(manager, "bagsShown")
+    if secure then return end
+    taintNoted = true
+    ns.Diag.Note("taint", "ContainerFrameSettingsManager.bagsShown tainted by "
+        .. tostring(by) .. " after " .. tostring(where))
+end
 
 local function moveAway(frame)
     if not stashed[frame] then return end

@@ -52,6 +52,8 @@ end
 
 function Bank.Open()
     if not Bags.db().bank then return end
+    -- the moment the client's bank reads the bag list (Core.lua, StashBlizzard)
+    Bags.CheckTaint("bank open")
     park()
     baseOpen()
     -- Our bags belong beside the bank, the way every bank window in the game
