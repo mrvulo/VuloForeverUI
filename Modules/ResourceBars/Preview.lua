@@ -103,6 +103,8 @@ local function clearXP(f)
     if not f.xpQuest then return end
     f.xpQuest:Hide(); f.xpIncomplete:Hide(); f.xpRested:Hide()
     f.center:Hide(); f.xpInfo:Hide()
+    -- the experience bar cuts its two sides to a width; other bars do not
+    f.left:SetWidth(0); f.right:SetWidth(0)
 end
 
 -- The client style draws on the client's bar, which is not ours to put on a

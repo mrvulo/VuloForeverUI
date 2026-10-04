@@ -151,7 +151,7 @@ RB.EXTRA_DEFAULTS = {
         -- client: overlays and texts laid over the client's own experience
         -- bar, where the action bars put it; own: a free-standing bar
         xpStyle         = "client",
-        infoAnchor      = "auto",      -- auto | above | below
+        infoAnchor      = "auto",      -- auto | inside | above | below
         useRestColor    = true,    -- blue fill while rested, as the client does it
         restedFillColor = { r = 0.0, g = 0.39, b = 0.88 },
         showRested      = true,

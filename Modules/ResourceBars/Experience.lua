@@ -291,29 +291,61 @@ local function rightText(bar, d)
     return pct(p)
 end
 
-local function infoText(bar, d)
-    local parts = {}
+-- The info line's pieces, by the side of the bar they belong to when the line
+-- is folded into the bar itself: the pace next to the level on the left, the
+-- shares and the times next to the percent on the right.
+local function infoParts(bar, d)
+    local left, right = {}, {}
     if not d.maxLevel and d.max and d.max > 0 then
         if bar.showRate then
-            parts[#parts + 1] = string.format(L["Level in %s  ·  %s XP/h"],
+            left[#left + 1] = string.format(L["Level in %s  ·  %s XP/h"],
                 d.toLevel and duration(d.toLevel) or "--", d.perHour and short(d.perHour) or "0")
         end
         if bar.showQuestRested then
-            parts[#parts + 1] = string.format(L["Quests: |cffffab07%s|r  ·  Rested: |cff4f90ff%s|r"],
+            right[#right + 1] = string.format(L["Quests: |cffffab07%s|r  ·  Rested: |cff4f90ff%s|r"],
                 pct((d.questComplete or 0) / d.max * 100), pct((d.rested or 0) / d.max * 100))
         end
     end
     if bar.showLevelTime and d.levelTime then
         if d.maxLevel then
-            parts[#parts + 1] = string.format(L["Played: %s"], duration(d.totalTime))
+            right[#right + 1] = string.format(L["Played: %s"], duration(d.totalTime))
         else
-            parts[#parts + 1] = string.format(L["This level: %s"], duration(d.levelTime))
+            right[#right + 1] = string.format(L["This level: %s"], duration(d.levelTime))
         end
     end
     if bar.showSessionTime and d.sessionTime then
-        parts[#parts + 1] = string.format(L["This session: %s"], duration(d.sessionTime))
+        right[#right + 1] = string.format(L["This session: %s"], duration(d.sessionTime))
     end
-    return table.concat(parts, "     ")
+    return left, right
+end
+
+local SEP = "   ·   "
+
+local function join(...)
+    local out = {}
+    for i = 1, select("#", ...) do
+        local v = select(i, ...)
+        if type(v) == "table" then
+            for _, p in ipairs(v) do out[#out + 1] = p end
+        elseif v and v ~= "" then
+            out[#out + 1] = v
+        end
+    end
+    return table.concat(out, SEP)
+end
+
+-- The two sides may only use what the middle text leaves free; whatever does
+-- not fit is cut with an ellipsis rather than written over the middle.
+local function fitSides(frame)
+    local total = frame:GetWidth() or 0
+    local mid = (frame.center:GetText() or "") ~= "" and frame.center:GetStringWidth() or 0
+    local room = math.max(20, (total - mid) / 2 - 12)
+    for _, fs in ipairs({ frame.left, frame.right }) do
+        fs:SetWordWrap(false)
+        fs:SetWidth(0)
+        local w = fs:GetStringWidth() or 0
+        fs:SetWidth(math.min(w + 2, room))
+    end
 end
 
 -- Overlays, texts and the info line, on our own bar or on the frame over the
@@ -345,23 +377,32 @@ function XP.PaintExtras(frame, bar, d, texture)
     UI.FontFor("resourcebars", frame.xpInfo, bar.infoSize or 11, "OUTLINE")
     frame.xpInfo:SetTextColor(c.r, c.g, c.b)
 
-    -- Above or below the bar. "auto" is above on the client's bar, which sits
-    -- right on top of the action bars, and below on our own.
+    -- In the bar, above or below it. "auto" is in the bar on the client's,
+    -- which has the action bars right above and below it, and below our own.
     local where = bar.infoAnchor or "auto"
-    if where == "auto" then where = isClientStyle(bar) and "above" or "below" end
-    frame.xpInfo:ClearAllPoints()
-    if where == "above" then
-        frame.xpInfo:SetPoint("BOTTOM", frame, "TOP", 0, 3)
-    else
-        frame.xpInfo:SetPoint("TOP", frame, "BOTTOM", 0, -3)
-    end
+    if where == "auto" then where = isClientStyle(bar) and "inside" or "below" end
+    local infoLeft, infoRight = infoParts(bar, d)
 
-    frame.left:SetText(leftText(bar, d))
+    if where == "inside" then
+        frame.left:SetText(join(leftText(bar, d), infoLeft))
+        frame.right:SetText(join(infoRight, rightText(bar, d)))
+        frame.xpInfo:SetText("")
+        frame.xpInfo:Hide()
+    else
+        frame.left:SetText(leftText(bar, d))
+        frame.right:SetText(rightText(bar, d))
+        frame.xpInfo:ClearAllPoints()
+        if where == "above" then
+            frame.xpInfo:SetPoint("BOTTOM", frame, "TOP", 0, 3)
+        else
+            frame.xpInfo:SetPoint("TOP", frame, "BOTTOM", 0, -3)
+        end
+        frame.xpInfo:SetText(join(infoLeft, infoRight))
+        frame.xpInfo:Show()
+    end
     frame.center:SetText(centerText(bar, d))
-    frame.right:SetText(rightText(bar, d))
-    frame.xpInfo:SetText(infoText(bar, d))
     frame.center:Show()
-    frame.xpInfo:Show()
+    fitSides(frame)
 end
 
 -- Our own bar, built by RB.BuildRegions and dressed by RB.PaintLook: the real

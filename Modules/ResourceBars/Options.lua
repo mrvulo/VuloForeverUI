@@ -370,8 +370,9 @@ local function xpPage()
     add({
         { type = "header", text = L["Info line"] },
         dropdown(key, "infoAnchor", L["Info line position"], {
-            { value = "auto",  text = L["Automatic"] },
-            { value = "above", text = L["Above the bar"] },
+            { value = "auto",   text = L["Automatic"] },
+            { value = "inside", text = L["In the bar"] },
+            { value = "above",  text = L["Above the bar"] },
             { value = "below", text = L["Below the bar"] },
         }),
         toggle(key, "showRate", L["Time to level and experience per hour"],

@@ -1970,6 +1970,7 @@ ns:RegisterLocale("deDE", {
     ["Info line"] = "Infozeile",
     ["Info line position"] = "Position der Infozeile",
     ["Above the bar"] = "Über der Leiste",
+    ["In the bar"] = "In der Leiste",
     ["Below the bar"] = "Unter der Leiste",
     ["Shade the cost of the current cast"] = "Kosten des laufenden Zaubers schattieren",
     ["While you cast a spell with a cast time, the part of the bar it will spend is shaded."] = "Während du einen Zauber mit Zauberzeit wirkst, wird der Teil der Leiste schattiert, den er verbrauchen wird.",
