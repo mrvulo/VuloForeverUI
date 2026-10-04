@@ -14,10 +14,11 @@ RB.frames = RB.frames or {}
 
 local WHITE = RB.WHITE
 
--- A bar that is only there while something runs. Power is not; everything else
--- is, and in Edit Mode all of them are, or there would be nothing to drag.
+-- A bar that is only there while something runs. Power and experience are
+-- not; everything else is, and in Edit Mode all of them are, or there would be
+-- nothing to drag.
 local function isTransient(key)
-    return key ~= "power" and key ~= "mana"
+    return key ~= "power" and key ~= "mana" and key ~= "xp"
 end
 RB.IsTransient = isTransient
 

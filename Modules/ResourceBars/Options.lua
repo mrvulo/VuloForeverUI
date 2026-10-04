@@ -1,6 +1,6 @@
 -- VuloForeverUI / Modules / ResourceBars / Options
 --
--- Three tabs, one per kind of bar, and inside each tab one section per bar.
+-- Four tabs, one per kind of bar, and inside each tab one section per bar.
 -- Every bar has the same shape, so the look controls are written once and
 -- handed the key they belong to; only the few settings that are particular to
 -- a kind of bar are written out separately.
@@ -15,6 +15,7 @@ mod.tabs = {
     { id = "resources", label = "Resources" },
     { id = "cast",      label = "Cast bar" },
     { id = "swing",     label = "Swing timer" },
+    { id = "xp",        label = "XP bar" },
 }
 
 -- Deferred: a dropdown writes its own label after set() returns, and
@@ -77,18 +78,21 @@ local function dropdown(key, field, label, values, width)
 end
 
 -- The look every bar shares. Returned as a flat list so a page can put its own
--- rows before and after it.
-local function lookRows(key)
+-- rows before and after it. `own` leaves out the fill colour and the two text
+-- corners, for a bar that brings its own (the experience bar).
+local function lookRows(key, own)
     local rows = {
         { type = "header", text = L["Size and texture"] },
-        slider(key, "width", L["Width"], 60, 600, 2),
+        -- an experience bar is often laid across the whole screen
+        slider(key, "width", L["Width"], 60, own and 1600 or 600, 2),
         slider(key, "height", L["Height"], 4, 60, 1),
         dropdown(key, "texture", L["Bar texture"], ns.MediaStatusbarValues(), 220),
         toggle(key, "showSpark", L["Show the spark"]),
         ns.BorderRows(rowsFor(key), { size = "borderSize", color = "borderColor" }, { subKeyPrefix = key }),
         color(key, "bgColor", L["Background color"]),
-        color(key, "fillColor", L["Fill color"]),
-
+    }
+    if not own then rows[#rows + 1] = color(key, "fillColor", L["Fill color"]) end
+    for _, row in ipairs({
         { type = "header", text = L["Text"] },
         slider(key, "fontSize", L["Text size"], 6, 24, 1),
         color(key, "textColor", L["Text color"]),
@@ -99,19 +103,22 @@ local function lookRows(key)
           },
           get = function() return RB.Bar(key).textLayer or "top" end,
           set = function(_, v) RB.Bar(key).textLayer = v; apply() end },
-        dropdown(key, "leftText", L["Left text"], {
+    }) do rows[#rows + 1] = row end
+    if not own then
+        rows[#rows + 1] = dropdown(key, "leftText", L["Left text"], {
             { value = "none",  text = L["Nothing"] },
             { value = "name",  text = L["The name"] },
             { value = "label", text = L["A fixed label"] },
-        }),
-        dropdown(key, "rightText", L["Right text"], {
+        })
+        rows[#rows + 1] = dropdown(key, "rightText", L["Right text"], {
             { value = "none",     text = L["Nothing"] },
             { value = "value",    text = L["The value"] },
             { value = "valuemax", text = L["Value and maximum"] },
             { value = "percent",  text = L["Percent"] },
             { value = "time",     text = L["The remaining time"] },
-        }),
-
+        })
+    end
+    for _, row in ipairs({
         { type = "header", text = L["Visibility"] },
         dropdown(key, "visibility", L["Show the bar"], {
             { value = "always",    text = L["Always shown"] },
@@ -122,7 +129,7 @@ local function lookRows(key)
         opacity(key, "opacity", L["Opacity"], { min = 10 }),
         toggle(key, "oocFade", L["Fade out of combat"]),
         opacity(key, "oocAlpha", L["Faded opacity"], { min = 5 }),
-    }
+    }) do rows[#rows + 1] = row end
     return rows
 end
 
@@ -288,6 +295,68 @@ local function swingPage()
     return page
 end
 
+local function xpPage()
+    local key = "xp"
+    local rows = {
+        enabledRow(key),
+        toggle(key, "showAtMaxLevel", L["Show at the highest level"],
+            L["Once you reach the highest level the bar stays, full, instead of going away."]),
+        toggle(key, "hideBlizzard", L["Hide the client's experience bar"],
+            L["Only the experience bar itself is hidden; the reputation bar the client shows in its place keeps working."]),
+
+        { type = "header", text = L["Colours"] },
+        toggle(key, "useRestColor", L["Blue while rested"],
+            L["The fill takes the rested colour while you have rested experience, exactly like the client's own bar."]),
+        color(key, "restedFillColor", L["Rested color"]),
+        color(key, "fillColor", L["Normal color"]),
+
+        { type = "header", text = L["After the fill"] },
+        toggle(key, "showRested", L["Show rested experience"],
+            L["The stretch of the bar that will earn double experience, in the rested colour."]),
+        toggle(key, "showQuest", L["Show finished quests"],
+            L["The experience the quests ready to hand in will bring, right after the fill."]),
+        color(key, "questColor", L["Finished quests color"]),
+        toggle(key, "showIncomplete", L["Also show unfinished quests"]),
+        color(key, "incompleteColor", L["Unfinished quests color"]),
+        opacity(key, "overlayOpacity", L["Overlay opacity"], { min = 10 }),
+
+        { type = "header", text = L["Texts on the bar"] },
+        dropdown(key, "leftText", L["Left text"], {
+            { value = "none",  text = L["Nothing"] },
+            { value = "level", text = L["The level"] },
+        }),
+        dropdown(key, "centerText", L["Middle text"], {
+            { value = "none",         text = L["Nothing"] },
+            { value = "value",        text = L["The value"] },
+            { value = "valuemax",     text = L["Value and maximum"] },
+            { value = "valuemaxrest", text = L["Value, maximum and what is left"] },
+            { value = "remaining",    text = L["What is left"] },
+        }, 240),
+        dropdown(key, "rightText", L["Right text"], {
+            { value = "none",         text = L["Nothing"] },
+            { value = "percent",      text = L["Percent"] },
+            { value = "percentquest", text = L["Percent, with finished quests"] },
+        }, 240),
+
+        { type = "header", text = L["Info line under the bar"] },
+        toggle(key, "showRate", L["Time to level and experience per hour"],
+            L["Measured over this session. A /reload keeps the session, a new login starts one."]),
+        toggle(key, "showQuestRested", L["Finished quests and rested, in percent"]),
+        toggle(key, "showLevelTime", L["Time played on this level"],
+            L["Asked from the client once per login; the chat message the client would print for it is held back."]),
+        toggle(key, "showSessionTime", L["Time played this session"]),
+        slider(key, "infoSize", L["Info text size"], 6, 24, 1),
+    }
+    for _, row in ipairs(tickRows(key)) do rows[#rows + 1] = row end
+    for _, row in ipairs(lookRows(key, true)) do rows[#rows + 1] = row end
+
+    return {
+        { type = "desc", text = L["|cffaaaaaaYour experience as a bar of its own: blue while rested, the rested stretch and the quests ready to hand in after the fill, and an info line underneath. Move it with /vedit.|r"] },
+        section(key, rows),
+        { type = "button", label = L["Open Edit Mode"], onClick = function() ns:SetEditMode(true) end },
+    }
+end
+
 -- ---------------------------------------------------------------- preview --
 
 -- While the page is open every bar is on screen, transient ones included:
@@ -337,6 +406,7 @@ end
 function mod:GetOptions(tabId)
     if tabId == "cast"  then return castPage() end
     if tabId == "swing" then return swingPage() end
+    if tabId == "xp"    then return xpPage() end
     return resourcesPage()
 end
 

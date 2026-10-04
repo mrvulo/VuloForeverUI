@@ -1,7 +1,8 @@
 -- VuloForeverUI / Modules / ResourceBars / Core
 --
 -- Free-standing bars for the three things that tell you when to press what:
--- your power, your cast, and your swing. One module, three tabs, and every bar
+-- your power, your cast, and your swing -- and, on a tab of its own, your
+-- experience. One module, four tabs, and every bar
 -- its own frame with its own mover -- none of this hangs off a unit frame, so
 -- it works whether or not our unit frames are switched on.
 --
@@ -90,6 +91,13 @@ RB.BARS = {
       defaults = { y = -282, width = 240, height = 12, useTypeColor = false,
                    fillColor = { r = 0.55, g = 0.75, b = 0.40 },
                    leftText = "label", rightText = "time" } },
+    { key = "xp", tab = "xp", label = "XP bar",
+      defaults = { y = -320, width = 520, height = 16, useTypeColor = false, showSpark = false,
+                   -- the client's own two colours: purple normally, blue while rested
+                   fillColor = { r = 0.58, g = 0.0, b = 0.55 },
+                   leftText = "level", rightText = "percentquest",
+                   ticks = "10,20,30,40,50,60,70,80,90",
+                   tickColor = { r = 0, g = 0, b = 0, a = 0.45 } } },
 }
 
 -- Settings that belong to one kind of bar only. They live in the same table as
@@ -139,12 +147,30 @@ RB.EXTRA_DEFAULTS = {
     swingMain   = { showRange = true, outOfRangeColor = { r = 0.8, g = 0.25, b = 0.25 } },
     swingOff    = { showRange = true, outOfRangeColor = { r = 0.8, g = 0.25, b = 0.25 } },
     swingRanged = { showRange = true, outOfRangeColor = { r = 0.8, g = 0.25, b = 0.25 } },
+    xp = {
+        useRestColor    = true,    -- blue fill while rested, as the client does it
+        restedFillColor = { r = 0.0, g = 0.39, b = 0.88 },
+        showRested      = true,
+        showQuest       = true,
+        showIncomplete  = false,
+        questColor      = { r = 1.0, g = 0.67, b = 0.03 },
+        incompleteColor = { r = 1.0, g = 0.82, b = 0.31 },
+        overlayOpacity  = 0.45,
+        centerText      = "valuemaxrest",
+        showRate        = true,
+        showQuestRested = true,
+        showLevelTime   = true,
+        showSessionTime = false,
+        infoSize        = 11,
+        showAtMaxLevel  = false,
+        hideBlizzard    = false,
+    },
 }
 
 local mod = ns:RegisterModule("resourcebars", {
     name        = "Resource Bars",
     group       = "HUD",
-    description = "Free-standing bars for your power, your cast and your swing timer, each with its own place on the screen.",
+    description = "Free-standing bars for your power, your cast, your swing timer and your experience, each with its own place on the screen.",
     defaults = {
         -- Off out of the box, like the cooldown bars: a second set of bars is
         -- a choice, and the settings page previews them without switching the
@@ -211,6 +237,7 @@ function RB.UpdateAll()
     -- cast EVENT may start this bar.
     RB.Cast.Refresh()
     RB.Swing.UpdateAll()
+    RB.XP.Update()
     RB.Each(function(key) RB.UpdateVisibility(key) end)
 end
 
@@ -245,6 +272,7 @@ function mod:OnEnable()
 
     RB.Cast.RegisterEvents(self)
     RB.Swing.RegisterEvents(self)
+    RB.XP.RegisterEvents(self)
 
     self:RegisterEvent("PLAYER_REGEN_DISABLED", function() RB.Each(function(key) RB.UpdateVisibility(key) end) end)
     self:RegisterEvent("PLAYER_REGEN_ENABLED", function() RB.Each(function(key) RB.UpdateVisibility(key) end) end)
@@ -289,6 +317,7 @@ end
 
 function mod:OnDisable()
     RB.Cast.Release()
+    RB.XP.Stop()
     -- the client's cast bar frame gets its border back
     if RB.CastSkin and RB.CastSkin.ApplyBorder then RB.CastSkin.ApplyBorder() end
     for _, frame in pairs(RB.frames or {}) do frame:Hide() end
@@ -304,6 +333,7 @@ function RB.Label(key)
         swingMain   = L["Main hand"],
         swingOff    = L["Off hand"],
         swingRanged = L["Ranged"],
+        xp          = L["XP bar"],
     }
     return labels[key] or key
 end
