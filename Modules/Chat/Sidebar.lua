@@ -266,9 +266,14 @@ function Sidebar.Refresh()
         -- a column given a real width would otherwise be mostly dead space
         -- you cannot hover back into view. Clicks stay with whatever is
         -- underneath, because the column sits over the world.
-        pcall(bar.SetMouseClickEnabled, bar, false)
-        pcall(bar.SetMouseMotionEnabled, bar, true)
-        if bar.SetPropagateMouseClicks then pcall(bar.SetPropagateMouseClicks, bar, true) end
+        -- Protected on this client even on our own frame, so never in a
+        -- fight; until it ends the column just does not take the mouse.
+        local column = bar
+        ns:RunOutOfCombatOnce("chat.sidebar.mouse", function()
+            column:SetMouseClickEnabled(false)
+            column:SetMouseMotionEnabled(true)
+            if column.SetPropagateMouseClicks then column:SetPropagateMouseClicks(true) end
+        end)
         bar:SetScript("OnEnter", function()
             if Chat.Fade then Chat.Fade.SetMouseOver(true) end
         end)

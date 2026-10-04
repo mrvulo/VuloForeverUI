@@ -34,10 +34,17 @@ local function ensureStrip()
     -- Motion without clicks, and both propagated: a motion-enabled overlay
     -- that does not propagate swallows the click meant for the real tab under
     -- it, and kills the client's own tab tooltip with it.
-    pcall(strip.SetMouseClickEnabled, strip, false)
-    pcall(strip.SetMouseMotionEnabled, strip, true)
-    if strip.SetPropagateMouseClicks then pcall(strip.SetPropagateMouseClicks, strip, true) end
-    if strip.SetPropagateMouseMotion then pcall(strip.SetPropagateMouseMotion, strip, true) end
+    -- All four are protected on this client, even on a frame of our own: in
+    -- a fight the client blocks them (and pcall reports success regardless).
+    -- Until the fight ends the strip simply keeps the mouse off, which lets
+    -- every click through to the real tab anyway.
+    local target = strip
+    ns:RunOutOfCombatOnce("chat.tabs.mouse", function()
+        target:SetMouseClickEnabled(false)
+        target:SetMouseMotionEnabled(true)
+        if target.SetPropagateMouseClicks then target:SetPropagateMouseClicks(true) end
+        if target.SetPropagateMouseMotion then target:SetPropagateMouseMotion(true) end
+    end)
     strip.ghosts = {}
     return strip
 end
