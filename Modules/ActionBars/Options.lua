@@ -211,6 +211,10 @@ function mod:GetOptions()
     end
     if db.style == "modern" then modernOptions(page) end
     local rest = {
+        { type = "header", text = L["Spell ranks"] },
+        toggle("autoUprank", L["Put new spell ranks on the bars"],
+            L["Learning a new rank swaps it onto your action bars in place of the rank that was your highest. Lower ranks you placed on purpose stay where they are."]),
+
         { type = "header", text = L["Paging by form"] },
         { type = "desc", text = L["|cffaaaaaaCat, bear, stealth, the stances and Shadowform normally swap the main bar to a page of their own. Switch this on to keep your bar where it is in every form.|r"] },
     }

@@ -221,6 +221,7 @@ Modules\ActionBars\ClassicBarLayout.lua
 Modules\ActionBars\ClassicBarDress.lua
 Modules\ActionBars\ClassicBarApply.lua
 Modules\ActionBars\Paging.lua
+Modules\ActionBars\Uprank.lua
 Modules\ActionBars\Preview.lua
 Modules\ActionBars\Options.lua
 

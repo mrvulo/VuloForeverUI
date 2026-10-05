@@ -74,6 +74,9 @@ local mod = ns:RegisterModule("actionbars", {
 
         -- Paging. Whether this client lets us do it at all is probed once.
         keepPage    = false,
+
+        -- A newly learned rank takes the place of the old one on the bars.
+        autoUprank  = true,
     },
 })
 AB.mod = mod
@@ -263,6 +266,7 @@ function mod:OnEnable()
     end
 
     self:RegisterEvent("PLAYER_REGEN_ENABLED", function() AB.Apply() end)
+    AB.Uprank.RegisterEvents(self)
 
     if not AB.profileHooked then
         AB.profileHooked = true
