@@ -80,6 +80,24 @@ end
 local freeHost, freeText, freeWanted
 local freeEvents = CreateFrame("Frame")
 
+-- Counted here, not taken from C_Container.CalculateTotalNumberOfFreeBagSlots:
+-- the client's sum includes bags of a special kind -- quiver, ammo pouch, soul
+-- bag, profession bags -- and a full set of bags next to an empty quiver read
+-- "45". What counts is room for anything you loot: the backpack and the
+-- ordinary bags (bag family 0) only.
+local function freeSlots()
+    local free = 0
+    local last = Constants and Constants.InventoryConstants
+        and Constants.InventoryConstants.NumBagSlots or NUM_BAG_SLOTS or 4
+    for bag = 0, last do
+        local f, family = C_Container.GetContainerNumFreeSlots(bag)
+        if type(f) == "number" and (family == nil or family == 0) then
+            free = free + f
+        end
+    end
+    return free
+end
+
 local function paintFree()
     if not freeText then return end
     local on = freeWanted and AB.db().backpackFreeSlots ~= false
@@ -95,8 +113,7 @@ local function paintFree()
         freeHost:SetFrameStrata(b:GetFrameStrata())
         freeHost:SetFrameLevel(b:GetFrameLevel() + 5)
     end
-    local free = C_Container.CalculateTotalNumberOfFreeBagSlots()
-    freeText:SetText(type(free) == "number" and tostring(free) or "")
+    freeText:SetText(tostring(freeSlots()))
 end
 
 freeEvents:SetScript("OnEvent", paintFree)
