@@ -737,12 +737,19 @@ function Window.PaintFrame(win)
             end
         end
     end
-    f.bg:SetShown(not standard)
     f.close:SetShown(not standard)
     f.title:SetShown(not standard)
+    f.bg:ClearAllPoints()
     if standard then
+        -- The template's own ground did not draw on this client (measured:
+        -- the world showed through the window), so the ground is ours, the
+        -- dark of the client's flat panels, inside its border.
+        f.bg:SetPoint("TOPLEFT", f, "TOPLEFT", 3, -3)
+        f.bg:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -3, 3)
+        f.bg:SetColorTexture(0.06, 0.06, 0.07, 0.97)
         ns.LayoutEdges(f.edges, f, 0, 0, 0, 0, 0, 0)
     else
+        f.bg:SetAllPoints(f)
         f.bg:SetColorTexture(db.bgColor.r, db.bgColor.g, db.bgColor.b, db.bgColor.a or 0.92)
         ns.LayoutEdges(f.edges, f, db.borderSize or 1,
             db.borderColor.r, db.borderColor.g, db.borderColor.b, db.borderColor.a or 0.12, 0)
