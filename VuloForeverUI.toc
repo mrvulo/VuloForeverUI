@@ -20,6 +20,10 @@ Core\Namespace.lua
 Core\Theme.lua
 Core\Locale.lua
 Locales\deDE.lua
+Locales\frFR.lua
+Locales\esES.lua
+Locales\ruRU.lua
+Locales\ptBR.lua
 Core\Utils.lua
 Core\Slash.lua
 Core\Diag.lua

@@ -14,6 +14,10 @@ ns.SUPPORTED_LOCALES = {
     { value = "auto", text = "Auto (client language)" },
     { value = "enUS", text = "English" },
     { value = "deDE", text = "Deutsch" },
+    { value = "frFR", text = "Français" },
+    { value = "esES", text = "Español" },
+    { value = "ruRU", text = "Русский" },
+    { value = "ptBR", text = "Português (Brasil)" },
 }
 
 -- Resolved live per lookup: SavedVariables (holding the override) only exist from ADDON_LOADED, so a load-time snapshot would ignore it.
