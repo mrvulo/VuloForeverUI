@@ -100,9 +100,11 @@ end
 local function build(win)
     local f = CreateFrame("Frame", "VuloForeverUIBags" .. win.key, UIParent)
     f:SetFrameStrata("HIGH")
-    -- Room underneath: the Standard frame's ground is a child at level 0 and
-    -- has to stay below the window's own texts.
-    f:SetFrameLevel(10)
+    -- Room underneath, and room above: the Standard frame's ground is a child
+    -- at level 0 and has to stay below the window's own texts, while the
+    -- client's item buttons sit at level 10 (their template says so). A window
+    -- at 10 itself drew its ground over the icons as a grey veil.
+    f:SetFrameLevel(3)
     f:SetToplevel(true)
     f:EnableMouse(true)
     f:SetMovable(true)
