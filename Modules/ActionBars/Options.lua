@@ -197,6 +197,11 @@ function mod:GetOptions()
             L["How many bag slots are still free, on the backpack button -- with the classic band and with the client's own bag bar."]),
         toggle("skinPetStance", L["Skin the pet and stance buttons too"]),
     }
+    -- The rows over the classic band, lifted together.
+    if db.style == "classic" and db.classicBar then
+        page[#page + 1] = slider("upperLift", L["Lift the bars over the band"], 0, 60, 1,
+            L["Bars 2 and 3 and everything above them move up together, clear of the experience bar's texts. A row you moved yourself in Edit Mode stays where you put it."])
+    end
     -- Shamans only: the client's totem bar on the classic band.
     if select(2, UnitClass("player")) == "SHAMAN" then
         page[#page + 1] = toggle("classicTotemBar", L["Totem bar on the classic bar"],

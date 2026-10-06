@@ -37,6 +37,7 @@ local mod = ns:RegisterModule("actionbars", {
         classicBar  = true,
         backpackFreeSlots = true,   -- the classic band: free bag slots on the backpack
         classicTotemBar = false,    -- the classic band: the shaman's totem bar on its small row
+        upperLift   = 6,            -- the classic band: rows over it lifted clear of the XP strip
         skinPetStance = true,
         -- Action bar 1's own art outside the Classic band: the frame with the
         -- dividers between its buttons, and the end caps, one switch each.

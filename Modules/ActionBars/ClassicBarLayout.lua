@@ -150,6 +150,14 @@ end
 -- place, and the watch is told to stop looking after it.
 local totemHooked = false
 
+-- How far the rows over the band are lifted, all of them together so they
+-- never close up on each other: bars 2 and 3, the small row above them, and
+-- the extra bars on top. Room for the experience strip's texts under them.
+local function lift()
+    local v = AB.db().upperLift
+    return type(v) == "number" and v or 0
+end
+
 local function layoutTotem(x)
     local totem = _G.MultiCastActionBarFrame
     if not totem then return end
@@ -178,7 +186,7 @@ local function layoutTotem(x)
         local fs = ratio(totem)
         local w, h = totem:GetSize()
         row:SetSize(math.max(1, (w or 1) * fs), math.max(1, (h or 1) * fs))
-        placeRow(row, "totem", "BOTTOMLEFT", P.art, "BOTTOMLEFT", x, SMALL_Y)
+        placeRow(row, "totem", "BOTTOMLEFT", P.art, "BOTTOMLEFT", x, SMALL_Y + lift())
         anchor(totem, "BOTTOMLEFT", "BOTTOMLEFT", 0, 0, nil, nil, row)
     elseif not want and placed[totem] then
         restoreFrame(totem)
@@ -197,7 +205,7 @@ local function layoutButtons()
         for _, upper in ipairs(UPPER_BARS) do
             local ub = _G[upper.name]
             if ub and ub:IsShown() then
-                layoutBarButtons(ub, upper.row, upper.x, UPPER_Y, BUTTON_PITCH, BUTTON_SIZE)
+                layoutBarButtons(ub, upper.row, upper.x, UPPER_Y + lift(), BUTTON_PITCH, BUTTON_SIZE)
             end
         end
         -- Stance or possess first, the pet bar after whichever of them shows.
@@ -206,7 +214,7 @@ local function layoutButtons()
             local sb = _G[name]
             if sb and sb:IsShown() then
                 if name == "PetActionBar" then x = math.max(36, x) end
-                local n = layoutBarButtons(sb, 3 + i, x, SMALL_Y, SMALL_PITCH, SMALL_BUTTON)
+                local n = layoutBarButtons(sb, 3 + i, x, SMALL_Y + lift(), SMALL_PITCH, SMALL_BUTTON)
                 if n > 0 then x = x + n * SMALL_PITCH + 6 end
             end
         end
@@ -222,7 +230,7 @@ local function layoutButtons()
                 right = right - SIDE_COLUMN
             end
         end
-        local y = EXTRA_Y
+        local y = EXTRA_Y + lift()
         for _, extra in ipairs(EXTRA_BARS) do
             local eb = _G[extra.name]
             if eb and eb:IsShown() then

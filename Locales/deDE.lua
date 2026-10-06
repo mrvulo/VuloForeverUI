@@ -1892,6 +1892,8 @@ ns:RegisterLocale("deDE", {
     ["Solid color"] = "Volle Farbe",
     ["Default"] = "Standard",
     ["Spell ranks"] = "Zauberränge",
+    ["Lift the bars over the band"] = "Leisten über dem Band anheben",
+    ["Bars 2 and 3 and everything above them move up together, clear of the experience bar's texts. A row you moved yourself in Edit Mode stays where you put it."] = "Leiste 2 und 3 und alles darüber rücken gemeinsam nach oben, weg von den Texten der Erfahrungsleiste. Eine Reihe, die du selbst im Bearbeitungsmodus verschoben hast, bleibt, wo sie ist.",
     ["Put new spell ranks on the bars"] = "Neue Zauberränge auf die Leisten legen",
     ["Learning a new rank swaps it onto your action bars in place of the rank that was your highest. Lower ranks you placed on purpose stay where they are."] = "Ein neu gelernter Rang ersetzt auf deinen Aktionsleisten den Rang, der bisher dein höchster war. Niedrigere Ränge, die du absichtlich hingelegt hast, bleiben, wo sie sind.",
     ["Damage number font"] = "Schrift der Schadenszahlen",
