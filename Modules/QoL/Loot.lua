@@ -35,14 +35,48 @@ local carriedBags = ns.CarriedBags
 -- Slots are taken one after another rather than in one burst: the server
 -- answers each LootSlot separately, and a burst past its limit drops the tail.
 -- Holding shift opens the window as usual, which is how you skip something.
+--
+-- The client's loot window opens all the same and would stand there for the
+-- whole run -- a flash of it on every corpse. It is made transparent for the
+-- run (alpha only: the frame is not hidden, nothing of the client's runs), and
+-- comes back the moment something is left that the run could not take: full
+-- bags, a roll, a confirmation. Then the player has to see it.
+local quickRun = 0
+local lootShown = false
+
+local function lootFrame() return _G.LootFrame end
+
+local function showLootFrame()
+    local f = lootFrame()
+    if f then f:SetAlpha(1) end
+end
+
+local function onQuickLootClosed()
+    lootShown = false
+    quickRun = quickRun + 1
+    showLootFrame()
+end
+
 local function onLootReady()
     if not QoL.db().quickLoot then return end
     if IsShiftKeyDown() then return end
+    quickRun = quickRun + 1
+    local run = quickRun
+    lootShown = true
+    local f = lootFrame()
+    if f then f:SetAlpha(0) end
+
     local step = QoL.db().quickLootDelay
-    for i = 1, GetNumLootItems() do
+    local count = GetNumLootItems()
+    for i = 1, count do
         local index = i
         C_Timer.After(step * index, function() LootSlot(index) end)
     end
+    -- The run is over and the window still open: whatever is left stays for
+    -- the player, visibly.
+    C_Timer.After(step * count + 0.4, function()
+        if run == quickRun and lootShown then showLootFrame() end
+    end)
 end
 
 -- ------------------------------------------------------ auto containers --
@@ -369,6 +403,9 @@ function Loot.Apply()
     local db = QoL.db()
 
     QoL.SyncEvent(db.quickLoot and true or false, "LOOT_READY", onLootReady)
+    -- Its own handler beside the auto-open one below: both listen to it.
+    QoL.SyncEvent(db.quickLoot and true or false, "LOOT_CLOSED", onQuickLootClosed)
+    if not db.quickLoot then showLootFrame() end
 
     local openOn = openEnabled()
     for ev, handler in pairs(OPEN_EVENTS) do
@@ -398,6 +435,8 @@ end
 
 function Loot.Disable()
     ns:UnregisterEvent("LOOT_READY", onLootReady)
+    ns:UnregisterEvent("LOOT_CLOSED", onQuickLootClosed)
+    showLootFrame()
     for ev, handler in pairs(OPEN_EVENTS) do
         ns:UnregisterEvent(ev, handler)
     end
