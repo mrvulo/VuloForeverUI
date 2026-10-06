@@ -37,34 +37,58 @@ local carriedBags = ns.CarriedBags
 -- Holding shift opens the window as usual, which is how you skip something.
 --
 -- The client's loot window opens all the same and would stand there for the
--- whole run -- a flash of it on every corpse. It is made transparent for the
--- run (alpha only: the frame is not hidden, nothing of the client's runs), and
--- comes back the moment something is left that the run could not take: full
--- bags, a roll, a confirmation. Then the player has to see it.
+-- whole run -- a flash of it on every corpse. Alpha does not hold: the window
+-- fades itself in and out with alpha animations that start at full alpha
+-- (ScrollingFlatPanel), so it showed on the open or on the close anyway.
+--
+-- What no animation of the client's touches is the SCALE. So for the run the
+-- window is shrunk to nothing, right after the client's own Open has placed
+-- it (a hook on Open, so the client positions it at its real size), and it
+-- gets its size back -- and with it exactly its place -- the moment it closes,
+-- or when the run is over and something is still lying there: full bags, a
+-- roll, a confirmation. Then the player has to see it.
+local TINY = 0.01
 local quickRun = 0
-local lootShown = false
+local hiding = false
+local savedScale
+local hooked = false
 
 local function lootFrame() return _G.LootFrame end
 
-local function showLootFrame()
+local function shrink()
     local f = lootFrame()
-    if f then f:SetAlpha(1) end
+    if not f or InCombatLockdown() and f:IsProtected() then return end
+    if not savedScale then savedScale = f:GetScale() end
+    f:SetScale(TINY)
 end
 
-local function onQuickLootClosed()
-    lootShown = false
-    quickRun = quickRun + 1
-    showLootFrame()
+local function restore()
+    hiding = false
+    local f = lootFrame()
+    if f and savedScale then f:SetScale(savedScale) end
+    savedScale = nil
+end
+
+local function hookLootFrame()
+    local f = lootFrame()
+    if hooked or not f or type(f.Open) ~= "function" then return end
+    hooked = true
+    hooksecurefunc(f, "Open", function() if hiding then shrink() end end)
+    -- Closed: full size again -- unless the next corpse's run has already
+    -- begun in the tenth of a second the old window took to fade out.
+    f:HookScript("OnHide", function() if not hiding then restore() end end)
 end
 
 local function onLootReady()
     if not QoL.db().quickLoot then return end
     if IsShiftKeyDown() then return end
+    hookLootFrame()
     quickRun = quickRun + 1
     local run = quickRun
-    lootShown = true
+    hiding = true
+    -- already open (the client may answer in either order)
     local f = lootFrame()
-    if f then f:SetAlpha(0) end
+    if f and f:IsShown() then shrink() end
 
     local step = QoL.db().quickLootDelay
     local count = GetNumLootItems()
@@ -73,10 +97,19 @@ local function onLootReady()
         C_Timer.After(step * index, function() LootSlot(index) end)
     end
     -- The run is over and the window still open: whatever is left stays for
-    -- the player, visibly.
+    -- the player, at full size.
     C_Timer.After(step * count + 0.4, function()
-        if run == quickRun and lootShown then showLootFrame() end
+        if run ~= quickRun or not hiding then return end
+        local frame = lootFrame()
+        if frame and frame:IsShown() then restore() end
     end)
+end
+
+local function onQuickLootClosed()
+    quickRun = quickRun + 1
+    -- The size comes back in the window's own OnHide, after its fade-out has
+    -- run at the tiny size; this only ends the run.
+    hiding = false
 end
 
 -- ------------------------------------------------------ auto containers --
@@ -405,7 +438,7 @@ function Loot.Apply()
     QoL.SyncEvent(db.quickLoot and true or false, "LOOT_READY", onLootReady)
     -- Its own handler beside the auto-open one below: both listen to it.
     QoL.SyncEvent(db.quickLoot and true or false, "LOOT_CLOSED", onQuickLootClosed)
-    if not db.quickLoot then showLootFrame() end
+    if not db.quickLoot then restore() end
 
     local openOn = openEnabled()
     for ev, handler in pairs(OPEN_EVENTS) do
@@ -436,7 +469,7 @@ end
 function Loot.Disable()
     ns:UnregisterEvent("LOOT_READY", onLootReady)
     ns:UnregisterEvent("LOOT_CLOSED", onQuickLootClosed)
-    showLootFrame()
+    restore()
     for ev, handler in pairs(OPEN_EVENTS) do
         ns:UnregisterEvent(ev, handler)
     end
