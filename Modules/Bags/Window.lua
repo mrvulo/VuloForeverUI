@@ -206,17 +206,52 @@ local function build(win)
             ns.UI:ShowModulePage("bags")
         end)
 
+    -- Made to be FOUND: a magnifier, a grey "Search" while it is empty, a
+    -- visible edge that turns gold while you type, and a ground a step
+    -- lighter than the window. The same in both looks.
     local search = CreateFrame("EditBox", nil, f)
     search:SetAutoFocus(false)
-    search:SetHeight(18)
+    search:SetHeight(20)
     search:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, -PAD - HEADER_H + 4)
     search:SetPoint("TOPRIGHT", f, "TOPRIGHT", -PAD, -PAD - HEADER_H + 4)
     local sbg = search:CreateTexture(nil, "BACKGROUND")
     sbg:SetAllPoints(search)
-    sbg:SetColorTexture(0, 0, 0, 0.4)
-    search:SetTextInsets(6, 6, 0, 0)
+    sbg:SetColorTexture(1, 1, 1, 0.08)
+    local edges = ns.MakeEdges(search, "BORDER")
+    local function edge(focused)
+        if focused then
+            ns.LayoutEdges(edges, search, 1, 1, 0.82, 0.3, 0.9, 0)
+        else
+            ns.LayoutEdges(edges, search, 1, 0.6, 0.6, 0.65, 0.55, 0)
+        end
+    end
+    edge(false)
+
+    local glass = search:CreateTexture(nil, "ARTWORK")
+    glass:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
+    glass:SetSize(14, 14)
+    glass:SetPoint("LEFT", search, "LEFT", 5, -1)
+    glass:SetVertexColor(0.75, 0.75, 0.8)
+    search:SetTextInsets(22, 6, 0, 0)
+
+    local hint = search:CreateFontString(nil, "ARTWORK")
+    hint:SetPoint("LEFT", search, "LEFT", 22, 0)
+    hint:SetTextColor(0.55, 0.55, 0.6)
+    search.hint = hint
+    local function showHint(self)
+        hint:SetShown(not self:HasFocus() and (self:GetText() or "") == "")
+    end
+
     search:SetScript("OnEscapePressed", function(self) self:SetText(""); self:ClearFocus() end)
+    search:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+    search:SetScript("OnEditFocusGained", function(self)
+        edge(true); glass:SetVertexColor(1, 0.82, 0.3); showHint(self)
+    end)
+    search:SetScript("OnEditFocusLost", function(self)
+        edge(false); glass:SetVertexColor(0.75, 0.75, 0.8); showHint(self)
+    end)
     search:SetScript("OnTextChanged", function(self)
+        showHint(self)
         win.filter = self:GetText()
         win.Refresh()
     end)
@@ -707,7 +742,10 @@ function Window.Layout(win)
     f:SetScale(db.scale or 1)
     Window.PaintFrame(win)
     ns.UI.FontFor("bags", f.info, 11, nil)
-    ns.UI.FontFor("bags", f.search, 11, nil)
+    ns.UI.FontFor("bags", f.search, 12, nil)
+    ns.UI.FontFor("bags", f.search.hint, 12, nil)
+    f.search.hint:SetText(L["Search"])
+    f.search.hint:SetShown(not f.search:HasFocus() and (f.search:GetText() or "") == "")
     f.search:SetShown(db.search ~= false)
 
     f.info:SetText(headerText(win, bagIDs, db))
