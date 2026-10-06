@@ -103,6 +103,10 @@ local function bagsPage()
     local d = db()
 
     local display = section(L["Display"], {
+        dropdown("style", L["Style"], {
+            { value = "standard", text = L["Standard -- the game's own bag look"] },
+            { value = "modern",   text = L["Modern -- flat"] },
+        }, { tooltip = L["Standard dresses the window in the frame, slots and quality rings of the game's own bags. Everything else -- search, categories, marks, the bank -- stays the same in both."] }),
         slider("scale", L["Window scale"], 60, 160, 1, { scale = 100 }),
         slider("iconZoom", L["Icon zoom"], 0, 0.2, 0.01),
         toggle("roundSlots", L["Rounded slots"],

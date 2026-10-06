@@ -35,6 +35,9 @@ local mod = ns:RegisterModule("bags", {
     defaults = {
         enabled  = false,
         replaceBlizzard = true,
+        -- modern: our flat window; standard: the same window in the client's
+        -- own bag frame and slot art (Window.lua, THE TWO LOOKS)
+        style = "modern",
 
         columns  = 12,
         slotSize = 37,

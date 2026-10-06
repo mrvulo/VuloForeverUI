@@ -461,14 +461,41 @@ local function placeCorners(slot, button, db)
     end
 end
 
+-- The Standard look (Window.lua, THE TWO LOOKS): the client's own empty bag
+-- slot as the ground, its quality ring instead of our edge, its square hover
+-- light. Switched per slot only when the look changes, since the hover and
+-- the ground keep what was set on them.
+local EMPTY_SLOT = "Interface\\Paperdoll\\UI-Backpack-EmptySlot"
+local HOVER = "Interface\\Buttons\\ButtonHilight-Square"
+
+local function applyLook(slot, standard)
+    if slot.look == standard then return end
+    slot.look = standard
+    local button = slot.button
+    local hl = button.GetHighlightTexture and button:GetHighlightTexture()
+    if standard then
+        slot.ground:SetTexture(EMPTY_SLOT)
+        slot.ground:SetTexCoord(0, 1, 0, 1)
+        if hl then hl:SetTexture(HOVER); hl:SetBlendMode("ADD"); hl:SetVertexColor(1, 1, 1, 1) end
+        for _, t in pairs(slot.edges) do t:Hide() end
+    else
+        slot.ground:SetColorTexture(1, 1, 1, 1)
+        if hl then hl:SetColorTexture(1, 1, 1, 0.10); hl:SetBlendMode("BLEND") end
+        if button.IconBorder then button.IconBorder:SetAlpha(0) end
+    end
+end
+
 function Slots.Paint(slot, bagID, slotID, info)
     local db = Bags.db()
     local button, frame = slot.button, slot.frame
+    local standard = db.style == "standard"
 
     frame:SetID(bagID)
     button:SetID(slotID)
     frame:SetSize(db.slotSize or 37, db.slotSize or 37)
-    applyRound(slot, db.roundSlots ~= false)
+    applyLook(slot, standard)
+    -- the client's slots are square
+    applyRound(slot, db.roundSlots ~= false and not standard)
 
     button:Show()
 
@@ -524,7 +551,22 @@ function Slots.Paint(slot, bagID, slotID, info)
     else
         callSetter(button, "SetItemButtonQuality", nil)
     end
-    if button.IconBorder then button.IconBorder:SetAlpha(0) end
+    if button.IconBorder then
+        -- Standard keeps the client's ring, which its setter just placed.
+        button.IconBorder:SetAlpha((standard and db.qualityBorder ~= false) and 1 or 0)
+    end
+
+    if standard then
+        -- The client's slot art; a profession bag's slots tinted in its colour.
+        local fam = db.markBagFamily ~= false and familyColor(bagID) or nil
+        if fam then
+            slot.ground:SetVertexColor(0.55 + fam[1] * 0.45, 0.55 + fam[2] * 0.45, 0.55 + fam[3] * 0.45, 1)
+        else
+            slot.ground:SetVertexColor(1, 1, 1, 1)
+        end
+        for _, t in pairs(slot.edges) do t:Hide() end
+        slot.roundRing:Hide()
+    end
 
     -- Empty slots are a dark square with a faint edge; full ones sit on the
     -- same ground and carry their quality colour, or a neutral grey when the
@@ -532,7 +574,9 @@ function Slots.Paint(slot, bagID, slotID, info)
     -- A slot of a profession bag takes that bag's colour: tinted ground and
     -- edge while empty, the edge alone under an item the quality leaves plain.
     local fam = db.markBagFamily ~= false and familyColor(bagID) or nil
-    if info then
+    if standard then
+        -- painted above
+    elseif info then
         slot.ground:SetVertexColor(0.02, 0.02, 0.03, 0.9)
         local r, g, b = 0.25, 0.25, 0.27
         if fam then r, g, b = fam[1], fam[2], fam[3] end

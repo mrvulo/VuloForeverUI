@@ -232,7 +232,8 @@ function Sidebar.Layout(win, keys)
         end
     end
 
-    local y = -34
+    -- below the header, wherever the window's look puts it (Window.lua)
+    local y = -34 - Bags.WindowFactory.TopExtra()
     for i, row in ipairs(rows) do
         local b = button(win, i)
         b:ClearAllPoints()

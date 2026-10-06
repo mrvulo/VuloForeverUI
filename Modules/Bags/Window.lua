@@ -17,6 +17,26 @@ Bags.WindowFactory = Window
 local PAD, HEADER_H = 10, 28
 local TOOL = 20          -- edge length of a tool button
 
+-- THE TWO LOOKS
+--
+-- Modern is the flat window this file always drew. Standard is the client's
+-- own bag look: the frame Forever's bags are made of (PortraitFrameFlatTemplate
+-- -- border, title bar, bag portrait, close button) under the same content.
+-- That frame is a child of the window drawn one level BELOW it, so the
+-- window's own texts and slots stay on top of its ground; only the header
+-- moves, down out of the title bar and right of the portrait.
+local function isStandard()
+    return Bags.db().style == "standard"
+end
+Window.IsStandard = isStandard
+
+-- Where the header rows start, and how far in from the left they begin.
+local function headTop() return isStandard() and 30 or PAD end
+local function headLeft() return isStandard() and 62 or PAD end
+-- How much further down everything below the header starts than in Modern
+-- (the side bar reads this too).
+function Window.TopExtra() return headTop() - PAD end
+
 -- ---------------------------------------------------------------- chrome --
 
 -- One tool button: an icon, a tooltip, and a click. They live in a row under
@@ -80,6 +100,9 @@ end
 local function build(win)
     local f = CreateFrame("Frame", "VuloForeverUIBags" .. win.key, UIParent)
     f:SetFrameStrata("HIGH")
+    -- Room underneath: the Standard frame's ground is a child at level 0 and
+    -- has to stay below the window's own texts.
+    f:SetFrameLevel(10)
     f:SetToplevel(true)
     f:EnableMouse(true)
     f:SetMovable(true)
@@ -118,6 +141,19 @@ local function build(win)
     -- sign in it: that glyph only exists if the chosen font happens to carry
     -- it, and this is the shape every other window here already uses.
     f.close = ns.UI:CreateCloseX(f, function() win.Close() end, "box")
+
+    -- The Standard look's frame (see THE TWO LOOKS). Its close button is the
+    -- client's; its click is ours, set on this instance of the template.
+    local ok, chrome = pcall(CreateFrame, "Frame", nil, f, "PortraitFrameFlatTemplate")
+    if ok and chrome then
+        chrome:SetAllPoints(f)
+        chrome:EnableMouse(false)
+        if chrome.CloseButton then
+            chrome.CloseButton:SetScript("OnClick", function() win.Close() end)
+        end
+        chrome:Hide()
+        f.chrome = chrome
+    end
 
     -- Escape closes it, like every window the client owns.
     if type(_G.UISpecialFrames) == "table" then
@@ -596,7 +632,7 @@ function Window.Layout(win)
     -- it is reserved while either is on. Asked the same way the field itself
     -- is shown (search ~= false): a nil setting meant a field on screen with no
     -- room made for it, drawn over the tools and eating their clicks.
-    local y = PAD + HEADER_H + (Window.HasToolRow(db) and 22 or 0)
+    local y = headTop() + HEADER_H + (Window.HasToolRow(db) and 22 or 0)
     y = y + Bags.BagBar.Layout(win, left, y)
     local sectionIndex = 0
     local missing, refused = false, false
@@ -667,12 +703,7 @@ function Window.Layout(win)
 
     f:SetSize(width, math.max(y + PAD, (barH or 0) + PAD))
     f:SetScale(db.scale or 1)
-    f.bg:SetColorTexture(db.bgColor.r, db.bgColor.g, db.bgColor.b, db.bgColor.a or 0.92)
-    ns.LayoutEdges(f.edges, f, db.borderSize or 1,
-        db.borderColor.r, db.borderColor.g, db.borderColor.b, db.borderColor.a or 0.12, 0)
-
-    ns.UI.FontFor("bags", f.title, 13, nil)
-    f.title:SetText(Bags.Title(win.key))
+    Window.PaintFrame(win)
     ns.UI.FontFor("bags", f.info, 11, nil)
     ns.UI.FontFor("bags", f.search, 11, nil)
     f.search:SetShown(db.search ~= false)
@@ -692,6 +723,34 @@ function Window.Layout(win)
     end
 end
 
+-- The window's own ground and border, or the client's frame in their place.
+function Window.PaintFrame(win)
+    local db, f = Bags.db(), win.frame
+    local standard = isStandard() and f.chrome ~= nil
+    if f.chrome then
+        f.chrome:SetShown(standard)
+        if standard then
+            f.chrome:SetFrameLevel(math.max(0, f:GetFrameLevel() - 1))
+            if f.chrome.SetTitle then f.chrome:SetTitle(Bags.Title(win.key)) end
+            if f.chrome.SetPortraitToAsset then
+                f.chrome:SetPortraitToAsset(win.key == "bank" and 133784 or 133633)
+            end
+        end
+    end
+    f.bg:SetShown(not standard)
+    f.close:SetShown(not standard)
+    f.title:SetShown(not standard)
+    if standard then
+        ns.LayoutEdges(f.edges, f, 0, 0, 0, 0, 0, 0)
+    else
+        f.bg:SetColorTexture(db.bgColor.r, db.bgColor.g, db.bgColor.b, db.bgColor.a or 0.92)
+        ns.LayoutEdges(f.edges, f, db.borderSize or 1,
+            db.borderColor.r, db.borderColor.g, db.borderColor.b, db.borderColor.a or 0.12, 0)
+    end
+    ns.UI.FontFor("bags", f.title, 13, nil)
+    f.title:SetText(Bags.Title(win.key))
+end
+
 -- The tool row: whichever tools are switched on, laid out left to right under
 -- the title, with the active mode lit.
 function Window.HasToolRow(db)
@@ -708,7 +767,7 @@ function Window.LayoutTools(win)
     local db = Bags.db()
     local f = win.frame
     local mode = Bags.Slots.Mode()
-    local rowY = -PAD - HEADER_H + 4
+    local rowY = -headTop() - HEADER_H + 4
     local right = -PAD
     local specs = {
         { button = f.sort,  on = db.showSortButton },
@@ -743,10 +802,18 @@ function Window.LayoutTools(win)
         end
     end
     f.search:ClearAllPoints()
-    f.search:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, rowY)
+    f.search:SetPoint("TOPLEFT", f, "TOPLEFT", headLeft(), rowY)
     f.search:SetPoint("TOPRIGHT", f, "TOPRIGHT", right - 2, rowY)
     f.title:ClearAllPoints()
     f.title:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, -PAD)
+    -- The money line: next to our close box in Modern, at the right edge
+    -- under the client's title bar in Standard.
+    f.info:ClearAllPoints()
+    if isStandard() then
+        f.info:SetPoint("TOPRIGHT", f, "TOPRIGHT", -PAD, -headTop())
+    else
+        f.info:SetPoint("TOPRIGHT", f, "TOPRIGHT", -PAD - 24, -PAD)
+    end
 end
 
 -- The cheap pass: the same slots, in the same places, painted again. This is
@@ -831,7 +898,7 @@ function Window.New(key, bagsFn)
                     local cols = math.max(1, db.columns or 12)
                     local size, gap = db.slotSize or 37, db.spacing or 4
                     f:SetSize(cols * (size + gap) - gap + PAD * 2, 320)
-                    f.bg:SetColorTexture(db.bgColor.r, db.bgColor.g, db.bgColor.b, db.bgColor.a or 0.92)
+                    Window.PaintFrame(win)
                 end
                 placeWindow(win)
                 f:Show()
