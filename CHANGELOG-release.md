@@ -1,35 +1,31 @@
-## 0.11.0
+## 0.12.0
 
 **New**
 
-- **Resource Bars** — a new XP bar tab. By default it lays itself over the
-  game's own experience bar, which keeps its place, look and colours (blue
-  while rested, purple otherwise). On top of it: the experience of quests
-  ready to hand in and your rested stretch after the fill, your level on the
-  left, the values in the middle, and the percent on the right with the
-  finished quests counted in. Next to them, if you like: time to level and
-  experience per hour, quest and rested share, time played on this level and
-  this session. Texts that do not fit are cut short instead of overlapping.
-  Can also be a free-standing bar of its own, placed with /vedit.
-- **Auras** — temporary weapon enchants (weapon imbues, poisons, stones) show
-  at the front of the buff row, as in the game's own row. Can be switched
-  off.
+- **Locales** — the suite now speaks French, Spanish (Spain and Latin
+  America), Russian and Brazilian Portuguese besides English and German. Auto
+  follows your game client; the language page lets you pick one.
+- **Bags** — a Style choice: Modern is the flat window as before; Standard
+  dresses the same window in the game's own bag look, with its frame, title
+  bar, bag portrait, close button, slot art and quality rings. Search,
+  categories, marks and the bank work the same in both.
+- **Action Bars** — newly learned spell ranks take the place of your previous
+  highest rank on the action bars. Lower ranks you placed on purpose stay.
+- **Global Settings** — a font for the damage numbers the game floats over
+  your target (damage, heals, misses), e.g. Expressway. Applies after you log
+  out and back in.
+- **Resource Bars** — the three texts of the XP bar can each be shifted left
+  or right.
 
 **Changed**
 
-- **Auras** — buffs and debuffs start next to the minimap, debuffs below the
-  buffs. Left unmoved they follow the minimap; once dragged they stay, and
-  Reset sends them back.
-- **Bags** — the upgrade arrow looks at armour, stats and weapon damage first
-  and only falls back to the item level when those disagree or are missing:
-  a grey item with a higher item level no longer gets the arrow over better
-  gear.
+- **Bags** — the search box is easier to find: a magnifier, a grey "Search"
+  placeholder, a visible edge that turns gold while you type.
+- **Action Bars** — on the classic bar, the bars above the band sit a little
+  higher so the experience bar's texts stay readable; a slider sets how far.
 
 **Fixed**
 
-- **Bags** — opening the bank no longer fails to claim the free first bank
-  tab with an "AddOn tried to call a protected function" error.
-- **Bags** — closing the game's Edit Mode no longer throws an error in the
-  party frames after the bags or the bank had been used.
-- **Chat** — no more blocked-action error when the chat tabs are built for
-  the first time during a fight.
+- **Action Bars** — the free bag slot count on the backpack no longer counts
+  quivers, ammo pouches or profession bags, so full bags read 0.
+- **Quality of Life** — one-click looting no longer flashes the loot window.
