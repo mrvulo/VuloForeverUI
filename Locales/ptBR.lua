@@ -1855,6 +1855,8 @@ ns:RegisterLocale("ptBR", {
     ["Solid color"] = "Cor sólida",
     ["Default"] = "Padrão",
     ["Spell ranks"] = "Graus de feitiço",
+    ["Show categories"] = "Mostrar categorias",
+    ["Hide categories"] = "Recolher categorias",
     ["Standard -- the game's own bag look"] = "Padrão -- o visual de bolsas do próprio jogo",
     ["Modern -- flat"] = "Moderno -- plano",
     ["Standard dresses the window in the frame, slots and quality rings of the game's own bags. Everything else -- search, categories, marks, the bank -- stays the same in both."] = "Padrão reveste a janela com a moldura, os espaços e os anéis de qualidade das bolsas do próprio jogo. Todo o resto -- busca, categorias, marcas, o banco -- continua igual nos dois.",

@@ -1892,6 +1892,8 @@ ns:RegisterLocale("frFR", {
     ["Solid color"] = "Couleur unie",
     ["Default"] = "Par défaut",
     ["Spell ranks"] = "Rangs de sorts",
+    ["Show categories"] = "Afficher les catégories",
+    ["Hide categories"] = "Replier les catégories",
     ["Standard -- the game's own bag look"] = "Standard : l'apparence des sacs du jeu",
     ["Modern -- flat"] = "Moderne : plat",
     ["Standard dresses the window in the frame, slots and quality rings of the game's own bags. Everything else -- search, categories, marks, the bank -- stays the same in both."] = "Standard habille la fenêtre du cadre, des emplacements et des anneaux de qualité des sacs du jeu. Tout le reste (recherche, catégories, marques, banque) reste identique dans les deux.",

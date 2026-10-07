@@ -196,6 +196,38 @@ local function button(win, index)
     return b
 end
 
+-- The fold arrow on top of the bar. Folded, the bar is this arrow alone and
+-- the slots take the room back; the shelves still stand as headings in the
+-- window, only their buttons go.
+local ARROW = 16
+local ARROW_LEFT  = "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up"
+local ARROW_RIGHT = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up"
+Sidebar.COLLAPSED_WIDTH = ARROW + 8
+
+local function collapsedKey(win)
+    return win.key == "bank" and "bankSidebarCollapsed" or "bagSidebarCollapsed"
+end
+
+local function arrow(win)
+    if win.sideArrow then return win.sideArrow end
+    local a = CreateFrame("Button", nil, win.frame)
+    a:SetSize(ARROW, ARROW)
+    a.tex = a:CreateTexture(nil, "ARTWORK")
+    a.tex:SetAllPoints(a)
+    a:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+    a:SetScript("OnClick", function()
+        local db, k = Bags.db(), collapsedKey(win)
+        db[k] = not db[k]
+        win.Refresh()
+    end)
+    a:SetScript("OnEnter", function(self)
+        ns.UI:ShowTooltip(self, Bags.db()[collapsedKey(win)] and L["Show categories"] or L["Hide categories"])
+    end)
+    a:SetScript("OnLeave", function() ns.UI:HideTooltip() end)
+    win.sideArrow = a
+    return a
+end
+
 -- One row of the bar. `keys` is what the draw actually produced, so a shelf
 -- with nothing on it has no button -- the bar is a map of THIS bag, not of
 -- every shelf that could exist.
@@ -204,7 +236,21 @@ function Sidebar.Layout(win, keys)
     local on = (win.key == "bank") and db.bankSidebar or db.bagSidebar
     if not on then
         for _, b in ipairs(win.sideButtons or {}) do b:Hide() end
+        if win.sideArrow then win.sideArrow:Hide() end
         return 0
+    end
+
+    -- below the header, wherever the window's look puts it (Window.lua)
+    local top = -34 - Bags.WindowFactory.TopExtra()
+    local a = arrow(win)
+    local folded = db[collapsedKey(win)] and true or false
+    a.tex:SetTexture(folded and ARROW_RIGHT or ARROW_LEFT)
+    a:ClearAllPoints()
+    a:SetPoint("TOPLEFT", win.frame, "TOPLEFT", folded and 4 or (4 + (BUTTON - ARROW) / 2), top)
+    a:Show()
+    if folded then
+        for _, b in ipairs(win.sideButtons or {}) do b:Hide() end
+        return Sidebar.COLLAPSED_WIDTH, math.abs(top) + ARROW + 4
     end
 
     local rows = { { view = "all", key = "all", label = L["All items"] } }
@@ -232,8 +278,7 @@ function Sidebar.Layout(win, keys)
         end
     end
 
-    -- below the header, wherever the window's look puts it (Window.lua)
-    local y = -34 - Bags.WindowFactory.TopExtra()
+    local y = top - ARROW - GAP
     for i, row in ipairs(rows) do
         local b = button(win, i)
         b:ClearAllPoints()

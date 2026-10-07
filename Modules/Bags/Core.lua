@@ -128,6 +128,9 @@ local mod = ns:RegisterModule("bags", {
         bankHideTabsInSidebar = false,
         bankHideEmptyWhenGrouped = false,
         bagSidebar = false,
+        -- folded to its arrow; one each, the bank's bar is a different bar
+        bagSidebarCollapsed = false,
+        bankSidebarCollapsed = false,
     },
 })
 Bags.mod = mod

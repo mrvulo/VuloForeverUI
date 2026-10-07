@@ -1892,6 +1892,8 @@ ns:RegisterLocale("ruRU", {
     ["Solid color"] = "Сплошной цвет",
     ["Default"] = "По умолчанию",
     ["Spell ranks"] = "Ранги заклинаний",
+    ["Show categories"] = "Показать категории",
+    ["Hide categories"] = "Свернуть категории",
     ["Standard -- the game's own bag look"] = "Стандартный — вид сумок самой игры",
     ["Modern -- flat"] = "Современный — плоский",
     ["Standard dresses the window in the frame, slots and quality rings of the game's own bags. Everything else -- search, categories, marks, the bank -- stays the same in both."] = "Стандартный оформляет окно рамкой, ячейками и кольцами качества собственных сумок игры. Все остальное — поиск, категории, метки, банк — одинаково в обоих.",
