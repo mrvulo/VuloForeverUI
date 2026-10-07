@@ -130,11 +130,21 @@ local function build()
     f.stamp:SetPoint("LEFT", f.title, "RIGHT", 8, 0)
     f.stamp:SetTextColor(0.55, 0.55, 0.6)
     f.close = ns.UI:CreateCloseX(f, function() f:Hide() end, "box")
+    -- The Standard look's frame, the same recipe as the bag windows
+    -- (Window.lua, THE TWO LOOKS): a child one level below the window, its
+    -- ground and border taken down under the content.
+    f:SetFrameLevel(3)
+    local ok, chrome = pcall(CreateFrame, "Frame", nil, f, "PortraitFrameFlatTemplate")
+    if ok and chrome then
+        chrome:SetAllPoints(f)
+        chrome:EnableMouse(false)
+        if chrome.CloseButton then chrome.CloseButton:SetScript("OnClick", function() f:Hide() end) end
+        chrome:Hide()
+        f.chrome = chrome
+    end
     if type(_G.UISpecialFrames) == "table" then table.insert(_G.UISpecialFrames, f:GetName()) end
 
     local scroll = CreateFrame("ScrollFrame", nil, f)
-    scroll:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, -HEADER)
-    scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -PAD, PAD)
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", function(self, delta)
         local max = self:GetVerticalScrollRange() or 0
@@ -218,9 +228,41 @@ function BankView.Layout()
     local columns = math.max(1, db.columns or 12)
     local gridW = columns * size + (columns - 1) * gap
 
-    f.bg:SetColorTexture(db.bgColor.r, db.bgColor.g, db.bgColor.b, db.bgColor.a or 0.97)
-    ns.LayoutEdges(f.edges, f, db.borderSize or 1,
-        db.borderColor.r, db.borderColor.g, db.borderColor.b, db.borderColor.a or 0.12, 0)
+    -- The look: our flat window, or the client's frame (Standard), where the
+    -- content starts below its title bar and right of its portrait.
+    local standard = db.style == "standard" and f.chrome ~= nil
+    local header = standard and 62 or HEADER
+    f.bg:ClearAllPoints()
+    if standard then
+        local level = f:GetFrameLevel()
+        f.chrome:Show()
+        f.chrome:SetFrameLevel(math.max(0, level - 1))
+        if f.chrome.Bg then f.chrome.Bg:SetFrameLevel(0) end
+        if f.chrome.NineSlice then f.chrome.NineSlice:SetFrameLevel(level + 1) end
+        if f.chrome.SetTitle then f.chrome:SetTitle(L["Bank"]) end
+        if f.chrome.SetPortraitToAsset then f.chrome:SetPortraitToAsset(133784) end
+        f.bg:SetPoint("TOPLEFT", f, "TOPLEFT", 3, -3)
+        f.bg:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -3, 3)
+        f.bg:SetColorTexture(0.06, 0.06, 0.07, 0.97)
+        ns.LayoutEdges(f.edges, f, 0, 0, 0, 0, 0, 0)
+    else
+        if f.chrome then f.chrome:Hide() end
+        f.bg:SetAllPoints(f)
+        f.bg:SetColorTexture(db.bgColor.r, db.bgColor.g, db.bgColor.b, db.bgColor.a or 0.97)
+        ns.LayoutEdges(f.edges, f, db.borderSize or 1,
+            db.borderColor.r, db.borderColor.g, db.borderColor.b, db.borderColor.a or 0.12, 0)
+    end
+    f.title:SetShown(not standard)
+    f.close:SetShown(not standard)
+    f.stamp:ClearAllPoints()
+    if standard then
+        f.stamp:SetPoint("TOPRIGHT", f, "TOPRIGHT", -PAD, -32)
+    else
+        f.stamp:SetPoint("LEFT", f.title, "RIGHT", 8, 0)
+    end
+    f.scroll:ClearAllPoints()
+    f.scroll:SetPoint("TOPLEFT", f, "TOPLEFT", PAD, -header)
+    f.scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -PAD, PAD)
     ns.UI.FontFor("bags", f.title, 13, nil)
     f.title:SetText(L["Bank"])
     ns.UI.FontFor("bags", f.stamp, 11, nil)
@@ -281,7 +323,10 @@ function BankView.Layout()
 
     f.content:SetSize(gridW, math.max(1, y))
     f:SetScale(db.scale or 1)
-    f:SetSize(gridW + PAD * 2, math.min(MAX_H, y + HEADER + PAD))
+    -- never narrower than the header line ("as of ..." beside the portrait)
+    local minW = (standard and 62 or (PAD + (f.title:GetStringWidth() or 0) + 8 + 24))
+        + (f.stamp:GetStringWidth() or 0) + PAD
+    f:SetSize(math.max(gridW + PAD * 2, math.ceil(minW)), math.min(MAX_H, y + header + PAD))
 end
 
 function BankView.Toggle()
