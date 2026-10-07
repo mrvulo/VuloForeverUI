@@ -21,7 +21,10 @@ local Sidebar = {}
 Bags.Sidebar = Sidebar
 
 local BUTTON, GAP = 26, 3
-Sidebar.WIDTH = BUTTON + 8
+-- The column: the window's own margin on the left, the buttons, then a gap,
+-- a hairline, and the same gap again before the first slot.
+local INSET, SPLIT = 10, 6
+Sidebar.WIDTH = BUTTON + SPLIT * 2
 
 -- The client's own bag icons, so a shelf is recognisable before its name is
 -- read. A shelf with no icon of its own gets the generic one rather than an
@@ -203,7 +206,7 @@ end
 local ARROW = 16
 local ARROW_LEFT  = "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up"
 local ARROW_RIGHT = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up"
-Sidebar.COLLAPSED_WIDTH = ARROW + 8
+Sidebar.COLLAPSED_WIDTH = ARROW + SPLIT * 2
 
 local function settingKey(win)
     return win.key == "bank" and "bankSidebar" or "bagSidebar"
@@ -241,8 +244,21 @@ function Sidebar.Layout(win, keys)
     local a = arrow(win)
     a.tex:SetTexture(on and ARROW_LEFT or ARROW_RIGHT)
     a:ClearAllPoints()
-    a:SetPoint("TOPLEFT", win.frame, "TOPLEFT", on and (4 + (BUTTON - ARROW) / 2) or 4, top)
+    a:SetPoint("TOPLEFT", win.frame, "TOPLEFT", on and (INSET + (BUTTON - ARROW) / 2) or INSET, top)
     a:Show()
+
+    -- the hairline between the column and the slots, down to the margin
+    if not win.sideLine then
+        win.sideLine = win.frame:CreateTexture(nil, "ARTWORK")
+        win.sideLine:SetColorTexture(1, 1, 1, 0.10)
+    end
+    local lineX = INSET + (on and BUTTON or ARROW) + SPLIT
+    win.sideLine:ClearAllPoints()
+    win.sideLine:SetPoint("TOPLEFT", win.frame, "TOPLEFT", lineX, top)
+    win.sideLine:SetPoint("BOTTOMLEFT", win.frame, "BOTTOMLEFT", lineX, INSET)
+    win.sideLine:SetWidth(1)
+    win.sideLine:Show()
+
     if not on then
         for _, b in ipairs(win.sideButtons or {}) do b:Hide() end
         return Sidebar.COLLAPSED_WIDTH, math.abs(top) + ARROW + 4
@@ -277,7 +293,7 @@ function Sidebar.Layout(win, keys)
     for i, row in ipairs(rows) do
         local b = button(win, i)
         b:ClearAllPoints()
-        b:SetPoint("TOPLEFT", win.frame, "TOPLEFT", 4, y)
+        b:SetPoint("TOPLEFT", win.frame, "TOPLEFT", INSET, y)
         if row.icon then
             b.icon:SetTexture(row.icon)
         else

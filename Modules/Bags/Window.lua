@@ -36,6 +36,7 @@ local function headLeft() return isStandard() and 62 or PAD end
 -- How much further down everything below the header starts than in Modern
 -- (the side bar reads this too).
 function Window.TopExtra() return headTop() - PAD end
+Window.PAD = PAD
 
 -- Where the first row of slots starts, below the header and the tool row.
 function Window.ContentTop(db)
@@ -750,17 +751,23 @@ function Window.Layout(win)
     for i = sectionIndex + 1, #win.sections do win.sections[i]:Hide() end
     Bags.Slots.HideRest(win.key)
 
+    -- The texts of the header first: the window is never narrower than they
+    -- are, so the header cannot run into itself with few columns.
+    ns.UI.FontFor("bags", f.info, 11, nil)
+    f.info:SetText(headerText(win, bagIDs, db))
+    ns.UI.FontFor("bags", f.title, 13, nil)
+    f.title:SetText(Bags.Title(win.key))
+    width = math.max(width, Window.MinWidth(win, db))
+
     f:SetSize(width, math.max(y + PAD, (barH or 0) + PAD))
     f:SetScale(db.scale or 1)
     Window.PaintFrame(win)
-    ns.UI.FontFor("bags", f.info, 11, nil)
     ns.UI.FontFor("bags", f.search, 12, nil)
     ns.UI.FontFor("bags", f.search.hint, 12, nil)
     f.search.hint:SetText(L["Search"])
     f.search.hint:SetShown(not f.search:HasFocus() and (f.search:GetText() or "") == "")
     f.search:SetShown(db.search ~= false)
 
-    f.info:SetText(headerText(win, bagIDs, db))
     f.moneyHit:SetShown(db.goldTracking and db.showMoney and win.key == "bags")
 
     Window.LayoutTools(win)
@@ -829,13 +836,9 @@ end
 -- height at the left, underneath it -- the field was made after them and lay
 -- on top, so it took every click meant for a tool: a mode switched on could
 -- not be switched off again.
-function Window.LayoutTools(win)
-    local db = Bags.db()
+local function toolSpecs(win, db)
     local f = win.frame
-    local mode = Bags.Slots.Mode()
-    local rowY = -headTop() - HEADER_H + 4
-    local right = -PAD
-    local specs = {
+    return {
         { button = f.sort,  on = db.showSortButton },
         { button = f.pin,   on = db.showPinned,    mode = "pin" },
         { button = f.split, on = db.stackSplitter, mode = "split" },
@@ -843,6 +846,36 @@ function Window.LayoutTools(win)
         { button = f.bankView, on = win.key == "bags" },
         { button = f.options, on = true },
     }
+end
+
+-- The narrowest the window may be: the top row (title, money line) and the
+-- second row (search field at a usable width, every tool button) side by
+-- side with their gaps, plus the margins.
+local SEARCH_MIN = 140
+function Window.MinWidth(win, db)
+    local f = win.frame
+    local tools = 0
+    for _, spec in ipairs(toolSpecs(win, db)) do
+        if spec.on then tools = tools + 1 end
+    end
+    local info = f.info:GetStringWidth() or 0
+    local top
+    if isStandard() then
+        top = headLeft() + info + PAD
+    else
+        top = PAD + (f.title:GetStringWidth() or 0) + 16 + info + 24 + PAD
+    end
+    local second = headLeft() + SEARCH_MIN + tools * (TOOL + 8) + PAD
+    return math.ceil(math.max(top, second))
+end
+
+function Window.LayoutTools(win)
+    local db = Bags.db()
+    local f = win.frame
+    local mode = Bags.Slots.Mode()
+    local rowY = -headTop() - HEADER_H + 4
+    local right = -PAD
+    local specs = toolSpecs(win, db)
     for i = #specs, 1, -1 do
         local spec = specs[i]
         local b = spec.button
