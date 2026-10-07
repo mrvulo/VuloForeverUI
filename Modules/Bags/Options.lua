@@ -27,6 +27,7 @@ local function apply()
     if Bags.Window then Bags.Window.Refresh() end
     -- The client's bag frames follow the takeover switch both ways.
     if Bags.db().replaceBlizzard then Bags.ParkBlizzard() else Bags.UnparkBlizzard() end
+    Bags.Tutorials.Update()
     if Bags.Bank then
         -- bank takeover switched off: the client's own frame comes back
         if not Bags.db().bank then

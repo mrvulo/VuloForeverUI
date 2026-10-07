@@ -249,6 +249,7 @@ function mod:OnEnable()
         -- wants to mark it.
         Bags.Marks.Scan()
         Bags.Refresh()
+        Bags.Tutorials.Update()
     end)
     self:RegisterEvent("PLAYERBANKSLOTS_CHANGED", function() Bags.Refresh() end)
     -- A tab bought, renamed or refiltered: the sidebar draws its name and its
@@ -307,6 +308,8 @@ function mod:OnEnable()
         Bags.Slots.Warm()
         Bags.HookBlizzard()
         if Bags.Bank then Bags.Bank.Hook() end
+        Bags.Tutorials.Hook()
+        Bags.Tutorials.Update()
     end)
 
     if IsLoggedIn() then
@@ -333,6 +336,8 @@ ns.Slash.BAGS = function()
 end
 
 function mod:OnDisable()
+    -- a frame later, once the module counts as off: the muted tip comes back
+    ns.NextFrame(Bags.Tutorials.Update)
     if Bags.Window then Bags.Window.Close() end
     if Bags.Bank then Bags.Bank.Close() end
     -- What we took from the client is given back -- the bank frame above all,

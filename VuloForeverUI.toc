@@ -181,6 +181,7 @@ Modules\Chat\History.lua
 Modules\Chat\Options.lua
 
 Modules\Bags\Core.lua
+Modules\Bags\Tutorials.lua
 Modules\Bags\Items.lua
 Modules\Bags\Marks.lua
 Modules\Bags\Gold.lua
