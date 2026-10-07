@@ -281,10 +281,23 @@ for (const f of files) {
             const s = litVal(kv.text);
             if (s !== null && s !== litVal(kv.value)) noteMissing(s, rel, line);
         }
-        // RegisterModule config: description renders as L[mod.description]
+        // RegisterModule config: name, group and description all render
+        // through L[...] at run time (sidebar, page header, reset message)
         if (kv.defaults !== undefined && kv.description !== undefined) {
-            const s = litVal(kv.description);
-            if (s !== null && s !== '') noteMissing(s, rel, line);
+            for (const k of ['name', 'group', 'description']) {
+                const s = litVal(kv[k]);
+                if (s !== null && s !== '') noteMissing(s, rel, line);
+            }
+        }
+        // a module's tab list: { id = "...", label = "..." }, shown as L[tab.label]
+        if (kv.id !== undefined && kv.label !== undefined && !typeVal) {
+            const s = litVal(kv.label);
+            if (s !== null) noteMissing(s, rel, line);
+        }
+        // slash command registration: desc is printed as L[e.desc] by /vfui help
+        if (kv.commands !== undefined && kv.desc !== undefined) {
+            const s = litVal(kv.desc);
+            if (s !== null) noteMissing(s, rel, line);
         }
     });
 }
