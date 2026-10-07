@@ -458,6 +458,7 @@ function Bags.HookBlizzard()
         -- Closed by the client itself, securely: from here on it may be
         -- hidden and parked again without running any of its scripts.
         frame:HookScript("OnHide", function(self)
+            if Bags.FinishUnpark(self) then return end
             if Bags.UnstashBlizzard(self) then
             ns.NextFrame(function()
                 Bags.ParkBlizzard()
@@ -492,6 +493,7 @@ end
 -- the client's at all, and the client closes it itself on its next toggle,
 -- after which it is parked like the rest.
 local stashed = {}
+local waitingUnpark = {}   -- frame -> parent, open under the park when the takeover ended
 
 -- The measurement behind the rule above, on the record (/vfdiag, saved
 -- variables): whether the client's list of shown bags is still its own after
@@ -543,16 +545,30 @@ function Bags.UnstashBlizzard(frame)
     return true
 end
 
+-- A bag left open under the park when the takeover ended, closed by the
+-- client now: back under its own parent, a frame later and only if it is
+-- still closed and the takeover still off.
+function Bags.FinishUnpark(frame)
+    local parent = waitingUnpark[frame]
+    if not parent then return false end
+    ns.NextFrame(function()
+        if waitingUnpark[frame] ~= parent then return end
+        if frame:IsShown() or InCombatLockdown() then return end
+        if mod.active and Bags.db().replaceBlizzard then waitingUnpark[frame] = nil; return end
+        waitingUnpark[frame] = nil
+        frame:SetParent(parent)
+    end)
+    return true
+end
+
 function Bags.HideBlizzard()
+    -- Only a VISIBLE bag is ours to deal with, and only by stashing it. A bag
+    -- the client keeps open under the park is left open: Hide() on it runs
+    -- its OnHide in our execution even there (measured: the taint note
+    -- "bagsShown tainted ... after bag toggle" came back every session while
+    -- this hid the parked bags), and that is the very write to keep out.
     for _, frame in ipairs(blizzardFrames()) do
-        if frame:IsVisible() then
-            Bags.StashBlizzard(frame)
-        elseif frame:IsShown() and not InCombatLockdown() then
-            -- Shown under the park: invisible already, so hiding it runs no
-            -- script -- it only keeps the bag from turning up should the
-            -- client hand it back to UIParent.
-            frame:Hide()
-        end
+        if frame:IsVisible() then Bags.StashBlizzard(frame) end
     end
 end
 
@@ -582,6 +598,11 @@ function Bags.ParkBlizzard()
     if not (mod.active and Bags.db().replaceBlizzard) then return end
     if InCombatLockdown() then return end
     unparkRetry:UnregisterEvent("PLAYER_REGEN_ENABLED")   -- a pending unpark is void
+    -- still waiting under the park from the last unpark: parked again
+    for frame, parent in pairs(waitingUnpark) do
+        if frame:GetParent() == park then parkedFrom[frame] = parent end
+        waitingUnpark[frame] = nil
+    end
     for _, frame in ipairs(blizzardFrames()) do
         local parent = frame:GetParent()
         if parent ~= park then
@@ -605,11 +626,15 @@ function Bags.UnparkBlizzard()
     unparkRetry:UnregisterEvent("PLAYER_REGEN_ENABLED")
     for frame, parent in pairs(parkedFrom) do
         if frame:GetParent() == park then
-            -- Shown under the park means "open" to the client, and would
-            -- turn up the moment it is back: it comes back closed. Under the
-            -- hidden park it is not visible, so this runs none of its scripts.
-            frame:Hide()
-            frame:SetParent(parent)
+            if frame:IsShown() then
+                -- Open to the client: back under its parent it would show,
+                -- and hiding it ourselves is the tainted write (see
+                -- HideBlizzard). It waits under the park until the client
+                -- closes it, and goes back then (the OnHide hook).
+                waitingUnpark[frame] = parent
+            else
+                frame:SetParent(parent)
+            end
         end
     end
     wipe(parkedFrom)

@@ -21,10 +21,12 @@ Bags.Tutorials = Tutorials
 
 local muted = {}   -- frame -> true while we hold it at alpha zero
 
--- The first step's text of every bag tutorial this client has.
+-- The steps of the bag tutorials that point at the CLIENT's bag frames: the
+-- first waits for one to open, the second points at a slot in one -- which,
+-- with the takeover on, is a parked button nobody can see.
 local function stuckText(text)
     return type(text) == "string" and text ~= ""
-        and (text == _G.TUTORIAL_REAGENT_BAG_STEP_1)
+        and (text == _G.TUTORIAL_REAGENT_BAG_STEP_1 or text == _G.TUTORIAL_REAGENT_BAG_STEP_2)
 end
 
 local function takeoverOn()
