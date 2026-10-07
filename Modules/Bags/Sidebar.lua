@@ -196,16 +196,17 @@ local function button(win, index)
     return b
 end
 
--- The fold arrow on top of the bar. Folded, the bar is this arrow alone and
--- the slots take the room back; the shelves still stand as headings in the
--- window, only their buttons go.
+-- The fold arrow on top of the bar, always there: it IS the switch for the
+-- bar (bagSidebar / bankSidebar, the same setting the options carry). Folded,
+-- the bar is this arrow alone and the slots take the room back; the shelves
+-- still stand as headings in the window, only their buttons go.
 local ARROW = 16
 local ARROW_LEFT  = "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up"
 local ARROW_RIGHT = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up"
 Sidebar.COLLAPSED_WIDTH = ARROW + 8
 
-local function collapsedKey(win)
-    return win.key == "bank" and "bankSidebarCollapsed" or "bagSidebarCollapsed"
+local function settingKey(win)
+    return win.key == "bank" and "bankSidebar" or "bagSidebar"
 end
 
 local function arrow(win)
@@ -216,12 +217,12 @@ local function arrow(win)
     a.tex:SetAllPoints(a)
     a:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
     a:SetScript("OnClick", function()
-        local db, k = Bags.db(), collapsedKey(win)
+        local db, k = Bags.db(), settingKey(win)
         db[k] = not db[k]
         win.Refresh()
     end)
     a:SetScript("OnEnter", function(self)
-        ns.UI:ShowTooltip(self, Bags.db()[collapsedKey(win)] and L["Show categories"] or L["Hide categories"])
+        ns.UI:ShowTooltip(self, Bags.db()[settingKey(win)] and L["Hide categories"] or L["Show categories"])
     end)
     a:SetScript("OnLeave", function() ns.UI:HideTooltip() end)
     win.sideArrow = a
@@ -233,22 +234,16 @@ end
 -- every shelf that could exist.
 function Sidebar.Layout(win, keys)
     local db = Bags.db()
-    local on = (win.key == "bank") and db.bankSidebar or db.bagSidebar
-    if not on then
-        for _, b in ipairs(win.sideButtons or {}) do b:Hide() end
-        if win.sideArrow then win.sideArrow:Hide() end
-        return 0
-    end
+    local on = db[settingKey(win)] and true or false
 
-    -- below the header, wherever the window's look puts it (Window.lua)
-    local top = -34 - Bags.WindowFactory.TopExtra()
+    -- level with the first row of slots, wherever the window's look puts it
+    local top = -Bags.WindowFactory.ContentTop(db)
     local a = arrow(win)
-    local folded = db[collapsedKey(win)] and true or false
-    a.tex:SetTexture(folded and ARROW_RIGHT or ARROW_LEFT)
+    a.tex:SetTexture(on and ARROW_LEFT or ARROW_RIGHT)
     a:ClearAllPoints()
-    a:SetPoint("TOPLEFT", win.frame, "TOPLEFT", folded and 4 or (4 + (BUTTON - ARROW) / 2), top)
+    a:SetPoint("TOPLEFT", win.frame, "TOPLEFT", on and (4 + (BUTTON - ARROW) / 2) or 4, top)
     a:Show()
-    if folded then
+    if not on then
         for _, b in ipairs(win.sideButtons or {}) do b:Hide() end
         return Sidebar.COLLAPSED_WIDTH, math.abs(top) + ARROW + 4
     end

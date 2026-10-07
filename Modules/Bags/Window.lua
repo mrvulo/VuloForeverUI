@@ -37,6 +37,11 @@ local function headLeft() return isStandard() and 62 or PAD end
 -- (the side bar reads this too).
 function Window.TopExtra() return headTop() - PAD end
 
+-- Where the first row of slots starts, below the header and the tool row.
+function Window.ContentTop(db)
+    return headTop() + HEADER_H + (Window.HasToolRow(db) and 22 or 0)
+end
+
 -- ---------------------------------------------------------------- chrome --
 
 -- One tool button: an icon, a tooltip, and a click. They live in a row under
@@ -777,7 +782,14 @@ function Window.PaintFrame(win)
     if f.chrome then
         f.chrome:SetShown(standard)
         if standard then
-            f.chrome:SetFrameLevel(math.max(0, f:GetFrameLevel() - 1))
+            local level = f:GetFrameLevel()
+            f.chrome:SetFrameLevel(math.max(0, level - 1))
+            -- Measured with the frame stack: the template puts its ground at
+            -- level 10000 and its border at 498, over the item buttons (10+),
+            -- a translucent grey veil over the whole window. Ground to the
+            -- bottom, border just over our own ground and under the buttons.
+            if f.chrome.Bg then f.chrome.Bg:SetFrameLevel(0) end
+            if f.chrome.NineSlice then f.chrome.NineSlice:SetFrameLevel(level + 1) end
             if f.chrome.SetTitle then f.chrome:SetTitle(Bags.Title(win.key)) end
             if f.chrome.SetPortraitToAsset then
                 f.chrome:SetPortraitToAsset(win.key == "bank" and 133784 or 133633)
@@ -788,9 +800,9 @@ function Window.PaintFrame(win)
     f.title:SetShown(not standard)
     f.bg:ClearAllPoints()
     if standard then
-        -- The template's own ground did not draw on this client (measured:
-        -- the world showed through the window), so the ground is ours, the
-        -- dark of the client's flat panels, inside its border.
+        -- The template's own ground is translucent (it sits at the bottom,
+        -- see above); ours is the dark of the client's flat panels, inside
+        -- its border.
         f.bg:SetPoint("TOPLEFT", f, "TOPLEFT", 3, -3)
         f.bg:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -3, 3)
         f.bg:SetColorTexture(0.06, 0.06, 0.07, 0.97)

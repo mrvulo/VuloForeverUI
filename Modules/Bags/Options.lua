@@ -238,7 +238,12 @@ local function bagsPage()
     -- between the gear switches.
     local view = section(L["Bag view"], {
         dropdown("defaultView", L["Bag view"], Bags.Categories.ViewValues(),
-            { tooltip = L["All items sorted into categories, all bags as one block, or one block per bag. The window opens on this; its side bar switches between them."] }),
+            { tooltip = L["All items sorted into categories, all bags as one block, or one block per bag. The window opens on this; its side bar switches between them."],
+              -- the open window switches at once, so the choice is seen
+              after = function()
+                  if Bags.Window then Bags.Window.view = db().defaultView or "all" end
+                  apply()
+              end }),
     })
 
     return {

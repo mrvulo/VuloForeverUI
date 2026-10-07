@@ -405,7 +405,13 @@ local FAMILY_COLORS = {
 }
 local FAMILY_DEFAULT = { 0.40, 0.80, 0.80 }
 
+-- The reagent bag's own slot (Enum.BagIndex.ReagentBag): only reagents go
+-- in, but the client reports no family for it, so it was never tinted.
+local REAGENT_BAG = Enum.BagIndex and Enum.BagIndex.ReagentBag
+local REAGENT_COLOR = { 0.35, 0.80, 0.55 }
+
 local function familyColor(bagID)
+    if REAGENT_BAG and bagID == REAGENT_BAG then return REAGENT_COLOR end
     local _, family = C_Container.GetContainerNumFreeSlots(bagID)
     if type(family) ~= "number" or family <= 0 then return nil end
     local mask = 1
