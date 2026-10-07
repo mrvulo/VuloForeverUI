@@ -30,26 +30,23 @@ local chosen = "standard"
 local TEMPLATES = {
     { key = "standard",
       name = "Standard",
-      desc = "Every module as the addon ships it: the dark look, the HUD, bags, nameplates, the combat meter and the class tools.",
+      desc = "Every module as the addon ships it.",
       on = {}, off = {} },
     { key = "minimal",
       name = "Minimal",
-      desc = "Only the look: the dark skin for the game's windows, chat, bags, unit frames and the character panel. No HUD modules, no nameplates, no meter. Switch on later what you miss.",
+      desc = "Only the look: chat, bags, unit frames and the minimap. No HUD bars, no nameplates, no damage meter -- switch on later what you miss.",
       on = {},
-      off = { "meter", "cooldownmanager", "actionring", "combattext", "reminders", "trackbars",
-              "powerbar", "actionbars", "nameplates", "playercastbar", "cooldownpulse", "fontbars",
-              "swingtimer", "vtmanadisplay", "arenaframes", "lazyvulo", "vulfishing",
-              "disenchantqueue", "goldtracker", "trinkets", "vullfg", "queuetimer",
-              "autoitembuy", "loadouts" } },
+      off = { "actionbars", "auras", "cooldownmanager", "damagemeter", "nameplates",
+              "reminders", "resourcebars", "tooltipids", "minimapcollector" } },
     { key = "healer",
       name = "Healer",
-      desc = "The standard set plus what a healer watches: the meter opens on healing, the power bar and the buff reminders are on, and the combat text shows your heals.",
-      on = { "powerbar", "reminders", "combattext" }, off = {},
+      desc = "The standard set plus what a healer watches: the resource bars and the buff reminders are on, and the damage meter opens on healing.",
+      on = { "resourcebars", "reminders", "damagemeter" }, off = {},
       meter = "heal" },
     { key = "pvp",
       name = "PvP",
-      desc = "The standard set plus the arena frames, the trinket tracker, the power bar and the reminders; the meter opens on damage.",
-      on = { "arenaframes", "trinkets", "powerbar", "reminders", "combattext" }, off = {},
+      desc = "The standard set plus the resource bars and the reminders; the damage meter opens on damage.",
+      on = { "resourcebars", "reminders", "damagemeter" }, off = {},
       meter = "damage" },
 }
 
@@ -105,15 +102,17 @@ local function applyTemplate(t)
         end
         setModuleDefault(key, s)
     end
-    local meter = ns.modules.meter
-    if meter and meter.db then
+    -- The first meter window opens on what the template is about.
+    local meter = ns.modules.damagemeter
+    local E = Enum.DamageMeterType
+    if meter and meter.db and E then
         local list = meter.db.windows
         if type(list) ~= "table" then
             list = {}
             meter.db.windows = list
         end
-        if not list[1] then list[1] = { segment = "current" } end
-        list[1].mode = t.meter or "damage"
+        if not list[1] then list[1] = {} end
+        list[1].dmType = (t.meter == "heal") and E.HealingDone or E.DamageDone
     end
     if ns.db and ns.db.global then ns.db.global.setupTemplate = t.key end
 end

@@ -248,13 +248,6 @@ local function applyGameTextFont()
             end
         end
     end
-    -- The sweep just rewrote the combat-number font objects CombatText owns;
-    -- its appliers take them back and no-op when their switches are off.
-    local ct = ns.modules and ns.modules.combattext
-    if ct and ct._enabled then
-        if ct.ReapplySharpFonts     then ct.ReapplySharpFonts()     end
-        if ct.ReapplyDamageTextFont then ct.ReapplyDamageTextFont() end
-    end
 end
 
 -- The numbers the game floats over a target -- damage, heals, "Miss" -- are
