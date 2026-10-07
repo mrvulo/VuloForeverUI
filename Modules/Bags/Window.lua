@@ -617,6 +617,15 @@ function Window.Layout(win)
     end
     order = Bags.Categories.Sort(keys)
     win.shelves = order
+    -- The first item of each shelf, as the face of a shelf that has no fixed
+    -- icon of its own (the player's own categories, sets) in the side bar.
+    win.shelfIcons = win.shelfIcons or {}
+    wipe(win.shelfIcons)
+    for key, list in pairs(buckets) do
+        local info = list[1] and list[1].info
+        local icon = info and (info.iconFileID or info.icon or info.texture)
+        if icon then win.shelfIcons[key] = icon end
+    end
 
     if view ~= "all" and not onlyBag then
         local only = {}

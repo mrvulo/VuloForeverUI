@@ -26,32 +26,37 @@ local BUTTON, GAP = 26, 3
 local INSET, SPLIT = 10, 6
 Sidebar.WIDTH = BUTTON + SPLIT * 2
 
--- The client's own bag icons, so a shelf is recognisable before its name is
--- read. A shelf with no icon of its own gets the generic one rather than an
--- empty square.
+-- One look for every button in the bar: a square item icon, cut the same
+-- way, on the same dark ground inside the same thin edge. The fixed shelves
+-- have an icon each; a shelf without one -- the player's own categories, a
+-- set -- shows its first item, and an empty one the plain bag. The old mix of
+-- round bag atlases, a glow and a plus sign is gone.
+local Q = "Interface\\Icons\\"
 local ICON = {
-    all         = "bags-icon-multiple",
-    allbags      = "bag-main",
-    perbag    = "bag-main-highlight",
-    equipment   = "bags-icon-equipment",
-    consumable  = "bags-icon-consumables",
-    tradegoods  = "bags-icon-tradegoods",
-    quest       = "bags-icon-questitem",
-    reagent     = "bags-icon-reagents",
-    junk        = "bags-icon-junk",
-    misc        = "bags-icon-addslots",
-    free        = "bags-icon-addslots",
-    pinned      = "PetJournal-FavoritesIcon",
-    recent      = "bags-glow-green",
+    all        = Q .. "INV_Misc_Bag_08",
+    allbags    = Q .. "INV_Misc_Bag_10",
+    perbag     = Q .. "INV_Misc_Bag_07",
+    equipment  = Q .. "INV_Chest_Chain",
+    consumable = Q .. "INV_Potion_51",
+    tradegoods = Q .. "INV_Fabric_Linen_01",
+    quest      = Q .. "INV_Misc_Note_01",
+    reagent    = Q .. "INV_Misc_Dust_02",
+    junk       = Q .. "INV_Misc_Bone_HumanSkull_01",
+    misc       = Q .. "INV_Misc_Gear_01",
+    free       = Q .. "INV_Box_01",
+    pinned     = Q .. "INV_Misc_Book_09",
+    recent     = Q .. "INV_Misc_Gift_01",
 }
+local FALLBACK = Q .. "INV_Misc_Bag_09"
+local MISSING = 134400              -- the question mark, should a file be absent
 
-local function iconFor(key)
-    local fixed = ICON[key]
-    if fixed then return fixed end
-    local kind = tostring(key):match("^(%a+):")
-    if kind == "set" or kind == "slot" then return "bags-icon-equipment" end
-    if kind == "custom" then return "bags-icon-multiple" end
-    return "bags-icon-multiple"
+local function iconFor(win, key)
+    return ICON[key] or (win.shelfIcons and win.shelfIcons[key]) or FALLBACK
+end
+
+local function setIcon(tex, icon)
+    if not tex:SetTexture(icon) then tex:SetTexture(MISSING) end
+    tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 end
 
 -- ---------------------------------------------------------------- deposit --
@@ -179,10 +184,14 @@ local function button(win, index)
     b = CreateFrame("Button", nil, win.frame)
     b:SetSize(BUTTON, BUTTON)
     b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    local ground = b:CreateTexture(nil, "BACKGROUND")
+    ground:SetAllPoints(b)
+    ground:SetColorTexture(0, 0, 0, 0.6)
     b.icon = b:CreateTexture(nil, "ARTWORK")
     b.icon:SetPoint("TOPLEFT", b, "TOPLEFT", 2, -2)
     b.icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -2, 2)
     b.edges = ns.MakeEdges(b, "OVERLAY")
+    b:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     b:SetScript("OnEnter", function(self)
         ns.UI:ShowTooltip(self, self.vfTip)
     end)
@@ -294,18 +303,19 @@ function Sidebar.Layout(win, keys)
         local b = button(win, i)
         b:ClearAllPoints()
         b:SetPoint("TOPLEFT", win.frame, "TOPLEFT", INSET, y)
-        if row.icon then
-            b.icon:SetTexture(row.icon)
-        else
-            b.icon:SetAtlas(iconFor(row.key))
-        end
+        setIcon(b.icon, row.icon or iconFor(win, row.view))
         b.vfView = row.view
         b.vfTab  = row.tab
         b.vfTip  = row.tab
             and { title = row.label, lines = { L["Right-click for name and deposit filters."] } }
             or row.label
         local active = (win.view or "all") == row.view
-        ns.LayoutEdges(b.edges, b, active and 1 or 0, 0.9, 0.75, 0.3, 1, 1)
+        -- every button carries its edge: grey at rest, gold when chosen
+        if active then
+            ns.LayoutEdges(b.edges, b, 1, 0.9, 0.75, 0.3, 1, 0)
+        else
+            ns.LayoutEdges(b.edges, b, 1, 0.35, 0.35, 0.38, 0.9, 0)
+        end
         b.icon:SetAlpha(active and 1 or 0.65)
         b:Show()
         y = y - BUTTON - GAP
