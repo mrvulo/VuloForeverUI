@@ -573,8 +573,17 @@ function Slots.Paint(slot, bagID, slotID, info)
         else
             slot.ground:SetVertexColor(1, 1, 1, 1)
         end
-        for _, t in pairs(slot.edges) do t:Hide() end
         slot.roundRing:Hide()
+        -- A profession bag's colour as an edge, as in Modern: the ground alone
+        -- vanished under every icon. Not over the client's quality ring --
+        -- an uncommon or better item keeps that.
+        local q = info and info.quality
+        local ringShown = info and db.qualityBorder ~= false and type(q) == "number" and q >= 2
+        if fam and not ringShown then
+            layoutRing(slot, fam[1], fam[2], fam[3], 0.9)
+        else
+            for _, t in pairs(slot.edges) do t:Hide() end
+        end
     end
 
     -- Empty slots are a dark square with a faint edge; full ones sit on the
