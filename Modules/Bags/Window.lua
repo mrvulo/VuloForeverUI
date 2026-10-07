@@ -713,10 +713,17 @@ function Window.Layout(win)
                 missing = true
                 break
             end
-            slot.frame:SetParent(f)
-            slot.frame:ClearAllPoints()
-            slot.frame:SetPoint("TOPLEFT", f, "TOPLEFT",
-                left + column * (size + gap), -y)
+            -- Moved only when its place really changes. Re-anchoring the slot
+            -- under the mouse, even onto the very same spot, made the client
+            -- see the mouse leave and enter again: the tooltip blinked out and
+            -- back on every layout pass.
+            local px, py = left + column * (size + gap), -y
+            if slot.placedIn ~= f or slot.px ~= px or slot.py ~= py then
+                if slot.frame:GetParent() ~= f then slot.frame:SetParent(f) end
+                slot.frame:ClearAllPoints()
+                slot.frame:SetPoint("TOPLEFT", f, "TOPLEFT", px, py)
+                slot.placedIn, slot.px, slot.py = f, px, py
+            end
             slot.mergedCount = entry.merged
             Bags.Slots.Paint(slot, entry.bag, entry.slot, entry.info)
             Bags.Slots.ApplyMode(slot, entry.bag, entry.slot, entry.info)

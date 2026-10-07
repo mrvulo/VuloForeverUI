@@ -274,6 +274,9 @@ local function makeSlot(owner)
     -- template's own handler is what shows the tooltip in the first place, and
     -- taking it away would leave a bag with no tooltips at all. A hook adds no
     -- field to the button and takes no click.
+    button:HookScript("OnLeave", function(self)
+        if self:IsMouseOver() then Bags.NoteSpuriousLeave(self) end
+    end)
     button:HookScript("OnEnter", function(self)
         local db = Bags.db()
         local parent = self:GetParent()

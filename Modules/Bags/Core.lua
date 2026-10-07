@@ -196,6 +196,7 @@ function Bags.Refresh()
             if Bags.Bank then Bags.Bank.Repaint() end
             return
         end
+        Bags.lastRefreshAt = GetTime()
         if Bags.Window then Bags.Window.Refresh() end
         if Bags.Bank then Bags.Bank.Refresh() end
     end)
@@ -209,9 +210,24 @@ function Bags.Repaint()
     ns.NextFrame(function()
         repainting = false
         if not mod.active then return end
+        Bags.lastRepaintAt = GetTime()
         if Bags.Window then Bags.Window.Repaint() end
         if Bags.Bank then Bags.Bank.Repaint() end
     end)
+end
+
+-- On the record (/vfdiag) when the client takes the mouse off a slot that
+-- the mouse is still over -- the tooltip blinking out -- together with how
+-- long ago our last layout and repaint ran. A few per session are enough.
+local leaveNotes = 0
+function Bags.NoteSpuriousLeave(button)
+    if leaveNotes >= 8 or not (ns.Diag and ns.Diag.Note) then return end
+    leaveNotes = leaveNotes + 1
+    local now = GetTime()
+    ns.Diag.Note("bags", string.format(
+        "hover lost over a slot: shown=%s, last layout %.2fs ago, last repaint %.2fs ago",
+        tostring(button:IsVisible()),
+        now - (Bags.lastRefreshAt or -999), now - (Bags.lastRepaintAt or -999)))
 end
 
 -- ---------------------------------------------------------------- lifecycle --
