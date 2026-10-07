@@ -379,7 +379,7 @@ local function xpPage()
             { value = "below", text = L["Below the bar"] },
         }),
         toggle(key, "showRate", L["Time to level and experience per hour"],
-            L["Measured over this session. A /reload keeps the session, a new login starts one."]),
+            L["Measured over the last 15 minutes of play. Right after a login or a /reload, over the whole session until new experience comes in."]),
         toggle(key, "showQuestRested", L["Finished quests and rested, in percent"]),
         toggle(key, "showLevelTime", L["Time played on this level"],
             L["Asked from the client once per login; the chat message the client would print for it is held back."]),

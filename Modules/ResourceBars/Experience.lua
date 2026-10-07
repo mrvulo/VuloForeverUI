@@ -48,14 +48,42 @@ end
 
 -- What PLAYER_XP_UPDATE brought, added to the session. A level-up wraps the
 -- value around, so the rest of the old level counts as well.
+-- The pace is measured over the last quarter of an hour, not the whole
+-- session: a session with a long break in it would otherwise promise a level
+-- far later than the player is actually getting there. Kept in memory only;
+-- after a /reload the session average stands in until new gains arrive.
+local WINDOW = 15 * 60
+local recent = {}        -- { t = GetTime(), xp = gained }, oldest first
+local windowStart = GetTime()
+
+local function prune(now)
+    while recent[1] and now - recent[1].t > WINDOW do table.remove(recent, 1) end
+end
+
 local function trackGain(cur, max)
     local s = session()
     if not (s and cur and max) then return end
     if not (s.start and s.last and s.lastMax) then resetSession(cur, max); return end
     local gained = cur - s.last
     if gained < 0 then gained = (s.lastMax - s.last) + cur end
-    if gained > 0 then s.gained = (s.gained or 0) + gained end
+    if gained > 0 then
+        s.gained = (s.gained or 0) + gained
+        recent[#recent + 1] = { t = GetTime(), xp = gained }
+    end
     s.last, s.lastMax = cur, max
+end
+
+-- Experience per hour over the window, or nil with nothing gained in it.
+local function recentRate()
+    local now = GetTime()
+    prune(now)
+    if not recent[1] then return nil end
+    local sum = 0
+    for _, e in ipairs(recent) do sum = sum + e.xp end
+    -- the span the window really covers: never more than the window, never
+    -- less than a minute (one kill right after a reload is not an hourly rate)
+    local span = math.max(60, math.min(WINDOW, now - windowStart))
+    return math.ceil(sum / span * 3600)
 end
 
 -- ---------------------------------------------------------------- played --
@@ -181,9 +209,13 @@ function XP.Read()
         local secs = time() - s.start
         local gained = s.gained or 0
         d.sessionTime = secs
-        if secs > 0 and gained > 0 then
-            d.perHour = math.ceil(gained / (secs / 3600))
-            d.toLevel = math.ceil((d.max - d.cur) / d.perHour * 3600)
+        local rate = recentRate()
+        if not rate and secs > 0 and gained > 0 then
+            rate = math.ceil(gained / (secs / 3600))
+        end
+        if rate and rate > 0 then
+            d.perHour = rate
+            d.toLevel = math.ceil((d.max - d.cur) / rate * 3600)
         end
     end
     if played.stamp then

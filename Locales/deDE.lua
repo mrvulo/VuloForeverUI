@@ -1977,7 +1977,7 @@ ns:RegisterLocale("deDE", {
     ["What is left"] = "Was noch fehlt",
     ["Percent, with finished quests"] = "Prozent, mit fertigen Quests",
     ["Time to level and experience per hour"] = "Zeit bis zur Stufe und Erfahrung pro Stunde",
-    ["Measured over this session. A /reload keeps the session, a new login starts one."] = "Gemessen über diese Sitzung. Ein /reload behält sie, ein neuer Login beginnt eine neue.",
+    ["Measured over the last 15 minutes of play. Right after a login or a /reload, over the whole session until new experience comes in."] = "Gemessen über die letzten 15 Minuten Spielzeit. Direkt nach dem Einloggen oder einem /reload über die ganze Sitzung, bis neue Erfahrung kommt.",
     ["Finished quests and rested, in percent"] = "Fertige Quests und Ruhebonus in Prozent",
     ["Time played on this level"] = "Spielzeit auf dieser Stufe",
     ["Asked from the client once per login; the chat message the client would print for it is held back."] = "Wird einmal pro Login beim Client erfragt; die Chatmeldung, die der Client dazu ausgeben würde, wird zurückgehalten.",

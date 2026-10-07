@@ -1977,7 +1977,7 @@ ns:RegisterLocale("ruRU", {
     ["What is left"] = "Остаток",
     ["Percent, with finished quests"] = "Проценты с выполненными заданиями",
     ["Time to level and experience per hour"] = "Время до уровня и опыт в час",
-    ["Measured over this session. A /reload keeps the session, a new login starts one."] = "Измеряется за этот сеанс. /reload сохраняет сеанс, новый вход начинает новый.",
+    ["Measured over the last 15 minutes of play. Right after a login or a /reload, over the whole session until new experience comes in."] = "Считается за последние 15 минут игры. Сразу после входа или /reload – за весь сеанс, пока не придёт новый опыт.",
     ["Finished quests and rested, in percent"] = "Выполненные задания и отдых в процентах",
     ["Time played on this level"] = "Время игры на этом уровне",
     ["Asked from the client once per login; the chat message the client would print for it is held back."] = "Запрашивается у клиента один раз за вход; сообщение в чате, которое клиент вывел бы, задерживается.",
