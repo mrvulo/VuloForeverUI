@@ -20,7 +20,7 @@ local Bags = ns.Bags
 local Sidebar = {}
 Bags.Sidebar = Sidebar
 
-local BUTTON, GAP = 26, 3
+local BUTTON, GAP = 22, 4
 -- The column: the window's own margin on the left, the buttons, then a gap,
 -- a hairline, and the same gap again before the first slot.
 local INSET, SPLIT = 10, 6
@@ -188,14 +188,31 @@ local function button(win, index)
     ground:SetAllPoints(b)
     ground:SetColorTexture(0, 0, 0, 0.6)
     b.icon = b:CreateTexture(nil, "ARTWORK")
-    b.icon:SetPoint("TOPLEFT", b, "TOPLEFT", 2, -2)
-    b.icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -2, 2)
+    b.icon:SetPoint("TOPLEFT", b, "TOPLEFT", 1, -1)
+    b.icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -1, 1)
     b.edges = ns.MakeEdges(b, "OVERLAY")
-    b:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+    -- The chosen one is marked twice: its gold edge, and a short gold bar in
+    -- the gap to its left -- readable at a glance down a long column.
+    b.mark = b:CreateTexture(nil, "OVERLAY")
+    b.mark:SetColorTexture(0.9, 0.75, 0.3, 1)
+    b.mark:SetPoint("RIGHT", b, "LEFT", -2, 0)
+    b.mark:SetSize(2, BUTTON - 6)
+    b.mark:Hide()
+    -- Calm at rest, colour on the way in: an unchosen icon is greyed down,
+    -- and lights up in full while the mouse is on it.
+    local function look(self, lit)
+        self.icon:SetDesaturated(not lit)
+        self.icon:SetAlpha(lit and 1 or 0.7)
+    end
+    b.look = look
     b:SetScript("OnEnter", function(self)
+        look(self, true)
         ns.UI:ShowTooltip(self, self.vfTip)
     end)
-    b:SetScript("OnLeave", function() ns.UI:HideTooltip() end)
+    b:SetScript("OnLeave", function(self)
+        look(self, self.vfActive)
+        ns.UI:HideTooltip()
+    end)
     b:SetScript("OnClick", function(self, mouse)
         if mouse == "RightButton" then
             if self.vfTab then ns:ShowPopupMenu(tabMenu(self.vfTab), "cursor", self) end
@@ -310,13 +327,16 @@ function Sidebar.Layout(win, keys)
             and { title = row.label, lines = { L["Right-click for name and deposit filters."] } }
             or row.label
         local active = (win.view or "all") == row.view
-        -- every button carries its edge: grey at rest, gold when chosen
+        -- every button carries its edge: a dark hairline at rest, gold when
+        -- chosen
         if active then
             ns.LayoutEdges(b.edges, b, 1, 0.9, 0.75, 0.3, 1, 0)
         else
-            ns.LayoutEdges(b.edges, b, 1, 0.35, 0.35, 0.38, 0.9, 0)
+            ns.LayoutEdges(b.edges, b, 1, 0.22, 0.22, 0.24, 1, 0)
         end
-        b.icon:SetAlpha(active and 1 or 0.65)
+        b.vfActive = active
+        b.mark:SetShown(active)
+        b.look(b, active or b:IsMouseOver())
         b:Show()
         y = y - BUTTON - GAP
     end
