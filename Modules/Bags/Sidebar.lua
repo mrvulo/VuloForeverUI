@@ -230,8 +230,9 @@ end
 -- the bar is this arrow alone and the slots take the room back; the shelves
 -- still stand as headings in the window, only their buttons go.
 local ARROW = 16
-local ARROW_LEFT  = "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up"
-local ARROW_RIGHT = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up"
+-- One plain arrow, mirrored, in place of the spellbook's page buttons (one
+-- gold, one blue): the same shape and colour in both states.
+local ARROW_TEX = "Interface\\ChatFrame\\ChatFrameExpandArrow"
 Sidebar.COLLAPSED_WIDTH = ARROW + SPLIT * 2
 
 local function settingKey(win)
@@ -268,7 +269,9 @@ function Sidebar.Layout(win, keys)
     -- level with the first row of slots, wherever the window's look puts it
     local top = -Bags.WindowFactory.ContentTop(db)
     local a = arrow(win)
-    a.tex:SetTexture(on and ARROW_LEFT or ARROW_RIGHT)
+    -- open: pointing right, towards the slots; folded: pointing left
+    a.tex:SetTexture(ARROW_TEX)
+    if on then a.tex:SetTexCoord(0, 1, 0, 1) else a.tex:SetTexCoord(1, 0, 0, 1) end
     a:ClearAllPoints()
     a:SetPoint("TOPLEFT", win.frame, "TOPLEFT", on and (INSET + (BUTTON - ARROW) / 2) or INSET, top)
     a:Show()
