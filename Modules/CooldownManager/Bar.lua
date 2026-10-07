@@ -197,6 +197,15 @@ local function makeIcon(parent, index)
     sheen:SetColorTexture(1, 1, 1, 0.14)
     icon.sheen = sheen
 
+    -- Queued for the next swing (Heroic Strike, Cleave, Maul, Raptor Strike):
+    -- the same light the action bars put on such a button.
+    local queued = b:CreateTexture(nil, "OVERLAY", nil, 3)
+    queued:SetTexture("Interface\\Buttons\\CheckButtonHilight")
+    queued:SetBlendMode("ADD")
+    queued:SetAllPoints(b)
+    queued:Hide()
+    icon.queued = queued
+
     b:SetScript("OnEnter", function(self)
         if not self._spellID then return end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -682,6 +691,30 @@ local function paintTexts(bar, icon, entry, aura)
 end
 
 -- One icon's live state. Every value here may be secret and none is read.
+-- "Is this spell waiting for the next swing?" -- the client's own answer,
+-- the one its action bars light a button from. Shown through the alpha the
+-- engine folds from the boolean, so a secret answer is never read.
+local function paintQueued(icon)
+    local b = icon.button
+    local id = b._spellID
+    if b._kind ~= "item" and type(id) == "number" and C_Spell.IsCurrentSpell then
+        icon.queued:Show()
+        ns.AlphaFromBool(icon.queued, C_Spell.IsCurrentSpell(id))
+    else
+        icon.queued:Hide()
+    end
+end
+
+function CM.UpdateQueued()
+    local db = CM.db()
+    for _, key in ipairs(db and db.barOrder or {}) do
+        local frame = CM.frames[key]
+        for _, icon in ipairs(frame and frame.icons or {}) do
+            if icon.button:IsShown() then paintQueued(icon) end
+        end
+    end
+end
+
 local function paintIcon(bar, icon, entry)
     local b = icon.button
     -- The tooltip, the texture and the cooldown all want what the row POINTS
@@ -689,6 +722,7 @@ local function paintIcon(bar, icon, entry)
     local rid, rkind = CM.Resolve(entry)
     b._spellID = rid
     b._kind = rkind
+    paintQueued(icon)
     b:Show()
 
     local tex

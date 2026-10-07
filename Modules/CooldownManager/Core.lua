@@ -637,6 +637,11 @@ function mod:OnEnable()
 
     -- The client's own "this spell lit up" pair. The spell id may be secret in
     -- a fight; CM.SetProc drops the ones it may not place.
+    -- A next-swing ability queued or let go: the client says so with these,
+    -- the same pair its action bars repaint their checked state on.
+    self:RegisterEvent("CURRENT_SPELL_CAST_CHANGED", function() CM.UpdateQueued() end)
+    self:RegisterEvent("ACTIONBAR_UPDATE_STATE", function() CM.UpdateQueued() end)
+
     self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", function(_, spellID)
         CM.SetProc(spellID, true)
     end)
