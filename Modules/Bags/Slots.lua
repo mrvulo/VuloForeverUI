@@ -441,12 +441,50 @@ local function bagItemFamily(bagID)
     return family
 end
 
+-- A reagent bag only takes its own reagents, so what lies in it says what it
+-- is -- the one answer left when the client reports a family for neither the
+-- slot nor the bag (measured on Forever: a leather reagent bag reports none).
+-- Trade goods subclass -> the bag family it belongs to; language-independent.
+local TRADEGOODS = 7
+local SUBCLASS_FAMILY = {
+    [6]  = 0x0008,   -- leather          -> leatherworking
+    [9]  = 0x0020,   -- herb             -> herbs
+    [7]  = 0x0400,   -- metal and stone  -> mining
+    [12] = 0x0040,   -- enchanting
+    [8]  = 0x2000,   -- cooking
+    [4]  = 0x0200,   -- jewelcrafting    -> gems
+    [1]  = 0x0080, [2] = 0x0080, [3] = 0x0080,   -- parts, explosives, devices -> engineering
+    [16] = 0x0010,   -- inscription
+}
+local contentCache = { at = -1, family = {} }
+
+local function contentFamily(bagID)
+    local now = GetTime()
+    if contentCache.at ~= now then contentCache.at = now; wipe(contentCache.family) end
+    local hit = contentCache.family[bagID]
+    if hit ~= nil then return hit or nil end
+    local found = false
+    for slot = 1, C_Container.GetContainerNumSlots(bagID) or 0 do
+        local itemID = C_Container.GetContainerItemID(bagID, slot)
+        if itemID then
+            local _, _, _, _, _, classID, subclassID = C_Item.GetItemInfoInstant(itemID)
+            if classID == TRADEGOODS and SUBCLASS_FAMILY[subclassID] then
+                found = SUBCLASS_FAMILY[subclassID]
+                break
+            end
+        end
+    end
+    contentCache.family[bagID] = found
+    return found or nil
+end
+
 -- What the slot holds decides first (the container's family), then what the
--- bag item is, and only a reagent bag that is neither gets the general
--- reagent colour.
+-- bag item is, then -- for the reagent bag -- what lies in it, and only a
+-- reagent bag that tells nothing at all gets the general reagent colour.
 local function familyColor(bagID)
     local _, family = C_Container.GetContainerNumFreeSlots(bagID)
     if type(family) ~= "number" or family <= 0 then family = bagItemFamily(bagID) end
+    if not family and REAGENT_BAG and bagID == REAGENT_BAG then family = contentFamily(bagID) end
     if family then return colorOf(family) end
     if REAGENT_BAG and bagID == REAGENT_BAG then return REAGENT_COLOR end
     return nil

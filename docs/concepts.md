@@ -69,9 +69,11 @@ These apply to every visible change, in every module.
   Hairline between column and slots.
 - **Slot colours:** quality ring for uncommon and better; profession bags
   tinted by bag family (`FAMILY_COLORS` in `Slots.lua`): first the family the
-  container reports, then the family of the bag item itself (a leather reagent
-  bag is leatherworking brown — the player's call, 2026-10-08), and only a
-  reagent bag with neither gets the general green-teal. In Standard
+  container reports, then the family of the bag item itself, then — reagent
+  bag only — what lies in it (trade goods subclass: leather → leatherworking
+  brown, herb → green, …; measured: Forever reports no family for a leather
+  reagent bag). A leather reagent bag is brown — the player's call,
+  2026-10-08. Only an empty reagent bag gets the general green-teal. In Standard
   the family colour is an edge on full and empty slots; round slots (setting
   "Rounded slots", honoured in both looks) use our round ring — quality first,
   else family. Recently looted items: light blue (`recentColor`).
