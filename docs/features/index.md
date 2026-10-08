@@ -25,7 +25,7 @@ jemand ohne den Code prüfen kann.
 | F-04 | Taschen-Stil Standard / Modern | Taschen | bestätigt | 0.12.0 |
 | F-05 | Suchfeld mit Lupe, Platzhalter, Rand | Taschen | bestätigt | 0.12.0 |
 | F-06 | Kategorien-Leiste: Pfeil, Symbole, Raster | Taschen | gebaut | – |
-| F-07 | Berufstaschen-Farben, runde Ringe in beiden Stilen | Taschen | gebaut | – |
+| F-07 | Berufstaschen-Farben, runde Ringe in beiden Stilen | Taschen | bestätigt | – |
 | F-08 | Bank-Ansicht unterwegs im Standard-Stil | Taschen | gebaut | – |
 | F-09 | Client-Taschen ohne Taint (Bankfach, Bearbeitungsmodus) | Taschen | gebaut | – |
 | F-10 | Reagenzientaschen-Tutorial ausblenden | Taschen | gebaut | – |
