@@ -64,6 +64,7 @@ local mod = ns:RegisterModule("bags", {
         itemLevelColor = { r = 0.95, g = 0.85, b = 0.4 },
         dimJunk       = true,
         markJunk      = true,
+        markQuestStarter = true,   -- the client's yellow "!" on items that start a quest
 
         -- display
         iconZoom          = 0,
@@ -283,6 +284,8 @@ function mod:OnEnable()
     end)
     Bags.Context.Register(self)
     self:RegisterEvent("BAG_UPDATE_COOLDOWN", function() Bags.Repaint() end)
+    -- A quest taken from an item: its "!" goes, though no bag changed.
+    self:RegisterEvent("QUEST_ACCEPTED", function() Bags.Repaint() end)
 
     self:RegisterEvent("BANKFRAME_OPENED", function()
         if Bags.db().bank and Bags.Bank then Bags.Bank.Open() end

@@ -122,6 +122,8 @@ local function bagsPage()
         toggle("dimJunk", L["Desaturate junk items"]),
         toggle("markJunk", L["Mark vendor junk with a C"],
             L["Grey items a vendor pays for get a C in the corner. Sorting puts them at the very end."]),
+        toggle("markQuestStarter", L["Mark items that start a quest"],
+            L["The yellow exclamation mark the game's own bags put on an item that starts a quest."]),
 
         toggle("splitEquipmentSets", L["Split set gear by set"]),
         toggle("showSetNames", L["Show set names on gear"], { inline = {

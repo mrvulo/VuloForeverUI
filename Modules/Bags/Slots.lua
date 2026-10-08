@@ -669,6 +669,24 @@ function Slots.Paint(slot, bagID, slotID, info)
         slot.junk:Hide()
     end
 
+    -- The client's yellow "!" on an item that starts a quest, as its own
+    -- bags show it. The template carries the texture; it is sized to the
+    -- slot here because the template pins it at 37 by 38.
+    local bang = button.IconQuestTexture
+    if bang then
+        local q = info and db.markQuestStarter ~= false
+            and C_Container.GetContainerItemQuestInfo
+            and C_Container.GetContainerItemQuestInfo(bagID, slotID)
+        if q and q.questID and not q.isActive then
+            bang:SetTexture(_G.TEXTURE_ITEM_QUEST_BANG or "Interface\\ContainerFrame\\UI-Icon-QuestBang")
+            bang:ClearAllPoints()
+            bang:SetAllPoints(button)
+            bang:Show()
+        else
+            bang:Hide()
+        end
+    end
+
     -- Grey items go quiet so the rest of the bag can be read.
     local isJunk = info and ((type(info.quality) == "number" and info.quality == POOR)
         or (ns.Junk and ns.Junk.IsMarked(info.itemID)))

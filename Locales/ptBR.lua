@@ -1855,6 +1855,8 @@ ns:RegisterLocale("ptBR", {
     ["Solid color"] = "Cor sólida",
     ["Default"] = "Padrão",
     ["Spell ranks"] = "Graus de feitiço",
+    ["Mark items that start a quest"] = "Marcar itens que iniciam uma missão",
+    ["The yellow exclamation mark the game's own bags put on an item that starts a quest."] = "O ponto de exclamação amarelo que as bolsas do jogo colocam em um item que inicia uma missão.",
     ["Open the settings window. Add a word for more: help, modules, client, debug, reset."] = "Abre a janela de configurações. Adicione uma palavra para mais: help, modules, client, debug, reset.",
     ["Reload the interface. Refused while in combat."] = "Recarrega a interface. Recusado em combate.",
     ["Measure which of our modules cost the most time in their event handlers and tickers."] = "Mede quais módulos gastam mais tempo em seus eventos e temporizadores.",

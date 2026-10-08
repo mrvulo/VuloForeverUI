@@ -1892,6 +1892,8 @@ ns:RegisterLocale("frFR", {
     ["Solid color"] = "Couleur unie",
     ["Default"] = "Par défaut",
     ["Spell ranks"] = "Rangs de sorts",
+    ["Mark items that start a quest"] = "Marquer les objets qui débutent une quête",
+    ["The yellow exclamation mark the game's own bags put on an item that starts a quest."] = "Le point d'exclamation jaune que les sacs du jeu placent sur un objet qui débute une quête.",
     ["Open the settings window. Add a word for more: help, modules, client, debug, reset."] = "Ouvre la fenêtre des réglages. Ajoutez un mot pour plus : help, modules, client, debug, reset.",
     ["Reload the interface. Refused while in combat."] = "Recharge l'interface. Refusé en combat.",
     ["Measure which of our modules cost the most time in their event handlers and tickers."] = "Mesure quels modules prennent le plus de temps dans leurs événements et minuteurs.",

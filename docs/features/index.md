@@ -39,6 +39,7 @@ jemand ohne den Code prüfen kann.
 | F-18 | Sechs Sprachen, alle Namen übersetzt | Sprachen | gebaut | 0.12.0 |
 | F-19 | Einrichtungs-Vorlagen mit echten Modulen | Einrichtung | gebaut | – |
 | F-20 | Chat-Tabs ohne Fehler im Kampf | Chat | gebaut | 0.11.0 |
+| F-21 | Gelbes „!“ auf Gegenständen, die eine Quest starten | Taschen | gebaut | – |
 
 ---
 
@@ -98,6 +99,11 @@ jemand ohne den Code prüfen kann.
 
 ### F-20 Chat-Tabs im Kampf
 - **Wenn** du im Kampf `/reload` machst, **dann** kommt kein `ADDON_ACTION_BLOCKED` aus `Chat/Tabs.lua`.
+
+### F-21 Quest-Starter markieren
+- Angenommen ein Gegenstand startet eine Quest (z. B. Owatankas Schwanzstachel), **dann** trägt sein Platz das gelbe „!“ des Spiels, in beiden Stilen und jeder Platzgröße.
+- **Wenn** du die Quest annimmst, **dann** verschwindet das „!“ sofort.
+- **Wenn** du „Gegenstände markieren, die eine Quest starten“ ausschaltest, **dann** ist kein „!“ mehr da.
 
 ---
 

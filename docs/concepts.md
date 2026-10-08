@@ -75,6 +75,9 @@ These apply to every visible change, in every module.
   the family colour is an edge on full and empty slots; round slots (setting
   "Rounded slots", honoured in both looks) use our round ring — quality first,
   else family. Recently looted items: light blue (`recentColor`).
+- **Quest starters** carry the client's own yellow "!" (`IconQuestTexture`,
+  `TEXTURE_ITEM_QUEST_BANG`), sized to the slot; gone once the quest is taken
+  (`QUEST_ACCEPTED` repaints). Setting `markQuestStarter`.
 - **Client bag frames** are parked under a hidden frame of ours and never
   hidden by us (see engine rules). A visible one is stashed (alpha 0, off
   screen). On takeover off, a still-open one stays parked until the client

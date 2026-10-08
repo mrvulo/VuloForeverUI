@@ -1892,6 +1892,8 @@ ns:RegisterLocale("ruRU", {
     ["Solid color"] = "Сплошной цвет",
     ["Default"] = "По умолчанию",
     ["Spell ranks"] = "Ранги заклинаний",
+    ["Mark items that start a quest"] = "Отмечать предметы, начинающие задание",
+    ["The yellow exclamation mark the game's own bags put on an item that starts a quest."] = "Жёлтый восклицательный знак, который сумки игры ставят на предмет, начинающий задание.",
     ["Open the settings window. Add a word for more: help, modules, client, debug, reset."] = "Открывает окно настроек. Добавьте слово для большего: help, modules, client, debug, reset.",
     ["Reload the interface. Refused while in combat."] = "Перезагружает интерфейс. В бою отклоняется.",
     ["Measure which of our modules cost the most time in their event handlers and tickers."] = "Измеряет, какие модули тратят больше всего времени в событиях и таймерах.",
