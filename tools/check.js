@@ -832,5 +832,52 @@ console.log('\n== secret values ==');
     }
 }
 
+// ---- taint traps -----------------------------------------------------------
+// Calls that broke the client before and must never come back (docs/concepts.md,
+// "Engine rules"). Each one ran client code inside our taint:
+//   * any call into HelpTip -- its frame pool is shared with tips the action
+//     bars show from secure code; reading HelpTip.framePool is fine
+//   * Hide() / SetParent() on a named client frame -- its OnHide runs in our
+//     execution (bank tab purchase forbidden, Edit Mode exit error, 2026-10)
+// A deliberate exception gets "-- taint-ok: <reason>" on the same line.
+console.log('\n== taint traps ==');
+{
+    const CLIENT_FRAMES = new Set(['BankFrame', 'LootFrame', 'ContainerFrameCombinedBags',
+        'StatusTrackingBarManager', 'MainStatusTrackingBarContainer',
+        'SecondaryStatusTrackingBarContainer', 'GameMenuFrame', 'EditModeManagerFrame',
+        'CompactPartyFrame', 'CompactRaidFrameContainer', 'PlayerFrame', 'TargetFrame']);
+    for (let i = 1; i <= 13; i++) CLIENT_FRAMES.add('ContainerFrame' + i);
+    const nameOf = (n) => {
+        if (!n) return null;
+        if (n.type === 'Identifier') return n.name;
+        if (n.type === 'MemberExpression' && n.base && n.base.type === 'Identifier'
+            && n.base.name === '_G' && n.identifier) return n.identifier.name;
+        return null;
+    };
+    let traps = 0;
+    for (const [f, ast] of asts) {
+        const rel = path.relative(ROOT, f);
+        if (rel.split(path.sep)[0] === 'Libs') continue;
+        const lines = fs.readFileSync(f, 'utf8').split(/\r?\n/);
+        eachNode(ast, (n) => {
+            if (n.type !== 'CallExpression' || !n.base || n.base.type !== 'MemberExpression') return;
+            const m = n.base;
+            const method = m.identifier && m.identifier.name;
+            const target = nameOf(m.base);
+            let why = null;
+            if (target === 'HelpTip' && method !== 'framePool') why = 'call into HelpTip';
+            else if ((method === 'Hide' || method === 'SetParent') && target && CLIENT_FRAMES.has(target))
+                why = method + '() on client frame ' + target;
+            if (!why) return;
+            const line = n.loc ? n.loc.start.line : 0;
+            if (/taint-ok:/.test(lines[line - 1] || '')) return;
+            traps++;
+            console.log('  TRAP [' + rel + ':' + line + '] ' + why);
+        });
+    }
+    if (traps === 0) console.log('clean');
+    else { console.log('  see docs/concepts.md, "Engine rules that broke things before"'); hardFail = true; }
+}
+
 console.log('\n' + (hardFail ? 'RESULT: FAIL' : 'RESULT: OK (warnings above, if any)'));
 process.exit(hardFail ? 1 : 0);
