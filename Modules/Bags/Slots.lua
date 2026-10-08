@@ -503,8 +503,8 @@ function Slots.Paint(slot, bagID, slotID, info)
     button:SetID(slotID)
     frame:SetSize(db.slotSize or 37, db.slotSize or 37)
     applyLook(slot, standard)
-    -- the client's slots are square
-    applyRound(slot, db.roundSlots ~= false and not standard)
+    -- "Rounded slots" holds in both looks
+    applyRound(slot, db.roundSlots ~= false)
 
     button:Show()
 
@@ -573,16 +573,33 @@ function Slots.Paint(slot, bagID, slotID, info)
         else
             slot.ground:SetVertexColor(1, 1, 1, 1)
         end
-        slot.roundRing:Hide()
-        -- A profession bag's colour as an edge, as in Modern: the ground alone
-        -- vanished under every icon. Not over the client's quality ring --
-        -- an uncommon or better item keeps that.
         local q = info and info.quality
         local ringShown = info and db.qualityBorder ~= false and type(q) == "number" and q >= 2
-        if fam and not ringShown then
-            layoutRing(slot, fam[1], fam[2], fam[3], 0.9)
+        if slot.isRound then
+            -- The client's ring is square and would sit around a round icon:
+            -- our round ring instead, the quality first, else the bag's colour.
+            if button.IconBorder then button.IconBorder:SetAlpha(0) end
+            local r, g, b
+            if ringShown and C_Item.GetItemQualityColor then
+                local ok, qr, qg, qb = pcall(C_Item.GetItemQualityColor, q)
+                if ok and type(qr) == "number" then r, g, b = qr, qg, qb end
+            end
+            if not r and fam then r, g, b = fam[1], fam[2], fam[3] end
+            if r then
+                layoutRing(slot, r, g, b, 0.95)
+            else
+                slot.roundRing:Hide()
+            end
         else
-            for _, t in pairs(slot.edges) do t:Hide() end
+            slot.roundRing:Hide()
+            -- A profession bag's colour as an edge, as in Modern: the ground
+            -- alone vanished under every icon. Not over the client's quality
+            -- ring -- an uncommon or better item keeps that.
+            if fam and not ringShown then
+                layoutRing(slot, fam[1], fam[2], fam[3], 0.9)
+            else
+                for _, t in pairs(slot.edges) do t:Hide() end
+            end
         end
     end
 
