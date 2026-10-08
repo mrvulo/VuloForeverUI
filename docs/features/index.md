@@ -56,6 +56,7 @@ jemand ohne den Code prüfen kann.
 
 ### F-07 Berufstaschen-Farben
 - Angenommen eine Reagenzien- oder Berufstasche steckt, **dann** haben ihre Plätze den Farbrand der Taschenart — leer wie belegt, in jeder Ansicht und Kategorie, in beiden Stilen.
+- Angenommen eine Leder-Reagenzientasche steckt, **dann** sind ihre Plätze **braun** wie Lederverarbeitung (nicht grün).
 - **Wenn** „Abgerundete Plätze“ an ist, **dann** sind die Plätze auch im Standard-Stil rund mit rundem Ring (Qualität vor Taschenfarbe).
 
 ### F-08 Bank-Ansicht unterwegs

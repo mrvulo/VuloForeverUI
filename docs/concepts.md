@@ -68,8 +68,10 @@ These apply to every visible change, in every module.
   a player-made category or set shows its first item, an empty one a bag.
   Hairline between column and slots.
 - **Slot colours:** quality ring for uncommon and better; profession bags
-  tinted by bag family (`FAMILY_COLORS` in `Slots.lua`), the reagent bag slot
-  (`Enum.BagIndex.ReagentBag`, no family reported) in green-teal. In Standard
+  tinted by bag family (`FAMILY_COLORS` in `Slots.lua`): first the family the
+  container reports, then the family of the bag item itself (a leather reagent
+  bag is leatherworking brown — the player's call, 2026-10-08), and only a
+  reagent bag with neither gets the general green-teal. In Standard
   the family colour is an edge on full and empty slots; round slots (setting
   "Rounded slots", honoured in both looks) use our round ring — quality first,
   else family. Recently looted items: light blue (`recentColor`).

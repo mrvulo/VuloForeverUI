@@ -410,16 +410,46 @@ local FAMILY_DEFAULT = { 0.40, 0.80, 0.80 }
 local REAGENT_BAG = Enum.BagIndex and Enum.BagIndex.ReagentBag
 local REAGENT_COLOR = { 0.35, 0.80, 0.55 }
 
-local function familyColor(bagID)
-    if REAGENT_BAG and bagID == REAGENT_BAG then return REAGENT_COLOR end
-    local _, family = C_Container.GetContainerNumFreeSlots(bagID)
-    if type(family) ~= "number" or family <= 0 then return nil end
+local function colorOf(family)
     local mask = 1
     while mask <= family do
         if family % (mask * 2) >= mask then return FAMILY_COLORS[mask] or FAMILY_DEFAULT end
         mask = mask * 2
     end
     return FAMILY_DEFAULT
+end
+
+-- The family of the BAG ITEM in a bag slot, for a slot the container itself
+-- reports none for: a leather reagent bag is leatherworking, whatever its
+-- container says.
+local getItemFamily = (C_Item and C_Item.GetItemFamily) or _G.GetItemFamily
+local toInvSlot = (C_Container and C_Container.ContainerIDToInventoryID) or _G.ContainerIDToInventoryID
+
+-- Asked once per bag that sits in the slot: bagID -> { itemID, family }.
+local bagFamilyCache = {}
+
+local function bagItemFamily(bagID)
+    if not (getItemFamily and toInvSlot) or bagID <= 0 then return nil end
+    local ok, inv = pcall(toInvSlot, bagID)
+    local itemID = ok and inv and GetInventoryItemID("player", inv)
+    if not itemID then return nil end
+    local hit = bagFamilyCache[bagID]
+    if hit and hit.itemID == itemID then return hit.family end
+    local ok2, family = pcall(getItemFamily, itemID)
+    family = (ok2 and type(family) == "number" and family > 0) and family or nil
+    bagFamilyCache[bagID] = { itemID = itemID, family = family }
+    return family
+end
+
+-- What the slot holds decides first (the container's family), then what the
+-- bag item is, and only a reagent bag that is neither gets the general
+-- reagent colour.
+local function familyColor(bagID)
+    local _, family = C_Container.GetContainerNumFreeSlots(bagID)
+    if type(family) ~= "number" or family <= 0 then family = bagItemFamily(bagID) end
+    if family then return colorOf(family) end
+    if REAGENT_BAG and bagID == REAGENT_BAG then return REAGENT_COLOR end
+    return nil
 end
 Slots.FamilyColor = familyColor
 
