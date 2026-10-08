@@ -532,7 +532,17 @@ local function headerText(win, bagIDs, db)
         local free, total, specialFree, specialTotal = Bags.CountSlots(bagIDs)
         local text = ("%d/%d"):format(free, total)
         if specialTotal > 0 then
-            text = text .. "  |cff66cccc" .. ("%d/%d"):format(specialFree, specialTotal) .. "|r"
+            -- in the colour the special bag's slots carry, so the two match
+            local hex = "66cccc"
+            for _, id in ipairs(bagIDs) do
+                local c = Bags.Slots.FamilyColor(id)
+                if c then
+                    hex = ("%02x%02x%02x"):format(math.floor(c[1] * 255 + 0.5),
+                        math.floor(c[2] * 255 + 0.5), math.floor(c[3] * 255 + 0.5))
+                    break
+                end
+            end
+            text = text .. "  |cff" .. hex .. ("%d/%d"):format(specialFree, specialTotal) .. "|r"
         end
         parts[#parts + 1] = text
     end

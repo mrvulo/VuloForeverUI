@@ -77,6 +77,10 @@ These apply to every visible change, in every module.
   the family colour is an edge on full and empty slots; round slots (setting
   "Rounded slots", honoured in both looks) use our round ring — quality first,
   else family. Recently looted items: light blue (`recentColor`).
+- **Free-slot count** in the header: ordinary bags, then the special bags
+  (any reported family, and the reagent bag slot always) as a second number
+  in the special bag's colour. Never fold a reagent bag into the ordinary
+  count.
 - **Quest starters** carry the client's own yellow "!" (`IconQuestTexture`,
   `TEXTURE_ITEM_QUEST_BANG`), sized to the slot; gone once the quest is taken
   (`QUEST_ACCEPTED` repaints). Setting `markQuestStarter`.

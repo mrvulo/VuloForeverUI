@@ -169,7 +169,10 @@ function Bags.CountSlots(bagIDs)
         local slots = C_Container.GetContainerNumSlots(id) or 0
         local f, family = C_Container.GetContainerNumFreeSlots(id)
         f = tonumber(f) or 0
-        if type(family) == "number" and family > 0 then
+        -- The reagent bag's slot takes nothing but reagents, whether or not
+        -- the client reports a family for it (Forever reports none).
+        local reagent = Enum.BagIndex and id == Enum.BagIndex.ReagentBag
+        if reagent or (type(family) == "number" and family > 0) then
             specialFree, specialTotal = specialFree + f, specialTotal + slots
         else
             free, total = free + f, total + slots
