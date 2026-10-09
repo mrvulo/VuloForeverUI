@@ -40,7 +40,7 @@ jemand ohne den Code prüfen kann.
 | F-19 | Einrichtungs-Vorlagen mit echten Modulen | Einrichtung | gebaut | – |
 | F-20 | Chat-Tabs ohne Fehler im Kampf | Chat | gebaut | 0.11.0 |
 | F-21 | Gelbes „!“ auf Gegenständen, die eine Quest starten | Taschen | gebaut | – |
-| F-22 | „Chat kopieren“ zeigt den Text | Chat | gebaut | – |
+| F-22 | „Chat kopieren“ zeigt den Text | Chat | bestätigt | – |
 
 ---
 
