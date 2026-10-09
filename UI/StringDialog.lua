@@ -165,12 +165,12 @@ end
 -- take the files the client itself uses for its chat. The family is made once
 -- and re-driven on every open, so a font change in the settings reaches it.
 local COPY_SIZE = 11
--- The copy box used to set a font FAMILY (CreateFontFamily: Roman plus the
--- client's Cyrillic, Korean and Chinese faces). On this client the box then
+-- The copy box used to set a font family of OUR OWN making (CreateFontFamily:
+-- Roman plus Cyrillic, Korean and Chinese faces). On this client the box then
 -- drew nothing at all -- the character count said 9752, the box stayed black
--- (player report, 2026-10-09) -- while the same box with a plain font, the
--- profile export, worked. The plain house font it is: it carries Latin and
--- Cyrillic; Chinese and Korean would show as boxes.
+-- (player report, 2026-10-09). The house font alone drew Latin but showed
+-- Chinese names as boxes. The chat's own font object (the client's family,
+-- the one the chat window itself uses) is what the copy box takes now.
 
 local function showExport(title, str, free)
     openShell(title)
@@ -181,7 +181,12 @@ local function showExport(title, str, free)
         or  L["The string is selected - press Ctrl+C to copy it."])
     exportPanel:Show()
     local eb = w.exportEB
-    ns.UI.Font(eb, COPY_SIZE)
+    -- Text copied out of the chat gets the chat's own font object: the
+    -- client's font family that the chat window draws every alphabet with
+    -- (Chinese and Korean names included). Profile strings are plain ASCII
+    -- and keep the house font.
+    local chatFont = free and _G.ChatFontNormal
+    if chatFont then eb:SetFontObject(chatFont) else ns.UI.Font(eb, COPY_SIZE) end
     eb:SetTextColor(ns.TC("textSoft"))
     eb._locked = nil
     eb:SetWidth(DIALOG_W - 2 * PAD - 26)
