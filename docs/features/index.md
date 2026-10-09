@@ -116,4 +116,7 @@ jemand ohne den Code prüfen kann.
 
 ## Offen
 
-- (leer)
+- 2026-10-09: schwarzer Balken links an der Namensplakette des Ziels, nach dem
+  Schrifttest (`/vfdiag fonts`) und den Kopierfenster-Umbauten; nach einem
+  Neustart des Clients weg. Ursache unbekannt. Taucht er wieder auf: Maus
+  drauf, `/vfdiag mouse`, `/reload`, dann Rückkanal lesen.
