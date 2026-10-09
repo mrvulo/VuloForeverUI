@@ -44,6 +44,7 @@ These apply to every visible change, in every module.
 | Template frames carry absolute frame levels (`PortraitFrameFlatTemplate`: `Bg` 10000, `NineSlice` 498; item buttons 10). Set them explicitly after creating. | Grey veil over the whole bag window. | — |
 | Re-anchoring a frame under the mouse (even to the same spot) fires OnLeave/OnEnter. Move a slot only when its place changed. | Bag tooltip blinked on every layout. | — |
 | Client alpha animations (`ShowAnim`/`HideAnim` from 1 → 0) override `SetAlpha`. To hide a client panel during a run, change its **scale**, not its alpha. | Loot window still flashed during quick loot. | — |
+| No font FAMILY (`CreateFontFamily`) on an EditBox; use the plain house font. | The chat copy box showed nothing (text and count were there). | — |
 | Every combat value may be secret: display it, never decide on it. | CLAUDE.md rule 2. | `secretlint` |
 
 ---

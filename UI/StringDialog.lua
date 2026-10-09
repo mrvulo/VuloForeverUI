@@ -165,34 +165,12 @@ end
 -- take the files the client itself uses for its chat. The family is made once
 -- and re-driven on every open, so a font change in the settings reaches it.
 local COPY_SIZE = 11
-local COPY_ALPHABETS = {
-    { alphabet = "russian",            file = "Fonts\\ARIALN.TTF",   extra = 1 },
-    { alphabet = "korean",             file = "Fonts\\2002.ttf",     extra = 2 },
-    { alphabet = "simplifiedchinese",  file = "Fonts\\ARKai_T.ttf",  extra = 2 },
-    { alphabet = "traditionalchinese", file = "Fonts\\blei00d.TTF",  extra = 2 },
-}
-local copyFamily
-
-local function copyFont()
-    local members = { { alphabet = "roman", file = ns.UI.FONT_PATH, height = COPY_SIZE, flags = "" } }
-    for _, a in ipairs(COPY_ALPHABETS) do
-        members[#members + 1] = { alphabet = a.alphabet, file = a.file, height = COPY_SIZE + a.extra, flags = "" }
-    end
-    if copyFamily == nil then
-        copyFamily = false
-        if type(_G.CreateFontFamily) == "function" then
-            local ok, made = pcall(_G.CreateFontFamily, "VuloForeverUICopyFont", members)
-            if ok and made then copyFamily = made end
-        end
-    end
-    if not copyFamily then return nil end
-    local ok = pcall(function()
-        for _, m in ipairs(members) do
-            copyFamily:GetFontObjectForAlphabet(m.alphabet):SetFont(m.file, m.height, m.flags)
-        end
-    end)
-    return ok and copyFamily or nil
-end
+-- The copy box used to set a font FAMILY (CreateFontFamily: Roman plus the
+-- client's Cyrillic, Korean and Chinese faces). On this client the box then
+-- drew nothing at all -- the character count said 9752, the box stayed black
+-- (player report, 2026-10-09) -- while the same box with a plain font, the
+-- profile export, worked. The plain house font it is: it carries Latin and
+-- Cyrillic; Chinese and Korean would show as boxes.
 
 local function showExport(title, str, free)
     openShell(title)
@@ -203,10 +181,7 @@ local function showExport(title, str, free)
         or  L["The string is selected - press Ctrl+C to copy it."])
     exportPanel:Show()
     local eb = w.exportEB
-    -- The copy box reads every alphabet; the profile strings are plain ASCII
-    -- and keep the single face.
-    local family = free and copyFont()
-    if family then eb:SetFontObject(family) else ns.UI.Font(eb, COPY_SIZE) end
+    ns.UI.Font(eb, COPY_SIZE)
     eb:SetTextColor(ns.TC("textSoft"))
     eb._locked = nil
     eb:SetWidth(DIALOG_W - 2 * PAD - 26)

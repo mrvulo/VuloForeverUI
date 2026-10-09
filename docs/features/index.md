@@ -40,6 +40,7 @@ jemand ohne den Code prüfen kann.
 | F-19 | Einrichtungs-Vorlagen mit echten Modulen | Einrichtung | gebaut | – |
 | F-20 | Chat-Tabs ohne Fehler im Kampf | Chat | gebaut | 0.11.0 |
 | F-21 | Gelbes „!“ auf Gegenständen, die eine Quest starten | Taschen | gebaut | – |
+| F-22 | „Chat kopieren“ zeigt den Text | Chat | gebaut | – |
 
 ---
 
@@ -105,6 +106,10 @@ jemand ohne den Code prüfen kann.
 - Angenommen ein Gegenstand startet eine Quest (z. B. Owatankas Schwanzstachel), **dann** trägt sein Platz das gelbe „!“ des Spiels, in beiden Stilen und jeder Platzgröße.
 - **Wenn** du die Quest annimmst, **dann** verschwindet das „!“ sofort.
 - **Wenn** du „Gegenstände markieren, die eine Quest starten“ ausschaltest, **dann** ist kein „!“ mehr da.
+
+### F-22 Chat kopieren
+- **Wenn** du in der Chat-Seitenleiste „Chat kopieren“ klickst, **dann** steht der Chatverlauf lesbar im Fenster, der Cursor am Ende (neueste Zeilen unten).
+- **Wenn** du Strg+A und Strg+C drückst, **dann** ist der Text in der Zwischenablage.
 
 ---
 
