@@ -1892,6 +1892,8 @@ ns:RegisterLocale("frFR", {
     ["Solid color"] = "Couleur unie",
     ["Default"] = "Par défaut",
     ["Spell ranks"] = "Rangs de sorts",
+    ["Font test -- click to close. Which line shows every character?"] = "Test de police – cliquez pour fermer. Quelle ligne affiche tous les caractères ?",
+    ["(file missing)"] = "(fichier absent)",
     ["Mark items that start a quest"] = "Marquer les objets qui débutent une quête",
     ["The yellow exclamation mark the game's own bags put on an item that starts a quest."] = "Le point d'exclamation jaune que les sacs du jeu placent sur un objet qui débute une quête.",
     ["Open the settings window. Add a word for more: help, modules, client, debug, reset."] = "Ouvre la fenêtre des réglages. Ajoutez un mot pour plus : help, modules, client, debug, reset.",

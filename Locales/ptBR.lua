@@ -1855,6 +1855,8 @@ ns:RegisterLocale("ptBR", {
     ["Solid color"] = "Cor sólida",
     ["Default"] = "Padrão",
     ["Spell ranks"] = "Graus de feitiço",
+    ["Font test -- click to close. Which line shows every character?"] = "Teste de fonte – clique para fechar. Qual linha mostra todos os caracteres?",
+    ["(file missing)"] = "(arquivo ausente)",
     ["Mark items that start a quest"] = "Marcar itens que iniciam uma missão",
     ["The yellow exclamation mark the game's own bags put on an item that starts a quest."] = "O ponto de exclamação amarelo que as bolsas do jogo colocam em um item que inicia uma missão.",
     ["Open the settings window. Add a word for more: help, modules, client, debug, reset."] = "Abre a janela de configurações. Adicione uma palavra para mais: help, modules, client, debug, reset.",

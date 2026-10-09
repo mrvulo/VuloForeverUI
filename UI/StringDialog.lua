@@ -181,12 +181,12 @@ local function showExport(title, str, free)
         or  L["The string is selected - press Ctrl+C to copy it."])
     exportPanel:Show()
     local eb = w.exportEB
-    -- Text copied out of the chat gets the chat's own font object: the
-    -- client's font family that the chat window draws every alphabet with
-    -- (Chinese and Korean names included). Profile strings are plain ASCII
-    -- and keep the house font.
-    local chatFont = free and _G.ChatFontNormal
-    if chatFont then eb:SetFontObject(chatFont) else ns.UI.Font(eb, COPY_SIZE) end
+    -- The house font, for now: Latin with umlauts and Cyrillic. The chat's
+    -- font family drew Chinese but lost the umlauts -- an EditBox does not
+    -- switch faces per character -- and /vfdiag fonts is there to find ONE
+    -- file that covers everything. Copying keeps the real characters either
+    -- way; only the boxes on screen differ.
+    ns.UI.Font(eb, COPY_SIZE)
     eb:SetTextColor(ns.TC("textSoft"))
     eb._locked = nil
     eb:SetWidth(DIALOG_W - 2 * PAD - 26)
@@ -512,3 +512,58 @@ function ns.UI:ShowProfileImportDialog(onSuccess)
     w.pasteEB:SetWidth(DIALOG_W - 2 * PAD - 26)
     w.pasteEB:SetFocus()
 end
+
+-- ---------------------------------------------------------------------------
+-- /vfdiag fonts -- which of the client's font files draws which alphabet.
+--
+-- The copy box needs ONE font file for every alphabet a chat line can carry:
+-- an EditBox does not switch fonts per character the way the chat window does
+-- (with the chat's font family it drew Chinese but lost the German umlauts).
+-- Which files this client ships and what each one covers is a question for
+-- the client, so it is asked here: one sample line per candidate, each in its
+-- own file, on screen to look at.
+local FONT_CANDIDATES = {
+    "Fonts\\FRIZQT__.TTF", "Fonts\\ARIALN.TTF", "Fonts\\FRIZQT___CYR.TTF",
+    "Fonts\\2002.TTF", "Fonts\\2002B.TTF", "Fonts\\K_Pagetext.TTF",
+    "Fonts\\ARHei.ttf", "Fonts\\ARKai_T.ttf", "Fonts\\ARKai_C.ttf",
+    "Fonts\\arheiuhk_bd.TTF", "Fonts\\blei00d.TTF", "Fonts\\bHEI01B.TTF", "Fonts\\bKAI00M.TTF",
+}
+local FONT_SAMPLE = "Öffnen äöüß  甜的 莉娜 深渊来  한국어 파티  Привет"
+local fontTest
+
+ns.OnLocaleReady(function()
+    if not (ns.Diag and ns.Diag.Commands) then return end
+    ns.Diag.Commands.fonts = function()
+        if not fontTest then
+            fontTest = CreateFrame("Frame", "VuloForeverUIFontTest", UIParent, "BackdropTemplate")
+            fontTest:SetFrameStrata("DIALOG")
+            fontTest:SetSize(760, 34 + #FONT_CANDIDATES * 26)
+            fontTest:SetPoint("CENTER")
+            fontTest:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
+            fontTest:SetBackdropColor(0, 0, 0, 0.92)
+            fontTest:EnableMouse(true)
+            fontTest:SetScript("OnMouseDown", function(self) self:Hide() end)
+            local head = fontTest:CreateFontString(nil, "OVERLAY")
+            ns.UI.Font(head, 12)
+            head:SetPoint("TOPLEFT", 10, -8)
+            head:SetText(L["Font test -- click to close. Which line shows every character?"])
+            for i, file in ipairs(FONT_CANDIDATES) do
+                local label = fontTest:CreateFontString(nil, "OVERLAY")
+                ns.UI.Font(label, 11)
+                label:SetPoint("TOPLEFT", 10, -10 - i * 26)
+                label:SetWidth(170)
+                label:SetJustifyH("LEFT")
+                label:SetText(file:gsub("^Fonts\\", ""))
+                local fs = fontTest:CreateFontString(nil, "OVERLAY")
+                fs:SetPoint("LEFT", label, "RIGHT", 8, 0)
+                if fs:SetFont(file, 15, "") then
+                    fs:SetText(FONT_SAMPLE)
+                else
+                    fs:SetFontObject(GameFontDisable)
+                    fs:SetText(L["(file missing)"])
+                end
+            end
+        end
+        fontTest:Show()
+    end
+end)

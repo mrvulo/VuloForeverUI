@@ -1892,6 +1892,8 @@ ns:RegisterLocale("deDE", {
     ["Solid color"] = "Volle Farbe",
     ["Default"] = "Standard",
     ["Spell ranks"] = "Zauberränge",
+    ["Font test -- click to close. Which line shows every character?"] = "Schrifttest – zum Schließen klicken. Welche Zeile zeigt alle Zeichen?",
+    ["(file missing)"] = "(Datei fehlt)",
     ["Mark items that start a quest"] = "Gegenstände markieren, die eine Quest starten",
     ["The yellow exclamation mark the game's own bags put on an item that starts a quest."] = "Das gelbe Ausrufezeichen, das die Taschen des Spiels auf einen Gegenstand setzen, der eine Quest startet.",
     ["Open the settings window. Add a word for more: help, modules, client, debug, reset."] = "Öffnet das Einstellungsfenster. Mit einem Wort mehr: help, modules, client, debug, reset.",

@@ -1892,6 +1892,8 @@ ns:RegisterLocale("ruRU", {
     ["Solid color"] = "Сплошной цвет",
     ["Default"] = "По умолчанию",
     ["Spell ranks"] = "Ранги заклинаний",
+    ["Font test -- click to close. Which line shows every character?"] = "Проверка шрифтов – щёлкните, чтобы закрыть. Какая строка показывает все символы?",
+    ["(file missing)"] = "(файл отсутствует)",
     ["Mark items that start a quest"] = "Отмечать предметы, начинающие задание",
     ["The yellow exclamation mark the game's own bags put on an item that starts a quest."] = "Жёлтый восклицательный знак, который сумки игры ставят на предмет, начинающий задание.",
     ["Open the settings window. Add a word for more: help, modules, client, debug, reset."] = "Открывает окно настроек. Добавьте слово для большего: help, modules, client, debug, reset.",

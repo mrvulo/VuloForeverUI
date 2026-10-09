@@ -44,7 +44,7 @@ These apply to every visible change, in every module.
 | Template frames carry absolute frame levels (`PortraitFrameFlatTemplate`: `Bg` 10000, `NineSlice` 498; item buttons 10). Set them explicitly after creating. | Grey veil over the whole bag window. | — |
 | Re-anchoring a frame under the mouse (even to the same spot) fires OnLeave/OnEnter. Move a slot only when its place changed. | Bag tooltip blinked on every layout. | — |
 | Client alpha animations (`ShowAnim`/`HideAnim` from 1 → 0) override `SetAlpha`. To hide a client panel during a run, change its **scale**, not its alpha. | Loot window still flashed during quick loot. | — |
-| No font family of our own (`CreateFontFamily`) on an EditBox. For text in any alphabet use the client's own family (`ChatFontNormal`); plain text the house font. | Our family drew nothing in the chat copy box; the house font showed Chinese as boxes. | — |
+| An EditBox does not switch font faces per character. A font family on it (ours or the client's `ChatFontNormal`) draws everything in ONE member face: ours drew nothing, the client's lost the German umlauts. Mixed alphabets need one font file that covers them all (`/vfdiag fonts` shows which). | Chat copy box, 2026-10-09. | — |
 | Every combat value may be secret: display it, never decide on it. | CLAUDE.md rule 2. | `secretlint` |
 
 ---
