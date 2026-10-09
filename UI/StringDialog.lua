@@ -202,6 +202,12 @@ function w.setReading(on)
     view:SetShown(w.reading)
     sf:SetAlpha(w.reading and 0 or 1)
     eb:SetFocus()
+    -- The selection is drawn even with the box at alpha zero: grey bars over
+    -- the reading view. Reading keeps the selection (Ctrl+C needs it) but
+    -- draws it in nothing; selecting gets the visible colour back.
+    if eb.SetHighlightColor then
+        if w.reading then eb:SetHighlightColor(0, 0, 0, 0) else eb:SetHighlightColor(0.6, 0.6, 0.6, 0.45) end
+    end
     if w.reading then
         eb:HighlightText()
         w.exportHint:SetText(L["Ctrl+C copies everything. To copy only a part, switch to Select text."])
@@ -262,6 +268,7 @@ local function showExport(title, str, free)
         w.readView:Hide()
         w.exportSF:SetAlpha(1)
         w.reading = false
+        if eb.SetHighlightColor then eb:SetHighlightColor(0.6, 0.6, 0.6, 0.45) end
         eb:HighlightText()
     end
 end
