@@ -122,6 +122,15 @@ These apply to every visible change, in every module.
 - Quick loot hides the client loot window by **scale** during the run and
   restores it when something is left (full bags, roll, confirmation).
 
+## Chat (`Modules/Chat/`, copy dialog in `UI/StringDialog.lua`)
+
+- **Copy chat** opens in reading mode: a ScrollingMessageFrame with the chat's
+  own font object draws the lines exactly like the chat (every alphabet at
+  once); the full text waits selected in an invisible EditBox underneath, so
+  Ctrl+C copies everything. "Select text" switches to the EditBox for a part.
+  Measured with `/vfdiag fonts`: no single font file of this client has
+  umlauts, Chinese and Korean together.
+
 ## Locales
 
 - Keys are English text. deDE is the reference; check.js covers literal

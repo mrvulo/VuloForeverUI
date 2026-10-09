@@ -128,6 +128,33 @@ local function ensureExportPanel()
     sf:SetPoint("TOPLEFT", exportPanel, "TOPLEFT", PAD + 2, -64)
     sf:SetPoint("BOTTOMRIGHT", exportPanel, "BOTTOMRIGHT", -(PAD + 16), 56)
     w.exportEB = eb
+    w.exportSF = sf
+
+    -- The reading view of the chat copy. An EditBox draws its whole text in
+    -- ONE face of a font family (measured with /vfdiag fonts: no file of this
+    -- client carries umlauts, Chinese and Korean together). The chat window
+    -- switches faces per character, and so does a ScrollingMessageFrame with
+    -- the chat's own font object -- so the lines are READ here, exactly as
+    -- the chat draws them, while the full text waits selected in the box
+    -- underneath for Ctrl+C. "Select text" swaps to the box for a part.
+    local view = CreateFrame("ScrollingMessageFrame", nil, exportPanel)
+    view:SetAllPoints(sf)
+    view:SetFrameLevel(sf:GetFrameLevel() + 5)
+    view:SetFontObject(_G.ChatFontNormal or GameFontHighlight)
+    view:SetJustifyH("LEFT")
+    view:SetFading(false)
+    view:SetMaxLines(2000)
+    view:SetIndentedWordWrap(false)
+    view:EnableMouseWheel(true)
+    view:SetScript("OnMouseWheel", function(self, delta)
+        if delta > 0 then self:ScrollUp() else self:ScrollDown() end
+    end)
+    -- a click into the reading view keeps the box underneath focused, so
+    -- Ctrl+C still copies everything
+    view:EnableMouse(true)
+    view:SetScript("OnMouseDown", function() eb:SetFocus(); eb:HighlightText() end)
+    view:Hide()
+    w.readView = view
 
     -- read-only that survives keystrokes: any user change snaps the text
     -- back and re-selects it, so a stray key never breaks the Ctrl+C flow.
@@ -157,6 +184,34 @@ local function ensureExportPanel()
         onClick = function() host:Hide() end,
     })
     close:SetPoint("BOTTOMRIGHT", exportPanel, "BOTTOMRIGHT", -PAD, 14)
+
+    -- Chat copy only: between reading every alphabet and selecting a part.
+    w.modeButton = UI:CreateButton(exportPanel, {
+        label = L["Select text"], width = 140,
+        onClick = function() w.setReading(not w.reading) end,
+    })
+    w.modeButton:SetPoint("RIGHT", close, "LEFT", -8, 0)
+end
+
+-- Reading: the chat-drawn view on top, the box underneath invisible but
+-- focused with everything selected. Selecting: the box itself, nothing
+-- selected, the cursor at the end (the newest lines).
+function w.setReading(on)
+    local eb, sf, view = w.exportEB, w.exportSF, w.readView
+    w.reading = on and true or false
+    view:SetShown(w.reading)
+    sf:SetAlpha(w.reading and 0 or 1)
+    eb:SetFocus()
+    if w.reading then
+        eb:HighlightText()
+        w.exportHint:SetText(L["Ctrl+C copies everything. To copy only a part, switch to Select text."])
+        w.modeButton._textFS:SetText(L["Select text"])
+    else
+        eb:HighlightText(0, 0)
+        eb:SetCursorPosition(#(eb._locked or ""))
+        w.exportHint:SetText(L["Select what you want and press Ctrl+C to copy it. Ctrl+A selects everything."])
+        w.modeButton._textFS:SetText(L["Read"])
+    end
 end
 
 -- The copy box's font: a FAMILY, one file per alphabet, like the client's own
@@ -194,11 +249,19 @@ local function showExport(title, str, free)
     eb._locked = str
     w.exportCount:SetText(string.format(L["%d characters"], #str))
     eb:SetFocus()
+    w.modeButton:SetShown(free and true or false)
     if free then
-        -- the newest lines are at the bottom, and that is where the reading starts
-        eb:HighlightText(0, 0)
-        eb:SetCursorPosition(#str)
+        -- every line into the reading view, as the chat draws it; the newest
+        -- at the bottom, which is where the reading starts
+        local view = w.readView
+        view:Clear()
+        for line in (str .. "\n"):gmatch("(.-)\n") do view:AddMessage(line) end
+        view:ScrollToBottom()
+        w.setReading(true)
     else
+        w.readView:Hide()
+        w.exportSF:SetAlpha(1)
+        w.reading = false
         eb:HighlightText()
     end
 end

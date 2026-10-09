@@ -108,8 +108,9 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du „Gegenstände markieren, die eine Quest starten“ ausschaltest, **dann** ist kein „!“ mehr da.
 
 ### F-22 Chat kopieren
-- **Wenn** du in der Chat-Seitenleiste „Chat kopieren“ klickst, **dann** steht der Chatverlauf lesbar im Fenster, der Cursor am Ende (neueste Zeilen unten).
-- **Wenn** du Strg+A und Strg+C drückst, **dann** ist der Text in der Zwischenablage.
+- **Wenn** du in der Chat-Seitenleiste „Chat kopieren“ klickst, **dann** steht der Verlauf so da wie im Chat: Umlaute, Chinesisch, Koreanisch und Russisch zugleich lesbar, farbig, neueste Zeilen unten; Mausrad scrollt.
+- **Wenn** du sofort Strg+C drückst, **dann** ist der ganze Verlauf in der Zwischenablage.
+- **Wenn** du „Text markieren“ klickst, **dann** kannst du mit der Maus einen Teil markieren und mit Strg+C kopieren (Chinesisch/Koreanisch dort als Kästchen, kopiert werden die echten Zeichen); „Lesen“ schaltet zurück.
 
 ---
 
