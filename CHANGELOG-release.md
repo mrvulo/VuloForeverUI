@@ -1,44 +1,33 @@
-## 0.13.0
+## 0.14.0
 
 **New**
 
-- **Reminders** — a "Show possible buffs" button opens a list of every buff
-  you could have right now: your own class buffs, buffs other classes give,
-  world buffs from level 55, and the best flask, elixir, food, scroll,
-  potion, poison, sharpening stone, weightstone or oil for your role and
-  level. Each line shows whether it is on you and for how long, and whether
-  the item is in your bags. Pick your role at the top of the window.
-- **Bags** — items that start a quest carry the game's yellow "!" until you
-  take the quest.
-- **Cooldown Manager** — queued next-swing abilities (Heroic Strike, Cleave,
-  Maul, Raptor Strike) light up like their action bar button.
-- **Resource Bars** — XP per hour and time to level follow your pace over
-  the last 15 minutes instead of the whole session.
-- **Nameplates** — "All of your own debuffs" (on by default) shows every
-  debuff you or your pet cast, also the many classic damage-over-time spells
-  the game does not mark for nameplates.
+- **Skins** — a new module under Unit Frames. "Window skins" restyles the
+  character window and the inspect window: Standard keeps the game's frame,
+  Modern makes it flat and dark (title bar, level line, stats, tabs). In
+  both, the equipment slots are rounded and ringed in their item's quality
+  colour and can show item level, enchant (and the poison, oil or stone on a
+  weapon), durability and weapon DPS. Stat sections fold with a click.
+- **Reminders** — flasks, elixirs and Well Fed food that suit your role show
+  up in the reminder row when you carry them but they are not on you; a
+  click uses them. Dungeons and raids only by default.
+- **Reminders** — "Possible buffs" is clickable: cast your own buff, use an
+  item from your bags, put a weapon item on the main hand (left click) or
+  off hand (right click). In a group, buffs nobody there can give are shown
+  dimmed at the bottom.
 
 **Changed**
 
-- **Bags** — the category bar folds in and out with its arrow, has uniform
-  square icons (a new category shows its first item), and nothing in the
-  window touches the frame or the slots any more.
-- **Bags** — profession and reagent bags tint their slots in both styles; a
-  leather reagent bag is leatherworking brown. "Rounded slots" now works in
-  the Standard style too, and the bank view away from the bank uses the
-  Standard look as well.
-- **Bags** — the window is prepared in the background after a loading
-  screen, so the first open of a session no longer stutters, and the bags
-  make far less garbage memory.
-- **Chat** — "Copy chat" shows the text like the chat itself, every alphabet
-  at once, and Ctrl+C copies everything; "Select text" lets you pick a part.
-- **Locales** — module, group and tab names are translated in every language.
+- **Options** — every settings page uses the two-column grid: a setting alone
+  on its line keeps its half, so all switches and boxes line up.
+- **Chat** — "Copy chat" shows the chat's colours and the same small font in
+  both views.
+- **Bags** — a cooldown or a picked-up item only redraws what changed, which
+  makes looting and fights lighter.
 
 **Fixed**
 
-- **Bags** — the tooltip no longer blinks off while you hover an item.
-- **Bags** — the stuck "You received a reagent bag" tip box is hidden.
-- **Bags** — the reagent bag counts as its own number next to the free slots
-  again.
-- **Bags** — opening and closing the bags no longer leads to blocked-action
-  errors at the bank or after Edit Mode.
+- **Reminders** — buffs from other classes now appear in "Possible buffs".
+- **Reminders** — the best foods (Nightfin Soup, Grilled Squid and others)
+  count as eaten even though their buff is not called Well Fed.
+- **Bags** — the first open of a session no longer stutters.
