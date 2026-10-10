@@ -116,13 +116,13 @@ end
 local function buildPanels()
     if panels.window then return end
     local cf, pdf = _G.CharacterFrame, _G.PaperDollFrame
-    panels.window = Skins.Panel(cf, Skins.BG)
+    panels.window = Skins.Ground(cf, Skins.BG)
     if pdf and pdf.TopBackgroundStripHost then
         -- the level line ("Level 5, Hunter"): a strip in the window's own
         -- dark, a shade lighter, under the title
         local strip = pdf.TopBackgroundStripHost
         panels.strip = Skins.Panel(strip, Skins.STRIP, 0, cf)
-        panels.strip:SetFrameLevel(math.max(0, strip:GetFrameLevel() - 1))
+        panels.strip:SetFrameLevel(strip:GetFrameLevel())
     end
     panels.tabs = {}
     for i = 1, 6 do

@@ -99,6 +99,39 @@ function Skins.Panel(host, color, inset, parent)
     return p
 end
 
+-- A window's ground: textures on the window ITSELF, in its lowest layer, so
+-- every child (model, slots, stats) stays above it whatever its level. A
+-- panel frame of ours at the window's level could end up over a child that
+-- shares that level.
+function Skins.Ground(frame, color)
+    local g = { parts = {} }
+    local c = color or BG
+    local bg = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
+    bg:SetAllPoints(frame)
+    bg:SetColorTexture(c[1], c[2], c[3], c[4])
+    g.parts[1] = bg
+    local px = 1
+    for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+        local t = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
+        t:SetColorTexture(EDGE[1], EDGE[2], EDGE[3], EDGE[4])
+        if side == "TOP" or side == "BOTTOM" then
+            t:SetPoint(side .. "LEFT", frame, side .. "LEFT", 0, 0)
+            t:SetPoint(side .. "RIGHT", frame, side .. "RIGHT", 0, 0)
+            t:SetHeight(px)
+        else
+            t:SetPoint("TOP" .. side, frame, "TOP" .. side, 0, 0)
+            t:SetPoint("BOTTOM" .. side, frame, "BOTTOM" .. side, 0, 0)
+            t:SetWidth(px)
+        end
+        g.parts[#g.parts + 1] = t
+    end
+    function g:SetShown(on)
+        for _, t in ipairs(self.parts) do t:SetShown(on) end
+    end
+    g:SetShown(false)
+    return g
+end
+
 -- ---------------------------------------------------------------- slots --
 --
 -- Every equipment slot gets: a round mask on the client's icon (the square

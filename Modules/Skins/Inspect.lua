@@ -77,7 +77,7 @@ function Inspect.Apply()
     if not (ready and f) then return end
     local modern = Skins.Modern() and Skins.db().inspect
     if modern then
-        panel = panel or Skins.Panel(f, Skins.BG)
+        panel = panel or Skins.Ground(f, Skins.BG)
         for _, r in ipairs(modernParts()) do Skins.Fade(r) end
     end
     if panel then panel:SetShown(modern) end
