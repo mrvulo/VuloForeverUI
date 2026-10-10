@@ -2,6 +2,7 @@
 ## Title: |cff9b6cffVuloForeverUI|r
 ## Notes: Modular UI suite for World of Warcraft: Forever
 ## Author: Vulo
+## Category: VuloUI
 ## Version: 0.13.0
 ## SavedVariables: VuloForeverUIDB, VuloForeverUIDiag
 ## SavedVariablesPerCharacter: VuloForeverUICharDB
