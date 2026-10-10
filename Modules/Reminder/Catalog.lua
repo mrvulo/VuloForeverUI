@@ -36,25 +36,6 @@ local win, scroll, child, note, rolePick
 local rows, heads = {}, {}
 local notedMissing
 
--- ---------------------------------------------------------------- role --
-
-local function charDB()
-    local c = _G.VuloForeverUICharDB
-    return type(c) == "table" and c or nil
-end
-
-function R.Role()
-    local c = charDB()
-    local v = c and c.reminderRole
-    for _, r in ipairs(R.ROLES) do if r.value == v then return v end end
-    return R.ROLE_DEFAULT[R.class] or "melee"
-end
-
-local function setRole(v)
-    local c = charDB()
-    if c then c.reminderRole = v end
-end
-
 -- ---------------------------------------------------------------- data --
 
 local CS = Enum.ItemConsumableSubclass or {}
@@ -71,7 +52,6 @@ local GROUPS = {
     { cat = "other",  label = "Other" },
     { cat = "potion", label = "Potions" },
 }
-local NO_MANA = { WARRIOR = true, ROGUE = true }
 
 local function fmtLeft(left)
     if left == math.huge then return L["Active"] end
@@ -150,38 +130,27 @@ local function bagItems()
     return list
 end
 
-local function mainHandKind()
-    local id = GetInventoryItemID("player", 16)
-    if not id then return nil end
-    local _, _, _, _, _, classID, subID = C_Item.GetItemInfoInstant(id)
-    if classID ~= Enum.ItemClass.Weapon then return nil end
-    local WS = Enum.ItemWeaponSubclass
-    if subID == WS.Mace1H or subID == WS.Mace2H or subID == WS.Staff then return "blunt" end
-    return "edge"
-end
+local fits, bestRank, mainHandKind = R.SupplyFits, R.BestRank, R.MainHandKind
 
--- Does an entry (supply chain, group buff) apply to this character and role?
-local function fits(e, role, ctx)
-    if e.roles and not e.roles[role] then return false end
-    if e.mana and NO_MANA[R.class] then return false end
-    if e.class and not e.class[R.class] then return false end
-    if e.noClass and e.noClass[R.class] then return false end
-    if e.from and ctx.level < e.from then return false end
-    if e.weapon and ctx.weapon and e.weapon ~= ctx.weapon then return false end
-    return true
-end
-
--- The best rank this level may use; nil when none.
-local function bestRank(items, level)
-    for _, it in ipairs(items) do
-        if it[2] <= level then return it[1] end
+-- The classes of everyone else in the group; second value: in a group at all.
+local function groupClasses()
+    local out = {}
+    if not IsInGroup() then return out, false end
+    local raid = IsInRaid()
+    for i = 1, raid and GetNumGroupMembers() or 4 do
+        local unit = raid and ("raid" .. i) or ("party" .. i)
+        if UnitExists(unit) and not UnitIsUnit(unit, "player") then
+            local _, class = UnitClass(unit)
+            if ns.CanRead(class) and type(class) == "string" then out[class] = true end
+        end
     end
+    return out, true
 end
 
 local function recommendedRow(id, isWeapon, chainItems)
     local count = C_Item.GetItemCount(id) or 0
     local row = { icon = C_Item.GetItemIconByID(id), item = id, name = itemName(id),
-                  count = count > 0 and count or nil }
+                  count = count > 0 and count or nil, use = count > 0, weapon = isWeapon }
     -- any rank of the chain on you counts: a lower elixir is still an elixir
     local state
     if not isWeapon then
@@ -215,18 +184,20 @@ local function collect()
         local cast = R.CastFor(R.EntryCfg(e), e.cast)
         if cast then
             local line, color = status(auraAny(e.ids))
-            spells[#spells + 1] = { icon = C_Spell.GetSpellTexture(cast), spell = cast,
+            spells[#spells + 1] = { icon = C_Spell.GetSpellTexture(cast), spell = cast, cast = true,
                 name = e.label and L[e.label] or R.SpellName(cast), line = line, color = color }
         end
     end
     if #spells > 0 then head(L["Your spells"]); addAll(spells) end
 
-    -- from other classes
+    -- from other classes; in a group, the classes someone there can give
+    -- come first, the rest is dimmed and says nobody here has it
     local faction = UnitFactionGroup("player")
     local names = _G.LOCALIZED_CLASS_NAMES_MALE or {}
-    local others, missing = {}, {}
+    local present, grouped = groupClasses()
+    local others, absent, missing = {}, {}, {}
     for _, b in ipairs(R.GROUP_BUFFS) do
-        if b.class ~= R.class and (not b.faction or b.faction == faction) and fits(b, role, ctx) then
+        if b.class ~= R.class and (not b.faction or b.faction == faction) and R.SupplyFits(b, role, ctx) then
             local name = R.SpellName(b.ids[1])
             if not name then
                 -- not loaded yet (SPELL_DATA_LOAD_RESULT redraws); noted once
@@ -234,16 +205,22 @@ local function collect()
                 C_Spell.RequestLoadSpellData(b.ids[1])
                 missing[#missing + 1] = b.ids[1]
             end
-            do
-                local line, color = status(auraAny(b.ids))
-                local who = names[b.class] or b.class
-                local cc = C_ClassColor.GetClassColor(b.class)
-                if cc then who = cc:WrapTextInColorCode(who) end
-                others[#others + 1] = { icon = C_Spell.GetSpellTexture(b.ids[1]), spell = b.ids[1],
-                    name = name or "…", line = line, color = color, count = who }
+            local state = auraAny(b.ids)
+            local line, color = status(state)
+            local who = names[b.class] or b.class
+            local cc = C_ClassColor.GetClassColor(b.class)
+            if cc then who = cc:WrapTextInColorCode(who) end
+            local row = { icon = C_Spell.GetSpellTexture(b.ids[1]), spell = b.ids[1],
+                name = name or "…", line = line, color = color, count = who }
+            if grouped and not present[b.class] and not state then
+                row.dim, row.line = true, line .. " · " .. L["Nobody in your group"]
+                absent[#absent + 1] = row
+            else
+                others[#others + 1] = row
             end
         end
     end
+    for _, row in ipairs(absent) do others[#others + 1] = row end
     if #missing > 0 and not notedMissing then
         notedMissing = true
         ns.Diag.Note("reminders", "group buff spells without a name: " .. table.concat(missing, ", "))
@@ -287,7 +264,7 @@ local function collect()
                 if isWeapon then line, color = L["For a weapon"], GREY
                 else line, color = status(itemAura(it.id)) end
                 list[#list + 1] = { icon = it.icon, item = it.id, name = it.name, count = it.count,
-                    line = line, color = color }
+                    line = line, color = color, use = true, weapon = isWeapon }
             end
         end
     end
@@ -304,7 +281,7 @@ local function collect()
     if R.class == "SHAMAN" then
         for _, id in ipairs(R.KnownList(R.IMBUES)) do
             weapons[#weapons + 1] = { icon = C_Spell.GetSpellTexture(id), spell = id,
-                name = R.SpellName(id), line = L["Spell"], color = GREY }
+                name = R.SpellName(id), line = L["Spell"], color = GREY, cast = true }
         end
     end
     for _, it in ipairs(byCat.weapon or {}) do weapons[#weapons + 1] = it end
@@ -338,7 +315,80 @@ local function showTip(f)
     elseif it.spell then GameTooltip:SetSpellByID(it.spell)
     elseif it.inv then GameTooltip:SetInventoryItem("player", it.inv)
     else return end
+    if it.cast then
+        GameTooltip:AddLine(L["Left click: cast"], 0.6, 1, 0.6)
+    elseif it.use and it.weapon then
+        GameTooltip:AddLine(L["Left click: main hand, right click: off hand"], 0.6, 1, 0.6)
+    elseif it.use then
+        GameTooltip:AddLine(L["Left click: use"], 0.6, 1, 0.6)
+    end
     GameTooltip:Show()
+end
+
+-- ---------------------------------------------------------------- clicks --
+--
+-- Casting and using are protected, so the rows stay plain frames and ONE
+-- secure button lays itself over the row under the mouse -- out of combat
+-- only, and it is taken away the moment a fight starts. Nothing in the list
+-- itself is ever protected, so scrolling, redrawing and closing the window
+-- stay free in a fight.
+local catcher
+
+local function dropCatcher()
+    if not catcher or InCombatLockdown() then return end
+    catcher.row = nil
+    catcher:Hide()
+    catcher:ClearAllPoints()
+end
+
+local function ensureCatcher()
+    if catcher then return catcher end
+    catcher = CreateFrame("Button", "VFUI_ReminderCatalogClick", UIParent, "SecureActionButtonTemplate")
+    catcher:SetFrameStrata("DIALOG")
+    catcher:SetFrameLevel(win:GetFrameLevel() + 50)
+    catcher:RegisterForClicks("LeftButtonDown", "LeftButtonUp", "RightButtonDown", "RightButtonUp")
+    catcher:Hide()
+    catcher:SetScript("OnEnter", function(self)
+        if self.row then self.row.hl:Show(); showTip(self.row) end
+    end)
+    catcher:SetScript("OnLeave", function(self)
+        if self.row then self.row.hl:Hide() end
+        GameTooltip:Hide()
+        dropCatcher()
+    end)
+    return catcher
+end
+
+local function bindCatcher(row)
+    local it = row.data
+    if InCombatLockdown() or not (it and (it.cast or it.use)) then return false end
+    local c = ensureCatcher()
+    local spell = it.cast and R.SpellName(it.spell)
+    for _, k in ipairs({ "*type1", "*spell1", "*unit1", "*macrotext1", "*type2", "*macrotext2" }) do
+        c:SetAttribute(k, nil)
+    end
+    if spell then
+        c:SetAttribute("*type1", "spell")
+        c:SetAttribute("*spell1", spell)
+        c:SetAttribute("*unit1", "player")
+    elseif it.use and it.item then
+        local use = "/use item:" .. it.item
+        c:SetAttribute("*type1", "macro")
+        if it.weapon then
+            c:SetAttribute("*macrotext1", use .. "\n/use 16")
+            c:SetAttribute("*type2", "macro")
+            c:SetAttribute("*macrotext2", use .. "\n/use 17")
+        else
+            c:SetAttribute("*macrotext1", use)
+        end
+    else
+        return false
+    end
+    c.row = row
+    c:ClearAllPoints()
+    c:SetAllPoints(row)
+    c:Show()
+    return true
 end
 
 local function makeRow(i)
@@ -365,7 +415,11 @@ local function makeRow(i)
     f.line:SetPoint("RIGHT", f.count, "LEFT", -6, 0)
     f.line:SetJustifyH("LEFT"); f.line:SetWordWrap(false)
     f:EnableMouse(true)
-    f:SetScript("OnEnter", function(self) self.hl:Show(); showTip(self) end)
+    f:SetScript("OnEnter", function(self)
+        -- with an action, the secure button takes over the hover (and the tooltip)
+        if bindCatcher(self) then return end
+        self.hl:Show(); showTip(self)
+    end)
     f:SetScript("OnLeave", function(self) self.hl:Hide(); GameTooltip:Hide() end)
     rows[i] = f
     return f
@@ -422,6 +476,12 @@ local function render()
     for i = nh + 1, #heads do heads[i]:Hide() end
     child:SetHeight(math.max(1, y))
     note:SetShown(nr == 0)
+    -- the rows were just refilled: the click button follows what is under
+    -- the mouse now, or goes
+    if catcher and catcher.row and not InCombatLockdown() then
+        local r = catcher.row
+        if not (r:IsShown() and r:IsMouseOver() and bindCatcher(r)) then dropCatcher() end
+    end
 end
 
 local pending
@@ -466,7 +526,7 @@ local function build()
     rolePick = UI:CreateDropdown(win, {
         label = L["Role"], width = W - 2 * PAD, values = R.ROLES,
         get = function() return R.Role() end,
-        set = function(_, v) setRole(v); render() end,
+        set = function(_, v) R.SetRole(v); render() end,
     })
     rolePick:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -50)
 
@@ -487,12 +547,14 @@ local function build()
 
     win:SetScript("OnEvent", function(_, ev, unit)
         if ev == "UNIT_AURA" and unit ~= "player" then return end
+        -- the last moment protected changes are allowed: no click button in a fight
+        if ev == "PLAYER_REGEN_DISABLED" then dropCatcher() end
         queue()
     end)
     win:SetScript("OnShow", function(self)
         for _, ev in ipairs({ "UNIT_AURA", "BAG_UPDATE_DELAYED", "WEAPON_ENCHANT_CHANGED",
                               "PLAYER_EQUIPMENT_CHANGED", "GET_ITEM_INFO_RECEIVED", "SPELL_DATA_LOAD_RESULT",
-                              "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "PLAYER_REGEN_DISABLED" }) do
+                              "PLAYER_LEVEL_UP", "GROUP_ROSTER_UPDATE", "PLAYER_REGEN_ENABLED", "PLAYER_REGEN_DISABLED" }) do
             self:RegisterEvent(ev)
         end
         self.ticker = C_Timer.NewTicker(5, queue)   -- the minutes count down
@@ -500,6 +562,7 @@ local function build()
         render()
     end)
     win:SetScript("OnHide", function(self)
+        dropCatcher()
         self:UnregisterAllEvents()
         if self.ticker then self.ticker:Cancel(); self.ticker = nil end
     end)

@@ -141,6 +141,13 @@ These apply to every visible change, in every module.
   client's own subclass names. Display only, no clicks. An item counts as
   active when an aura of its use-spell's name is up; food shows "Well Fed".
   Unreadable auras (combat) say so, never "active".
+- **Clicks in the list:** the rows are never secure. One secure button
+  (`VFUI_ReminderCatalogClick`) lays itself over the hovered row out of
+  combat and is dropped at `PLAYER_REGEN_DISABLED`, on hide and on every
+  redraw that moves the row. Weapon items: left = main hand, right = off hand.
+- **Consumable reminders** (row): per flask/elixir/food chain of the role,
+  only when a usable rank is in the bags and none is on you; food = Well Fed.
+  Default: dungeons and raids only.
 - Recommendations come from `Supplies.lua`: chains of ranks, best first, with
   required levels — every item and spell ID checked against the client's
   item/spell tables, never typed from memory. The role is picked per

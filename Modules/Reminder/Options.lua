@@ -93,6 +93,11 @@ function mod:GetOptions()
         end
     end
 
+    o[#o + 1] = { type = "header", text = L["Consumables"] }
+    o[#o + 1] = flag("consumables", L["Remind about flasks, elixirs and food"],
+        L["Shows an icon when a flask, elixir or Well Fed food that suits your role is in your bags but not on you. A click uses it. The role is the one picked in Possible buffs."])
+    o[#o + 1] = flag("consumablesInstances", L["Only in dungeons and raids"])
+
     o[#o + 1] = { type = "header", text = L["Tracked spells"] }
     o[#o + 1] = flag("camp", R.SpellName(R.CAMP) or L["Campfire buff"],
         L["Shows whenever the campfire buff is missing."])

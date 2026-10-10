@@ -43,6 +43,9 @@ jemand ohne den Code prüfen kann.
 | F-22 | „Chat kopieren“ zeigt den Text | Chat | bestätigt | – |
 | F-23 | Fenster „Mögliche Buffs“ mit Empfehlungen pro Rolle | Erinnerungen | gebaut | – |
 | F-24 | Eigene DoTs auf Namensplaketten, auch ohne Plakettenkennung (PvP und PvE) | Namensplaketten | gebaut | – |
+| F-25 | Mögliche Buffs: wer in der Gruppe den Buff geben kann | Erinnerungen | gebaut | – |
+| F-26 | Erinnerung an Fläschchen, Elixier und Essen aus den Taschen | Erinnerungen | gebaut | – |
+| F-27 | Mögliche Buffs anklickbar (wirken / benutzen) | Erinnerungen | gebaut | – |
 
 ---
 
@@ -126,6 +129,20 @@ jemand ohne den Code prüfen kann.
 - Angenommen „Alle eigenen Debuffs“ ist an (Standard), **wenn** du einem gegnerischen Spieler (Schlachtfeld, Duell, Weltkampf) oder einem NPC deinen DoT gibst, **dann** erscheint er sofort auf seiner Plakette mit Restzeit und verschwindet, wenn er ausläuft.
 - **Dann** stehen die DoTs anderer Spieler dort nicht (außer „Alle Debuffs anzeigen“ ist an).
 - **Wenn** du „Alle eigenen Debuffs“ ausschaltest, **dann** zeigt die Plakette nur noch die Debuffs, die das Spiel für Plaketten markiert.
+
+### F-25 Wer kann mir das geben
+- Angenommen du bist in einer Gruppe, **dann** stehen unter „Von anderen Klassen“ zuerst die Buffs, die jemand in der Gruppe geben kann; die übrigen stehen unten, blass, mit „Niemand in deiner Gruppe“. Allein ist nichts blass.
+- **Wenn** jemand der Gruppe beitritt oder sie verlässt, **dann** ordnet sich die Liste sofort neu.
+
+### F-26 Erinnerung an Verbrauchsgüter
+- Angenommen du bist in einem Dungeon, hast ein für deine Rolle passendes Elixier in den Taschen und keins aktiv, **dann** zeigt die Erinnerungsleiste dessen Symbol; ein Linksklick trinkt es, danach verschwindet das Symbol.
+- Angenommen du hast nur Essen ohne „Satt“-Wirkung oder gar nichts Passendes dabei, **dann** erscheint kein Symbol.
+- **Wenn** „Nur in Dungeons und Schlachtzügen“ aus ist, **dann** gilt das auch in der offenen Welt.
+
+### F-27 Mögliche Buffs anklickbar
+- **Wenn** du außerhalb des Kampfs im Fenster auf deinen eigenen Zauber klickst, **dann** wirkst du ihn; auf ein Elixier, Essen, einen Trank oder eine Rolle in den Taschen, **dann** wird es benutzt.
+- **Wenn** du auf Gift, Öl oder Stein klickst, **dann** kommt es links auf die Waffenhand, rechts auf die Schildhand.
+- Angenommen du bist im Kampf, **dann** tut ein Klick nichts und es kommt kein Fehler.
 
 ---
 

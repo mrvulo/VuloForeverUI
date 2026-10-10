@@ -45,6 +45,8 @@ local mod = ns:RegisterModule("reminders", {
         enabled     = true,
         buffs       = true,
         weapons     = true,
+        consumables = true,     -- flasks, elixirs, food from the bags (Supplies.lua)
+        consumablesInstances = true,  -- ... only in dungeons and raids
         camp        = false,    -- the campfire buff; opt-in, it is missing most of the time
         customIDs   = {},       -- spell IDs the user tracks, in the order added
         warnMinutes = 0,        -- 0 = only when missing
@@ -189,6 +191,11 @@ local function whereAllowed()
     if kind == "raid" then return where.raid ~= false end
     if kind == "pvp" or kind == "arena" then return where.pvp == true end
     return where.world ~= false
+end
+
+local function inInstance()
+    local _, kind = IsInInstance()
+    return kind == "party" or kind == "raid" or kind == "scenario"
 end
 
 local function suppressed()
@@ -346,6 +353,11 @@ function R.Collect(all)
         end
     end
 
+    -- flasks, elixirs and food the role wants and the bags hold
+    if db.consumables and (all or not db.consumablesInstances or inInstance()) then
+        for _, it in ipairs(R.ConsumableReminders(all, aurasOk)) do add(items, it, all) end
+    end
+
     if aurasOk or all then
         local tracked = {}
         if db.camp then tracked[1] = R.CAMP end
@@ -420,6 +432,7 @@ function mod:OnEnable()
     self:RegisterEvent("UNIT_ENTERED_VEHICLE", mine)
     self:RegisterEvent("UNIT_EXITED_VEHICLE", mine)
     self:RegisterEvent("BAG_UPDATE_DELAYED", function() onBags(); queue() end)
+    self:RegisterEvent("PLAYER_LEVEL_UP", queue)
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function() wipe(R.dismissed); queue() end)
     for _, ev in ipairs({ "PLAYER_REGEN_ENABLED", "PLAYER_EQUIPMENT_CHANGED", "WEAPON_ENCHANT_CHANGED",
                           "SPELLS_CHANGED", "PLAYER_UPDATE_RESTING", "ZONE_CHANGED_NEW_AREA",

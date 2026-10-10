@@ -16,6 +16,7 @@
 --   weapon   "edge" / "blunt": only for that kind of main-hand weapon
 --   from     not before this character level (end-game items with no level)
 local _, ns = ...
+local L = ns.L
 local R = ns.Reminder
 
 R.ROLES = {
@@ -157,3 +158,123 @@ R.WORLD_BUFFS = {
     { ids = { 22818 } },    -- Mol'dar's Moxie
     { ids = { 22820 }, roles = set(C, H) },       -- Slip'kik's Savvy
 }
+
+-- ---------------------------------------------------------------- role --
+
+local function charDB()
+    local c = _G.VuloForeverUICharDB
+    return type(c) == "table" and c or nil
+end
+
+-- The role picked in the "Possible buffs" window, per character; the class
+-- guess until the player picks one.
+function R.Role()
+    local c = charDB()
+    local v = c and c.reminderRole
+    for _, r in ipairs(R.ROLES) do if r.value == v then return v end end
+    return R.ROLE_DEFAULT[R.class] or "melee"
+end
+
+function R.SetRole(v)
+    local c = charDB()
+    if c then c.reminderRole = v end
+    R.Queue()
+end
+
+-- ---------------------------------------------------------------- matching --
+
+local NO_MANA = { WARRIOR = true, ROGUE = true }
+
+function R.MainHandKind()
+    local id = GetInventoryItemID("player", 16)
+    if not id then return nil end
+    local _, _, _, _, _, classID, subID = C_Item.GetItemInfoInstant(id)
+    if classID ~= Enum.ItemClass.Weapon then return nil end
+    local WS = Enum.ItemWeaponSubclass
+    if subID == WS.Mace1H or subID == WS.Mace2H or subID == WS.Staff then return "blunt" end
+    return "edge"
+end
+
+function R.SupplyContext()
+    return { level = UnitLevel("player") or 1, weapon = R.MainHandKind() }
+end
+
+-- Does an entry (supply chain, group buff) apply to this character and role?
+function R.SupplyFits(e, role, ctx)
+    if e.roles and not e.roles[role] then return false end
+    if e.mana and NO_MANA[R.class] then return false end
+    if e.class and not e.class[R.class] then return false end
+    if e.noClass and e.noClass[R.class] then return false end
+    if e.from and ctx.level < e.from then return false end
+    if e.weapon and ctx.weapon and e.weapon ~= ctx.weapon then return false end
+    return true
+end
+
+-- The best rank this level may use; nil when none.
+function R.BestRank(items, level)
+    for _, it in ipairs(items) do
+        if it[2] <= level then return it[1] end
+    end
+end
+
+-- ---------------------------------------------------------------- reminders --
+--
+-- The reminder row's consumables: per flask, elixir and food chain of the
+-- role, an icon when none of its ranks is on you AND you carry one the level
+-- allows -- a reminder about something not in the bags could not be acted
+-- on. A click uses the best rank you carry. Food counts as on you while
+-- "Well Fed" is up, whatever was eaten.
+
+local CONSUMABLE = { flask = "Flask", elixir = "Elixir", food = "Food" }
+local WELL_FED = 19705
+
+-- Only called with readable auras (Core.lua checks); an aura that is secret
+-- on its own counts as present, a false "missing" is the worse mistake.
+local function auraUp(name)
+    if not name then return false end
+    local aura = C_UnitAuras.GetAuraDataBySpellName("player", name, "HELPFUL")
+    if type(aura) ~= "table" then return false end
+    return true
+end
+
+local function chainActive(c)
+    if c.cat == "food" then return auraUp(R.SpellName(WELL_FED)) end
+    for _, it in ipairs(c.items) do
+        local name = C_Item.GetItemSpell(it[1])
+        if name then
+            if auraUp(name) then return true end
+        else
+            C_Item.RequestLoadItemDataByID(it[1])
+        end
+    end
+    return false
+end
+
+-- all = the preview's question (every chain, due or not); aurasOk = the
+-- auras may be read right now.
+function R.ConsumableReminders(all, aurasOk)
+    local out = {}
+    local role, ctx = R.Role(), R.SupplyContext()
+    for _, c in ipairs(R.SUPPLIES) do
+        if CONSUMABLE[c.cat] and R.SupplyFits(c, role, ctx) then
+            local pick
+            for _, it in ipairs(c.items) do
+                if it[2] <= ctx.level and (C_Item.GetItemCount(it[1]) or 0) > 0 then pick = it[1]; break end
+            end
+            local shown = pick or (all and R.BestRank(c.items, ctx.level))
+            if shown then
+                out[#out + 1] = {
+                    key    = "cons:" .. c.items[1][1],
+                    icon   = C_Item.GetItemIconByID(shown),
+                    itemID = shown,
+                    short  = L[CONSUMABLE[c.cat]],
+                    line   = L["Not active"],
+                    hint   = pick and L["Left click: use"] or nil,
+                    macro  = pick and ("/use item:" .. pick) or nil,
+                    due    = aurasOk and pick ~= nil and not chainActive(c),
+                }
+            end
+        end
+    end
+    return out
+end
