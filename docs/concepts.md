@@ -131,8 +131,10 @@ These apply to every visible change, in every module.
   required levels — every item and spell ID checked against the client's
   item/spell tables, never typed from memory. The role is picked per
   character in the window (Forever does not reliably name a spec); the class
-  gives the first guess. Paladin buffs only for Alliance, shaman only for
-  Horde (classic faction lock — change if Forever lifts it).
+  gives the first guess. Group buffs of every class are listed for both
+  factions (the player's call, 2026-10-10). A spell name the client has not
+  loaded yet is requested (`SPELL_DATA_LOAD_RESULT` redraws) and noted once
+  in the diag log as `reminders`.
 
 ## Quality of Life (`Modules/QoL/`)
 

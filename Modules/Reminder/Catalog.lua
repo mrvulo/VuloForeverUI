@@ -34,6 +34,7 @@ local GREEN, GREY, GOLD = { 0.35, 0.85, 0.35 }, { 0.6, 0.6, 0.6 }, { 1, 0.82, 0 
 
 local win, scroll, child, note, rolePick
 local rows, heads = {}, {}
+local notedMissing
 
 -- ---------------------------------------------------------------- role --
 
@@ -223,19 +224,29 @@ local function collect()
     -- from other classes
     local faction = UnitFactionGroup("player")
     local names = _G.LOCALIZED_CLASS_NAMES_MALE or {}
-    local others = {}
+    local others, missing = {}, {}
     for _, b in ipairs(R.GROUP_BUFFS) do
         if b.class ~= R.class and (not b.faction or b.faction == faction) and fits(b, role, ctx) then
             local name = R.SpellName(b.ids[1])
-            if name then
+            if not name then
+                -- not loaded yet (SPELL_DATA_LOAD_RESULT redraws); noted once
+                -- in the diag log in case this client does not know the ID
+                C_Spell.RequestLoadSpellData(b.ids[1])
+                missing[#missing + 1] = b.ids[1]
+            end
+            do
                 local line, color = status(auraAny(b.ids))
                 local who = names[b.class] or b.class
                 local cc = C_ClassColor.GetClassColor(b.class)
                 if cc then who = cc:WrapTextInColorCode(who) end
                 others[#others + 1] = { icon = C_Spell.GetSpellTexture(b.ids[1]), spell = b.ids[1],
-                    name = name, line = line, color = color, count = who }
+                    name = name or "…", line = line, color = color, count = who }
             end
         end
+    end
+    if #missing > 0 and not notedMissing then
+        notedMissing = true
+        ns.Diag.Note("reminders", "group buff spells without a name: " .. table.concat(missing, ", "))
     end
     if #others > 0 then head(L["From other classes"]); addAll(others) end
 
@@ -480,7 +491,7 @@ local function build()
     end)
     win:SetScript("OnShow", function(self)
         for _, ev in ipairs({ "UNIT_AURA", "BAG_UPDATE_DELAYED", "WEAPON_ENCHANT_CHANGED",
-                              "PLAYER_EQUIPMENT_CHANGED", "GET_ITEM_INFO_RECEIVED",
+                              "PLAYER_EQUIPMENT_CHANGED", "GET_ITEM_INFO_RECEIVED", "SPELL_DATA_LOAD_RESULT",
                               "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "PLAYER_REGEN_DISABLED" }) do
             self:RegisterEvent(ev)
         end

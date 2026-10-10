@@ -122,7 +122,7 @@ R.SUPPLIES = {
 }
 
 -- Buffs other classes give. Recognised by name like the class buffs, so the
--- group and greater versions count too. faction: the class exists only there.
+-- group and greater versions count too.
 R.GROUP_BUFFS = {
     { class = "DRUID",   ids = { 1126, 21849 } },                         -- Mark / Gift of the Wild
     { class = "DRUID",   ids = { 467 }, roles = set(T) },                 -- Thorns
@@ -132,16 +132,16 @@ R.GROUP_BUFFS = {
     { class = "PRIEST",  ids = { 14752, 27681 }, mana = true },           -- Divine Spirit
     { class = "PRIEST",  ids = { 976, 27683 } },                          -- Shadow Protection
     { class = "MAGE",    ids = { 1459, 23028 }, mana = true },            -- Arcane Intellect
-    { class = "PALADIN", faction = "Alliance", ids = { 20217, 25898 } },  -- Kings
-    { class = "PALADIN", faction = "Alliance", ids = { 19740, 25782 }, roles = set(M, RA, T) },     -- Might
-    { class = "PALADIN", faction = "Alliance", ids = { 19742, 25894 }, mana = true },               -- Wisdom
-    { class = "PALADIN", faction = "Alliance", ids = { 1038, 25895 }, roles = set(M, RA, C, H) },   -- Salvation
-    { class = "PALADIN", faction = "Alliance", ids = { 19977, 25890 }, roles = set(T) },            -- Light
-    { class = "PALADIN", faction = "Alliance", ids = { 20911, 25899 }, roles = set(T) },            -- Sanctuary
-    { class = "PALADIN", faction = "Alliance", ids = { 465 }, roles = set(M, T) },                  -- Devotion Aura
-    { class = "SHAMAN",  faction = "Horde", ids = { 8076 }, roles = set(M, T) },                    -- Strength of Earth
-    { class = "SHAMAN",  faction = "Horde", ids = { 8836 }, roles = set(M, RA, T) },                -- Grace of Air
-    { class = "SHAMAN",  faction = "Horde", ids = { 5677 }, mana = true },                          -- Mana Spring
+    { class = "PALADIN", ids = { 20217, 25898 } },  -- Kings
+    { class = "PALADIN", ids = { 19740, 25782 }, roles = set(M, RA, T) },     -- Might
+    { class = "PALADIN", ids = { 19742, 25894 }, mana = true },               -- Wisdom
+    { class = "PALADIN", ids = { 1038, 25895 }, roles = set(M, RA, C, H) },   -- Salvation
+    { class = "PALADIN", ids = { 19977, 25890 }, roles = set(T) },            -- Light
+    { class = "PALADIN", ids = { 20911, 25899 }, roles = set(T) },            -- Sanctuary
+    { class = "PALADIN", ids = { 465 }, roles = set(M, T) },                  -- Devotion Aura
+    { class = "SHAMAN",  ids = { 8076 }, roles = set(M, T) },                    -- Strength of Earth
+    { class = "SHAMAN",  ids = { 8836 }, roles = set(M, RA, T) },                -- Grace of Air
+    { class = "SHAMAN",  ids = { 5677 }, mana = true },                          -- Mana Spring
     { class = "WARRIOR", ids = { 6673 }, roles = set(M, T) },             -- Battle Shout
     { class = "HUNTER",  ids = { 19506 }, roles = set(M, RA) },           -- Trueshot Aura
     { class = "WARLOCK", ids = { 6307 } },                                -- Blood Pact (imp)

@@ -118,7 +118,7 @@ jemand ohne den Code prüfen kann.
 - Angenommen ein Buff ist auf dir (z. B. ein Elixier, „Satt“, Arkane Intelligenz), **dann** steht darunter grün „Aktiv · 25 Min.“; sonst grau „Nicht aktiv“. Trinkst du etwas, solange das Fenster offen ist, wechselt die Zeile von selbst.
 - **Dann** zeigt Maus drüber den Tooltip; Escape oder das X schließt; das Fenster lässt sich ziehen.
 - **Wenn** du oben die Rolle wechselst (Nahkampf-, Fernkampf-, Zauberschaden, Heiler, Tank), **dann** wechseln sofort die Empfehlungen: je Kategorie der beste Rang, den deine Stufe erlaubt (Stufe 20 sieht Stufe-20-Sachen), gold „Empfohlen · in den Taschen“ oder grau „nicht in den Taschen“.
-- **Dann** stehen unter „Von anderen Klassen“ die Gruppenbuffs für deine Rolle mit Klassennamen in Klassenfarbe (Paladin nur Allianz, Schamane nur Horde); ab Stufe 55 kommen die Weltbuffs dazu.
+- **Dann** stehen unter „Von anderen Klassen“ die Gruppenbuffs für deine Rolle mit Klassennamen in Klassenfarbe — Ausdauer, Mal der Wildnis, Könige, Macht usw., für beide Fraktionen; ab Stufe 55 kommen die Weltbuffs dazu.
 - Angenommen ein Schurke, **dann** werden Sofort- und Tödliches Gift empfohlen. Jede Nahkampf- und Tankrolle (auch Schamane) bekommt Elementarwetzstein und Wetzstein, mit Streitkolben oder Stab Gewichtsstein statt Wetzstein.
 
 ---
