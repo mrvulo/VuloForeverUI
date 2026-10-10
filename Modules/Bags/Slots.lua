@@ -562,6 +562,21 @@ local function applyLook(slot, standard)
     end
 end
 
+-- The cooldown swirl, driven by the client's own numbers. On its own as
+-- well: a cooldown starting needs only this, not the whole slot.
+function Slots.PaintCooldown(slot, bagID, slotID)
+    local button = slot.button
+    local cd = button.Cooldown or button.cooldown
+    if not cd then return end
+    local start, duration, enable = C_Container.GetContainerItemCooldown(bagID, slotID)
+    if type(start) == "number" and type(duration) == "number" then
+        pcall(cd.SetCooldown, cd, start, duration)
+        cd:SetShown((enable or 0) ~= 0 and duration > 0)
+    else
+        pcall(cd.Clear, cd)
+    end
+end
+
 function Slots.Paint(slot, bagID, slotID, info)
     local db = Bags.db()
     local button, frame = slot.button, slot.frame
@@ -730,17 +745,7 @@ function Slots.Paint(slot, bagID, slotID, info)
         or (ns.Junk and ns.Junk.IsMarked(info.itemID)))
     callSetter(button, "SetItemButtonDesaturated", (db.dimJunk and isJunk) and true or false)
 
-    -- The cooldown swirl, driven by the client's own numbers.
-    local cd = button.Cooldown or button.cooldown
-    if cd then
-        local start, duration, enable = C_Container.GetContainerItemCooldown(bagID, slotID)
-        if type(start) == "number" and type(duration) == "number" then
-            pcall(cd.SetCooldown, cd, start, duration)
-            cd:SetShown((enable or 0) ~= 0 and duration > 0)
-        else
-            pcall(cd.Clear, cd)
-        end
-    end
+    Slots.PaintCooldown(slot, bagID, slotID)
 
     -- The item level, on gear only.
     if db.showItemLevel and info and Bags.Categories.IsGear(info) then

@@ -690,6 +690,9 @@ function Window.Layout(win)
     Bags.Slots.Begin(win.key)
     win.placed = win.placed or {}
     wipe(win.placed)
+    -- [bag][slot] -> its placed entry, for repainting one slot
+    win.placedAt = win.placedAt or {}
+    for _, t in pairs(win.placedAt) do wipe(t) end
     -- The second header row carries the search field and the tool buttons, so
     -- it is reserved while either is on. Asked the same way the field itself
     -- is shown (search ~= false): a nil setting meant a field on screen with no
@@ -754,7 +757,11 @@ function Window.Layout(win)
             Bags.Slots.ApplyMode(slot, entry.bag, entry.slot, entry.info)
             local filtered = not matches(entry, win.filter) or Bags.Context.Fades(entry.info)
             Bags.Slots.SetFiltered(slot, filtered)
-            win.placed[#win.placed + 1] = { slot = slot, bag = entry.bag, slotID = entry.slot, filtered = filtered }
+            local rec = { slot = slot, bag = entry.bag, slotID = entry.slot, filtered = filtered }
+            win.placed[#win.placed + 1] = rec
+            local at = win.placedAt[entry.bag]
+            if not at then at = {}; win.placedAt[entry.bag] = at end
+            at[entry.slot] = rec
 
             column = column + 1
             if column >= columns then
@@ -946,6 +953,27 @@ function Window.Repaint(win)
     end
 end
 
+-- One slot only: an item locked or unlocked (picked up, dropped, traded).
+-- False when the slot is not drawn on its own (a merged stack, another
+-- view) -- the caller then repaints the window.
+function Window.RepaintSlot(win, bag, slotID)
+    if not (win.frame and win.frame:IsShown() and win.placedAt) then return true end
+    local at = win.placedAt[bag]
+    if not at then return true end          -- a bag this window does not show
+    local rec = at[slotID]
+    if not rec then return false end
+    Bags.Slots.Paint(rec.slot, bag, slotID, C_Container.GetContainerItemInfo(bag, slotID))
+    return true
+end
+
+-- Only the swirls: what a cooldown starting changes.
+function Window.RepaintCooldowns(win)
+    if not (win.frame and win.frame:IsShown() and win.placed) then return end
+    for _, placed in ipairs(win.placed) do
+        Bags.Slots.PaintCooldown(placed.slot, placed.bag, placed.slotID)
+    end
+end
+
 -- ---------------------------------------------------------------- factory --
 
 function Window.New(key, bagsFn)
@@ -1010,6 +1038,14 @@ function Window.New(key, bagsFn)
 
     function win.Repaint()
         Window.Repaint(win)
+    end
+
+    function win.RepaintSlot(bag, slotID)
+        return Window.RepaintSlot(win, bag, slotID)
+    end
+
+    function win.RepaintCooldowns()
+        Window.RepaintCooldowns(win)
     end
 
     function win.IsShown()

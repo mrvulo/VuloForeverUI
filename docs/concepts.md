@@ -93,7 +93,9 @@ These apply to every visible change, in every module.
   a loading screen (`win.Prepare`) — the first open used to hitch ~250 ms.
   Bag slots are read through the one shared `ns.BagSlotLocation`; never
   create an ItemLocation per slot (it copies the whole mixin). Measure with
-  `/vfuiprof` before and after any change for speed.
+  `/vfuiprof` before and after any change for speed. A lock repaints only
+  its slot (`Bags.RepaintSlot`), a cooldown only the swirls
+  (`Bags.RepaintCooldowns`); the whole repaint is the fallback.
 - **Client tutorials** that wait for the client's bag frame (reagent bag step
   1 and 2) are faded out while the takeover is on (`Tutorials.lua`).
 

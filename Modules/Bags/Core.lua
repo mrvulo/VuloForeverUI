@@ -221,6 +221,43 @@ function Bags.Repaint()
     end)
 end
 
+-- Single slots and cooldowns, collected over a frame like the rest.
+local slotQueue, slotsPending = {}, false
+local cooldownsPending = false
+
+function Bags.RepaintSlot(bag, slot)
+    local t = slotQueue[bag]
+    if not t then t = {}; slotQueue[bag] = t end
+    t[slot] = true
+    if slotsPending then return end
+    slotsPending = true
+    ns.NextFrame(function()
+        slotsPending = false
+        if not mod.active then for _, q in pairs(slotQueue) do wipe(q) end; return end
+        local whole = false
+        for b, q in pairs(slotQueue) do
+            for sl in pairs(q) do
+                local okW = not Bags.Window or Bags.Window.RepaintSlot(b, sl)
+                local okB = not Bags.Bank or Bags.Bank.RepaintSlot(b, sl)
+                if not (okW and okB) then whole = true end
+            end
+            wipe(q)
+        end
+        if whole then Bags.Repaint() end
+    end)
+end
+
+function Bags.RepaintCooldowns()
+    if cooldownsPending then return end
+    cooldownsPending = true
+    ns.NextFrame(function()
+        cooldownsPending = false
+        if not mod.active then return end
+        if Bags.Window then Bags.Window.RepaintCooldowns() end
+        if Bags.Bank then Bags.Bank.RepaintCooldowns() end
+    end)
+end
+
 -- On the record (/vfdiag) when the client takes the mouse off a slot that
 -- the mouse is still over -- the tooltip blinking out -- together with how
 -- long ago our last layout and repaint ran. A few per session are enough.
@@ -275,7 +312,12 @@ function mod:OnEnable()
     end)
     -- What only changed an ITEM gets a repaint. These two fire constantly --
     -- every cooldown that starts, twice for every item picked up.
-    self:RegisterEvent("ITEM_LOCK_CHANGED", function() Bags.Repaint() end)
+    -- Both go to the one thing they change: a lock to its slot, a cooldown
+    -- to the swirls. A whole repaint per potion read every slot's item info
+    -- again -- ~50 KB of garbage each time (/vfuiprof, 2026-10-10).
+    self:RegisterEvent("ITEM_LOCK_CHANGED", function(_, bag, slot)
+        if type(bag) == "number" and type(slot) == "number" then Bags.RepaintSlot(bag, slot) end
+    end)
     -- What is worn decides the upgrade arrows.
     self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function()
         Bags.Items.ForgetWorn()
@@ -286,7 +328,7 @@ function mod:OnEnable()
         Bags.Repaint()
     end)
     Bags.Context.Register(self)
-    self:RegisterEvent("BAG_UPDATE_COOLDOWN", function() Bags.Repaint() end)
+    self:RegisterEvent("BAG_UPDATE_COOLDOWN", function() Bags.RepaintCooldowns() end)
     -- A quest taken from an item: its "!" goes, though no bag changed.
     self:RegisterEvent("QUEST_ACCEPTED", function() Bags.Repaint() end)
 
