@@ -389,6 +389,11 @@ function UI:BuildOptionsPage(key, tabId)
     local gridMod  = (tabId and ns.modules and ns.modules[tabId]) or mod
     local wantGrid = gridMod.optionsGrid
     if type(wantGrid) == "table" then wantGrid = tabId and wantGrid[tabId] end
+    -- The grid is the house rule for every page (the player's call,
+    -- 2026-10-10): a setting alone on its line keeps its half, so every
+    -- switch and box sits on the same line as the ones above and below.
+    -- A page opts OUT with optionsGrid = false (or false for its tab).
+    if wantGrid == nil then wantGrid = true end
     UI._grid = nil
     local pw = parent:GetWidth()
     if not pw or pw < 100 then pw = 540 end

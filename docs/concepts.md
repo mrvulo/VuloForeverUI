@@ -21,6 +21,12 @@ These apply to every visible change, in every module.
   (10 px) on all sides, fixed gaps between columns, a minimum width that fits
   the header (title, money line, search field ≥ 140 px, every tool button).
   Text that does not fit is cut with an ellipsis, never drawn over a neighbour.
+- **One line for every control.** On every options page each switch,
+  dropdown and slider sits on the same vertical line as the ones above and
+  below — a setting alone on its row keeps its half of the two-column grid
+  instead of stretching across (the player's call, 2026-10-10). The grid is
+  the default (`UI/OptionsBuilder/Page.lua`); a page opts out only with
+  `optionsGrid = false`.
 - **Changes show at once.** A setting changed in the options updates the open
   window immediately (e.g. the bag view dropdown switches the open window).
 - **Calm at rest, colour on intent.** Unselected icons desaturated and dimmed,

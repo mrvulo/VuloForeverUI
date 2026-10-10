@@ -111,7 +111,8 @@ local function fitColumns(run, availW)
 end
 
 -- ---- strict grid, opt-in per page ---------------------------------------
--- A module sets `optionsGrid = true` and every compact row on its page becomes
+-- On by default for every page since 2026-10-10 (Page.lua); a module sets
+-- `optionsGrid = false` to leave it. With it, every compact row on a page becomes
 -- one half of a two-column grid -- INCLUDING a setting with no partner, which
 -- keeps its half and leaves the other empty instead of stretching across the
 -- page.
