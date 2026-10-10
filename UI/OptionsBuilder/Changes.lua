@@ -310,7 +310,7 @@ local function filterChanged(items)
     local out = {}
     for _, it in ipairs(items) do
         if type(it) == "table" then
-            if it.type == "section" or it.type == "group" then
+            if it.type == "section" or it.type == "group" or it.type == "card" then
                 if it._vcChangedInside then out[#out + 1] = it end
             elseif not FILTER_SKIP[it.type] and (it._vcChanged or it._vcChangedInside) then
                 out[#out + 1] = it

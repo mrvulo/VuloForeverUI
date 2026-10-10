@@ -158,7 +158,7 @@ jemand ohne den Code prüfen kann.
 - **Wenn** „Haltbarkeit“ an ist, **dann** zeigt jeder Platz mit Haltbarkeit seinen Prozentwert, gelb unter 50 %, rot unter 20 %.
 - **Wenn** „Werte-Abschnitte“ an ist, **dann** lassen sich die Abschnitte rechts per Klick auf den Titel ein- und ausklappen, und der Zustand bleibt nach /reload.
 - **Dann** wechselt jede Einstellung sofort im offenen Fenster, und im Kampf kommt kein Fehler (Einklappen wartet bis nach dem Kampf).
-- **Dann** zeigt die Optionsseite den Reiter „Fenster-Skins“ und die Abschnitte Stil, Fenster, Auf den Plätzen, Werte.
+- **Dann** zeigt die Optionsseite unter „Fenster-Skins“ je eine Karte für Charakterfenster, Betrachten-Fenster und Levelführer: Symbol, Titel, Beschreibung, rechts Aus/Standard/Modern, ein Pfeil klappt die Einstellungen der Karte auf.
 
 ### F-29 Schmuckstück-Raster
 - **Wenn** du mit der Maus auf einen Schmuck-Platz fährst, **dann** klappt ein Raster mit allen Schmuckstücken aus den Taschen auf, jedes mit seiner Abklingzeit; es schließt, sobald die Maus Platz und Raster verlässt.
@@ -169,7 +169,7 @@ jemand ohne den Code prüfen kann.
 - Angenommen die Warteschlange eines Platzes ist an, **wenn** du von Hand ein passives oder nicht gelistetes Schmuckstück anlegst (z. B. Reitgerte), **dann** bleibt es liegen; der Pfeil wird grau, bis du es wieder ablegst.
 
 ### F-30 Levelführer-Skin
-- Angenommen das Levelführer-Addon ist geladen und „Skins → Levelführer → Levelführer skinnen“ ist an, **dann** haben Guide-Fenster (Kopf, Schrittliste, Fußzeile) und die Kästen mit dem aktuellen Schritt samt „Step N“-Reiter den Tooltip-Rahmen des Spiels (Standard) bzw. flach dunkle Flächen mit dünnem Rand (Modern); keine hellen runden Rahmen mehr.
+- Angenommen das Levelführer-Addon ist geladen und die Karte „Levelführer“ steht auf Standard oder Modern, **dann** haben Guide-Fenster (Kopf, Schrittliste, Fußzeile) und die Kästen mit dem aktuellen Schritt samt „Step N“-Reiter den Tooltip-Rahmen des Spiels (Standard) bzw. flach dunkle Flächen mit dünnem Rand (Modern); keine hellen runden Rahmen mehr.
 - **Dann** ist der Scrollbalken im Standard-Stil der des Spiels, im Modern-Stil der schmale Balken unserer Fenster.
 - **Dann** ist der Wegpfeil gold (Standard) bzw. in der Akzentfarbe (Modern), und das Fenster „Active Targets“ samt Titel-Reiter hat denselben Rahmen; im Kampf neu geöffnet bekommt es ihn nach dem Kampf.
 - **Wenn** du über einen Schritt in der Liste fährst, **dann** hellt er sich leicht auf und wird beim Verlassen wieder dunkel.

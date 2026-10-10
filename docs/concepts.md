@@ -163,8 +163,13 @@ These apply to every visible change, in every module.
 - Slot text sides: left column → right, right column → left, main hand →
   left, off hand → above, ranged → right past the ammo slot. The inspect
   window is too narrow for weapon texts (ring and level only).
-- The settings page shows its single tab ("Window skins") via
-  `mod.tabsAlways`, so more skin kinds can join as tabs.
+- **Settings page = a list of cards** (the player's call, 2026-10-11): one
+  card per skin target (character window, inspect window, levelling guide)
+  with icon, title, one line of description, its look on the right (Off /
+  Standard / Modern) and an arrow that folds out its own settings. A new
+  skin target is a new card, never a new tab. Card type: `type = "card"` in
+  `UI/OptionsBuilder/Card.lua`. The tab "Window skins" shows alone via
+  `mod.tabsAlways`.
 
 - **Levelling guide** (`Guide.lua`, tab "Levelling guide"): a skin for the
   player's guide addon. Its frames are plain frames of that addon; our

@@ -281,6 +281,9 @@ placeItem = function(parent, item, y)
     if item.type == "section" then
         return placeSection(parent, item, y)
     end
+    if item.type == "card" then
+        return OB.placeCard(parent, item, y)
+    end
     if item.type == "header" then
         y = y - 12
         -- A plain heading at page level is a chapter too, on the pages that

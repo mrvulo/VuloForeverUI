@@ -78,6 +78,7 @@ UI\OptionsBuilder\Changes.lua
 UI\OptionsBuilder\Columns.lua
 UI\OptionsBuilder\Popup.lua
 UI\OptionsBuilder\Place.lua
+UI\OptionsBuilder\Card.lua
 UI\OptionsBuilder\Group.lua
 UI\OptionsBuilder\Reveal.lua
 UI\OptionsBuilder\Page.lua
