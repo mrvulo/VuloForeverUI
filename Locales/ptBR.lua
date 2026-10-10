@@ -1855,6 +1855,7 @@ ns:RegisterLocale("ptBR", {
     ["Solid color"] = "Cor sólida",
     ["Default"] = "Padrão",
     ["Spell ranks"] = "Graus de feitiço",
+    ["Hitches of %d ms or more: %d. Measured part and its biggest piece:"] = "Travadas de %d ms ou mais: %d. Parte medida e sua maior peça:",
     ["Frames over 10 / 50 / 100 ms this session: %d / %d / %d."] = "Quadros acima de 10 / 50 / 100 ms nesta sessão: %d / %d / %d.",
     ["Memory: %.0f KB now, %.0f KB at the start."] = "Memória: %.0f KB agora, %.0f KB no início.",
     ["Client: %.3f ms per frame on average, peak %.1f ms."] = "Cliente: %.3f ms por quadro em média, pico %.1f ms.",

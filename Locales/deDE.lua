@@ -1892,6 +1892,7 @@ ns:RegisterLocale("deDE", {
     ["Solid color"] = "Volle Farbe",
     ["Default"] = "Standard",
     ["Spell ranks"] = "Zauberränge",
+    ["Hitches of %d ms or more: %d. Measured part and its biggest piece:"] = "Ruckler ab %d ms: %d. Gemessener Anteil und sein größtes Stück:",
     ["Frames over 10 / 50 / 100 ms this session: %d / %d / %d."] = "Bilder über 10 / 50 / 100 ms in dieser Sitzung: %d / %d / %d.",
     ["Memory: %.0f KB now, %.0f KB at the start."] = "Speicher: jetzt %.0f KB, beim Start %.0f KB.",
     ["Client: %.3f ms per frame on average, peak %.1f ms."] = "Client: im Schnitt %.3f ms pro Bild, Spitze %.1f ms.",

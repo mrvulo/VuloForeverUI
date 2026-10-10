@@ -28,7 +28,21 @@ end
 -- of the same guarded call, because C_Timer is missing on the oldest clients we
 -- still load on -- there the work simply happens inline, which is what those
 -- copies did too.
+-- While /vfuiprof measures, the deferred work is billed too, under the file
+-- and line that asked for it -- a bag window laid out a frame later is still
+-- the bags' cost. Off, this is the plain call.
 function ns.NextFrame(fn)
+    if ns.Prof and ns.Prof.IsActive() then
+        local stack = (debugstack(2, 1, 0) or ""):gsub('"%]', "")
+        local where = stack:match("AddOns[/\\][^/\\]+[/\\]([^:]+:%d+)") or "next frame"
+        local inner = fn
+        fn = function()
+            local k0, t0 = collectgarbage("count"), debugprofilestop()
+            inner()
+            local dt = debugprofilestop() - t0
+            ns.Prof.Record(where, dt, collectgarbage("count") - k0)
+        end
+    end
     if C_Timer and C_Timer.After then C_Timer.After(0, fn) else fn() end
 end
 

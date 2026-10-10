@@ -1892,6 +1892,7 @@ ns:RegisterLocale("ruRU", {
     ["Solid color"] = "Сплошной цвет",
     ["Default"] = "По умолчанию",
     ["Spell ranks"] = "Ранги заклинаний",
+    ["Hitches of %d ms or more: %d. Measured part and its biggest piece:"] = "Подвисания от %d мс: %d. Измеренная часть и её крупнейший кусок:",
     ["Frames over 10 / 50 / 100 ms this session: %d / %d / %d."] = "Кадров дольше 10 / 50 / 100 мс за сеанс: %d / %d / %d.",
     ["Memory: %.0f KB now, %.0f KB at the start."] = "Память: сейчас %.0f КБ, в начале %.0f КБ.",
     ["Client: %.3f ms per frame on average, peak %.1f ms."] = "Клиент: в среднем %.3f мс на кадр, пик %.1f мс.",

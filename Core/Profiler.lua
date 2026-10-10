@@ -27,6 +27,10 @@ ns.Prof = {}
 
 -- kb: what the Lua heap grew by while the handler ran -- the garbage it made.
 -- A collection step in between can make it negative; that counts as 0.
+-- What ran since the hitch watcher last looked (about one frame): the sum,
+-- and the single biggest piece.
+local frameSum, frameTop, frameTopMs = 0, nil, 0
+
 function ns.Prof.Record(label, ms, kb)
     local d = data[label]
     if not d then d = { ms = 0, calls = 0, peak = 0, kb = 0 }; data[label] = d end
@@ -34,6 +38,28 @@ function ns.Prof.Record(label, ms, kb)
     d.calls = d.calls + 1
     if ms > d.peak then d.peak = ms end
     if kb and kb > 0 then d.kb = d.kb + kb end
+    frameSum = frameSum + ms
+    if ms > frameTopMs then frameTop, frameTopMs = label, ms end
+end
+
+-- ---------------------------------------------------------------- hitches --
+--
+-- Every frame in which the client billed us HITCH_MS or more, with what the
+-- measured parts did in it. A hitch whose measured part is small happened in
+-- code the dispatch does not see -- an OnUpdate script, a hook, a timer of
+-- one of our frames, or the garbage collector cleaning up after us.
+local HITCH_MS, MAX_HITCHES = 30, 40
+local hitches = {}
+local watcher = CreateFrame("Frame")
+
+local function watch()
+    local P, E = C_AddOnProfiler, Enum.AddOnProfilerMetric
+    local ok, last = pcall(P.GetAddOnMetric, ns.NAME, E.LastTime)
+    if ok and type(last) == "number" and last >= HITCH_MS and #hitches < MAX_HITCHES then
+        hitches[#hitches + 1] = { at = clock(), ms = last, sum = frameSum,
+            top = frameTop, topMs = frameTopMs, combat = InCombatLockdown() }
+    end
+    frameSum, frameTop, frameTopMs = 0, nil, 0
 end
 
 -- The addon's whole memory, in KB; nil when the client does not answer.
@@ -58,6 +84,7 @@ end
 
 function ns.Prof.Reset()
     data = {}
+    hitches = {}
     startedAt = clock()
     startKB = addonKB()
 end
@@ -69,6 +96,8 @@ function ns.Prof.SetActive(on)
     if on then ns.Prof.Reset() end
     if ns.SetEventProfiling  then ns:SetEventProfiling(on)  end
     if ns.SetTickerProfiling then ns:SetTickerProfiling(on) end
+    local P = _G.C_AddOnProfiler
+    watcher:SetScript("OnUpdate", (on and P and P.GetAddOnMetric) and watch or nil)
 end
 
 function ns.Prof.IsActive() return active end
@@ -124,6 +153,18 @@ function ns.Prof.Report()
         DEFAULT_CHAT_FRAME:AddMessage("|cffffd100" .. line .. "|r")
         -- the chat print above is not captured; the diag log keeps the table
         if ns.Diag then ns.Diag.Record(line) end
+    end
+    if #hitches > 0 then
+        ns:Print(L["Hitches of %d ms or more: %d. Measured part and its biggest piece:"], HITCH_MS, #hitches)
+        for i = 1, math.min(#hitches, 15) do
+            local h = hitches[i]
+            local line = string.format("  +%6.1f s  %6.1f ms  measured %5.1f ms  %s%s",
+                (h.at - startedAt) / 1000, h.ms, h.sum,
+                h.top and string.format("%s %.1f ms", h.top, h.topMs) or "-",
+                h.combat and "  [combat]" or "")
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff8080" .. line .. "|r")
+            if ns.Diag then ns.Diag.Record(line) end
+        end
     end
 end
 

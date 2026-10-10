@@ -1892,6 +1892,7 @@ ns:RegisterLocale("frFR", {
     ["Solid color"] = "Couleur unie",
     ["Default"] = "Par défaut",
     ["Spell ranks"] = "Rangs de sorts",
+    ["Hitches of %d ms or more: %d. Measured part and its biggest piece:"] = "Saccades de %d ms ou plus : %d. Part mesurée et son plus gros morceau :",
     ["Frames over 10 / 50 / 100 ms this session: %d / %d / %d."] = "Images au-delà de 10 / 50 / 100 ms cette session : %d / %d / %d.",
     ["Memory: %.0f KB now, %.0f KB at the start."] = "Mémoire : %.0f Ko maintenant, %.0f Ko au départ.",
     ["Client: %.3f ms per frame on average, peak %.1f ms."] = "Client : %.3f ms par image en moyenne, pic %.1f ms.",

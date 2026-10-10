@@ -85,12 +85,8 @@ function Marks.Acknowledge(bag, slot)
     Bags.Repaint()
 end
 
--- A GUID we may use as a table key: a plain string, or nothing. The shared
--- location: one new one per slot was most of the garbage the bags made
--- (/vfuiprof, 2026-10-10: 4 MB in eight minutes).
-local function readGuid(bag, slot)
-    local loc = ns.BagSlotLocation(bag, slot)
-    if not C_Item.DoesItemExist(loc) then return nil end
+-- A GUID we may use as a table key: a plain string, or nothing.
+local function readGuid(loc)
     local guid = C_Item.GetItemGUID(loc)
     if ns.IsSecret(guid) or type(guid) ~= "string" or guid == "" then return nil end
     return guid
@@ -118,13 +114,16 @@ function Marks.Scan()
     for _, bag in ipairs(ns.CarriedBags()) do
         local inBag = slots[bag]
         if not inBag then inBag = {}; slots[bag] = inBag end
+        -- Item ID and stack count straight from the slot, through the one
+        -- shared location: the info table the client builds per slot was the
+        -- rest of the garbage after the location objects were gone.
         for slot = 1, C_Container.GetContainerNumSlots(bag) or 0 do
-            local info = C_Container.GetContainerItemInfo(bag, slot)
-            local id = info and info.itemID
-            if type(id) == "number" then
-                local count = tonumber(info.stackCount) or 1
+            local id = C_Container.GetContainerItemID(bag, slot)
+            local loc = type(id) == "number" and ns.BagSlotLocation(bag, slot)
+            if loc and C_Item.DoesItemExist(loc) then
+                local count = tonumber(C_Item.GetStackCount(loc)) or 1
                 counts[id] = (counts[id] or 0) + count
-                local guid = readGuid(bag, slot)
+                local guid = readGuid(loc)
                 if guid then
                     inBag[slot] = guid
                     n = n + 1

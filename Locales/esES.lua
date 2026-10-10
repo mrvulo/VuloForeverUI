@@ -1892,6 +1892,7 @@ local T = {
     ["Solid color"] = "Color sólido",
     ["Default"] = "Por defecto",
     ["Spell ranks"] = "Rangos de hechizo",
+    ["Hitches of %d ms or more: %d. Measured part and its biggest piece:"] = "Tirones de %d ms o más: %d. Parte medida y su mayor pieza:",
     ["Frames over 10 / 50 / 100 ms this session: %d / %d / %d."] = "Fotogramas por encima de 10 / 50 / 100 ms en esta sesión: %d / %d / %d.",
     ["Memory: %.0f KB now, %.0f KB at the start."] = "Memoria: %.0f KB ahora, %.0f KB al inicio.",
     ["Client: %.3f ms per frame on average, peak %.1f ms."] = "Cliente: %.3f ms por fotograma de media, pico %.1f ms.",
