@@ -1,8 +1,9 @@
 -- VuloForeverUI / Modules / Skins / Guide
 --
 -- A skin for the levelling-guide addon the player runs: its guide window
--- (header, step list, footer, scrollbar) and the floating "current step"
--- boxes above it, in two looks:
+-- (header, step list, footer, scrollbar), the floating "current step"
+-- boxes above it, the waypoint arrow and the "Active Targets" window, in two
+-- looks:
 --
 --   Standard  the game's own tooltip frame: dark ground, the classic border
 --   Modern    flat dark panels with a one-pixel edge, like our own windows
@@ -73,8 +74,16 @@ local function recolor(f)
     painting = false
 end
 
+local deferred = false
+
 local function skin(f)
     if not (f and f.SetBackdrop) then return end
+    -- a frame holding secure buttons (the target window) waits for the
+    -- fight to end; PLAYER_REGEN_ENABLED runs the pass again
+    if InCombatLockdown() and f.IsProtected and f:IsProtected() then
+        deferred = true
+        return
+    end
     local name = db().style
     if skinned[f] == name then return end
     skinned[f] = name
@@ -103,6 +112,29 @@ local function pools()
     return list, cur
 end
 
+-- The waypoint arrow: one picture that only turns. Grey first, then tinted
+-- in the look's colour: gold for Standard, the accent for Modern.
+local function arrow()
+    local a = _G.RXPG_ARROW
+    local t = a and a.texture
+    if not (t and t.SetDesaturated) then return end
+    t:SetDesaturated(true)
+    if db().style == "modern" then
+        local ac = ns.COLORS.accent
+        t:SetVertexColor(ac.r, ac.g, ac.b, 1)
+    else
+        t:SetVertexColor(1, 0.82, 0, 1)
+    end
+end
+
+-- The "Active Targets" window and its title tab, made on demand by the guide.
+local function targets()
+    local f = _G.RXPTargetFrame
+    if not f then return end
+    skin(f)
+    if f.title then skin(f.title) end
+end
+
 local function skinPools()
     if not active() then return end
     local list, cur = pools()
@@ -111,6 +143,7 @@ local function skinPools()
         skin(f)
         if f.number then skin(f.number) end
     end
+    targets()
 end
 
 -- Banner art the guide draws behind its header and footer.
@@ -155,6 +188,7 @@ local function skinStatic()
     skin(main.Footer)
     banners(true)
     scrollbar()
+    arrow()
     skinPools()
 end
 
@@ -171,6 +205,8 @@ local function setup()
     local body = main.BottomFrame
     if body and body.UpdateFrame then hooksecurefunc(body, "UpdateFrame", skinPools) end
     if body and body.StepScroll then hooksecurefunc(body, "StepScroll", skinPools) end
+    local a = _G.RXPG_ARROW
+    if a and a.UpdateVisuals then hooksecurefunc(a, "UpdateVisuals", function() if active() then arrow() end end) end
     Guide.Apply()
 end
 
@@ -182,6 +218,9 @@ function Guide.Enable(mod)
     if Guide.Installed() then setup() end
     mod:RegisterEvent("ADDON_LOADED", function(_, name)
         if name == ADDON then ns.NextFrame(setup) end
+    end)
+    mod:RegisterEvent("PLAYER_REGEN_ENABLED", function()
+        if deferred and active() then deferred = false; skinStatic() end
     end)
 end
 

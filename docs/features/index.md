@@ -171,6 +171,7 @@ jemand ohne den Code prüfen kann.
 ### F-30 Levelführer-Skin
 - Angenommen das Levelführer-Addon ist geladen und „Skins → Levelführer → Levelführer skinnen“ ist an, **dann** haben Guide-Fenster (Kopf, Schrittliste, Fußzeile) und die Kästen mit dem aktuellen Schritt samt „Step N“-Reiter den Tooltip-Rahmen des Spiels (Standard) bzw. flach dunkle Flächen mit dünnem Rand (Modern); keine hellen runden Rahmen mehr.
 - **Dann** ist der Scrollbalken im Standard-Stil der des Spiels, im Modern-Stil der schmale Balken unserer Fenster.
+- **Dann** ist der Wegpfeil gold (Standard) bzw. in der Akzentfarbe (Modern), und das Fenster „Active Targets“ samt Titel-Reiter hat denselben Rahmen; im Kampf neu geöffnet bekommt es ihn nach dem Kampf.
 - **Wenn** du über einen Schritt in der Liste fährst, **dann** hellt er sich leicht auf und wird beim Verlassen wieder dunkel.
 - **Wenn** du den Stil wechselst oder der Guide einen neuen Abschnitt lädt, **dann** sitzt der Skin sofort richtig; ausschalten wirkt nach /reload.
 
