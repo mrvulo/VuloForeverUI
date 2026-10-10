@@ -129,6 +129,7 @@ Modules\Skins\Core.lua
 Modules\Skins\Character.lua
 Modules\Skins\Stats.lua
 Modules\Skins\Inspect.lua
+Modules\Skins\Guide.lua
 Modules\Skins\Options.lua
 Modules\Nameplates\Nameplates.lua
 Modules\Nameplates\Suppress.lua

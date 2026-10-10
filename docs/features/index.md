@@ -47,6 +47,7 @@ jemand ohne den Code prüfen kann.
 | F-26 | Erinnerung an Fläschchen, Elixier und Essen aus den Taschen | Erinnerungen | gebaut | – |
 | F-27 | Mögliche Buffs anklickbar (wirken / benutzen) | Erinnerungen | gebaut | – |
 | F-28 | Fenster-Skins: Charakter- und Betrachten-Fenster, Standard / Modern | Skins | gebaut | – |
+| F-30 | Levelführer-Skin (Standard / Modern) | Skins | gebaut | – |
 | F-29 | Schmuckstücke: Auswahl-Raster beim Drüberfahren, Vormerken im Kampf, Warteschlange respektiert Handwahl | Komfort | gebaut | – |
 
 ---
@@ -166,6 +167,12 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du Alt-Klick auf ein Schmuckstück im Raster machst, **dann** verschwindet es aus dem Raster; mit gedrückter Alt-Taste erscheinen ausgeblendete grau und lassen sich per Alt-Klick zurückholen.
 - Angenommen „Abgerundete Plätze“ ist an (Standard), **dann** sind beide Plätze und jedes Feld im Raster abgerundet wie die Taschen, mit Ring in der Qualitätsfarbe; die Abklingzeit-Spirale folgt der runden Form; eine Vormerkung im Raster hat einen goldenen Ring.
 - Angenommen die Warteschlange eines Platzes ist an, **wenn** du von Hand ein passives oder nicht gelistetes Schmuckstück anlegst (z. B. Reitgerte), **dann** bleibt es liegen; der Pfeil wird grau, bis du es wieder ablegst.
+
+### F-30 Levelführer-Skin
+- Angenommen das Levelführer-Addon ist geladen und „Skins → Levelführer → Levelführer skinnen“ ist an, **dann** haben Guide-Fenster (Kopf, Schrittliste, Fußzeile) und die Kästen mit dem aktuellen Schritt samt „Step N“-Reiter den Tooltip-Rahmen des Spiels (Standard) bzw. flach dunkle Flächen mit dünnem Rand (Modern); keine hellen runden Rahmen mehr.
+- **Dann** ist der Scrollbalken im Standard-Stil der des Spiels, im Modern-Stil der schmale Balken unserer Fenster.
+- **Wenn** du über einen Schritt in der Liste fährst, **dann** hellt er sich leicht auf und wird beim Verlassen wieder dunkel.
+- **Wenn** du den Stil wechselst oder der Guide einen neuen Abschnitt lädt, **dann** sitzt der Skin sofort richtig; ausschalten wirkt nach /reload.
 
 ---
 

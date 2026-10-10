@@ -5,6 +5,11 @@
       "file": "Modules/ActionBars/ClassicBarLayout.lua",
       "kind": "global",
       "name": "CharacterReagentBag0Slot"
+    },
+    {
+      "file": "Modules/Skins/Guide.lua",
+      "kind": "global",
+      "name": "RXPFrame"
     }
   ]
 }

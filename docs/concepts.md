@@ -166,6 +166,14 @@ These apply to every visible change, in every module.
 - The settings page shows its single tab ("Window skins") via
   `mod.tabsAlways`, so more skin kinds can join as tabs.
 
+- **Levelling guide** (`Guide.lua`, tab "Levelling guide"): a skin for the
+  player's guide addon. Its frames are plain frames of that addon; our
+  backdrop goes on after each of its redraw hooks, pooled frames are tracked
+  by the look they carry, and a SetBackdrop/SetBackdropColor from the guide
+  is answered with ours. Its secure item/target buttons are never touched.
+  The addon's name appears only as the technically needed globals, never in
+  UI text, comments or commits.
+
 ## Reminders (`Modules/Reminder/`)
 
 - The row shows only what is missing and switched on; a click casts or

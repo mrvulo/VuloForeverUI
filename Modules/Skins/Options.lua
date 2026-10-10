@@ -10,6 +10,7 @@ local mod = Skins.mod
 
 mod.tabs = {
     { id = "windows", label = "Window skins" },
+    { id = "guide",   label = "Levelling guide" },
 }
 mod.tabsAlways = true
 
@@ -38,6 +39,27 @@ local function windowsPage()
     }
 end
 
-function mod:GetOptions()
+local guideRows = ns.OptionRows(function() return mod.db.guide end, function()
+    if Skins.Guide then Skins.Guide.Apply() end
+end)
+
+local function guidePage()
+    local items = {
+        { type = "header", text = L["Levelling guide"] },
+    }
+    if not (Skins.Guide and Skins.Guide.Installed()) then
+        items[#items + 1] = { type = "desc", text = L["|cffaaaaaaNo levelling guide addon is loaded.|r"] }
+    end
+    items[#items + 1] = guideRows.toggle("enabled", L["Skin the levelling guide"],
+        L["Its guide window and the current-step boxes. Switching it off takes effect after /reload."])
+    items[#items + 1] = guideRows.dropdown("style", L["Style"], {
+        { value = "standard", text = L["Standard"] },
+        { value = "modern",   text = L["Modern"] },
+    }, L["Standard: the game's tooltip frame. Modern: flat and dark like our windows."])
+    return items
+end
+
+function mod:GetOptions(tabId)
+    if tabId == "guide" then return guidePage() end
     return windowsPage()
 end

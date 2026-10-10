@@ -44,6 +44,11 @@ local mod = ns:RegisterModule("skins", {
             statSections = true,
             collapsed    = {},           -- [section title] = true
         },
+        -- the levelling-guide addon's windows (Guide.lua)
+        guide = {
+            enabled = true,
+            style   = "standard",        -- "standard" | "modern"
+        },
     },
 })
 Skins.mod = mod
