@@ -1892,6 +1892,8 @@ ns:RegisterLocale("ruRU", {
     ["Solid color"] = "Сплошной цвет",
     ["Default"] = "По умолчанию",
     ["Spell ranks"] = "Ранги заклинаний",
+    ["Memory: %.0f KB now, %.0f KB at the start."] = "Память: сейчас %.0f КБ, в начале %.0f КБ.",
+    ["Client: %.3f ms per frame on average, peak %.1f ms."] = "Клиент: в среднем %.3f мс на кадр, пик %.1f мс.",
     ["Shows every buff you could have: your spells, buffs from other classes, and the best flask, elixir, food, scroll, potion and weapon item for your role and level."] = "Показывает все возможные баффы: ваши заклинания, баффы других классов и лучшую настойку, эликсир, еду, свиток, зелье и средство для оружия для вашей роли и уровня.",
     ["Green = on you now. Recommended for your role and level."] = "Зелёный = активен. Рекомендации по роли и уровню.",
     ["Role"] = "Роль",

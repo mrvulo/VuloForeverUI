@@ -183,11 +183,11 @@ local function onEventProfiled(_, event, ...)
     -- add a Lua call per firing to the hottest path in the addon -- thousands
     -- per second in a raid -- for an event that almost never has one-shots.
     if onceSets[event] then takeOnceHandlers(event, list) end
-    local record, clock = ns.Prof.Record, debugprofilestop
+    local record, clock, gcCount = ns.Prof.Record, debugprofilestop, collectgarbage
     local hot = HOT[event]
     for i = 1, #list do
         local h = list[i]
-        local t0 = clock()
+        local k0, t0 = gcCount("count"), clock()
         if hot then
             h(event, ...)
         else
@@ -201,7 +201,7 @@ local function onEventProfiled(_, event, ...)
         -- part of the handler it is labelling -- a bias weighted by call count,
         -- i.e. worst exactly where the measurement matters most.
         local dt = clock() - t0
-        record(labelFor(h, event), dt)
+        record(labelFor(h, event), dt, gcCount("count") - k0)
     end
 end
 

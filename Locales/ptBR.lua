@@ -1855,6 +1855,8 @@ ns:RegisterLocale("ptBR", {
     ["Solid color"] = "Cor sólida",
     ["Default"] = "Padrão",
     ["Spell ranks"] = "Graus de feitiço",
+    ["Memory: %.0f KB now, %.0f KB at the start."] = "Memória: %.0f KB agora, %.0f KB no início.",
+    ["Client: %.3f ms per frame on average, peak %.1f ms."] = "Cliente: %.3f ms por quadro em média, pico %.1f ms.",
     ["Shows every buff you could have: your spells, buffs from other classes, and the best flask, elixir, food, scroll, potion and weapon item for your role and level."] = "Mostra todos os bônus possíveis: seus feitiços, bônus de outras classes e o melhor frasco, elixir, comida, pergaminho, poção e item de arma para sua função e nível.",
     ["Green = on you now. Recommended for your role and level."] = "Verde = ativo. Recomendações conforme função e nível.",
     ["Role"] = "Função",

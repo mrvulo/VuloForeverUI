@@ -25,13 +25,24 @@ local active, startedAt = false, 0
 
 ns.Prof = {}
 
-function ns.Prof.Record(label, ms)
+-- kb: what the Lua heap grew by while the handler ran -- the garbage it made.
+-- A collection step in between can make it negative; that counts as 0.
+function ns.Prof.Record(label, ms, kb)
     local d = data[label]
-    if not d then d = { ms = 0, calls = 0, peak = 0 }; data[label] = d end
+    if not d then d = { ms = 0, calls = 0, peak = 0, kb = 0 }; data[label] = d end
     d.ms = d.ms + ms
     d.calls = d.calls + 1
     if ms > d.peak then d.peak = ms end
+    if kb and kb > 0 then d.kb = d.kb + kb end
 end
+
+-- The addon's whole memory, in KB; nil when the client does not answer.
+local function addonKB()
+    pcall(UpdateAddOnMemoryUsage)
+    local ok, kb = pcall(GetAddOnMemoryUsage, ns.NAME)
+    return ok and type(kb) == "number" and kb or nil
+end
+local startKB
 
 -- For hand-instrumenting anything the dispatch and ticker do not cover.
 -- Both halves no-op while profiling is off.
@@ -48,6 +59,7 @@ end
 function ns.Prof.Reset()
     data = {}
     startedAt = clock()
+    startKB = addonKB()
 end
 
 function ns.Prof.SetActive(on)
@@ -83,11 +95,27 @@ function ns.Prof.Report()
     if span < 0 then span = 0 end
     ns:Print(L["Measured over %.1f s -- %.1f ms total, %.2f%% of it ours:"],
         span / 1000, total, span > 0 and (total / span * 100) or 0)
-    for i = 1, math.min(#sorted, 15) do
+    local nowKB = addonKB()
+    if nowKB and startKB then
+        ns:Print(L["Memory: %.0f KB now, %.0f KB at the start."], nowKB, startKB)
+    end
+    -- The client's own numbers cover everything, also what the dispatch does
+    -- not see (OnUpdate scripts, hooks, timers of our frames).
+    local P, E = _G.C_AddOnProfiler, _G.Enum and _G.Enum.AddOnProfilerMetric
+    if P and E and P.GetAddOnMetric then
+        local ok1, avg = pcall(P.GetAddOnMetric, ns.NAME, E.RecentAverageTime)
+        local ok2, peak = pcall(P.GetAddOnMetric, ns.NAME, E.PeakTime)
+        if ok1 and ok2 and type(avg) == "number" and type(peak) == "number" then
+            ns:Print(L["Client: %.3f ms per frame on average, peak %.1f ms."], avg, peak)
+        end
+    end
+    for i = 1, math.min(#sorted, 20) do
         local e = sorted[i]
-        DEFAULT_CHAT_FRAME:AddMessage(string.format(
-            "  |cffffd100%-22s|r %7.1f ms  %6d x  |cff888888peak %.2f ms|r",
-            e.label, e.d.ms, e.d.calls, e.d.peak))
+        local line = string.format("  %-22s %7.1f ms  %6d x  peak %.2f ms  %7.0f KB",
+            e.label, e.d.ms, e.d.calls, e.d.peak, e.d.kb)
+        DEFAULT_CHAT_FRAME:AddMessage("|cffffd100" .. line .. "|r")
+        -- the chat print above is not captured; the diag log keeps the table
+        if ns.Diag then ns.Diag.Record(line) end
     end
 end
 

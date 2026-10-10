@@ -1892,6 +1892,8 @@ local T = {
     ["Solid color"] = "Color sólido",
     ["Default"] = "Por defecto",
     ["Spell ranks"] = "Rangos de hechizo",
+    ["Memory: %.0f KB now, %.0f KB at the start."] = "Memoria: %.0f KB ahora, %.0f KB al inicio.",
+    ["Client: %.3f ms per frame on average, peak %.1f ms."] = "Cliente: %.3f ms por fotograma de media, pico %.1f ms.",
     ["Shows every buff you could have: your spells, buffs from other classes, and the best flask, elixir, food, scroll, potion and weapon item for your role and level."] = "Muestra todos los beneficios posibles: tus hechizos, los de otras clases y el mejor frasco, elixir, comida, pergamino, poción y objeto de arma para tu rol y nivel.",
     ["Green = on you now. Recommended for your role and level."] = "Verde = activo. Recomendaciones según tu rol y nivel.",
     ["Role"] = "Rol",

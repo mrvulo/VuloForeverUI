@@ -47,17 +47,18 @@ end
 -- Measuring variant, swapped in wholesale by the profiler so the walk above
 -- stays exactly as reviewed when profiling is off.
 local function tickProfiled(_, elapsed)
-    local record, clock = ns.Prof.Record, debugprofilestop
+    local record, clock, gcCount = ns.Prof.Record, debugprofilestop, collectgarbage
     local i = 1
     while i <= count do
         local s = subs[i]
         s.acc = s.acc + elapsed
         if s.acc >= s.interval then
             s.acc = 0
-            local t0 = clock()
+            local k0, t0 = gcCount("count"), clock()
             local ok, err = pcall(s.fn, s.arg)
             if not ok then geterrorhandler()(err) end
-            record(s.label or "ticker", clock() - t0)
+            local dt = clock() - t0
+            record(s.label or "ticker", dt, gcCount("count") - k0)
         end
         if subs[i] == s then i = i + 1 end
     end
