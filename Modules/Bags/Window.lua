@@ -951,8 +951,11 @@ end
 function Window.New(key, bagsFn)
     local win = { key = key, bags = bagsFn }
 
-    function win.Open()
+    local Prof = ns.Prof
+    local function setup()
+        local t0 = Prof.Begin()
         if not win.frame then build(win) end
+        Prof.End("bags open: build", t0)
         -- The view a window opens with is the one the settings name, and that
         -- setting is the BAGS'. The bank opens on everything: "default bag
         -- type" is about the bag somebody works out of, and a bank that opened
@@ -965,10 +968,27 @@ function Window.New(key, bagsFn)
             win.showBagBar = win.key == "bags" and Bags.db().showBagBar == true
         end
         placeWindow(win)
+        t0 = Prof.Begin()
         Window.Layout(win)
+        Prof.End("bags open: layout", t0)
+    end
+
+    function win.Open()
+        setup()
+        local t0 = Prof.Begin()
         win.frame:Show()
+        Prof.End("bags open: show", t0)
         -- a real open: the edit mode's preview no longer owns this window
         win.previewing, win.previewClose = nil, nil
+    end
+
+    -- The first open of a session built the window and loaded a hundred icons
+    -- in one frame: a hitch of a quarter second (/vfuiprof, 2026-10-10). Done
+    -- once, hidden, a few seconds after the loading screen, it costs nothing
+    -- the player sees.
+    function win.Prepare()
+        if win.frame or InCombatLockdown() then return end
+        setup()
     end
 
     function win.Close()

@@ -89,6 +89,11 @@ These apply to every visible change, in every module.
   hidden by us (see engine rules). A visible one is stashed (alpha 0, off
   screen). On takeover off, a still-open one stays parked until the client
   closes it (`FinishUnpark`).
+- **Performance:** the window is built and laid out once, hidden, 3 s after
+  a loading screen (`win.Prepare`) — the first open used to hitch ~250 ms.
+  Bag slots are read through the one shared `ns.BagSlotLocation`; never
+  create an ItemLocation per slot (it copies the whole mixin). Measure with
+  `/vfuiprof` before and after any change for speed.
 - **Client tutorials** that wait for the client's bag frame (reagent bag step
   1 and 2) are faded out while the takeover is on (`Tutorials.lua`).
 

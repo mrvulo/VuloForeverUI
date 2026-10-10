@@ -30,6 +30,7 @@ ns.Prof = {}
 -- What ran since the hitch watcher last looked (about one frame): the sum,
 -- and the single biggest piece.
 local frameSum, frameTop, frameTopMs = 0, nil, 0
+local prevSum, prevTop, prevTopMs = 0, nil, 0
 
 function ns.Prof.Record(label, ms, kb)
     local d = data[label]
@@ -55,10 +56,16 @@ local watcher = CreateFrame("Frame")
 local function watch()
     local P, E = C_AddOnProfiler, Enum.AddOnProfilerMetric
     local ok, last = pcall(P.GetAddOnMetric, ns.NAME, E.LastTime)
+    -- The client's "last frame" and our tally can be one tick apart (timers
+    -- may run after this script in the same frame), so the hitch is charged
+    -- to whichever of the last two ticks measured more.
     if ok and type(last) == "number" and last >= HITCH_MS and #hitches < MAX_HITCHES then
-        hitches[#hitches + 1] = { at = clock(), ms = last, sum = frameSum,
-            top = frameTop, topMs = frameTopMs, combat = InCombatLockdown() }
+        local sum, top, topMs = frameSum, frameTop, frameTopMs
+        if prevSum > sum then sum, top, topMs = prevSum, prevTop, prevTopMs end
+        hitches[#hitches + 1] = { at = clock(), ms = last, sum = sum,
+            top = top, topMs = topMs, combat = InCombatLockdown() }
     end
+    prevSum, prevTop, prevTopMs = frameSum, frameTop, frameTopMs
     frameSum, frameTop, frameTopMs = 0, nil, 0
 end
 

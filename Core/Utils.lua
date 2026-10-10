@@ -33,7 +33,7 @@ end
 -- the bags' cost. Off, this is the plain call.
 function ns.NextFrame(fn)
     if ns.Prof and ns.Prof.IsActive() then
-        local stack = (debugstack(2, 1, 0) or ""):gsub('"%]', "")
+        local stack = (debugstack(2, 1, 0) or ""):gsub('["%]]', "")
         local where = stack:match("AddOns[/\\][^/\\]+[/\\]([^:]+:%d+)") or "next frame"
         local inner = fn
         fn = function()
