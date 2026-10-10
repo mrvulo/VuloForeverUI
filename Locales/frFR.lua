@@ -1892,6 +1892,8 @@ ns:RegisterLocale("frFR", {
     ["Solid color"] = "Couleur unie",
     ["Default"] = "Par défaut",
     ["Spell ranks"] = "Rangs de sorts",
+    ["All of your own debuffs"] = "Tous vos affaiblissements",
+    ["On, every debuff you or your pet cast shows, also those the game does not mark for nameplates (many classic damage-over-time spells). Off, only the marked ones, as on the game's own nameplates."] = "Activé : chaque affaiblissement lancé par vous ou votre familier s'affiche, même ceux que le jeu ne marque pas pour les barres d'info (nombreux dégâts sur la durée classiques). Désactivé : seulement ceux marqués, comme sur les barres du jeu.",
     ["Hitches of %d ms or more: %d. Measured part and its biggest piece:"] = "Saccades de %d ms ou plus : %d. Part mesurée et son plus gros morceau :",
     ["Frames over 10 / 50 / 100 ms this session: %d / %d / %d."] = "Images au-delà de 10 / 50 / 100 ms cette session : %d / %d / %d.",
     ["Memory: %.0f KB now, %.0f KB at the start."] = "Mémoire : %.0f Ko maintenant, %.0f Ko au départ.",

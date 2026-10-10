@@ -92,7 +92,7 @@ local M = ns:RegisterModule("nameplates", {
             duration = { position = "centre",      size = 14, color = c(1, 1, 1), x = 1, y = 0 },
             stacks   = { position = "bottomright", size = 11, color = c(1, 1, 1), x = 0, y = 5 },
         },
-        debuffIncludeCC = false, showAllDebuffs = false,
+        debuffIncludeCC = false, showAllDebuffs = false, allOwnDebuffs = true,
         enemyBuffFilter = "important",
 
         -- colours: enemy types

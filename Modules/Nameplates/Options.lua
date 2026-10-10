@@ -255,6 +255,7 @@ local function aurasSection()
         auraKindRows("cc", L["Crowd Control"]),
         toggle("debuffIncludeCC", L["Debuffs include Crowd Control"]),
         toggle("showAllDebuffs", L["Show All Debuffs"], L["Off, only the debuffs you (or your pet) cast are shown. On, also those cast by other players."]),
+        toggle("allOwnDebuffs", L["All of your own debuffs"], L["On, every debuff you or your pet cast shows, also those the game does not mark for nameplates (many classic damage-over-time spells). Off, only the marked ones, as on the game's own nameplates."]),
         dropdown("enemyBuffFilter", L["Enemy Buff Filter"], {
             { value = "important",   text = L["Important"] },
             { value = "dispellable", text = L["Only Dispellable"] },

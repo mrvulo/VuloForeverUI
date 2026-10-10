@@ -1892,6 +1892,8 @@ ns:RegisterLocale("ruRU", {
     ["Solid color"] = "Сплошной цвет",
     ["Default"] = "По умолчанию",
     ["Spell ranks"] = "Ранги заклинаний",
+    ["All of your own debuffs"] = "Все свои дебаффы",
+    ["On, every debuff you or your pet cast shows, also those the game does not mark for nameplates (many classic damage-over-time spells). Off, only the marked ones, as on the game's own nameplates."] = "Вкл.: показываются все дебаффы от вас или питомца, даже не отмеченные игрой для индикаторов (многие классические периодические заклинания). Выкл.: только отмеченные, как на индикаторах игры.",
     ["Hitches of %d ms or more: %d. Measured part and its biggest piece:"] = "Подвисания от %d мс: %d. Измеренная часть и её крупнейший кусок:",
     ["Frames over 10 / 50 / 100 ms this session: %d / %d / %d."] = "Кадров дольше 10 / 50 / 100 мс за сеанс: %d / %d / %d.",
     ["Memory: %.0f KB now, %.0f KB at the start."] = "Память: сейчас %.0f КБ, в начале %.0f КБ.",

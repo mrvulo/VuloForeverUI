@@ -1855,6 +1855,8 @@ ns:RegisterLocale("ptBR", {
     ["Solid color"] = "Cor sólida",
     ["Default"] = "Padrão",
     ["Spell ranks"] = "Graus de feitiço",
+    ["All of your own debuffs"] = "Todas as suas penalidades",
+    ["On, every debuff you or your pet cast shows, also those the game does not mark for nameplates (many classic damage-over-time spells). Off, only the marked ones, as on the game's own nameplates."] = "Ligado: aparece cada penalidade sua ou do ajudante, inclusive as que o jogo não marca para placas de nome (muitos danos ao longo do tempo clássicos). Desligado: só as marcadas, como nas placas do jogo.",
     ["Hitches of %d ms or more: %d. Measured part and its biggest piece:"] = "Travadas de %d ms ou mais: %d. Parte medida e sua maior peça:",
     ["Frames over 10 / 50 / 100 ms this session: %d / %d / %d."] = "Quadros acima de 10 / 50 / 100 ms nesta sessão: %d / %d / %d.",
     ["Memory: %.0f KB now, %.0f KB at the start."] = "Memória: %.0f KB agora, %.0f KB no início.",

@@ -1892,6 +1892,8 @@ ns:RegisterLocale("deDE", {
     ["Solid color"] = "Volle Farbe",
     ["Default"] = "Standard",
     ["Spell ranks"] = "Zauberränge",
+    ["All of your own debuffs"] = "Alle eigenen Debuffs",
+    ["On, every debuff you or your pet cast shows, also those the game does not mark for nameplates (many classic damage-over-time spells). Off, only the marked ones, as on the game's own nameplates."] = "An: Jeder Debuff von dir oder deinem Begleiter erscheint, auch wenn das Spiel ihn nicht für Namensplaketten markiert (viele klassische Schaden-über-Zeit-Zauber). Aus: nur die markierten, wie auf den Plaketten des Spiels.",
     ["Hitches of %d ms or more: %d. Measured part and its biggest piece:"] = "Ruckler ab %d ms: %d. Gemessener Anteil und sein größtes Stück:",
     ["Frames over 10 / 50 / 100 ms this session: %d / %d / %d."] = "Bilder über 10 / 50 / 100 ms in dieser Sitzung: %d / %d / %d.",
     ["Memory: %.0f KB now, %.0f KB at the start."] = "Speicher: jetzt %.0f KB, beim Start %.0f KB.",

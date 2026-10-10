@@ -68,9 +68,15 @@ local function sortFor(kind, db)
     return m.ImportantOnly
 end
 
+-- The client's own rule for a plate: of your debuffs, only those whose spell
+-- is flagged "show on nameplates" (Blizzard_AuraContainerGroups,
+-- DoesAuraPassCandidateFilters). Many classic damage-over-time spells carry
+-- no such flag, so a dot the player keeps up went missing -- the client's own
+-- plates have the same gap and close it with the CVar
+-- nameplateShowAllPersonalAuras. "allOwnDebuffs" (on by default) is that
+-- switch for ours: every debuff you or your pet cast.
 local function candidatesFor(kind, db)
-    if kind ~= "debuffs" or db.showAllDebuffs then return {} end
-    -- the client's own "would this show on a plate" rule, decided in C
+    if kind ~= "debuffs" or db.showAllDebuffs or db.allOwnDebuffs ~= false then return {} end
     return { nameplateShowPersonal = true }
 end
 

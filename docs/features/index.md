@@ -42,6 +42,7 @@ jemand ohne den Code prüfen kann.
 | F-21 | Gelbes „!“ auf Gegenständen, die eine Quest starten | Taschen | gebaut | – |
 | F-22 | „Chat kopieren“ zeigt den Text | Chat | bestätigt | – |
 | F-23 | Fenster „Mögliche Buffs“ mit Empfehlungen pro Rolle | Erinnerungen | gebaut | – |
+| F-24 | Eigene DoTs auf Namensplaketten, auch ohne Plakettenkennung (PvP und PvE) | Namensplaketten | gebaut | – |
 
 ---
 
@@ -120,6 +121,11 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du oben die Rolle wechselst (Nahkampf-, Fernkampf-, Zauberschaden, Heiler, Tank), **dann** wechseln sofort die Empfehlungen: je Kategorie der beste Rang, den deine Stufe erlaubt (Stufe 20 sieht Stufe-20-Sachen), gold „Empfohlen · in den Taschen“ oder grau „nicht in den Taschen“.
 - **Dann** stehen unter „Von anderen Klassen“ die Gruppenbuffs für deine Rolle mit Klassennamen in Klassenfarbe — Ausdauer, Mal der Wildnis, Könige, Macht usw., für beide Fraktionen; ab Stufe 55 kommen die Weltbuffs dazu.
 - Angenommen ein Schurke, **dann** werden Sofort- und Tödliches Gift empfohlen. Jede Nahkampf- und Tankrolle (auch Schamane) bekommt Elementarwetzstein und Wetzstein, mit Streitkolben oder Stab Gewichtsstein statt Wetzstein.
+
+### F-24 Eigene DoTs auf Namensplaketten
+- Angenommen „Alle eigenen Debuffs“ ist an (Standard), **wenn** du einem gegnerischen Spieler (Schlachtfeld, Duell, Weltkampf) oder einem NPC deinen DoT gibst, **dann** erscheint er sofort auf seiner Plakette mit Restzeit und verschwindet, wenn er ausläuft.
+- **Dann** stehen die DoTs anderer Spieler dort nicht (außer „Alle Debuffs anzeigen“ ist an).
+- **Wenn** du „Alle eigenen Debuffs“ ausschaltest, **dann** zeigt die Plakette nur noch die Debuffs, die das Spiel für Plaketten markiert.
 
 ---
 

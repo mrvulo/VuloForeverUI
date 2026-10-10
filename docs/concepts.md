@@ -122,6 +122,15 @@ These apply to every visible change, in every module.
 - Queued next-swing abilities light up like the action bar button
   (`C_Spell.IsCurrentSpell`, alpha folded from the boolean).
 
+## Nameplates (`Modules/Nameplates/`)
+
+- Auras are the client's aura containers: we hand over filter strings and
+  candidate filters, the client reads, filters and draws. Nothing is read.
+- Own debuffs: the candidate filter `nameplateShowPersonal = true` hides
+  every spell the game does not flag for plates — many classic dots. Setting
+  `allOwnDebuffs` (default on) drops that filter, like the client's CVar
+  `nameplateShowAllPersonalAuras` does for its own plates.
+
 ## Reminders (`Modules/Reminder/`)
 
 - The row shows only what is missing and switched on; a click casts or
