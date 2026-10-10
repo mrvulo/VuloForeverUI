@@ -125,6 +125,11 @@ Modules\UnitFrames\ClassicPet.lua
 Modules\UnitFrames\Movers.lua
 Modules\UnitFrames\Preview.lua
 Modules\UnitFrames\UnitFrames.lua
+Modules\Skins\Core.lua
+Modules\Skins\Character.lua
+Modules\Skins\Stats.lua
+Modules\Skins\Inspect.lua
+Modules\Skins\Options.lua
 Modules\Nameplates\Nameplates.lua
 Modules\Nameplates\Suppress.lua
 Modules\Nameplates\Health.lua

@@ -133,6 +133,26 @@ These apply to every visible change, in every module.
   `allOwnDebuffs` (default on) drops that filter, like the client's CVar
   `nameplateShowAllPersonalAuras` does for its own plates.
 
+## Skins (`Modules/Skins/`)
+
+- Group Unit Frames, tab "Window skins". Character window (Camelot build of
+  Blizzard_UIPanels_Game) and inspect window (Blizzard_InspectUI, on demand).
+- **Standard** = the client's frame; **Modern** = our flat dark panels
+  (`Skins.BG`, the level strip `Skins.STRIP`, 1 px edge `Skins.EDGE`). In both
+  the slots are rounded (mask from Media/Masks) and ringed in the item's
+  quality colour; empty = neutral grey. The player asked for this
+  (2026-10-10): the level line must match the window, never stay gold/rock.
+- Client art is only ever faded (`Skins.Fade`, alpha remembered) and given
+  back by `Skins.RestoreAll` at the start of every `Skins.Apply`; each part
+  fades again what the settings want gone. Panels hang on frames that are
+  not faded (a faded host would fade its children).
+- Slot texts: item level (player: GetCurrentItemLevel; inspect: from the
+  link), enchant (tooltip line ItemEnchantmentPermanent; weapon temp
+  enchants = the item the reminders learned), durability (player only).
+- Stat sections fold by giving the client's ScrollBox a shorter data
+  provider built from its own entries — only while a section is folded, so
+  with nothing folded the client's list is untouched.
+
 ## Reminders (`Modules/Reminder/`)
 
 - The row shows only what is missing and switched on; a click casts or

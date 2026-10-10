@@ -46,6 +46,7 @@ jemand ohne den Code prüfen kann.
 | F-25 | Mögliche Buffs: wer in der Gruppe den Buff geben kann | Erinnerungen | gebaut | – |
 | F-26 | Erinnerung an Fläschchen, Elixier und Essen aus den Taschen | Erinnerungen | gebaut | – |
 | F-27 | Mögliche Buffs anklickbar (wirken / benutzen) | Erinnerungen | gebaut | – |
+| F-28 | Fenster-Skins: Charakter- und Betrachten-Fenster, Standard / Modern | Skins | gebaut | – |
 
 ---
 
@@ -144,6 +145,16 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du außerhalb des Kampfs im Fenster auf deinen eigenen Zauber klickst, **dann** wirkst du ihn; auf ein Elixier, Essen, einen Trank oder eine Rolle in den Taschen, **dann** wird es benutzt.
 - **Wenn** du auf Gift, Öl oder Stein klickst, **dann** kommt es links auf die Waffenhand, rechts auf die Schildhand.
 - Angenommen du bist im Kampf, **dann** tut ein Klick nichts und es kommt kein Fehler.
+
+### F-28 Fenster-Skins
+- Angenommen „Skins → Fenster-Skins → Stil“ steht auf **Standard**, **wenn** du das Charakterfenster (C) öffnest, **dann** bleibt der Blizzard-Rahmen, aber jeder Ausrüstungsplatz ist abgerundet und trägt einen Ring in der Qualitätsfarbe seines Gegenstands (leer: neutral).
+- Angenommen **Modern**, **dann** ist das Fenster flach dunkel mit dünnem Rand: Titel, die Leiste „Stufe 5, Jäger“, Modellhintergrund, Werte-Bereich und Reiter in derselben dunklen Farbe; die Plätze ebenfalls abgerundet in Qualitätsfarbe. Nichts Helles oder Goldenes bleibt stehen.
+- **Wenn** du jemanden betrachtest, **dann** sieht das Betrachten-Fenster im gewählten Stil genauso aus.
+- **Wenn** „Gegenstandsstufe“ an ist, **dann** steht auf jedem belegten Platz die Stufe (auch beim Betrachten).
+- **Wenn** „Verzauberungen als Text“ an ist, **dann** steht neben dem Platz der Name der Verzauberung bzw. von Öl/Gift/Stein auf der Waffe, nichts überlappt das Modell.
+- **Wenn** „Haltbarkeit“ an ist, **dann** zeigt jeder Platz mit Haltbarkeit seinen Prozentwert, gelb unter 50 %, rot unter 20 %.
+- **Wenn** „Werte-Abschnitte“ an ist, **dann** lassen sich die Abschnitte rechts per Klick auf den Titel ein- und ausklappen, und der Zustand bleibt nach /reload.
+- **Dann** wechselt jede Einstellung sofort im offenen Fenster, und im Kampf kommt kein Fehler.
 
 ---
 
