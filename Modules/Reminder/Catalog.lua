@@ -293,7 +293,8 @@ local function collect()
         if g.cat == "food" then
             local fed = R.SpellName(WELL_FED)
             if fed then
-                local line, color = status(auraByName(fed, WELL_FED))
+                -- any food buff counts, not only the ones named Well Fed
+                local line, color = status(auraAny(R.FOOD_BUFFS))
                 list[1] = { icon = C_Spell.GetSpellTexture(WELL_FED), spell = WELL_FED,
                     name = fed, line = line, color = color }
             end
@@ -317,7 +318,7 @@ local function showTip(f)
     else return end
     if it.cast then
         GameTooltip:AddLine(L["Left click: cast"], 0.6, 1, 0.6)
-    elseif it.use and it.weapon then
+    elseif it.use and it.weapon and R.IsWeapon(17) then
         GameTooltip:AddLine(L["Left click: main hand, right click: off hand"], 0.6, 1, 0.6)
     elseif it.use then
         GameTooltip:AddLine(L["Left click: use"], 0.6, 1, 0.6)
@@ -336,6 +337,7 @@ local catcher
 
 local function dropCatcher()
     if not catcher or InCombatLockdown() then return end
+    if catcher.row then catcher.row.hl:Hide() end
     catcher.row = nil
     catcher:Hide()
     catcher:ClearAllPoints()
@@ -362,6 +364,14 @@ end
 local function bindCatcher(row)
     local it = row.data
     if InCombatLockdown() or not (it and (it.cast or it.use)) then return false end
+    -- Only a row the scroll frame shows whole: the button is not clipped, and
+    -- over a half-hidden row it would reach past the list onto the role box
+    -- or beyond the window, where a click would still use the item.
+    local top, bottom = row:GetTop(), row:GetBottom()
+    local sTop, sBottom = scroll:GetTop(), scroll:GetBottom()
+    if not (top and bottom and sTop and sBottom) or top > sTop + 0.5 or bottom < sBottom - 0.5 then
+        return false
+    end
     local c = ensureCatcher()
     local spell = it.cast and R.SpellName(it.spell)
     for _, k in ipairs({ "*type1", "*spell1", "*unit1", "*macrotext1", "*type2", "*macrotext2" }) do
@@ -376,8 +386,11 @@ local function bindCatcher(row)
         c:SetAttribute("*type1", "macro")
         if it.weapon then
             c:SetAttribute("*macrotext1", use .. "\n/use 16")
-            c:SetAttribute("*type2", "macro")
-            c:SetAttribute("*macrotext2", use .. "\n/use 17")
+            -- right click only when the off hand holds a weapon, not a shield
+            if R.IsWeapon(17) then
+                c:SetAttribute("*type2", "macro")
+                c:SetAttribute("*macrotext2", use .. "\n/use 17")
+            end
         else
             c:SetAttribute("*macrotext1", use)
         end
@@ -480,7 +493,11 @@ local function render()
     -- the mouse now, or goes
     if catcher and catcher.row and not InCombatLockdown() then
         local r = catcher.row
-        if not (r:IsShown() and r:IsMouseOver() and bindCatcher(r)) then dropCatcher() end
+        if not (r:IsShown() and r:IsMouseOver() and bindCatcher(r)) then
+            dropCatcher()
+        elseif GameTooltip:IsOwned(r) then
+            showTip(r)      -- the row may hold something else now
+        end
     end
 end
 

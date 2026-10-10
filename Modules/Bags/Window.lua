@@ -1014,8 +1014,10 @@ function Window.New(key, bagsFn)
     -- in one frame: a hitch of a quarter second (/vfuiprof, 2026-10-10). Done
     -- once, hidden, a few seconds after the loading screen, it costs nothing
     -- the player sees.
+    -- The frame itself exists from the start (EnsureMover); what matters is
+    -- that it was never laid out.
     function win.Prepare()
-        if win.frame or InCombatLockdown() then return end
+        if win.placed or InCombatLockdown() then return end
         setup()
     end
 

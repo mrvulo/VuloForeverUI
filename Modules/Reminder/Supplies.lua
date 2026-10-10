@@ -226,23 +226,38 @@ end
 -- "Well Fed" is up, whatever was eaten.
 
 local CONSUMABLE = { flask = "Flask", elixir = "Elixir", food = "Food" }
-local WELL_FED = 19705
+
+-- What food leaves on you. Most foods give "Well Fed"; the best ones give a
+-- buff of their own name (spell table, 2026-10-10): Nightfin Soup "Mana
+-- Regeneration", Grilled Squid "Increased Agility", Runn Tum Tuber Surprise
+-- "Increased Intellect", Dirge's Chops "Increased Stamina".
+R.FOOD_BUFFS = { 19705, 18194, 18192, 22730, 25661 }
+local FOOD_BUFF_ID = {}
+for _, id in ipairs(R.FOOD_BUFFS) do FOOD_BUFF_ID[id] = true end
 
 -- Only called with readable auras (Core.lua checks); an aura that is secret
 -- on its own counts as present, a false "missing" is the worse mistake.
-local function auraUp(name)
+-- notFood: an aura of the same name that came from food does not count --
+-- Mageblood and Nightfin Soup both leave "Mana Regeneration".
+local function auraUp(name, notFood)
     if not name then return false end
     local aura = C_UnitAuras.GetAuraDataBySpellName("player", name, "HELPFUL")
     if type(aura) ~= "table" then return false end
+    if notFood and ns.CanRead(aura) and FOOD_BUFF_ID[aura.spellId] then return false end
     return true
 end
 
 local function chainActive(c)
-    if c.cat == "food" then return auraUp(R.SpellName(WELL_FED)) end
+    if c.cat == "food" then
+        for _, id in ipairs(R.FOOD_BUFFS) do
+            if auraUp(R.SpellName(id)) then return true end
+        end
+        return false
+    end
     for _, it in ipairs(c.items) do
         local name = C_Item.GetItemSpell(it[1])
         if name then
-            if auraUp(name) then return true end
+            if auraUp(name, true) then return true end
         else
             C_Item.RequestLoadItemDataByID(it[1])
         end
