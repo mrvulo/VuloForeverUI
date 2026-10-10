@@ -119,7 +119,7 @@ jemand ohne den Code prüfen kann.
 - **Dann** zeigt Maus drüber den Tooltip; Escape oder das X schließt; das Fenster lässt sich ziehen.
 - **Wenn** du oben die Rolle wechselst (Nahkampf-, Fernkampf-, Zauberschaden, Heiler, Tank), **dann** wechseln sofort die Empfehlungen: je Kategorie der beste Rang, den deine Stufe erlaubt (Stufe 20 sieht Stufe-20-Sachen), gold „Empfohlen · in den Taschen“ oder grau „nicht in den Taschen“.
 - **Dann** stehen unter „Von anderen Klassen“ die Gruppenbuffs für deine Rolle mit Klassennamen in Klassenfarbe (Paladin nur Allianz, Schamane nur Horde); ab Stufe 55 kommen die Weltbuffs dazu.
-- Angenommen ein Schurke, **dann** werden Sofort- und Tödliches Gift empfohlen; ein Krieger mit Streitkolben bekommt Gewichtsteine statt Wetzsteine.
+- Angenommen ein Schurke, **dann** werden Sofort- und Tödliches Gift empfohlen. Jede Nahkampf- und Tankrolle (auch Schamane) bekommt Elementarwetzstein und Wetzstein, mit Streitkolben oder Stab Gewichtsstein statt Wetzstein.
 
 ---
 

@@ -57,10 +57,10 @@ R.SUPPLIES = {
         { 8928, 60 }, { 8927, 52 }, { 8926, 44 }, { 6950, 36 }, { 6949, 28 }, { 6947, 20 } } },  -- Instant Poison
     { cat = "weapon", class = set("ROGUE"), items = {
         { 20844, 60 }, { 8985, 54 }, { 8984, 46 }, { 2893, 38 }, { 2892, 30 } } },               -- Deadly Poison
-    { cat = "weapon", roles = set(M, T), noClass = set("ROGUE", "SHAMAN"), items = { { 18262, 50 } } },
-    { cat = "weapon", roles = set(M, T), noClass = set("ROGUE", "SHAMAN"), weapon = "edge", items = {
+    { cat = "weapon", roles = set(M, T), items = { { 18262, 50 } } },
+    { cat = "weapon", roles = set(M, T), weapon = "edge", items = {
         { 12404, 35 }, { 7964, 25 }, { 2871, 15 }, { 2863, 5 }, { 2862, 1 } } },                 -- sharpening stones
-    { cat = "weapon", roles = set(M, T), noClass = set("ROGUE", "SHAMAN"), weapon = "blunt", items = {
+    { cat = "weapon", roles = set(M, T), weapon = "blunt", items = {
         { 12643, 35 }, { 7965, 25 }, { 3241, 15 }, { 3240, 5 }, { 3239, 1 } } },                  -- weightstones
     { cat = "weapon", roles = set(C), items = { { 20749, 45 }, { 20750, 40 }, { 20746, 30 }, { 20744, 5 } } },  -- wizard oil
     { cat = "weapon", roles = set(H), items = { { 20748, 45 }, { 20747, 40 }, { 20745, 20 } } },               -- mana oil
