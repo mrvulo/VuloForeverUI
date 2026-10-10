@@ -273,7 +273,7 @@ local function changePath(e)
     local m = ns.modules[e.mod]
     if not m then return nil end
     local parts = { L[m.name] }
-    if e.tab and e.tab ~= "default" and m.tabs and #m.tabs > 1 then
+    if e.tab and e.tab ~= "default" and m.tabs and (#m.tabs > 1 or m.tabsAlways) then
         for _, t in ipairs(m.tabs) do
             if t.id == e.tab then parts[#parts + 1] = L[t.label]; break end
         end

@@ -10,6 +10,7 @@ local _, ns = ...
 local Skins = ns.Skins
 
 local Inspect = {}
+Skins.Inspect = Inspect
 table.insert(Skins.parts, Inspect)
 
 local sideOf = {}
@@ -32,7 +33,9 @@ local function slotInfo(slot)
         if type(lvl) == "number" then info.level = lvl end
     end
     local e = enchantByLink[link]
-    if e == nil then
+    if e == nil and not Skins.ItemReady(GetInventoryItemID(u, slot)) then
+        e = false                     -- asked for; not kept until it arrives
+    elseif e == nil then
         local ok, data = pcall(C_TooltipInfo.GetHyperlink, link)
         e = ok and Skins.EnchantFrom(data) or false
         enchantByLink[link] = e
@@ -45,7 +48,7 @@ local function paint(button)
     local side = sideOf[button]
     if not side then return end
     if not Skins.db().inspect then
-        Skins.PaintSlot(button, side, nil)
+        Skins.PaintSlot(button, side, nil, true)
         return
     end
     Skins.PaintSlot(button, side, slotInfo(button:GetID()))
@@ -55,19 +58,26 @@ local function paintAll()
     for b in pairs(sideOf) do paint(b) end
 end
 
+function Inspect.Repaint()
+    if ready and _G.InspectFrame and _G.InspectFrame:IsShown() then paintAll() end
+end
+
 local function modernParts()
     local f = _G.InspectFrame
-    local list = { f.NineSlice, f.Bg or _G.InspectFrameBg, f.TopTileStreaks, f.PortraitContainer,
-                   _G.InspectFramePortrait }
+    local list = {}
+    -- appended one by one: a missing piece must not end the list early
+    local function add(t) if t then list[#list + 1] = t end end
+    add(f.NineSlice); add(f.Bg or _G.InspectFrameBg); add(f.TopTileStreaks)
+    add(f.PortraitContainer); add(_G.InspectFramePortrait)
     local inset = f.Inset or _G.InspectFrameInset
-    if inset then list[#list + 1] = inset.NineSlice; list[#list + 1] = inset.Bg end
+    if inset then add(inset.NineSlice); add(inset.Bg) end
     local model = _G.InspectModelFrame
     if model then
-        for _, r in ipairs({ model:GetRegions() }) do list[#list + 1] = r end
+        for _, r in ipairs({ model:GetRegions() }) do add(r) end
     end
     for i = 1, 3 do
         local tab = _G["InspectFrameModeTab" .. i]
-        if tab then list[#list + 1] = tab.Background end
+        if tab then add(tab.Background) end
     end
     return list
 end
@@ -81,17 +91,19 @@ function Inspect.Apply()
         for _, r in ipairs(modernParts()) do Skins.Fade(r) end
     end
     if panel then panel:SetShown(modern) end
+    Skins.FlatClose(f.CloseButton or _G.InspectFrameCloseButton, modern)
     paintAll()
 end
 
 local function setup()
     if ready or not _G.InspectFrame or not _G.InspectPaperDollItemSlotButton_Update then return end
     ready = true
-    for side, names in pairs(Skins.SLOTS) do
-        for _, n in ipairs(names) do
-            local b = _G["Inspect" .. n .. "Slot"]
-            if b then sideOf[b] = side end
-        end
+    -- The inspect window is narrower: its weapon row has no room for text
+    -- beside or above the slots, so the weapons show level and ring only.
+    local WEAPON = { MainHand = true, SecondaryHand = true, Ranged = true }
+    for n, side in pairs(Skins.SLOTS) do
+        local b = _G["Inspect" .. n .. "Slot"]
+        if b then sideOf[b] = WEAPON[n] and "none" or side end
     end
     hooksecurefunc("InspectPaperDollItemSlotButton_Update", function(button)
         if sideOf[button] then paint(button) end

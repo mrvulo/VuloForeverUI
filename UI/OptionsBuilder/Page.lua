@@ -201,7 +201,7 @@ local function crumbText(mod, tabId)
         parts[#parts + 1] = L[g]
     end
     parts[#parts + 1] = L[mod.name]
-    if mod.tabs and #mod.tabs > 1 then
+    if mod.tabs and (#mod.tabs > 1 or mod.tabsAlways) then
         for _, t in ipairs(mod.tabs) do
             if t.id == tabId then parts[#parts + 1] = L[t.label]; break end
         end

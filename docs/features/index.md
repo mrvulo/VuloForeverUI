@@ -151,10 +151,11 @@ jemand ohne den Code prüfen kann.
 - Angenommen **Modern**, **dann** ist das Fenster flach dunkel mit dünnem Rand: Titel, die Leiste „Stufe 5, Jäger“, Modellhintergrund, Werte-Bereich und Reiter in derselben dunklen Farbe; die Plätze ebenfalls abgerundet in Qualitätsfarbe. Nichts Helles oder Goldenes bleibt stehen.
 - **Wenn** du jemanden betrachtest, **dann** sieht das Betrachten-Fenster im gewählten Stil genauso aus.
 - **Wenn** „Gegenstandsstufe“ an ist, **dann** steht auf jedem belegten Platz die Stufe (auch beim Betrachten).
-- **Wenn** „Verzauberungen als Text“ an ist, **dann** steht neben dem Platz der Name der Verzauberung bzw. von Öl/Gift/Stein auf der Waffe, nichts überlappt das Modell.
+- **Wenn** „Verzauberungen als Text“ an ist, **dann** steht neben dem Platz der Name der Verzauberung bzw. von Öl/Gift/Stein auf der Waffe: Waffenhand links, Schildhand darüber, Fernkampf rechts hinter dem Munitionsplatz; nichts liegt auf einem anderen Platz.
 - **Wenn** „Haltbarkeit“ an ist, **dann** zeigt jeder Platz mit Haltbarkeit seinen Prozentwert, gelb unter 50 %, rot unter 20 %.
 - **Wenn** „Werte-Abschnitte“ an ist, **dann** lassen sich die Abschnitte rechts per Klick auf den Titel ein- und ausklappen, und der Zustand bleibt nach /reload.
-- **Dann** wechselt jede Einstellung sofort im offenen Fenster, und im Kampf kommt kein Fehler.
+- **Dann** wechselt jede Einstellung sofort im offenen Fenster, und im Kampf kommt kein Fehler (Einklappen wartet bis nach dem Kampf).
+- **Dann** zeigt die Optionsseite den Reiter „Fenster-Skins“ und die Abschnitte Stil, Fenster, Auf den Plätzen, Werte.
 
 ---
 

@@ -1,4 +1,8 @@
 -- VuloForeverUI / Modules / Skins / Options
+--
+-- One tab per kind of skin; "Window skins" is the first. The tab shows even
+-- while it is the only one (tabsAlways), so the page keeps its place when
+-- the next kind arrives.
 local _, ns = ...
 local L = ns.L
 local Skins = ns.Skins
@@ -7,16 +11,19 @@ local mod = Skins.mod
 mod.tabs = {
     { id = "windows", label = "Window skins" },
 }
+mod.tabsAlways = true
 
 local rows = ns.OptionRows(function() return Skins.db() end, function() Skins.Apply() end)
 
 local function windowsPage()
     return {
-        { type = "desc", text = L["|cffaaaaaaThe character window and the inspect window. Open them with C, or inspect someone, to see a change at once.|r"] },
+        { type = "header", text = L["Style"] },
         rows.dropdown("style", L["Style"], {
             { value = "standard", text = L["Standard"] },
             { value = "modern",   text = L["Modern"] },
-        }, L["Standard keeps the game's own frame; Modern makes it flat and dark. Both round the slots and ring them in the item's quality colour."]),
+        }, L["Standard keeps the game's own frame; Modern makes it flat and dark. Both round the slots and ring them in the item's quality colour. Open the character window (C) to see a change at once."]),
+
+        { type = "header", text = L["Windows"] },
         rows.toggle("character", L["Character window"]),
         rows.toggle("inspect", L["Inspect window"]),
 
@@ -30,6 +37,6 @@ local function windowsPage()
     }
 end
 
-function mod:GetOptions(tabId)
+function mod:GetOptions()
     return windowsPage()
 end

@@ -151,7 +151,14 @@ These apply to every visible change, in every module.
   enchants = the item the reminders learned), durability (player only).
 - Stat sections fold by giving the client's ScrollBox a shorter data
   provider built from its own entries — only while a section is folded, so
-  with nothing folded the client's list is untouched.
+  with nothing folded the client's list is untouched. Never in combat: a new
+  provider runs every row's update in our taint, where a secret stat would
+  throw; the fold waits for PLAYER_REGEN_ENABLED.
+- Slot text sides: left column → right, right column → left, main hand →
+  left, off hand → above, ranged → right past the ammo slot. The inspect
+  window is too narrow for weapon texts (ring and level only).
+- The settings page shows its single tab ("Window skins") via
+  `mod.tabsAlways`, so more skin kinds can join as tabs.
 
 ## Reminders (`Modules/Reminder/`)
 

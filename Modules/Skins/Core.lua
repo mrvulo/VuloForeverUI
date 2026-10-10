@@ -125,11 +125,88 @@ function Skins.Ground(frame, color)
         end
         g.parts[#g.parts + 1] = t
     end
+    -- a title bar: a darker band the height of the client's title row
+    local bar = frame:CreateTexture(nil, "BACKGROUND", nil, -6)
+    bar:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
+    bar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, -1)
+    bar:SetHeight(24)
+    bar:SetColorTexture(0, 0, 0, 0.5)
+    g.parts[#g.parts + 1] = bar
     function g:SetShown(on)
         for _, t in ipairs(self.parts) do t:SetShown(on) end
     end
     g:SetShown(false)
     return g
+end
+
+-- The client's close button, flat: its own art faded, a thin cross of ours
+-- over it. The button itself (and its click) stays the client's.
+local closeX = setmetatable({}, { __mode = "k" })
+function Skins.FlatClose(button, on)
+    if not button then return end
+    local x = closeX[button]
+    if on then
+        for _, t in ipairs({ button:GetNormalTexture(), button:GetPushedTexture(),
+                             button:GetHighlightTexture(), button:GetDisabledTexture() }) do
+            Skins.Fade(t)
+        end
+        if not x then
+            local f = CreateFrame("Frame", nil, button)
+            f:SetAllPoints(button)
+            f:EnableMouse(false)
+            local t = f:CreateTexture(nil, "OVERLAY")
+            t:SetAtlas("uitools-icon-close")
+            t:SetSize(14, 14)
+            t:SetPoint("CENTER", button, "CENTER", -2, 0)
+            t:SetVertexColor(1, 1, 1, 0.75)
+            button:HookScript("OnEnter", function() if f:IsShown() then t:SetVertexColor(1, 1, 1, 1) end end)
+            button:HookScript("OnLeave", function() t:SetVertexColor(1, 1, 1, 0.75) end)
+            x = f
+            closeX[button] = x
+        end
+        x:Show()
+    elseif x then
+        x:Hide()
+    end
+end
+
+-- A client MinimalScrollBar, flat: track and thumb art faded, a thin bar of
+-- ours on the thumb.
+local thumbs = setmetatable({}, { __mode = "k" })
+function Skins.FlatScrollBar(bar, on)
+    local track = bar and bar.Track
+    local thumb = track and track.Thumb
+    if not thumb then return end
+    if on then
+        Skins.FadeRegions(track)
+        Skins.FadeRegions(thumb)
+        local t = thumbs[thumb]
+        if not t then
+            t = thumb:CreateTexture(nil, "OVERLAY")
+            t:SetColorTexture(1, 1, 1, 0.3)
+            t:SetPoint("TOP", thumb, "TOP", 0, 0)
+            t:SetPoint("BOTTOM", thumb, "BOTTOM", 0, 0)
+            t:SetWidth(4)
+            thumbs[thumb] = t
+        end
+        t:Show()
+    elseif thumbs[thumb] then
+        thumbs[thumb]:Hide()
+    end
+end
+
+-- An item whose data the client has not loaded yet answers "no enchant" and
+-- "no level". Those answers must not be kept: ask for the item and say so,
+-- and GET_ITEM_INFO_RECEIVED repaints (Character/Inspect).
+local asked = {}       -- itemID -> times asked; an item that never comes is let go
+function Skins.ItemReady(itemID)
+    if type(itemID) ~= "number" then return true end
+    if C_Item.IsItemDataCachedByID(itemID) then return true end
+    asked[itemID] = (asked[itemID] or 0) + 1
+    if asked[itemID] > 3 then return true end
+    C_Item.RequestLoadItemDataByID(itemID)
+    Skins.waiting = true
+    return false
 end
 
 -- ---------------------------------------------------------------- slots --
@@ -152,8 +229,11 @@ local function grow(t, anchor)
     t:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", e, -e)
 end
 
--- side: "left" (text to the right), "right" (text to the left), "bottom"
--- (text above the slot)
+-- side: "left" (text to the right), "right" (text to the left), "above"
+-- (text over the slot, centred), "none" (no enchant text: the ammo slot).
+-- The weapon row sits 43 px apart, so its three slots each send their text
+-- a different way: main hand left, off hand up, ranged right (past the ammo
+-- slot while that is shown -- PaintSlot's `after`).
 local function decorate(button, side)
     local d = deco[button]
     if d then return d end
@@ -172,18 +252,18 @@ local function decorate(button, side)
     d.dura:SetPoint("TOPLEFT", button, "TOPLEFT", 2, -2)
     d.enchant = d.over:CreateFontString(nil, "OVERLAY")
     d.enchant:SetWordWrap(false)
-    d.enchant:SetTextColor(0.35, 0.95, 0.35)
+    d.enchant:SetTextColor(0.35, 0.95, 0.35, 0.9)
     if side == "left" then
-        d.enchant:SetPoint("LEFT", button, "RIGHT", 6, 0)
+        d.enchant:SetPoint("LEFT", button, "RIGHT", 5, 0)
         d.enchant:SetJustifyH("LEFT")
     elseif side == "right" then
-        d.enchant:SetPoint("RIGHT", button, "LEFT", -6, 0)
+        d.enchant:SetPoint("RIGHT", button, "LEFT", -5, 0)
         d.enchant:SetJustifyH("RIGHT")
     else
         d.enchant:SetPoint("BOTTOM", button, "TOP", 0, 3)
         d.enchant:SetJustifyH("CENTER")
     end
-    d.enchant:SetWidth(side == "bottom" and 90 or 110)
+    d.enchant:SetWidth(side == "above" and 110 or 115)
     deco[button] = d
     return d
 end
@@ -203,11 +283,17 @@ local function setRound(button, d, on)
     grow(d.ring, button)
 end
 
--- The square art the client draws round a slot.
+-- The square art the client draws round a slot: the quality border, the
+-- quick-slot frame, the gear-slot plate (on BorderFrame, or on the ammo slot
+-- itself as "GearSlotSmall").
 local function slotArt(button)
     local out = { button.IconBorder, button.GetNormalTexture and button:GetNormalTexture() }
     if button.BorderFrame then
         for _, r in ipairs({ button.BorderFrame:GetRegions() }) do out[#out + 1] = r end
+    end
+    for _, r in ipairs({ button:GetRegions() }) do
+        local atlas = r.GetAtlas and r:GetAtlas()
+        if type(atlas) == "string" and atlas:find("GearSlot", 1, true) then out[#out + 1] = r end
     end
     return out
 end
@@ -218,9 +304,11 @@ end
 
 -- info: { quality, level, dura (0..1 or nil), enchant (string or nil) }
 -- or nil for an empty slot. Called after the client has drawn the slot.
-function Skins.PaintSlot(button, side, info)
+-- off: this window is switched off -- the slot goes back to the client's.
+-- after: a frame the "left" text starts behind instead of the slot.
+function Skins.PaintSlot(button, side, info, off, after)
     local d = decorate(button, side)
-    if not mod.active then
+    if not mod.active or off then
         if d.round then setRound(button, d, false) end
         d.over:Hide()
         return
@@ -259,8 +347,12 @@ function Skins.PaintSlot(button, side, info)
         d.dura:Hide()
     end
 
-    fontFor(d.enchant, 10)
-    if db.enchants and info and info.enchant then
+    fontFor(d.enchant, 9)
+    if d.side == "left" then
+        d.enchant:ClearAllPoints()
+        d.enchant:SetPoint("LEFT", after or button, "RIGHT", 5, 0)
+    end
+    if db.enchants and d.side ~= "none" and info and info.enchant then
         d.enchant:SetText(info.enchant)
         d.enchant:Show()
     else

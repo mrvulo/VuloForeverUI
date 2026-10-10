@@ -13,15 +13,18 @@ local Skins = ns.Skins
 local Character = {}
 table.insert(Skins.parts, Character)
 
+-- Which way each slot's enchant text runs (Core.lua, decorate).
 local SLOTS = {
-    left   = { "Head", "Neck", "Shoulder", "Back", "Chest", "Shirt", "Tabard", "Wrist" },
-    right  = { "Hands", "Waist", "Legs", "Feet", "Finger0", "Finger1", "Trinket0", "Trinket1" },
-    bottom = { "MainHand", "SecondaryHand", "Ranged" },
+    Head = "left", Neck = "left", Shoulder = "left", Back = "left", Chest = "left",
+    Shirt = "left", Tabard = "left", Wrist = "left",
+    Hands = "right", Waist = "right", Legs = "right", Feet = "right",
+    Finger0 = "right", Finger1 = "right", Trinket0 = "right", Trinket1 = "right",
+    MainHand = "right", SecondaryHand = "above", Ranged = "left",
 }
-local NO_LEVEL = { [4] = true, [19] = true }     -- shirt, tabard
+local NO_LEVEL = { [0] = true, [4] = true, [19] = true }     -- ammo, shirt, tabard
 Skins.SLOTS, Skins.NO_LEVEL = SLOTS, NO_LEVEL
 
-local sideOf = {}          -- client slot button -> "left" | "right" | "bottom"
+local sideOf = {}          -- client slot button -> "left" | "right" | "above" | "none"
 local enchantCache = {}    -- inventory slot -> enchant text (or false)
 
 -- ---------------------------------------------------------------- slot data --
@@ -40,8 +43,11 @@ local function weaponTemp(slot)
 end
 
 local function enchantOf(slot)
+    if slot == 0 then return nil end          -- ammo: nothing to enchant
     local v = enchantCache[slot]
-    if v == nil then
+    if v == nil and not Skins.ItemReady(GetInventoryItemID("player", slot)) then
+        v = false                     -- asked for; not kept until it arrives
+    elseif v == nil then
         local ok, data = pcall(C_TooltipInfo.GetInventoryItem, "player", slot)
         v = ok and Skins.EnchantFrom(data) or false
         enchantCache[slot] = v
@@ -69,10 +75,13 @@ local function paint(button)
     if not side then return end
     local db = Skins.db()
     if not db.character then
-        Skins.PaintSlot(button, side, nil)
+        Skins.PaintSlot(button, side, nil, true)
         return
     end
-    Skins.PaintSlot(button, side, slotInfo(button:GetID()))
+    -- the ranged text starts behind the ammo slot while that one is shown
+    local ammo = _G.CharacterAmmoSlot
+    local after = (button == _G.CharacterRangedSlot and ammo and ammo:IsShown()) and ammo or nil
+    Skins.PaintSlot(button, side, slotInfo(button:GetID()), false, after)
 end
 
 function Character.PaintAll()
@@ -88,12 +97,24 @@ local function modernParts()
     local pdf = _G.PaperDollFrame
     local list = { cf.NineSlice, cf.PortraitContainer, cf.FrameGlow }
     local function add(t) if t then list[#list + 1] = t end end
+    local statBoxes = { [_G.CharacterStatsPaneScrollBox or 0] = true, [_G.CharacterStatsPanePetScrollBox or 0] = true }
     for _, host in ipairs({ cf.LeftPaneHost, cf.RightPaneHost }) do
         if host then
             -- textures only: the panes may hold live frames (the stat list)
             for _, r in ipairs({ host:GetRegions() }) do add(r) end
             add(host.StoneBg)
+            -- and the art of its plain child frames (the gold divider), never
+            -- the stat lists themselves
+            for _, c in ipairs({ host:GetChildren() }) do
+                if not statBoxes[c] then
+                    for _, r in ipairs({ c:GetRegions() }) do add(r) end
+                end
+            end
         end
+    end
+    -- every texture of the stat lists: border, class ground, the scroll line
+    for box in pairs(statBoxes) do
+        if box ~= 0 then for _, r in ipairs({ box:GetRegions() }) do add(r) end end
     end
     if pdf then
         add(pdf.TopBackgroundStripHost)
@@ -104,8 +125,6 @@ local function modernParts()
                          "CharacterModelFrameBackgroundBotLeft", "CharacterModelFrameBackgroundBotRight" }) do
         add(_G[n])
     end
-    local stats = _G.CharacterStatsPaneScrollBox
-    if stats then add(stats.Border); add(stats.ClassBackground) end
     for i = 1, 6 do
         local tab = _G["CharacterFrameModeTab" .. i]
         if tab then add(tab.Background) end
@@ -121,8 +140,19 @@ local function buildPanels()
         -- the level line ("Level 5, Hunter"): a strip in the window's own
         -- dark, a shade lighter, under the title
         local strip = pdf.TopBackgroundStripHost
-        panels.strip = Skins.Panel(strip, Skins.STRIP, 0, cf)
+        -- on PaperDollFrame, which is never faded: it goes with the page,
+        -- not over the other tabs' controls
+        panels.strip = Skins.Panel(strip, Skins.STRIP, 0, pdf)
         panels.strip:SetFrameLevel(strip:GetFrameLevel())
+    end
+    local right = cf.RightPaneHost
+    if right then
+        -- the stat side reads as its own area: a darker ground on the pane
+        local t = right:CreateTexture(nil, "BACKGROUND", nil, -8)
+        t:SetPoint("TOPLEFT", right, "TOPLEFT", 0, -26)
+        t:SetPoint("BOTTOMRIGHT", right, "BOTTOMRIGHT", -6, 8)
+        t:SetColorTexture(0, 0, 0, 0.2)
+        panels.statGround = t
     end
     panels.tabs = {}
     for i = 1, 6 do
@@ -139,6 +169,12 @@ local function showPanels(on)
     if not panels.window then return end
     panels.window:SetShown(on)
     if panels.strip then panels.strip:SetShown(on) end
+    if panels.statGround then panels.statGround:SetShown(on) end
+    local cf = _G.CharacterFrame
+    Skins.FlatClose(cf.CloseButton or _G.CharacterFrameCloseButton, on)
+    for _, box in ipairs({ _G.CharacterStatsPaneScrollBox, _G.CharacterStatsPanePetScrollBox }) do
+        if box then Skins.FlatScrollBar(box.ScrollBar, on) end
+    end
     for _, p in ipairs(panels.tabs) do p:SetShown(on) end
 end
 
@@ -162,12 +198,11 @@ local hooked
 function Character.Enable(mod)
     if not hooked and _G.PaperDollItemSlotButton_Update then
         hooked = true
-        for side, names in pairs(SLOTS) do
-            for _, n in ipairs(names) do
-                local b = _G["Character" .. n .. "Slot"]
-                if b then sideOf[b] = side end
-            end
+        for n, side in pairs(SLOTS) do
+            local b = _G["Character" .. n .. "Slot"]
+            if b then sideOf[b] = side end
         end
+        if _G.CharacterAmmoSlot then sideOf[_G.CharacterAmmoSlot] = "none" end
         hooksecurefunc("PaperDollItemSlotButton_Update", function(button)
             if sideOf[button] then paint(button) end
         end)
@@ -178,6 +213,19 @@ function Character.Enable(mod)
     end
     mod:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", changed)
     mod:RegisterEvent("WEAPON_ENCHANT_CHANGED", changed)
+    -- an item the slots asked for has arrived: draw again, once per frame
+    local queued
+    mod:RegisterEvent("GET_ITEM_INFO_RECEIVED", function()
+        if not Skins.waiting or queued then return end
+        queued = true
+        ns.NextFrame(function()
+            queued = false
+            Skins.waiting = false
+            wipe(enchantCache)
+            Character.PaintAll()
+            if Skins.Inspect then Skins.Inspect.Repaint() end
+        end)
+    end)
     mod:RegisterEvent("UPDATE_INVENTORY_DURABILITY", function()
         if _G.CharacterFrame and _G.CharacterFrame:IsShown() then Character.PaintAll() end
     end)

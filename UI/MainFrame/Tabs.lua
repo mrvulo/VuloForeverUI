@@ -99,7 +99,8 @@ function UI:BuildTabsForModule(key)
     UI:ReleaseTabs()
 
     local tabs = (mod and mod.tabs) or { { id = "default", label = L["Settings"] } }
-    local hasRealTabs = mod and mod.tabs and #mod.tabs > 1
+    -- one tab shows too when the module asks (a page that will grow tabs)
+    local hasRealTabs = mod and mod.tabs and (#mod.tabs > 1 or mod.tabsAlways)
 
     if not hasRealTabs then
         f.tabBar:Hide()

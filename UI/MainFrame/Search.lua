@@ -41,7 +41,7 @@ function MF.BuildSearchResults(f, searchBox, placeholder)
             -- well listed every one of its rows twice
             if m and m.GetOptions and not m._pageMember and not m.parentTab then
                 local tabIds, tabLabels = {}, {}
-                local realTabs = m.tabs and #m.tabs > 1
+                local realTabs = m.tabs and (#m.tabs > 1 or m.tabsAlways)
                 if m.tabs then
                     for _, t in ipairs(m.tabs) do
                         table.insert(tabIds, t.id); tabLabels[t.id] = t.label
