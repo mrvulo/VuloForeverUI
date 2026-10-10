@@ -54,7 +54,7 @@ function mod:GetOptions()
             { type = "button", label = L["Open Edit Mode"], width = 200, primary = true,
               onClick = function() ns:SetEditMode(true) end },
             { type = "button", label = L["Show possible buffs"], width = 200,
-              tooltip = L["Shows every buff you could have now: your spells, weapon enchants and the potions, elixirs, flasks, scrolls and food in your bags."],
+              tooltip = L["Shows every buff you could have: your spells, buffs from other classes, and the best flask, elixir, food, scroll, potion and weapon item for your role and level."],
               onClick = function() R.ToggleCatalog() end },
         } },
         slider("size", L["Icon size"], 24, 64),

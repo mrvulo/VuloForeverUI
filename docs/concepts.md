@@ -127,6 +127,12 @@ These apply to every visible change, in every module.
   client's own subclass names. Display only, no clicks. An item counts as
   active when an aura of its use-spell's name is up; food shows "Well Fed".
   Unreadable auras (combat) say so, never "active".
+- Recommendations come from `Supplies.lua`: chains of ranks, best first, with
+  required levels — every item and spell ID checked against the client's
+  item/spell tables, never typed from memory. The role is picked per
+  character in the window (Forever does not reliably name a spec); the class
+  gives the first guess. Paladin buffs only for Alliance, shaman only for
+  Horde (classic faction lock — change if Forever lifts it).
 
 ## Quality of Life (`Modules/QoL/`)
 

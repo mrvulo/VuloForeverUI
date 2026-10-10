@@ -41,7 +41,7 @@ jemand ohne den Code prüfen kann.
 | F-20 | Chat-Tabs ohne Fehler im Kampf | Chat | gebaut | 0.11.0 |
 | F-21 | Gelbes „!“ auf Gegenständen, die eine Quest starten | Taschen | gebaut | – |
 | F-22 | „Chat kopieren“ zeigt den Text | Chat | bestätigt | – |
-| F-23 | Fenster „Mögliche Buffs“ | Erinnerungen | gebaut | – |
+| F-23 | Fenster „Mögliche Buffs“ mit Empfehlungen pro Rolle | Erinnerungen | gebaut | – |
 
 ---
 
@@ -117,6 +117,9 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du unter Erinnerungen „Mögliche Buffs zeigen“ klickst, **dann** öffnet sich rechts neben dem Optionsfenster eine Liste: „Deine Zauber“, „Waffen“ (jede Waffenhand mit Restzeit, Gifte/Öle/Steine aus den Taschen), danach Fläschchen, Elixiere, Tränke, Rollen, Essen — jeweils mit Anzahl.
 - Angenommen ein Buff ist auf dir (z. B. ein Elixier, „Satt“, Arkane Intelligenz), **dann** steht darunter grün „Aktiv · 25 Min.“; sonst grau „Nicht aktiv“. Trinkst du etwas, solange das Fenster offen ist, wechselt die Zeile von selbst.
 - **Dann** zeigt Maus drüber den Tooltip; Escape oder das X schließt; das Fenster lässt sich ziehen.
+- **Wenn** du oben die Rolle wechselst (Nahkampf-, Fernkampf-, Zauberschaden, Heiler, Tank), **dann** wechseln sofort die Empfehlungen: je Kategorie der beste Rang, den deine Stufe erlaubt (Stufe 20 sieht Stufe-20-Sachen), gold „Empfohlen · in den Taschen“ oder grau „nicht in den Taschen“.
+- **Dann** stehen unter „Von anderen Klassen“ die Gruppenbuffs für deine Rolle mit Klassennamen in Klassenfarbe (Paladin nur Allianz, Schamane nur Horde); ab Stufe 55 kommen die Weltbuffs dazu.
+- Angenommen ein Schurke, **dann** werden Sofort- und Tödliches Gift empfohlen; ein Krieger mit Streitkolben bekommt Gewichtsteine statt Wetzsteine.
 
 ---
 

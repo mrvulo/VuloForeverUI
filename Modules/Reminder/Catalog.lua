@@ -1,17 +1,23 @@
 -- VuloForeverUI / Modules / Reminder / Catalog
 --
 -- "What could I have on me right now?" -- a window opened from the options
--- page, listing everything this character can put on itself:
+-- page, listing everything this character can put on itself or get from
+-- others, for the role picked at its top:
 --
---   Your spells   the class buffs from Data.lua the character knows
---   Weapons       each weapon slot's temporary enchant, shaman imbues, and the
---                 poisons, oils and stones in the bags
---   then one group per kind of consumable in the bags -- flasks, elixirs,
---   potions, scrolls, food -- named by the client's own item subclass names.
+--   Your spells         the class buffs from Data.lua the character knows
+--   From other classes  group buffs (Supplies.lua), for this role
+--   World buffs         from level 55
+--   Weapons             each weapon slot's temporary enchant, shaman imbues,
+--                       the recommended poison / stone / oil, the bag's own
+--   Flasks, Elixirs, Food, Scrolls, Other, Potions
+--                       the recommended ones first (best rank the level
+--                       allows, Supplies.lua), then whatever else of that kind
+--                       is in the bags
 --
--- Every row says whether that buff is on you and for how long. Only to look
--- at: casting and using stay with the reminder row and the bags, so nothing
--- here is secure and nothing can taint.
+-- Every row says whether that buff is on you and for how long; a recommended
+-- item also whether you carry it. Only to look at: casting and using stay
+-- with the reminder row and the bags, so nothing here is secure and nothing
+-- can taint.
 --
 -- An item counts as "on you" when an aura of its use-spell's name is up (an
 -- elixir and its buff share the name). Food is the exception: what it leaves
@@ -20,25 +26,59 @@ local _, ns = ...
 local L = ns.L
 local R = ns.Reminder
 
-local W, H, PAD = 340, 460, 12
+local W, H, PAD = 360, 540, 12
 local ROW_H, ICON = 30, 22
+local TOP = 90                  -- title, line, role picker
 local WELL_FED = 19705
+local GREEN, GREY, GOLD = { 0.35, 0.85, 0.35 }, { 0.6, 0.6, 0.6 }, { 1, 0.82, 0 }
 
-local win, scroll, child, note
+local win, scroll, child, note, rolePick
 local rows, heads = {}, {}
+
+-- ---------------------------------------------------------------- role --
+
+local function charDB()
+    local c = _G.VuloForeverUICharDB
+    return type(c) == "table" and c or nil
+end
+
+function R.Role()
+    local c = charDB()
+    local v = c and c.reminderRole
+    for _, r in ipairs(R.ROLES) do if r.value == v then return v end end
+    return R.ROLE_DEFAULT[R.class] or "melee"
+end
+
+local function setRole(v)
+    local c = charDB()
+    if c then c.reminderRole = v end
+end
 
 -- ---------------------------------------------------------------- data --
 
 local CS = Enum.ItemConsumableSubclass or {}
--- consumable subclasses in display order; bandages heal, they buff nothing
-local ORDER = { CS.Flasksphials, CS.Elixir, CS.Potion, CS.Scroll, CS.Fooddrink, CS.Other, CS.Generic }
-local WEAPON_SUB = { [CS.Itemenhancement or -1] = true, [CS.ItemenhancementTemporary or -1] = true }
+local CAT_OF = {
+    [CS.Flasksphials or -1] = "flask", [CS.Elixir or -1] = "elixir", [CS.Potion or -1] = "potion",
+    [CS.Scroll or -1] = "scroll", [CS.Fooddrink or -1] = "food",
+    [CS.Itemenhancement or -1] = "weapon", [CS.ItemenhancementTemporary or -1] = "weapon",
+}
+local GROUPS = {
+    { cat = "flask",  label = "Flasks" },
+    { cat = "elixir", label = "Elixirs" },
+    { cat = "food",   label = "Food" },
+    { cat = "scroll", label = "Scrolls" },
+    { cat = "other",  label = "Other" },
+    { cat = "potion", label = "Potions" },
+}
+local NO_MANA = { WARRIOR = true, ROGUE = true }
 
 local function fmtLeft(left)
     if left == math.huge then return L["Active"] end
-    if left >= 3600 then return L["Active · %s"]:format(L["%d h"]:format(math.floor(left / 3600))) end
-    if left >= 60 then return L["Active · %s"]:format(L["%d min"]:format(math.floor(left / 60))) end
-    return L["Active · %s"]:format(L["%d s"]:format(math.max(0, math.floor(left))))
+    local t
+    if left >= 3600 then t = L["%d h"]:format(math.floor(left / 3600))
+    elseif left >= 60 then t = L["%d min"]:format(math.floor(left / 60))
+    else t = L["%d s"]:format(math.max(0, math.floor(left))) end
+    return L["Active · %s"]:format(t)
 end
 
 -- Seconds left on an aura of this name; nil = not on you, false = cannot be
@@ -64,15 +104,30 @@ local function auraAny(ids)
     return best
 end
 
+-- the aura an item leaves: its use-spell's name (nil while the item is not cached)
+local function itemAura(id)
+    local name, spellID = C_Item.GetItemSpell(id)
+    return auraByName(name, spellID)
+end
+
 -- state: number/huge = on you, nil = not on you, false = unreadable
 local function status(state)
-    if state == false then return L["Not readable in combat"], 0.6, 0.6, 0.6 end
-    if state then return fmtLeft(state), 0.35, 0.85, 0.35 end
-    return L["Not active"], 0.6, 0.6, 0.6
+    if state == false then return L["Not readable in combat"], GREY end
+    if state then return fmtLeft(state), GREEN end
+    return L["Not active"], GREY
+end
+
+local function itemName(id)
+    local n = C_Item.GetItemNameByID(id)
+    if n then return n end
+    C_Item.RequestLoadItemDataByID(id)     -- GET_ITEM_INFO_RECEIVED redraws
+    return "…"
 end
 
 local function bagItems()
     local seen, list = {}, {}
+    local remembered = {}
+    for _, id in pairs(R.WeaponItems()) do remembered[id] = true end
     for bag = 0, (NUM_BAG_SLOTS or 4) + 1 do
         for slot = 1, C_Container.GetContainerNumSlots(bag) or 0 do
             local info = C_Container.GetContainerItemInfo(bag, slot)
@@ -80,13 +135,12 @@ local function bagItems()
             if id and not seen[id] then
                 seen[id] = true
                 local _, _, _, equipLoc, icon, classID, subID = C_Item.GetItemInfoInstant(id)
-                local spellName, spellID = C_Item.GetItemSpell(id)
                 if classID == Enum.ItemClass.Consumable and (not equipLoc or equipLoc == "")
-                    and subID ~= CS.Bandage and spellName then
-                    list[#list + 1] = { id = id, sub = subID, icon = icon,
-                        name = C_Item.GetItemNameByID(id) or info.itemName or spellName,
-                        count = C_Item.GetItemCount(id) or 1,
-                        spellName = spellName, spellID = spellID }
+                    and subID ~= CS.Bandage and C_Item.GetItemSpell(id) then
+                    list[#list + 1] = { id = id, icon = icon,
+                        cat = remembered[id] and "weapon" or CAT_OF[subID] or "other",
+                        name = C_Item.GetItemNameByID(id) or info.itemName or "",
+                        count = C_Item.GetItemCount(id) or 1 }
                 end
             end
         end
@@ -95,82 +149,170 @@ local function bagItems()
     return list
 end
 
--- { head = text } or { icon, name, line, r, g, b, count, spell, item }
+local function mainHandKind()
+    local id = GetInventoryItemID("player", 16)
+    if not id then return nil end
+    local _, _, _, _, _, classID, subID = C_Item.GetItemInfoInstant(id)
+    if classID ~= Enum.ItemClass.Weapon then return nil end
+    local WS = Enum.ItemWeaponSubclass
+    if subID == WS.Mace1H or subID == WS.Mace2H or subID == WS.Staff then return "blunt" end
+    return "edge"
+end
+
+-- Does an entry (supply chain, group buff) apply to this character and role?
+local function fits(e, role, ctx)
+    if e.roles and not e.roles[role] then return false end
+    if e.mana and NO_MANA[R.class] then return false end
+    if e.class and not e.class[R.class] then return false end
+    if e.noClass and e.noClass[R.class] then return false end
+    if e.from and ctx.level < e.from then return false end
+    if e.weapon and ctx.weapon and e.weapon ~= ctx.weapon then return false end
+    return true
+end
+
+-- The best rank this level may use; nil when none.
+local function bestRank(items, level)
+    for _, it in ipairs(items) do
+        if it[2] <= level then return it[1] end
+    end
+end
+
+local function recommendedRow(id, isWeapon, chainItems)
+    local count = C_Item.GetItemCount(id) or 0
+    local row = { icon = C_Item.GetItemIconByID(id), item = id, name = itemName(id),
+                  count = count > 0 and count or nil }
+    -- any rank of the chain on you counts: a lower elixir is still an elixir
+    local state
+    if not isWeapon then
+        for _, it in ipairs(chainItems) do
+            local s = itemAura(it[1])
+            if s == false then state = false; break end
+            if s and (not state or s > state) then state = s end
+        end
+    end
+    if state ~= nil then
+        row.line, row.color = status(state)
+    elseif count > 0 then
+        row.line, row.color = L["Recommended · in your bags"], GOLD
+    else
+        row.line, row.color, row.dim = L["Recommended · not in your bags"], GREY, true
+    end
+    return row
+end
+
+-- { head = text } or { icon, name, line, color, count, dim, spell | item | inv }
 local function collect()
     local out = {}
+    local role = R.Role()
+    local ctx = { level = UnitLevel("player") or 1, weapon = mainHandKind() }
     local function head(text) out[#out + 1] = { head = text } end
+    local function addAll(list) for _, it in ipairs(list) do out[#out + 1] = it end end
 
+    -- your spells
     local spells = {}
     for _, e in ipairs(R.classBuffs) do
         local cast = R.CastFor(R.EntryCfg(e), e.cast)
         if cast then
-            local line, r, g, b = status(auraAny(e.ids))
+            local line, color = status(auraAny(e.ids))
             spells[#spells + 1] = { icon = C_Spell.GetSpellTexture(cast), spell = cast,
-                name = e.label and L[e.label] or R.SpellName(cast), line = line, r = r, g = g, b = b }
+                name = e.label and L[e.label] or R.SpellName(cast), line = line, color = color }
         end
     end
-    if #spells > 0 then
-        head(L["Your spells"])
-        for _, it in ipairs(spells) do out[#out + 1] = it end
+    if #spells > 0 then head(L["Your spells"]); addAll(spells) end
+
+    -- from other classes
+    local faction = UnitFactionGroup("player")
+    local names = _G.LOCALIZED_CLASS_NAMES_MALE or {}
+    local others = {}
+    for _, b in ipairs(R.GROUP_BUFFS) do
+        if b.class ~= R.class and (not b.faction or b.faction == faction) and fits(b, role, ctx) then
+            local name = R.SpellName(b.ids[1])
+            if name then
+                local line, color = status(auraAny(b.ids))
+                local who = names[b.class] or b.class
+                local cc = C_ClassColor.GetClassColor(b.class)
+                if cc then who = cc:WrapTextInColorCode(who) end
+                others[#others + 1] = { icon = C_Spell.GetSpellTexture(b.ids[1]), spell = b.ids[1],
+                    name = name, line = line, color = color, count = who }
+            end
+        end
+    end
+    if #others > 0 then head(L["From other classes"]); addAll(others) end
+
+    -- world buffs
+    if ctx.level >= 55 then
+        local world = {}
+        for _, b in ipairs(R.WORLD_BUFFS) do
+            local name = (not b.faction or b.faction == faction) and fits(b, role, ctx)
+                and R.SpellName(b.ids[1])
+            if name then
+                local line, color = status(auraAny(b.ids))
+                world[#world + 1] = { icon = C_Spell.GetSpellTexture(b.ids[1]), spell = b.ids[1],
+                    name = name, line = line, color = color }
+            end
+        end
+        if #world > 0 then head(L["World buffs"]); addAll(world) end
     end
 
+    -- recommendations per category, then the bags
     local items = bagItems()
-    local remembered = R.WeaponItems()
-    local mine = {}
-    for _, id in pairs(remembered) do mine[id] = true end
+    local shown = {}
+    local byCat = {}
+    for _, chainDef in ipairs(R.SUPPLIES) do
+        if fits(chainDef, role, ctx) then
+            local id = bestRank(chainDef.items, ctx.level)
+            if id and not shown[id] then
+                shown[id] = true
+                local list = byCat[chainDef.cat] or {}
+                byCat[chainDef.cat] = list
+                list[#list + 1] = recommendedRow(id, chainDef.cat == "weapon", chainDef.items)
+            end
+        end
+    end
+    local function bagRows(cat, list, isWeapon)
+        for _, it in ipairs(items) do
+            if it.cat == cat and not shown[it.id] then
+                local line, color
+                if isWeapon then line, color = L["For a weapon"], GREY
+                else line, color = status(itemAura(it.id)) end
+                list[#list + 1] = { icon = it.icon, item = it.id, name = it.name, count = it.count,
+                    line = line, color = color }
+            end
+        end
+    end
 
     local weapons = {}
     for _, s in ipairs(R.SLOTS) do
         if R.IsWeapon(s.inv) then
             local left = R.EnchantLeft(R.WeaponSlot(s))
-            local line, r, g, b
-            if left then line, r, g, b = fmtLeft(left), 0.35, 0.85, 0.35
-            else line, r, g, b = L["No weapon enchant"], 0.6, 0.6, 0.6 end
             weapons[#weapons + 1] = { icon = GetInventoryItemTexture("player", s.inv), inv = s.inv,
-                name = L[s.label], line = line, r = r, g = g, b = b }
+                name = L[s.label],
+                line = left and fmtLeft(left) or L["No weapon enchant"], color = left and GREEN or GREY }
         end
     end
     if R.class == "SHAMAN" then
         for _, id in ipairs(R.KnownList(R.IMBUES)) do
             weapons[#weapons + 1] = { icon = C_Spell.GetSpellTexture(id), spell = id,
-                name = R.SpellName(id), line = L["Spell"], r = 0.6, g = 0.6, b = 0.6 }
+                name = R.SpellName(id), line = L["Spell"], color = GREY }
         end
     end
-    for _, it in ipairs(items) do
-        if WEAPON_SUB[it.sub] or mine[it.id] then
-            it.weapon = true
-            weapons[#weapons + 1] = { icon = it.icon, item = it.id, name = it.name, count = it.count,
-                line = L["For a weapon"], r = 0.6, g = 0.6, b = 0.6 }
-        end
-    end
-    if #weapons > 0 then
-        head(L["Weapons"])
-        for _, it in ipairs(weapons) do out[#out + 1] = it end
-    end
+    for _, it in ipairs(byCat.weapon or {}) do weapons[#weapons + 1] = it end
+    bagRows("weapon", weapons, true)
+    if #weapons > 0 then head(L["Weapons"]); addAll(weapons) end
 
-    for _, sub in ipairs(ORDER) do
-        local group = {}
-        if sub == CS.Fooddrink then
+    for _, g in ipairs(GROUPS) do
+        local list = {}
+        if g.cat == "food" then
             local fed = R.SpellName(WELL_FED)
             if fed then
-                local line, r, g, b = status(auraByName(fed, WELL_FED))
-                group[1] = { icon = C_Spell.GetSpellTexture(WELL_FED), spell = WELL_FED,
-                    name = fed, line = line, r = r, g = g, b = b }
+                local line, color = status(auraByName(fed, WELL_FED))
+                list[1] = { icon = C_Spell.GetSpellTexture(WELL_FED), spell = WELL_FED,
+                    name = fed, line = line, color = color }
             end
         end
-        local found
-        for _, it in ipairs(items) do
-            if it.sub == sub and not it.weapon then
-                found = true
-                local line, r, g, b = status(auraByName(it.spellName, it.spellID))
-                group[#group + 1] = { icon = it.icon, item = it.id, name = it.name, count = it.count,
-                    line = line, r = r, g = g, b = b }
-            end
-        end
-        if found then
-            head(C_Item.GetItemSubClassInfo(Enum.ItemClass.Consumable, sub) or "")
-            for _, it in ipairs(group) do out[#out + 1] = it end
-        end
+        for _, it in ipairs(byCat[g.cat] or {}) do list[#list + 1] = it end
+        bagRows(g.cat, list, false)
+        if #list > (g.cat == "food" and 1 or 0) then head(L[g.label]); addAll(list) end
     end
     return out
 end
@@ -229,21 +371,21 @@ end
 local function render()
     if not (win and win:IsShown()) then return end
     local list = collect()
-    local width = scroll:GetWidth()
-    child:SetWidth(width)
+    child:SetWidth(scroll:GetWidth())
+    local ac = ns.COLORS.accent
     local y, nr, nh = 0, 0, 0
     for _, it in ipairs(list) do
         if it.head then
             nh = nh + 1
+            local gap = nh > 1 and 10 or 0
             local fs = heads[nh] or makeHead(nh)
             fs:ClearAllPoints()
-            fs:SetPoint("TOPLEFT", child, "TOPLEFT", 2, -(y + (nh > 1 and 10 or 0)))
+            fs:SetPoint("TOPLEFT", child, "TOPLEFT", 2, -(y + gap))
             fs:SetPoint("RIGHT", child, "RIGHT", -2, 0)
-            local ac = ns.COLORS.accent
             fs:SetTextColor(ac.r, ac.g, ac.b)
             fs:SetText(it.head)
             fs:Show()
-            y = y + (nh > 1 and 10 or 0) + 18
+            y = y + gap + 18
         else
             nr = nr + 1
             local f = rows[nr] or makeRow(nr)
@@ -252,10 +394,15 @@ local function render()
             f:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -y)
             f:SetPoint("RIGHT", child, "RIGHT", 0, 0)
             f.icon:SetTexture(it.icon or 134400)
+            f.icon:SetDesaturated(it.dim == true)
+            f.icon:SetAlpha(it.dim and 0.6 or 1)
             f.name:SetText(it.name or "")
+            f.name:SetAlpha(it.dim and 0.7 or 1)
             f.line:SetText(it.line or "")
-            f.line:SetTextColor(it.r or 0.6, it.g or 0.6, it.b or 0.6)
-            f.count:SetText(it.count and ("×" .. it.count) or "")
+            local c = it.color or GREY
+            f.line:SetTextColor(c[1], c[2], c[3])
+            local count = it.count
+            f.count:SetText(type(count) == "number" and ("×" .. count) or count or "")
             f:Show()
             y = y + ROW_H
         end
@@ -295,7 +442,6 @@ local function build()
     title:SetPoint("RIGHT", win, "RIGHT", -34, 0)
     title:SetJustifyH("LEFT")
     title:SetText(L["Possible buffs"])
-    win.title = title
     UI:CreateCloseX(win, function() win:Hide() end)
 
     local sub = win:CreateFontString(nil, "OVERLAY")
@@ -304,10 +450,17 @@ local function build()
     sub:SetPoint("RIGHT", win, "RIGHT", -PAD, 0)
     sub:SetJustifyH("LEFT")
     sub:SetTextColor(ns.TC("textDim"))
-    sub:SetText(L["Your own buffs and what is in your bags. Green = on you now."])
+    sub:SetText(L["Green = on you now. Recommended for your role and level."])
+
+    rolePick = UI:CreateDropdown(win, {
+        label = L["Role"], width = W - 2 * PAD, values = R.ROLES,
+        get = function() return R.Role() end,
+        set = function(_, v) setRole(v); render() end,
+    })
+    rolePick:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -50)
 
     scroll = CreateFrame("ScrollFrame", nil, win, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -52)
+    scroll:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -TOP)
     scroll:SetPoint("BOTTOMRIGHT", win, "BOTTOMRIGHT", -PAD - 14, PAD)
     child = CreateFrame("Frame", nil, scroll)
     child:SetSize(1, 1)
@@ -328,10 +481,11 @@ local function build()
     win:SetScript("OnShow", function(self)
         for _, ev in ipairs({ "UNIT_AURA", "BAG_UPDATE_DELAYED", "WEAPON_ENCHANT_CHANGED",
                               "PLAYER_EQUIPMENT_CHANGED", "GET_ITEM_INFO_RECEIVED",
-                              "PLAYER_REGEN_ENABLED", "PLAYER_REGEN_DISABLED" }) do
+                              "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "PLAYER_REGEN_DISABLED" }) do
             self:RegisterEvent(ev)
         end
         self.ticker = C_Timer.NewTicker(5, queue)   -- the minutes count down
+        if rolePick._button and rolePick._button._refresh then rolePick._button._refresh() end
         render()
     end)
     win:SetScript("OnHide", function(self)
