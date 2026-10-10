@@ -164,6 +164,7 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du im Raster links klickst, **dann** kommt das Schmuckstück in den oberen Platz, rechts in den unteren.
 - Angenommen du bist im Kampf, **wenn** du klickst, **dann** wird es vorgemerkt (kleines Symbol unten rechts im Platz) und nach dem Kampf angelegt; ein zweiter Klick auf dasselbe hebt die Vormerkung auf.
 - **Wenn** du Alt-Klick auf ein Schmuckstück im Raster machst, **dann** verschwindet es aus dem Raster; mit gedrückter Alt-Taste erscheinen ausgeblendete grau und lassen sich per Alt-Klick zurückholen.
+- Angenommen „Abgerundete Plätze“ ist an (Standard), **dann** sind beide Plätze und jedes Feld im Raster abgerundet wie die Taschen, mit Ring in der Qualitätsfarbe; die Abklingzeit-Spirale folgt der runden Form; eine Vormerkung im Raster hat einen goldenen Ring.
 - Angenommen die Warteschlange eines Platzes ist an, **wenn** du von Hand ein passives oder nicht gelistetes Schmuckstück anlegst (z. B. Reitgerte), **dann** bleibt es liegen; der Pfeil wird grau, bis du es wieder ablegst.
 
 ---

@@ -50,6 +50,7 @@ local function makeCell(i)
     local bg = c:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints(c)
     bg:SetColorTexture(0, 0, 0, 0.6)
+    c.bg = bg
     c.icon = c:CreateTexture(nil, "ARTWORK")
     c.icon:SetPoint("TOPLEFT", 1, -1)
     c.icon:SetPoint("BOTTOMRIGHT", -1, 1)
@@ -60,6 +61,9 @@ local function makeCell(i)
     local hl = c:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints(c.icon)
     hl:SetColorTexture(1, 1, 1, 0.15)
+    c.look = { frame = c, icon = c.icon, ground = bg, cd = c.cd, edges = c.edges }
+    Trinkets.MakeRound(c.look, CELL)
+    hl:AddMaskTexture(c.look.mask)
     c:SetScript("OnClick", function(self, button)
         local id = self.id
         if not id then return end
@@ -114,6 +118,10 @@ function render()
         else
             ns.LayoutEdges(c.edges, c, 1, 0, 0, 0, 1)
         end
+        local round = Trinkets.Db().round ~= false
+        local _, _, quality = C_Item.GetItemInfo(id)
+        Trinkets.ApplyRound(c.look, round, quality)
+        if round and picked[id] then c.look.ring:SetVertexColor(1, 0.82, 0, 1) end
         -- handed on as they come: secret in a fight, so nil is tested by TYPE
         local start, dur = C_Container.GetItemCooldown(id)
         if type(start) == "nil" then start = 0 end

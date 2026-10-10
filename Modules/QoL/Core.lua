@@ -230,6 +230,7 @@ local mod = ns:RegisterModule("qol", {
             vertical = false,
             tooltips = true,
             grid     = true,      -- the pick grid on hover (TrinketFlyout.lua)
+            round    = true,      -- rounded slots with a quality ring
             gridColumns = 4,
             freeMove = false,     -- moved without Edit Mode while on
             x = 0, y = -120, scale = 1,

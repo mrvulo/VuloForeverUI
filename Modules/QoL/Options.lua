@@ -409,6 +409,7 @@ local function trinketsPage()
           set = function(_, v) QoL.Trinkets.SetUnlocked(v) end },
         toggle("trinkets", "vertical", L["Stack the slots vertically"]),
         toggle("trinkets", "tooltips", L["Show tooltips"]),
+        toggle("trinkets", "round", L["Rounded slots"]),
         toggle("trinkets", "grid", L["Pick grid when hovering a slot"]),
         slider("trinkets", "gridColumns", L["Columns of the pick grid"], 1, 8, 1),
         slider("trinkets", "scale", L["Size"], 0.5, 2, 0.05),

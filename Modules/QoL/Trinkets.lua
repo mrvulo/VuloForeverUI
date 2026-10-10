@@ -53,6 +53,62 @@ local holder, buttons, ticker, pending
 
 local function db() return QoL.db().trinkets end
 
+-- ---------------------------------------------------------------- round look --
+--
+-- The rounded square the bags and the character window use: a mask on the
+-- icon and its ground, the cooldown swipe drawn in the same shape, and a
+-- thin ring in the item's quality colour instead of the square edge. The
+-- mask files leave 10 of their 128 px empty per side, so they are stretched
+-- past the frame by that much.
+local MASK = "Interface\\AddOns\\VuloForeverUI\\Media\\Masks\\csquare_mask.tga"
+local RING = "Interface\\AddOns\\VuloForeverUI\\Media\\Masks\\csquare_ring.tga"
+local MARGIN = 10 / 108
+
+local function grow(t, f, size)
+    local e = size * MARGIN
+    t:ClearAllPoints()
+    t:SetPoint("TOPLEFT", f, "TOPLEFT", -e, e)
+    t:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", e, -e)
+end
+
+-- parts: { frame, icon, ground, cd, edges }; adds .mask and .ring once.
+function Trinkets.MakeRound(p, size)
+    p.mask = p.frame:CreateMaskTexture()
+    p.mask:SetTexture(MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    grow(p.mask, p.frame, size)
+    p.ring = p.frame:CreateTexture(nil, "OVERLAY", nil, 2)
+    p.ring:SetTexture(RING)
+    grow(p.ring, p.frame, size)
+    p.ring:Hide()
+end
+
+-- Round or square, and the ring's colour (quality, or a neutral grey).
+function Trinkets.ApplyRound(p, round, quality)
+    if p.round ~= round then
+        local fn = round and "AddMaskTexture" or "RemoveMaskTexture"
+        for _, t in ipairs({ p.icon, p.ground }) do
+            if t and t[fn] then pcall(t[fn], t, p.mask) end
+        end
+        if p.cd then
+            -- the swipe in the same shape; back to the plain square without
+            p.cd:SetSwipeTexture(round and MASK or "Interface\\Buttons\\WHITE8X8")
+            p.cd:SetSwipeColor(0, 0, 0, 0.8)
+        end
+        p.ring:SetShown(round)
+        p.round = round
+    end
+    -- every time: a repaint of the square edge may have shown it again
+    for _, t in pairs(p.edges or {}) do t:SetShown(not round) end
+    if round then
+        local r, g, b = 0.32, 0.32, 0.36
+        if type(quality) == "number" and quality >= 0 then
+            local qr, qg, qb = C_Item.GetItemQualityColor(quality)
+            if qr then r, g, b = qr, qg, qb end
+        end
+        p.ring:SetVertexColor(r, g, b, 1)
+    end
+end
+
 -- ---------------------------------------------------------------- queue data --
 
 function Trinkets.Queue(key)
@@ -259,6 +315,7 @@ local function paintSlot(b)
     local waiting = held[inv] ~= nil and held[inv] == GetInventoryItemID("player", inv)
     b.mark:SetDesaturated(waiting)
     b.mark:SetAlpha(waiting and 0.6 or 1)
+    Trinkets.ApplyRound(b.look, db().round ~= false, GetInventoryItemQuality("player", inv))
     local p = pendingPick[inv]
     if p then
         b.pend:SetTexture(Trinkets.ItemIcon(p))
@@ -369,7 +426,10 @@ local function build()
         mark:SetAtlas("bags-greenarrow")
         mark:SetSize(12, 12)
         mark:SetPoint("TOPLEFT", view, "TOPLEFT", 1, -1)
-        ns.LayoutEdges(ns.MakeEdges(view, "OVERLAY"), view, 1, 0, 0, 0, 1)
+        local edges = ns.MakeEdges(view, "OVERLAY")
+        ns.LayoutEdges(edges, view, 1, 0, 0, 0, 1)
+        local look = { frame = view, icon = icon, ground = bg, cd = cd, edges = edges }
+        Trinkets.MakeRound(look, SIZE)
         -- the trinket picked in a fight, waiting to go on
         local pendFrame = CreateFrame("Frame", nil, view)
         pendFrame:SetSize(15, 15)
@@ -398,7 +458,7 @@ local function build()
         b:SetScript("OnEnter", onEnter)
         b:SetScript("OnLeave", function() GameTooltip:Hide() end)
         b.key, b.inv, b.view, b.icon, b.cd, b.mark = s.key, s.inv, view, icon, cd, mark
-        b.pend, b.pendFrame = pend, pendFrame
+        b.pend, b.pendFrame, b.look = pend, pendFrame, look
         buttons[#buttons + 1] = b
     end
     holder.mover = ns:CreateMover(holder, {
