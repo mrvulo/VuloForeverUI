@@ -85,14 +85,23 @@ function Marks.Acknowledge(bag, slot)
     Bags.Repaint()
 end
 
--- A GUID we may use as a table key: a plain string, or nothing.
+-- A GUID we may use as a table key: a plain string, or nothing. The shared
+-- location: one new one per slot was most of the garbage the bags made
+-- (/vfuiprof, 2026-10-10: 4 MB in eight minutes).
 local function readGuid(bag, slot)
-    local loc = ItemLocation:CreateFromBagAndSlot(bag, slot)
+    local loc = ns.BagSlotLocation(bag, slot)
     if not C_Item.DoesItemExist(loc) then return nil end
     local guid = C_Item.GetItemGUID(loc)
     if ns.IsSecret(guid) or type(guid) ~= "string" or guid == "" then return nil end
     return guid
 end
+
+-- Scratch tables, reused by every scan: the counts and slots are double
+-- buffered (the last scan's stay readable until the new one is complete),
+-- the stacks are three parallel arrays instead of a table per stack.
+local spareCounts, spareSlots = {}, {}
+local stackGuid, stackId, stackCount = {}, {}, {}
+local present, unread = {}, {}
 
 -- One pass over the bags. A stack is new when the bags have not held it
 -- before, or when it grew -- AND the player owns more of that item than at
@@ -102,12 +111,14 @@ end
 -- The first pass after a login only primes, because otherwise every item a
 -- player owns would be "just picked up".
 function Marks.Scan()
-    local now, counts, slots, stacks, unread = GetTime(), {}, {}, {}, {}
+    local now, counts, slots = GetTime(), spareCounts, spareSlots
+    wipe(counts); wipe(unread)
+    for _, t in pairs(slots) do wipe(t) end
+    local n = 0
     for _, bag in ipairs(ns.CarriedBags()) do
-        local n = C_Container.GetContainerNumSlots(bag) or 0
-        local inBag = {}
-        slots[bag] = inBag
-        for slot = 1, n do
+        local inBag = slots[bag]
+        if not inBag then inBag = {}; slots[bag] = inBag end
+        for slot = 1, C_Container.GetContainerNumSlots(bag) or 0 do
             local info = C_Container.GetContainerItemInfo(bag, slot)
             local id = info and info.itemID
             if type(id) == "number" then
@@ -116,7 +127,8 @@ function Marks.Scan()
                 local guid = readGuid(bag, slot)
                 if guid then
                     inBag[slot] = guid
-                    stacks[#stacks + 1] = { guid = guid, id = id, count = count }
+                    n = n + 1
+                    stackGuid[n], stackId[n], stackCount[n] = guid, id, count
                 else
                     unread[id] = true
                 end
@@ -129,17 +141,18 @@ function Marks.Scan()
     -- full scan mark everything the player owns.
     if next(counts) == nil then return end
 
-    local present = {}
+    wipe(present)
     local judge = primed and now >= quietUntil
-    for _, s in ipairs(stacks) do
+    for i = 1, n do
+        local guid, id, count = stackGuid[i], stackId[i], stackCount[i]
         if judge then
-            local before = known[s.guid]
-            if (before == nil or s.count > before) and counts[s.id] > (totals[s.id] or 0) then
-                fresh[s.guid] = now
+            local before = known[guid]
+            if (before == nil or count > before) and counts[id] > (totals[id] or 0) then
+                fresh[guid] = now
             end
         end
-        known[s.guid] = s.count
-        present[s.guid] = true
+        known[guid] = count
+        present[guid] = true
     end
     for guid in pairs(fresh) do
         if not present[guid] then fresh[guid] = nil end
@@ -149,6 +162,7 @@ function Marks.Scan()
     -- had: the stack is judged at the next pass that can see it, and against
     -- what the player had before, not against a total it already counted in.
     for id in pairs(unread) do counts[id] = totals[id] end
+    spareCounts, spareSlots = totals, slotGuid
     totals, slotGuid = counts, slots
     -- An empty scan primes nothing: at a fresh login the addon loads before
     -- the client has filled the bags, and a snapshot of nothing made every

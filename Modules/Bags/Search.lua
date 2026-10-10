@@ -52,8 +52,7 @@ end end
 -- means when they type >30.
 local function itemLevel(entry, info)
     if not Bags.Categories.IsGear(info) then return nil end
-    local loc = ItemLocation:CreateFromBagAndSlot(entry.bag, entry.slot)
-    local ok, value = pcall(C_Item.GetCurrentItemLevel, loc)
+    local ok, value = pcall(C_Item.GetCurrentItemLevel, ns.BagSlotLocation(entry.bag, entry.slot))
     if ok and type(value) == "number" then return value end
     return nil
 end

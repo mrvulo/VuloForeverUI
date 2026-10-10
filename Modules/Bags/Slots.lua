@@ -745,9 +745,8 @@ function Slots.Paint(slot, bagID, slotID, info)
     -- The item level, on gear only.
     if db.showItemLevel and info and Bags.Categories.IsGear(info) then
         local level
-        local loc = ItemLocation and ItemLocation.CreateFromBagAndSlot
-            and ItemLocation:CreateFromBagAndSlot(bagID, slotID)
-        if loc and C_Item.GetCurrentItemLevel then
+        local loc = ns.BagSlotLocation(bagID, slotID)
+        if C_Item.GetCurrentItemLevel then
             local ok, value = pcall(C_Item.GetCurrentItemLevel, loc)
             if ok and type(value) == "number" then level = value end
         end

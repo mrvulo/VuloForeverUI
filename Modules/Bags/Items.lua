@@ -224,8 +224,7 @@ function Items.IsUpgrade(bagID, slotID, info)
     local minLevel = select(5, C_Item.GetItemInfo(info.itemID))
     if type(minLevel) == "number" and minLevel > UnitLevel("player") then return false end
 
-    local here = ItemLocation:CreateFromBagAndSlot(bagID, slotID)
-    local ok, level = pcall(C_Item.GetCurrentItemLevel, here)
+    local ok, level = pcall(C_Item.GetCurrentItemLevel, ns.BagSlotLocation(bagID, slotID))
     if not (ok and type(level) == "number") then return false end
 
     -- Better than either of two worn pieces is enough: it would replace that

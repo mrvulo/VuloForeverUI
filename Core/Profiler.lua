@@ -108,6 +108,14 @@ function ns.Prof.Report()
         if ok1 and ok2 and type(avg) == "number" and type(peak) == "number" then
             ns:Print(L["Client: %.3f ms per frame on average, peak %.1f ms."], avg, peak)
         end
+        -- How often a frame of ours went over 10 / 50 / 100 ms in this
+        -- session: one hitch at login reads very differently from one a minute.
+        local ok3, c10 = pcall(P.GetAddOnMetric, ns.NAME, E.CountTimeOver10Ms)
+        local ok4, c50 = pcall(P.GetAddOnMetric, ns.NAME, E.CountTimeOver50Ms)
+        local ok5, c100 = pcall(P.GetAddOnMetric, ns.NAME, E.CountTimeOver100Ms)
+        if ok3 and ok4 and ok5 and type(c10) == "number" and type(c50) == "number" and type(c100) == "number" then
+            ns:Print(L["Frames over 10 / 50 / 100 ms this session: %d / %d / %d."], c10, c50, c100)
+        end
     end
     for i = 1, math.min(#sorted, 20) do
         local e = sorted[i]

@@ -216,8 +216,12 @@ local function canBeWeaponItem(id)
     return classID == Enum.ItemClass.Consumable or classID == Enum.ItemClass.ItemEnhancement
 end
 
+-- Double buffered: the counts of the last pass stay readable while the new
+-- ones are taken, and no table is made per bag update.
+local spareCounts = {}
 local function countBags()
-    local counts = {}
+    local counts = spareCounts
+    wipe(counts)
     for bag = 0, 4 do
         for slot = 1, C_Container.GetContainerNumSlots(bag) or 0 do
             local info = C_Container.GetContainerItemInfo(bag, slot)
@@ -245,7 +249,7 @@ local function onBags()
     for id, n in pairs(bagCounts) do
         if (now[id] or 0) < n and canBeWeaponItem(id) then lastUsed, lastUsedAt = id, GetTime() end
     end
-    bagCounts = now
+    spareCounts, bagCounts = bagCounts, now
     matchWeaponItem()
 end
 
@@ -268,7 +272,7 @@ end
 local function primeEnchants()
     wipe(gainedAt)
     for _, s in ipairs(R.SLOTS) do prevLeft[s.key] = enchantLeft(weaponSlot(s)) end
-    bagCounts = countBags()
+    spareCounts, bagCounts = bagCounts, countBags()
     lastUsed, lastUsedAt = nil, nil
 end
 

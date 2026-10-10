@@ -202,6 +202,17 @@ end
 -- The bags a player carries. Asked of the client rather than assumed: this
 -- build may or may not have a reagent bag, and a bag id that does not exist
 -- answers with no slots, which is the same as not being there.
+-- One ItemLocation for a bag slot, reused by every caller: creating one
+-- copies the whole mixin into a new table, and the bags asked for one per
+-- slot on every bag update and every repaint. Valid only until the next call
+-- -- read what you need from it and let it go; never keep it.
+local sharedLoc
+function ns.BagSlotLocation(bag, slot)
+    if sharedLoc then sharedLoc:SetBagAndSlot(bag, slot)
+    else sharedLoc = ItemLocation:CreateFromBagAndSlot(bag, slot) end
+    return sharedLoc
+end
+
 function ns.CarriedBags()
     local out = {}
     local idx = Enum.BagIndex

@@ -1892,6 +1892,7 @@ ns:RegisterLocale("frFR", {
     ["Solid color"] = "Couleur unie",
     ["Default"] = "Par défaut",
     ["Spell ranks"] = "Rangs de sorts",
+    ["Frames over 10 / 50 / 100 ms this session: %d / %d / %d."] = "Images au-delà de 10 / 50 / 100 ms cette session : %d / %d / %d.",
     ["Memory: %.0f KB now, %.0f KB at the start."] = "Mémoire : %.0f Ko maintenant, %.0f Ko au départ.",
     ["Client: %.3f ms per frame on average, peak %.1f ms."] = "Client : %.3f ms par image en moyenne, pic %.1f ms.",
     ["Shows every buff you could have: your spells, buffs from other classes, and the best flask, elixir, food, scroll, potion and weapon item for your role and level."] = "Affiche toutes les améliorations possibles : vos sorts, celles des autres classes et le meilleur flacon, élixir, nourriture, parchemin, potion et objet d'arme pour votre rôle et niveau.",
