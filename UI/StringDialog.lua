@@ -13,6 +13,7 @@ local L = ns.L
 local DIALOG_W   = 560
 local DIALOG_H   = 400
 local PAD        = 14
+local COPY_SIZE  = 11   -- the copy box text, both views
 
 local host, dlg
 local exportPanel, pastePanel, previewPanel
@@ -141,6 +142,10 @@ local function ensureExportPanel()
     view:SetAllPoints(sf)
     view:SetFrameLevel(sf:GetFrameLevel() + 5)
     view:SetFontObject(_G.ChatFontNormal or GameFontHighlight)
+    -- the size of the select view, in the chat's own face: the same call the
+    -- chat makes when its font size is changed, so every alphabet still draws
+    local file, _, flags = view:GetFont()
+    if file then view:SetFont(file, COPY_SIZE, flags) end
     view:SetJustifyH("LEFT")
     view:SetFading(false)
     view:SetMaxLines(2000)
@@ -225,7 +230,6 @@ end
 -- copied out of the chat was a row of boxes. Latin keeps our face, the rest
 -- take the files the client itself uses for its chat. The family is made once
 -- and re-driven on every open, so a font change in the settings reaches it.
-local COPY_SIZE = 11
 -- The copy box used to set a font family of OUR OWN making (CreateFontFamily:
 -- Roman plus Cyrillic, Korean and Chinese faces). On this client the box then
 -- drew nothing at all -- the character count said 9752, the box stayed black

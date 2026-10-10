@@ -40,7 +40,7 @@ jemand ohne den Code prüfen kann.
 | F-19 | Einrichtungs-Vorlagen mit echten Modulen | Einrichtung | gebaut | – |
 | F-20 | Chat-Tabs ohne Fehler im Kampf | Chat | gebaut | 0.11.0 |
 | F-21 | Gelbes „!“ auf Gegenständen, die eine Quest starten | Taschen | gebaut | – |
-| F-22 | „Chat kopieren“ zeigt den Text | Chat | bestätigt | – |
+| F-22 | „Chat kopieren“ zeigt den Text | Chat | gebaut | – |
 | F-23 | Fenster „Mögliche Buffs“ mit Empfehlungen pro Rolle | Erinnerungen | gebaut | – |
 | F-24 | Eigene DoTs auf Namensplaketten, auch ohne Plakettenkennung (PvP und PvE) | Namensplaketten | gebaut | – |
 | F-25 | Mögliche Buffs: wer in der Gruppe den Buff geben kann | Erinnerungen | gebaut | – |
@@ -114,6 +114,7 @@ jemand ohne den Code prüfen kann.
 
 ### F-22 Chat kopieren
 - **Wenn** du in der Chat-Seitenleiste „Chat kopieren“ klickst, **dann** steht der Verlauf so da wie im Chat: Umlaute, Chinesisch, Koreanisch und Russisch zugleich lesbar, farbig, neueste Zeilen unten; Mausrad scrollt.
+- **Dann** haben beide Ansichten („Lesen“ und „Text markieren“) dieselbe kleine Schrift und die Farben des Chats (Beute grün, Systemmeldungen gelb, Kanäle in ihrer Farbe); „|4Spieler:Spieler;“ steht als „Spieler“ da.
 - **Wenn** du sofort Strg+C drückst, **dann** ist der ganze Verlauf in der Zwischenablage.
 - **Wenn** du „Text markieren“ klickst, **dann** kannst du mit der Maus einen Teil markieren und mit Strg+C kopieren (Chinesisch/Koreanisch dort als Kästchen, kopiert werden die echten Zeichen); „Lesen“ schaltet zurück.
 

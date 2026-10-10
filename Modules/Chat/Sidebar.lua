@@ -32,7 +32,24 @@ local function stripEscapes(line)
     line = line:gsub("|T.-|t", "")
     line = line:gsub("|A.-|a", "")
     line = line:gsub("|K.-|k", "")
+    -- "|4Spieler:Spieler;" is the chat's singular/plural switch: the number
+    -- before it decides. A text box shows it raw, so it is resolved here.
+    line = line:gsub("(%d+)(%s*)|4([^:;]*):([^;]*);", function(n, sp, one, many)
+        return n .. sp .. (tonumber(n) == 1 and one or many)
+    end)
+    line = line:gsub("|4[^:;]*:([^;]*);", "%1")
     return line
+end
+
+-- The line's own colour (loot green, system yellow, a channel's colour) is
+-- not in its text -- the chat hands it to AddMessage separately. Wrapped
+-- round the line, both views of the copy box show the chat's colours.
+local function colored(line, r, g, b)
+    if not (ns.CanRead(r) and ns.CanRead(g) and ns.CanRead(b))
+        or type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number" then
+        return line
+    end
+    return string.format("|cff%02x%02x%02x%s|r", r * 255, g * 255, b * 255, line)
 end
 
 local function activeFrame()
@@ -60,11 +77,11 @@ function Sidebar.CopyText()
     local ok, count = pcall(smf.GetNumMessages, smf)
     if not (ok and type(count) == "number") then return "" end
     for i = 1, count do
-        local okLine, text = pcall(smf.GetMessageInfo, smf, i)
+        local okLine, text, r, g, b = pcall(smf.GetMessageInfo, smf, i)
         -- A secret line is skipped rather than copied: it may not be measured,
         -- joined or put in a table with anything, and a copy is all three.
         if okLine and type(text) == "string" and not ns.IsSecret(text) then
-            out[#out + 1] = stripEscapes(text)
+            out[#out + 1] = colored(stripEscapes(text), r, g, b)
         end
     end
     return table.concat(out, "\n")

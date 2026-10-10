@@ -172,6 +172,10 @@ These apply to every visible change, in every module.
   Ctrl+C copies everything. "Select text" switches to the EditBox for a part.
   Measured with `/vfdiag fonts`: no single font file of this client has
   umlauts, Chinese and Korean together.
+- Both views use `COPY_SIZE` (11). The reading view keeps the chat's font
+  object and only changes its size with `SetFont(file, size, flags)` — the
+  call the chat itself makes. Each line carries its chat colour as a `|c`
+  wrap (the colour is an AddMessage argument, not part of the text).
 
 ## Locales
 
