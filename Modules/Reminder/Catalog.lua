@@ -197,7 +197,7 @@ local function collect()
     local present, grouped = groupClasses()
     local others, absent, missing = {}, {}, {}
     for _, b in ipairs(R.GROUP_BUFFS) do
-        if b.class ~= R.class and (not b.faction or b.faction == faction) and R.SupplyFits(b, role, ctx) then
+        if b.giver ~= R.class and (not b.faction or b.faction == faction) and R.SupplyFits(b, role, ctx) then
             local name = R.SpellName(b.ids[1])
             if not name then
                 -- not loaded yet (SPELL_DATA_LOAD_RESULT redraws); noted once
@@ -207,12 +207,12 @@ local function collect()
             end
             local state = auraAny(b.ids)
             local line, color = status(state)
-            local who = names[b.class] or b.class
-            local cc = C_ClassColor.GetClassColor(b.class)
+            local who = names[b.giver] or b.giver
+            local cc = C_ClassColor.GetClassColor(b.giver)
             if cc then who = cc:WrapTextInColorCode(who) end
             local row = { icon = C_Spell.GetSpellTexture(b.ids[1]), spell = b.ids[1],
                 name = name or "…", line = line, color = color, count = who }
-            if grouped and not present[b.class] and not state then
+            if grouped and not present[b.giver] and not state then
                 row.dim, row.line = true, line .. " · " .. L["Nobody in your group"]
                 absent[#absent + 1] = row
             else
