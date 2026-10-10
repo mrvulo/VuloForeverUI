@@ -40,6 +40,7 @@ local mod = ns:RegisterModule("skins", {
             itemLevel    = true,
             enchants     = true,
             durability   = true,
+            weaponDps    = true,
             statSections = true,
             collapsed    = {},           -- [section title] = true
         },
@@ -253,16 +254,12 @@ local function decorate(button, side)
     d.enchant = d.over:CreateFontString(nil, "OVERLAY")
     d.enchant:SetWordWrap(false)
     d.enchant:SetTextColor(0.35, 0.95, 0.35, 0.9)
-    if side == "left" then
-        d.enchant:SetPoint("LEFT", button, "RIGHT", 5, 0)
-        d.enchant:SetJustifyH("LEFT")
-    elseif side == "right" then
-        d.enchant:SetPoint("RIGHT", button, "LEFT", -5, 0)
-        d.enchant:SetJustifyH("RIGHT")
-    else
-        d.enchant:SetPoint("BOTTOM", button, "TOP", 0, 3)
-        d.enchant:SetJustifyH("CENTER")
-    end
+    d.dps = d.over:CreateFontString(nil, "OVERLAY")
+    d.dps:SetWordWrap(false)
+    d.dps:SetTextColor(0.92, 0.92, 0.92)
+    local justify = (side == "left" and "LEFT") or (side == "right" and "RIGHT") or "CENTER"
+    d.enchant:SetJustifyH(justify)
+    d.dps:SetJustifyH(justify)
     d.enchant:SetWidth(side == "above" and 110 or 115)
     deco[button] = d
     return d
@@ -347,17 +344,39 @@ function Skins.PaintSlot(button, side, info, off, after)
         d.dura:Hide()
     end
 
+    -- The text beside the slot: weapon DPS and the enchant, one line each;
+    -- with both, DPS on top. "left" texts may start behind another frame.
     fontFor(d.enchant, 9)
-    if d.side == "left" then
-        d.enchant:ClearAllPoints()
-        d.enchant:SetPoint("LEFT", after or button, "RIGHT", 5, 0)
+    fontFor(d.dps, 10)
+    local showE = db.enchants and d.side ~= "none" and info and info.enchant
+    local showD = db.weaponDps and d.side ~= "none" and info and info.dps
+    d.enchant:ClearAllPoints()
+    d.dps:ClearAllPoints()
+    if d.side == "above" then
+        d.enchant:SetPoint("BOTTOM", button, "TOP", 0, 3)
+        d.dps:SetPoint("BOTTOM", showE and d.enchant or button, "TOP", 0, showE and 1 or 3)
+    elseif d.side ~= "none" then
+        local from = (d.side == "left") and (after or button) or button
+        local point, rel, x = "LEFT", "RIGHT", 5
+        if d.side == "right" then point, rel, x = "RIGHT", "LEFT", -5 end
+        d.dps:SetPoint(point, from, rel, x, showE and 6 or 0)
+        d.enchant:SetPoint(point, from, rel, x, showD and -6 or 0)
     end
-    if db.enchants and d.side ~= "none" and info and info.enchant then
-        d.enchant:SetText(info.enchant)
-        d.enchant:Show()
+    if showE then d.enchant:SetText(info.enchant); d.enchant:Show() else d.enchant:Hide() end
+    if showD then
+        d.dps:SetText(L["%.1f DPS"]:format(info.dps))
+        d.dps:Show()
     else
-        d.enchant:Hide()
+        d.dps:Hide()
     end
+end
+
+-- A weapon's damage per second from its link, or nil.
+function Skins.WeaponDps(link)
+    if type(link) ~= "string" or not ns.CanRead(link) then return nil end
+    local ok, t = pcall(C_Item.GetItemStats, link)
+    local v = ok and type(t) == "table" and t.ITEM_MOD_DAMAGE_PER_SECOND_SHORT
+    if type(v) == "number" and v > 0 then return v end
 end
 
 -- ---------------------------------------------------------------- data --

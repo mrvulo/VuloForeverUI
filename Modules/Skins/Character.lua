@@ -67,6 +67,7 @@ local function slotInfo(slot)
     local cur, max = GetInventoryItemDurability(slot)
     if type(cur) == "number" and type(max) == "number" and max > 0 then info.dura = cur / max end
     info.enchant = enchantOf(slot)
+    if slot >= 16 and slot <= 18 then info.dps = Skins.WeaponDps(GetInventoryItemLink("player", slot)) end
     return info
 end
 
