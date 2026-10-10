@@ -218,6 +218,7 @@ Modules\QoL\Junk.lua
 Modules\QoL\Loot.lua
 Modules\QoL\Display.lua
 Modules\QoL\Trinkets.lua
+Modules\QoL\TrinketFlyout.lua
 Modules\QoL\Gold.lua
 Modules\QoL\TradeCheck.lua
 Modules\QoL\Quests.lua

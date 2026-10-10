@@ -401,7 +401,7 @@ end
 local function trinketsPage()
     local items = {
         { type = "header", text = L["Trinkets"] },
-        { type = "desc", text = L["|cffaaaaaaTwo trinket slots on screen with their cooldowns. Left click uses the trinket, right click picks another, alt-click switches that slot's auto-queue. Trinkets can only be changed out of combat.|r"] },
+        { type = "desc", text = L["|cffaaaaaaTwo trinket slots on screen with their cooldowns. Left click uses the trinket; hovering a slot opens a grid of the trinkets in your bags (left click: upper slot, right click: lower slot); alt-click on a slot switches its auto-queue. In combat a pick is noted and goes on after the fight.|r"] },
         toggle("trinkets", "enabled", L["Show the trinket window"]),
         { type = "toggle", label = L["Unlock to move"],
           tooltip = L["Drag the window where you want it, then switch this off to lock it again. Not in combat."],
@@ -409,6 +409,8 @@ local function trinketsPage()
           set = function(_, v) QoL.Trinkets.SetUnlocked(v) end },
         toggle("trinkets", "vertical", L["Stack the slots vertically"]),
         toggle("trinkets", "tooltips", L["Show tooltips"]),
+        toggle("trinkets", "grid", L["Pick grid when hovering a slot"]),
+        slider("trinkets", "gridColumns", L["Columns of the pick grid"], 1, 8, 1),
         slider("trinkets", "scale", L["Size"], 0.5, 2, 0.05),
     }
     for _, spec in ipairs({ { "top", L["Auto-queue: upper slot"] }, { "bottom", L["Auto-queue: lower slot"] } }) do

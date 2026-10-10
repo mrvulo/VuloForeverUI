@@ -15,7 +15,9 @@
 --
 -- Right click and alt-click are no secure action at all (their types point at
 -- nothing), and a hook on the button handles them: the pick-list, and the
--- queue switch for that slot.
+-- queue switch for that slot. Hovering a slot opens the pick grid
+-- (TrinketFlyout.lua), a plain frame: a pick there in a fight is noted and
+-- goes on when the fight ends.
 --
 -- WHAT IS NOT POSSIBLE IN A FIGHT
 --
@@ -108,6 +110,7 @@ end
 local function inBags(id)
     return (C_Item.GetItemCount(id) or 0) > 0 and not C_Item.IsEquippedItem(id)
 end
+Trinkets.InBags = inBags
 
 local num = ns.Num
 
@@ -119,12 +122,46 @@ local function itemLeft(id)
     return math.max(0, dur - (GetTime() - start))
 end
 
+-- What the queue put into a slot last, so a change it did not make can be
+-- told apart (onEquip): that one is the player's own pick.
+local lastQueued = {}       -- inv -> item ID the queue equipped
+local held = {}             -- inv -> item ID the queue must leave alone
+local pendingPick = {}      -- inv -> item ID picked in a fight, put on after it
+Trinkets.held, Trinkets.pendingPick = held, pendingPick
+
 local function equip(id, inv)
-    if InCombatLockdown() then
-        ns:Print(L["Trinkets can only be changed out of combat."])
+    if InCombatLockdown() then return end
+    lastQueued[inv] = id
+    C_Item.EquipItemByName(id, inv)
+end
+
+-- The player picks a trinket for a slot (pick-list, pick grid). In a fight
+-- or while dead nothing can be equipped: the pick is noted, a second pick of
+-- the same one takes the note back, and it goes on once that is over.
+function Trinkets.Pick(id, inv)
+    if InCombatLockdown() or UnitIsDeadOrGhost("player") then
+        if pendingPick[inv] == id then
+            pendingPick[inv] = nil
+        else
+            pendingPick[inv] = id
+            for other, pid in pairs(pendingPick) do
+                if other ~= inv and pid == id then pendingPick[other] = nil end
+            end
+        end
+        if Trinkets.Refresh then Trinkets.Refresh() end
         return
     end
+    pendingPick[inv] = nil
     C_Item.EquipItemByName(id, inv)
+end
+
+-- After the fight (or a resurrection): the noted picks go on.
+local function applyPending()
+    if InCombatLockdown() or UnitIsDeadOrGhost("player") then return end
+    for inv, id in pairs(pendingPick) do
+        if inBags(id) then C_Item.EquipItemByName(id, inv) end
+        pendingPick[inv] = nil
+    end
 end
 
 -- ---------------------------------------------------------------- the queue --
@@ -142,6 +179,8 @@ local function runQueue(key, inv)
     if IsInventoryItemLocked(inv) then return end
     local current = GetInventoryItemID("player", inv)
     if not current then return end
+    -- the player's own pick of something the queue would take off again
+    if held[inv] == current then return end
 
     local start, dur = GetInventoryItemCooldown("player", inv)
     start, dur = num(start), num(dur)
@@ -214,7 +253,19 @@ local function paintSlot(b)
     if type(start) == "nil" then start = 0 end
     if type(dur) == "nil" then dur = 0 end
     pcall(b.cd.SetCooldown, b.cd, start, dur)
-    b.mark:SetShown(Trinkets.Queue(b.key).enabled)
+    local q = Trinkets.Queue(b.key)
+    b.mark:SetShown(q.enabled)
+    -- grey while the queue waits on the player's own pick
+    local waiting = held[inv] ~= nil and held[inv] == GetInventoryItemID("player", inv)
+    b.mark:SetDesaturated(waiting)
+    b.mark:SetAlpha(waiting and 0.6 or 1)
+    local p = pendingPick[inv]
+    if p then
+        b.pend:SetTexture(Trinkets.ItemIcon(p))
+        b.pendFrame:Show()
+    else
+        b.pendFrame:Hide()
+    end
 end
 
 function Trinkets.Refresh()
@@ -246,15 +297,14 @@ end
 local function pickList(b)
     local entries = { { text = L["Trinkets"], title = true } }
     if InCombatLockdown() then
-        entries[#entries + 1] = { text = L["Trinkets can only be changed out of combat."], title = true }
-        return entries
+        entries[#entries + 1] = { text = L["In combat: the pick goes on after the fight."], title = true }
     end
     local any = false
     for _, id in ipairs(Trinkets.Owned()) do
         if inBags(id) then
             any = true
             entries[#entries + 1] = { text = Trinkets.ItemName(id), icon = Trinkets.ItemIcon(id),
-                func = function() equip(id, b.inv) end }
+                func = function() Trinkets.Pick(id, b.inv) end }
         end
     end
     if not any then entries[#entries + 1] = { text = L["No other trinket in your bags."], title = true } end
@@ -276,10 +326,19 @@ local function onClick(self, button, down)
 end
 
 local function onEnter(self)
+    if Trinkets.ShowGrid then Trinkets.ShowGrid(self) end
     if not db().tooltips then return end
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     if not GameTooltip:SetInventoryItem("player", self.inv) then
         GameTooltip:SetText(L["Trinkets"], 1, 1, 1)
+    end
+    local cur = GetInventoryItemID("player", self.inv)
+    if held[self.inv] and held[self.inv] == cur and Trinkets.Queue(self.key).enabled then
+        GameTooltip:AddLine(L["Auto-queue waits: you picked this trinket yourself."], 0.7, 0.7, 0.7, true)
+    end
+    local p = pendingPick[self.inv]
+    if p then
+        GameTooltip:AddLine(L["After the fight: %s"]:format(Trinkets.ItemName(p)), 1, 0.82, 0, true)
     end
     GameTooltip:AddLine(L["Right click: pick a trinket. Alt-click: auto-queue on or off."], 0.6, 0.6, 0.65, true)
     GameTooltip:Show()
@@ -311,6 +370,16 @@ local function build()
         mark:SetSize(12, 12)
         mark:SetPoint("TOPLEFT", view, "TOPLEFT", 1, -1)
         ns.LayoutEdges(ns.MakeEdges(view, "OVERLAY"), view, 1, 0, 0, 0, 1)
+        -- the trinket picked in a fight, waiting to go on
+        local pendFrame = CreateFrame("Frame", nil, view)
+        pendFrame:SetSize(15, 15)
+        pendFrame:SetPoint("BOTTOMRIGHT", view, "BOTTOMRIGHT", 2, -2)
+        pendFrame:SetFrameLevel(cd:GetFrameLevel() + 2)
+        local pend = pendFrame:CreateTexture(nil, "OVERLAY")
+        pend:SetAllPoints(pendFrame)
+        pend:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        ns.LayoutEdges(ns.MakeEdges(pendFrame, "OVERLAY"), pendFrame, 1, 1, 0.82, 0, 1)
+        pendFrame:Hide()
 
         local b = CreateFrame("Button", nil, holder, "SecureActionButtonTemplate")
         b:SetAllPoints(view)
@@ -329,6 +398,7 @@ local function build()
         b:SetScript("OnEnter", onEnter)
         b:SetScript("OnLeave", function() GameTooltip:Hide() end)
         b.key, b.inv, b.view, b.icon, b.cd, b.mark = s.key, s.inv, view, icon, cd, mark
+        b.pend, b.pendFrame = pend, pendFrame
         buttons[#buttons + 1] = b
     end
     holder.mover = ns:CreateMover(holder, {
@@ -339,6 +409,9 @@ local function build()
     if db().freeMove then ns:SetMoverFreeMove(holder.mover, true) end
     return true
 end
+
+function Trinkets.Holder() return holder end
+function Trinkets.Db() return db() end
 
 -- Moving without Edit Mode: the mover's own free-move, switched from the
 -- options. It is refused in a fight by the mover itself -- the window holds
@@ -351,11 +424,40 @@ end
 
 -- ---------------------------------------------------------------- apply --
 
-local function onEquip() Trinkets.Refresh() end
+-- A trinket slot changed. Not by the queue, and to something the queue
+-- would take off again (passive, or not in its list above the stop marker):
+-- that is the player's pick, and the queue leaves it there until it goes.
+local function queueKeeps(key, id)
+    if C_Item.GetItemSpell(id) == nil then return false end
+    for _, lid in ipairs(Trinkets.Queue(key).list) do
+        if lid == STOP then return false end
+        if lid == id then return true end
+    end
+    return false
+end
+
+local function onEquip(_, slot)
+    for _, s in ipairs(SLOTS) do
+        if slot == nil or slot == s.inv then
+            local id = GetInventoryItemID("player", s.inv)
+            if held[s.inv] and held[s.inv] ~= id then held[s.inv] = nil end
+            if id and lastQueued[s.inv] == id then
+                lastQueued[s.inv] = nil
+            elseif id and slot == s.inv and not queueKeeps(s.key, id) then
+                held[s.inv] = id
+            end
+        end
+    end
+    Trinkets.Refresh()
+end
 local function onCooldown() Trinkets.Refresh() end
 local function onRegen()
     if pending then Trinkets.Apply() end
-    if QoL.mod.active and db().enabled then tickQueue() end
+    if QoL.mod.active and db().enabled then
+        applyPending()
+        tickQueue()
+        Trinkets.Refresh()
+    end
 end
 
 function Trinkets.Apply()
@@ -364,6 +466,8 @@ function Trinkets.Apply()
     QoL.SyncEvent(on, "BAG_UPDATE_COOLDOWN", onCooldown)
     QoL.SyncEvent(on, "SPELL_UPDATE_COOLDOWN", onCooldown)
     ns:RegisterEvent("PLAYER_REGEN_ENABLED", onRegen)
+    QoL.SyncEvent(on, "PLAYER_UNGHOST", onRegen)
+    QoL.SyncEvent(on, "PLAYER_ALIVE", onRegen)
 
     -- Showing, hiding and building touch a frame with secure children: out
     -- of combat only, and a change asked for in a fight lands when it ends.
@@ -384,6 +488,9 @@ function Trinkets.Disable()
     QoL.SyncEvent(false, "PLAYER_EQUIPMENT_CHANGED", onEquip)
     QoL.SyncEvent(false, "BAG_UPDATE_COOLDOWN", onCooldown)
     QoL.SyncEvent(false, "SPELL_UPDATE_COOLDOWN", onCooldown)
+    QoL.SyncEvent(false, "PLAYER_UNGHOST", onRegen)
+    QoL.SyncEvent(false, "PLAYER_ALIVE", onRegen)
+    if Trinkets.HideGrid then Trinkets.HideGrid() end
     if ticker then ns:CancelTicker(ticker); ticker = nil end
     if holder then
         if InCombatLockdown() then pending = true else holder:Hide() end

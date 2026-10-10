@@ -229,6 +229,8 @@ local mod = ns:RegisterModule("qol", {
             enabled  = false,
             vertical = false,
             tooltips = true,
+            grid     = true,      -- the pick grid on hover (TrinketFlyout.lua)
+            gridColumns = 4,
             freeMove = false,     -- moved without Edit Mode while on
             x = 0, y = -120, scale = 1,
         },

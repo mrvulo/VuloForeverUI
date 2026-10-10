@@ -196,6 +196,12 @@ These apply to every visible change, in every module.
 
 - Quick loot hides the client loot window by **scale** during the run and
   restores it when something is left (full bags, roll, confirmation).
+- **Trinkets** (`Trinkets.lua`, `TrinketFlyout.lua`): the click is a secure
+  button running `/use 13|14`; everything else is plain frames. The pick grid
+  on hover is NOT secure (equipping is refused in combat anyway): a click in
+  a fight only notes the pick, applied at PLAYER_REGEN_ENABLED / alive. A
+  trinket the player put on by hand that is passive or not listed above the
+  stop marker holds the queue of its slot until it leaves the slot.
 
 ## Chat (`Modules/Chat/`, copy dialog in `UI/StringDialog.lua`)
 

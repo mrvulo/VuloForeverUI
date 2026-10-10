@@ -47,6 +47,7 @@ jemand ohne den Code prüfen kann.
 | F-26 | Erinnerung an Fläschchen, Elixier und Essen aus den Taschen | Erinnerungen | gebaut | – |
 | F-27 | Mögliche Buffs anklickbar (wirken / benutzen) | Erinnerungen | gebaut | – |
 | F-28 | Fenster-Skins: Charakter- und Betrachten-Fenster, Standard / Modern | Skins | gebaut | – |
+| F-29 | Schmuckstücke: Auswahl-Raster beim Drüberfahren, Vormerken im Kampf, Warteschlange respektiert Handwahl | Komfort | gebaut | – |
 
 ---
 
@@ -157,6 +158,13 @@ jemand ohne den Code prüfen kann.
 - **Wenn** „Werte-Abschnitte“ an ist, **dann** lassen sich die Abschnitte rechts per Klick auf den Titel ein- und ausklappen, und der Zustand bleibt nach /reload.
 - **Dann** wechselt jede Einstellung sofort im offenen Fenster, und im Kampf kommt kein Fehler (Einklappen wartet bis nach dem Kampf).
 - **Dann** zeigt die Optionsseite den Reiter „Fenster-Skins“ und die Abschnitte Stil, Fenster, Auf den Plätzen, Werte.
+
+### F-29 Schmuckstück-Raster
+- **Wenn** du mit der Maus auf einen Schmuck-Platz fährst, **dann** klappt ein Raster mit allen Schmuckstücken aus den Taschen auf, jedes mit seiner Abklingzeit; es schließt, sobald die Maus Platz und Raster verlässt.
+- **Wenn** du im Raster links klickst, **dann** kommt das Schmuckstück in den oberen Platz, rechts in den unteren.
+- Angenommen du bist im Kampf, **wenn** du klickst, **dann** wird es vorgemerkt (kleines Symbol unten rechts im Platz) und nach dem Kampf angelegt; ein zweiter Klick auf dasselbe hebt die Vormerkung auf.
+- **Wenn** du Alt-Klick auf ein Schmuckstück im Raster machst, **dann** verschwindet es aus dem Raster; mit gedrückter Alt-Taste erscheinen ausgeblendete grau und lassen sich per Alt-Klick zurückholen.
+- Angenommen die Warteschlange eines Platzes ist an, **wenn** du von Hand ein passives oder nicht gelistetes Schmuckstück anlegst (z. B. Reitgerte), **dann** bleibt es liegen; der Pfeil wird grau, bis du es wieder ablegst.
 
 ---
 
