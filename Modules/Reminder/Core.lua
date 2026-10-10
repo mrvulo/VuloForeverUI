@@ -9,6 +9,7 @@
 --   Core.lua     the checks, the weapon-item learning, events and lifecycle
 --   Display.lua  the secure icon row
 --   Preview.lua  the live preview on the options page
+--   Catalog.lua  the window "what could I have": spells, weapon items, potions
 --   Options.lua  the options page
 --
 -- WHEN IT LOOKS
@@ -97,6 +98,7 @@ function R.CastFor(cfg, list)
     end
     return known[1]
 end
+R.IsKnown = isKnown
 
 -- ---------------------------------------------------------------- config --
 
@@ -175,6 +177,9 @@ end
 local function weaponSlot(s)
     return s.key == "main" and Enum.WeaponSlot.MainHand or Enum.WeaponSlot.OffHand
 end
+
+-- for the list of possible buffs (Catalog.lua)
+R.IsWeapon, R.EnchantLeft, R.WeaponSlot, R.WeaponItems = isWeapon, enchantLeft, weaponSlot, weaponItems
 
 -- "Show in": the instance type decides the bucket.
 local function whereAllowed()

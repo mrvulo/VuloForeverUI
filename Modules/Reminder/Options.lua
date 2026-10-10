@@ -53,6 +53,9 @@ function mod:GetOptions()
         { type = "group", layout = "row", gap = 10, align = "center", items = {
             { type = "button", label = L["Open Edit Mode"], width = 200, primary = true,
               onClick = function() ns:SetEditMode(true) end },
+            { type = "button", label = L["Show possible buffs"], width = 200,
+              tooltip = L["Shows every buff you could have now: your spells, weapon enchants and the potions, elixirs, flasks, scrolls and food in your bags."],
+              onClick = function() R.ToggleCatalog() end },
         } },
         slider("size", L["Icon size"], 24, 64),
         slider("spacing", L["Spacing"], 0, 20),

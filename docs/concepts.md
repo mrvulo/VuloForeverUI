@@ -117,6 +117,17 @@ These apply to every visible change, in every module.
 - Queued next-swing abilities light up like the action bar button
   (`C_Spell.IsCurrentSpell`, alpha folded from the boolean).
 
+## Reminders (`Modules/Reminder/`)
+
+- The row shows only what is missing and switched on; a click casts or
+  re-applies the weapon item used last (learned per slot, per character).
+- **Possible buffs** (`Catalog.lua`, button on the options page): a plain,
+  non-secure list of everything the character could put on itself — known
+  class buffs, weapon slots + weapon items, then consumables grouped by the
+  client's own subclass names. Display only, no clicks. An item counts as
+  active when an aura of its use-spell's name is up; food shows "Well Fed".
+  Unreadable auras (combat) say so, never "active".
+
 ## Quality of Life (`Modules/QoL/`)
 
 - Quick loot hides the client loot window by **scale** during the run and

@@ -41,6 +41,7 @@ jemand ohne den Code prüfen kann.
 | F-20 | Chat-Tabs ohne Fehler im Kampf | Chat | gebaut | 0.11.0 |
 | F-21 | Gelbes „!“ auf Gegenständen, die eine Quest starten | Taschen | gebaut | – |
 | F-22 | „Chat kopieren“ zeigt den Text | Chat | bestätigt | – |
+| F-23 | Fenster „Mögliche Buffs“ | Erinnerungen | gebaut | – |
 
 ---
 
@@ -111,6 +112,11 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du in der Chat-Seitenleiste „Chat kopieren“ klickst, **dann** steht der Verlauf so da wie im Chat: Umlaute, Chinesisch, Koreanisch und Russisch zugleich lesbar, farbig, neueste Zeilen unten; Mausrad scrollt.
 - **Wenn** du sofort Strg+C drückst, **dann** ist der ganze Verlauf in der Zwischenablage.
 - **Wenn** du „Text markieren“ klickst, **dann** kannst du mit der Maus einen Teil markieren und mit Strg+C kopieren (Chinesisch/Koreanisch dort als Kästchen, kopiert werden die echten Zeichen); „Lesen“ schaltet zurück.
+
+### F-23 Mögliche Buffs
+- **Wenn** du unter Erinnerungen „Mögliche Buffs zeigen“ klickst, **dann** öffnet sich rechts neben dem Optionsfenster eine Liste: „Deine Zauber“, „Waffen“ (jede Waffenhand mit Restzeit, Gifte/Öle/Steine aus den Taschen), danach Fläschchen, Elixiere, Tränke, Rollen, Essen — jeweils mit Anzahl.
+- Angenommen ein Buff ist auf dir (z. B. ein Elixier, „Satt“, Arkane Intelligenz), **dann** steht darunter grün „Aktiv · 25 Min.“; sonst grau „Nicht aktiv“. Trinkst du etwas, solange das Fenster offen ist, wechselt die Zeile von selbst.
+- **Dann** zeigt Maus drüber den Tooltip; Escape oder das X schließt; das Fenster lässt sich ziehen.
 
 ---
 
