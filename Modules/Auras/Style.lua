@@ -226,7 +226,10 @@ function Style.Initializer(kind, db, holder)
         cd:SetDrawEdge(false)
         cd:SetHideCountdownNumbers(true)
         if round then
-            -- the swipe in the rounded shape too
+            -- the swipe in the rounded shape too, grown like the icon's mask:
+            -- the file's empty margin would otherwise leave a bright rim of
+            -- icon between the swipe and the ring
+            grown(cd, button, size)
             cd:SetSwipeTexture(MASK)
             cd:SetSwipeColor(0, 0, 0, 0.8)
             -- the square flash at the end would show past the rounded corners

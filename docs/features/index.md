@@ -51,6 +51,7 @@ jemand ohne den Code prüfen kann.
 | F-30 | Levelführer-Skin (Standard / Modern) | Skins | gebaut | – |
 | F-29 | Schmuckstücke: Auswahl-Raster beim Drüberfahren, Vormerken im Kampf, Warteschlange respektiert Handwahl | Komfort | gebaut | – |
 | F-32 | Bedrohung in Prozent am Ziel- und Fokusrahmen (Classic / Standard) | Einheitenfenster | gebaut | – |
+| F-33 | Buffs und Debuffs abgerundet, Spirale und Ring in derselben Form | Auren | gebaut | – |
 
 ---
 
@@ -195,6 +196,11 @@ jemand ohne den Code prüfen kann.
 - Angenommen Stil Classic oder Standard, **wenn** du unter Einheitenfenster „Bedrohung in Prozent“ einschaltest und einen Gegner angreifst, **dann** steht über dem Zielrahmen ein Kästchen mit deiner Bedrohung in Prozent, gefärbt gelb → orange → rot.
 - **Dann** überdeckt das Kästchen im Classic-Stil weder Namen noch Porträt; ohne Bedrohung (außer Kampf) ist es weg.
 - **Wenn** du den Schalter ausmachst, **dann** verschwindet das Kästchen beim nächsten Bedrohungswechsel; das rote Aggro-Leuchten bleibt.
+
+### F-33 Auren abgerundet
+- Angenommen „Abgerundete Symbole“ ist bei Buffs an, **dann** sind Symbol, Rand-Ring und Waffenverzauberungen abgerundet wie die Taschen.
+- **Wenn** ein Buff abläuft, **dann** deckt die dunkle Spirale das Symbol bis an den Ring ab; zwischen Spirale und Ring bleibt kein heller Streifen (gilt ebenso für die runden Schmuck-Plätze unter Komfort).
+- **Dann** blitzt am Ende der Laufzeit nichts Eckiges über die runden Ecken.
 
 ---
 

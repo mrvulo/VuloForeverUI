@@ -106,6 +106,7 @@ function Trinkets.MakeRound(p, size)
     p.ring:SetTexture(RING)
     grow(p.ring, p.frame, size)
     p.ring:Hide()
+    p.roundSize = size
 end
 
 -- Round or square, and the ring's colour (quality, or a neutral grey).
@@ -116,7 +117,14 @@ function Trinkets.ApplyRound(p, round, quality)
             if t and t[fn] then pcall(t[fn], t, p.mask) end
         end
         if p.cd then
-            -- the swipe in the same shape; back to the plain square without
+            -- the swipe in the same shape, grown like the mask (its empty
+            -- margin would leave a bright rim); back to the plain square without
+            if round then
+                grow(p.cd, p.frame, p.roundSize)
+            else
+                p.cd:ClearAllPoints()
+                p.cd:SetAllPoints(p.icon)
+            end
             p.cd:SetSwipeTexture(round and MASK or "Interface\\Buttons\\WHITE8X8")
             p.cd:SetSwipeColor(0, 0, 0, 0.8)
         end
