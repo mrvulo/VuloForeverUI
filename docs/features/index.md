@@ -53,6 +53,7 @@ jemand ohne den Code prüfen kann.
 | F-32 | Bedrohung in Prozent am Ziel- und Fokusrahmen (Classic / Standard) | Einheitenfenster | gebaut | – |
 | F-33 | Buffs und Debuffs abgerundet, Spirale und Ring in derselben Form | Auren | gebaut | – |
 | F-34 | Goldprüfung aus dem Rechtsklick-Menü auf einen Spieler | Komfort | gebaut | – |
+| F-35 | Durchschnittliche Gegenstandsstufe im Charakterfenster, Farbe wählbar | Skins | gebaut | – |
 
 ---
 
@@ -207,6 +208,11 @@ jemand ohne den Code prüfen kann.
 - Angenommen die Goldprüfung ist an, **wenn** du einen Spieler im Ziel- oder Gruppenrahmen rechts anklickst, **dann** steht unten im Menü „Goldprüfung“; ein Klick scannt ihn und öffnet das Fenster mit dem Ergebnis.
 - **Wenn** du danach „Fokus setzen“ aus demselben Menü wählst, **dann** klappt das ohne Fehlermeldung über eine blockierte Aktion.
 - Angenommen ein Name im Chat, **dann** gibt es den Eintrag nur, wenn der Spieler gerade Ziel, Fokus oder in deiner Gruppe ist; bei dir selbst und bei NPCs fehlt er.
+
+### F-35 Durchschnittliche Gegenstandsstufe im Charakterfenster
+- Angenommen der Charakterfenster-Skin ist an (Standard oder Modern), **wenn** du das Charakterfenster öffnest, **dann** steht in der Stufen-Leiste zwischen „Stufe 24, Schamanin“ und dem Pfeil-Knopf mittig „iLvl 22.7“ (Durchschnitt der angelegten Ausrüstung, eine Nachkommastelle).
+- Angenommen Farbe „Nach Qualität“, **dann** hat der Text die Farbe der durchschnittlichen Qualität deiner Teile (meist grün); mit „Eigene Farbe“ die gewählte Farbe, sofort beim Ändern.
+- **Wenn** du ein Teil wechselst, **dann** ändert sich der Wert gleich; mit dem Schalter aus oder dem Skin auf „Aus“ ist der Text weg.
 
 ---
 

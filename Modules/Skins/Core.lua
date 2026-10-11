@@ -39,6 +39,9 @@ local mod = ns:RegisterModule("skins", {
             character    = true,
             inspect      = true,
             itemLevel    = true,
+            avgItemLevel = true,         -- average in the level strip
+            avgItemLevelColor  = "quality",   -- "quality" | "custom"
+            avgItemLevelCustom = { r = 1, g = 0.82, b = 0 },
             enchants     = true,
             durability   = true,
             weaponDps    = true,

@@ -8,6 +8,7 @@
 -- and bag event and colours its IconBorder; our hook runs after it and lays
 -- the ring and texts over the result.
 local _, ns = ...
+local L = ns.L
 local Skins = ns.Skins
 
 local Character = {}
@@ -85,8 +86,65 @@ local function paint(button)
     Skins.PaintSlot(button, side, slotInfo(button:GetID()), false, after)
 end
 
+-- The average item level, in the level strip between "Level 24, Shaman" and
+-- the pane toggle: the equipped average the client's own stat shows, with one
+-- decimal. Coloured by the rounded mean quality of the pieces that carry a
+-- level, or in the player's own colour.
+local avg
+
+local function meanQualityColor()
+    local sum, n = 0, 0
+    for button in pairs(sideOf) do
+        local slot = button:GetID()
+        local q = not NO_LEVEL[slot] and GetInventoryItemID("player", slot) and GetInventoryItemQuality("player", slot)
+        if type(q) == "number" and q >= 0 then sum, n = sum + q, n + 1 end
+    end
+    if n == 0 then return 1, 1, 1 end
+    local r, g, b = C_Item.GetItemQualityColor(math.floor(sum / n + 0.5))
+    if r then return r, g, b end
+    return 1, 1, 1
+end
+
+local function paintAverage()
+    local db = Skins.db()
+    local on = Skins.mod.active and db.character and db.avgItemLevel
+    local pdf, lvl = _G.PaperDollFrame, _G.CharacterLevelText
+    if not avg then
+        if not (on and pdf and pdf.TopBackgroundStripHost and lvl) then return end
+        local host = pdf.TopBackgroundStripHost
+        local f = CreateFrame("Frame", nil, host)
+        f:SetAllPoints(host)
+        f:SetFrameLevel(host:GetFrameLevel() + 5)
+        avg = f:CreateFontString(nil, "OVERLAY")
+        avg:SetJustifyH("CENTER")
+        avg:SetWordWrap(false)
+        avg:SetPoint("LEFT", lvl, "RIGHT", 6, 0)
+        local toggle = _G.CharacterFrame and _G.CharacterFrame.RightPaneToggleButton
+        if toggle then
+            avg:SetPoint("RIGHT", toggle, "LEFT", -6, 0)
+        else
+            avg:SetPoint("RIGHT", host, "RIGHT", -36, 0)
+        end
+    end
+    local _, equipped = GetAverageItemLevel()
+    if not (on and type(equipped) == "number" and equipped > 0) then
+        avg:Hide()
+        return
+    end
+    ns.UI.FontFor("skins", avg, 13, "OUTLINE")
+    avg:SetFormattedText(L["iLvl %.1f"], math.floor(equipped * 10) / 10)
+    local c = db.avgItemLevelCustom
+    if db.avgItemLevelColor == "custom" and type(c) == "table" then
+        avg:SetTextColor(c.r, c.g, c.b)
+    else
+        avg:SetTextColor(meanQualityColor())
+    end
+    avg:Show()
+end
+
 function Character.PaintAll()
     for button in pairs(sideOf) do paint(button) end
+    paintAverage()
 end
 
 -- ---------------------------------------------------------------- frame --
@@ -226,6 +284,9 @@ function Character.Enable(mod)
             Character.PaintAll()
             if Skins.Inspect then Skins.Inspect.Repaint() end
         end)
+    end)
+    mod:RegisterEvent("PLAYER_AVG_ITEM_LEVEL_UPDATE", function()
+        if _G.CharacterFrame and _G.CharacterFrame:IsShown() then paintAverage() end
     end)
     mod:RegisterEvent("UPDATE_INVENTORY_DURABILITY", function()
         if _G.CharacterFrame and _G.CharacterFrame:IsShown() then Character.PaintAll() end

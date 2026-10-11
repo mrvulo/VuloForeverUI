@@ -54,6 +54,14 @@ function mod:GetOptions()
             rows.toggle("enchants", L["Enchants as text"], L["The enchant of each piece beside its slot; on a weapon also the poison, oil or stone on it."]),
             rows.toggle("durability", L["Durability"], L["Yellow below 50 %, red below 20 %. Your own window only."]),
             rows.toggle("weaponDps", L["Weapon DPS"], L["Damage per second beside each weapon slot, above its enchant."]),
+            { type = "header", text = L["Average item level"] },
+            rows.toggle("avgItemLevel", L["Show average item level"], L["Beside your level above the model: the average of what you wear, as the stats show it."]),
+            rows.dropdown("avgItemLevelColor", L["Text color"], {
+                { value = "quality", text = L["By quality"] },
+                { value = "custom",  text = L["Custom color"] },
+            }),
+            rows.color("avgItemLevelCustom", L["Custom color"],
+                { disabled = function() return Skins.db().avgItemLevelColor ~= "custom" end }),
             { type = "header", text = L["Stats"] },
             rows.toggle("statSections", L["Fold stat sections"], L["A click on a section title in the stats folds it; the window remembers it."]),
         } }
