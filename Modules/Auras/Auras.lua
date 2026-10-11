@@ -43,6 +43,8 @@ local mod = ns:RegisterModule("auras", {
         swipeStyle = "reverse",   -- reverse | normal | none (Style.lua)
         buffBorderSize    = 1,
         debuffBorderSize  = 1,
+        buffRound         = false,   -- rounded icons, the bags' rounded square
+        debuffRound       = false,
         buffBorderColor   = { r = 0, g = 0, b = 0 },
         debuffBorderColor = { r = 0, g = 0, b = 0 },
 
@@ -301,6 +303,7 @@ function mod:GetOptions()
         num("maxBuffs", L["Most icons"], 1, 40, 1),
         num("paddingBuffs", L["Spacing"], 0, 20, 1),
         ns.BorderRows(rows, { size = "buffBorderSize", color = "buffBorderColor" }),
+        flag("buffRound", L["Rounded icons"]),
         flag("weaponEnchants", L["Show weapon enchants"],
              L["Imbues, poisons and stones on your weapons are no auras. They take the first places of the buff row, as in the game's own row."]),
     } }
@@ -311,6 +314,7 @@ function mod:GetOptions()
         num("maxDebuffs", L["Most icons"], 1, 40, 1),
         num("paddingDebuffs", L["Spacing"], 0, 20, 1),
         ns.BorderRows(rows, { size = "debuffBorderSize", color = "debuffBorderColor" }),
+        flag("debuffRound", L["Rounded icons"]),
         flag("dispelColors", L["Color by dispel type"],
              L["The client tints the border of every debuff by its dispel type, a debuff without one in its own color. Which color a debuff gets stays its decision -- the type is never read here."], true),
     }

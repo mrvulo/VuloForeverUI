@@ -95,6 +95,42 @@ local function noSnap(edges)
     end
 end
 
+-- ---------------------------------------------------------------------------
+-- The rounded look (per kind, buffRound / debuffRound): the bags' rounded
+-- square. The mask files leave 10 of 128 px empty per side, so they are
+-- stretched past the button by that much. A ring is one texture instead of
+-- four strips: it is a whole file, not a cropped band, so it never goes
+-- sub-texel; the engine tints it per dispel type the same way.
+-- ---------------------------------------------------------------------------
+local MASK       = "Interface\\AddOns\\VuloForeverUI\\Media\\Masks\\csquare_mask.tga"
+local RING_THIN  = "Interface\\AddOns\\VuloForeverUI\\Media\\Masks\\csquare_ring.tga"
+local RING_THICK = "Interface\\AddOns\\VuloForeverUI\\Media\\Buttons\\csquare_border.tga"
+local MARGIN = 10 / 108
+Style.ROUND = { MASK = MASK, RING = RING_THIN, RING_THICK = RING_THICK, MARGIN = MARGIN }
+
+local function grown(tex, button, size)
+    local e = size * MARGIN
+    tex:ClearAllPoints()
+    tex:SetPoint("TOPLEFT", button, "TOPLEFT", -e, e)
+    tex:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", e, -e)
+end
+
+local function addDispelRing(button, db, size)
+    local add = button.AddDispelTypeTexture
+    local st  = dispelStyle()
+    local map = dispelColorMap(db)
+    if not (add and st ~= nil and map) then return end
+    local ring = button:CreateTexture(nil, "OVERLAY", nil, 2)
+    ring:SetTexture(db.dispelBorderSize >= 3 and RING_THICK or RING_THIN)
+    grown(ring, button, size)
+    ring:Hide()
+    local opts = { style = st, showWhenHarmful = true, showWhenHelpful = false,
+        showWithoutDispelType = true, customDispelColorMap = map }
+    if not pcall(add, button, ring, opts) and button.ClearDispelTypeTextures then
+        pcall(button.ClearDispelTypeTextures, button)
+    end
+end
+
 local function addDispelStrips(button, db, px)
     local add = button.AddDispelTypeTexture
     local st  = dispelStyle()
@@ -151,6 +187,7 @@ function Style.Initializer(kind, db, holder)
         local bSize  = buffs and db.buffBorderSize or db.debuffBorderSize
         local bColor = buffs and db.buffBorderColor or db.debuffBorderColor
         local wantDispel = (not buffs) and db.dispelColors
+        local round = buffs and db.buffRound or (not buffs and db.debuffRound)
 
         -- The AuraButton intrinsic carries no size of its own, and the flow
         -- layout only ANCHORS its elements -- layout.elementWidth feeds the
@@ -170,6 +207,12 @@ function Style.Initializer(kind, db, holder)
         local icon = button:CreateTexture(nil, "ARTWORK")
         icon:SetAllPoints(button)
         icon:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom)
+        if round then
+            local mask = button:CreateMaskTexture()
+            mask:SetTexture(MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+            grown(mask, button, size)
+            icon:AddMaskTexture(mask)
+        end
 
         -- The swipe: "reverse" (the default -- the dark part is the time
         -- already gone), "normal" (the dark part is the time left) or "none".
@@ -182,14 +225,28 @@ function Style.Initializer(kind, db, holder)
         cd:SetDrawSwipe(swipe ~= "none")
         cd:SetDrawEdge(false)
         cd:SetHideCountdownNumbers(true)
+        if round then
+            -- the swipe in the rounded shape too
+            cd:SetSwipeTexture(MASK)
+            cd:SetSwipeColor(0, 0, 0, 0.8)
+        end
 
         if bSize > 0 then
-            local edges = ns.MakeEdges(button, "OVERLAY")
-            ns.LayoutEdgesAt(edges, button, bSize * px, bColor.r, bColor.g, bColor.b, bColor.a or 1)
-            noSnap(edges)
+            if round then
+                local ring = button:CreateTexture(nil, "OVERLAY", nil, 1)
+                ring:SetTexture(bSize >= 3 and RING_THICK or RING_THIN)
+                grown(ring, button, size)
+                ring:SetVertexColor(bColor.r, bColor.g, bColor.b, bColor.a or 1)
+            else
+                local edges = ns.MakeEdges(button, "OVERLAY")
+                ns.LayoutEdgesAt(edges, button, bSize * px, bColor.r, bColor.g, bColor.b, bColor.a or 1)
+                noSnap(edges)
+            end
         end
         -- after the static border, so the tinted ring draws over it
-        if wantDispel then addDispelStrips(button, db, px) end
+        if wantDispel then
+            if round then addDispelRing(button, db, size) else addDispelStrips(button, db, px) end
+        end
 
         local font = ns.ModuleFontPath("auras")
 

@@ -233,7 +233,9 @@ These apply to every visible change, in every module.
   Standard (the client's ActionButtonTemplate art above — NOT the 1.x
   UI-Quickslot ring, which Forever's own bars do not use) or Modern (rounded
   square from Media/Masks with a coloured ring, or a 1 px square edge).
-  Trinket slots and reminder icons follow this.
+  Trinket slots and reminder icons follow this. Auras offer "Rounded icons"
+  per kind (buffs / debuffs): mask + one ring texture for the border and one
+  for the dispel colour (registered with the engine like the four strips).
 
 ## Chat (`Modules/Chat/`, copy dialog in `UI/StringDialog.lua`)
 

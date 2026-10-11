@@ -47,6 +47,12 @@ local function newIcon(parent)
     f.tex:SetAllPoints(f)
     f.edges = ns.MakeEdges(f, "OVERLAY")
     f.dispel = ns.MakeEdges(f, "OVERLAY")
+    -- the rounded look: mask, a ring for the border, a ring for the dispel colour
+    local R = A.Style.ROUND
+    f.mask = f:CreateMaskTexture()
+    f.mask:SetTexture(R.MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    f.ring = f:CreateTexture(nil, "OVERLAY", nil, 1)
+    f.dring = f:CreateTexture(nil, "OVERLAY", nil, 2)
     f.duration = f:CreateFontString(nil, "OVERLAY")
     f.stacks = f:CreateFontString(nil, "OVERLAY")
     return f
@@ -106,14 +112,42 @@ local function layoutBlock(kind, db)
         local n = (i - 1) % #art + 1
         f.tex:SetTexture(art[n])
         f.tex:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom)
-        ns.LayoutEdges(f.edges, f, bSize, bColor.r, bColor.g, bColor.b, bColor.a or 1)
         -- The client paints a debuff's border in its dispel type; here each
         -- sample debuff stands for one type.
         local dc = (not buffs) and db.dispelColors and db[DEBUFF_TYPE[n]]
-        if dc then
-            ns.LayoutEdges(f.dispel, f, db.dispelBorderSize, dc.r, dc.g, dc.b, 1)
-        else
+        local round = buffs and db.buffRound or (not buffs and db.debuffRound)
+        local R = A.Style.ROUND
+        if f.round ~= round then
+            if round then f.tex:AddMaskTexture(f.mask) else f.tex:RemoveMaskTexture(f.mask) end
+            f.round = round
+        end
+        if round then
+            local e = size * R.MARGIN
+            for _, t in ipairs({ f.mask, f.ring, f.dring }) do
+                t:ClearAllPoints()
+                t:SetPoint("TOPLEFT", f, "TOPLEFT", -e, e)
+                t:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", e, -e)
+            end
+            ns.LayoutEdges(f.edges, f, 0, 0, 0, 0, 0)
             ns.LayoutEdges(f.dispel, f, 0, 0, 0, 0, 0)
+            f.ring:SetTexture(bSize >= 3 and R.RING_THICK or R.RING)
+            f.ring:SetVertexColor(bColor.r, bColor.g, bColor.b, bColor.a or 1)
+            f.ring:SetShown(bSize > 0)
+            if dc then
+                f.dring:SetTexture(db.dispelBorderSize >= 3 and R.RING_THICK or R.RING)
+                f.dring:SetVertexColor(dc.r, dc.g, dc.b, 1)
+                f.dring:Show()
+            else
+                f.dring:Hide()
+            end
+        else
+            f.ring:Hide(); f.dring:Hide()
+            ns.LayoutEdges(f.edges, f, bSize, bColor.r, bColor.g, bColor.b, bColor.a or 1)
+            if dc then
+                ns.LayoutEdges(f.dispel, f, db.dispelBorderSize, dc.r, dc.g, dc.b, 1)
+            else
+                ns.LayoutEdges(f.dispel, f, 0, 0, 0, 0, 0)
+            end
         end
 
         local t = (i - 1) % #TIMES + 1
