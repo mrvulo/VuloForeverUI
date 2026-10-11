@@ -435,6 +435,8 @@ local function goldPage()
             L["Beside the trade window: the most gold they ever owned against everything they ever earned themselves. What has no recorded source came by trade or mail."]),
         toggle("gold", "mailCheck", L["Check the sender of a gold mail"],
             L["Beside an open mail with gold: a live check when the sender is your target, focus, mouseover or in your group, otherwise your last scan of them. In the inbox a mark shows the result, or an orange ? when you have never scanned the sender."]),
+        toggle("gold", "inspectAuto", L["Check gold whenever you inspect someone"],
+            L["Opens the gold check beside the inspect window and scans the player. Without it, the Gold check button under the inspect window does it on demand."]),
         { type = "button", label = L["Open the gold check"], width = 240,
           onClick = function() QoL.TradeCheck.ShowWindow() end },
         { type = "desc", text = L["|cffaaaaaaThe numbers are the character statistics of the achievement window, read the way its compare view reads them. They need the player in reach, and a guild bank or a generous friend look the same as bought gold -- it is a hint, not proof.|r"] },

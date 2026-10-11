@@ -21,6 +21,11 @@
 --
 -- Every scan is kept account-wide (ns.db.global.qolTradeScans), together with
 -- how often you traded with that character, so a second meeting has history.
+--
+-- A counter the client does not report is shown as "--" and never counted as
+-- zero. The request shares one comparison slot with the achievement window
+-- and other addons: it waits for the server's spacing, gives up after 15 s,
+-- and drops a scan whose slot someone else took (see THE COMPARISON SLOT).
 local _, ns = ...
 local L = ns.L
 
@@ -31,14 +36,16 @@ QoL.TradeCheck = TC
 -- Statistic ids (Achievement table, statistics flag), stable across clients.
 local STAT = {
     peak = 334, acquired = 328, looted = 333, quest = 326, vendor = 921, auction = 919,
-    travel = 1146, barber = 1147, postage = 1148,
+    daily = 753, travel = 1146, barber = 1147, postage = 1148, respec = 1150,
     posted = 329, bought = 330, bestBid = 331, bestSale = 332,
-    quests = 98, kills = 107, dungeons = 932, deaths = 60, flights = 349,
+    quests = 98, kills = 107, dungeons = 932, deaths = 60, flights = 349, honor = 588,
 }
 local MONEY = {
     peak = true, acquired = true, looted = true, quest = true, vendor = true, auction = true,
-    travel = true, barber = true, postage = true, bestBid = true, bestSale = true,
+    daily = true, travel = true, barber = true, postage = true, respec = true, bestBid = true, bestSale = true,
 }
+local NUM_STATS = 0
+for _ in pairs(STAT) do NUM_STATS = NUM_STATS + 1 end
 local PROFESSIONS = {
     { id = 1527, key = "Alchemy" },     { id = 1532, key = "Blacksmithing" },
     { id = 1535, key = "Enchanting" },  { id = 1544, key = "Engineering" },
@@ -49,7 +56,10 @@ local PROFESSIONS = {
 }
 local LEVEL_10 = 6          -- the "Level 10" achievement: roughly the character's age
 local MAX_SCANS = 10
-local TIMEOUT = 5
+-- The reply to a comparison request can take its time on a busy server, and
+-- the server throttles requests that come quicker than every few seconds.
+local TIMEOUT = 15
+local SPACING = 5
 
 local registered, pending, tradeKey, result
 local panel, window
@@ -113,19 +123,30 @@ local function unitName(unit)
     return name, name .. "-" .. (realm or "?")
 end
 
+-- A counter the client does not report stays nil -- missing is not zero,
+-- and nothing below adds a missing counter in as 0.
 local function readStats(p)
-    local stats = {}
+    local get = p.own and GetStatistic or GetComparisonStatistic
+    local stats, n = {}, 0
     for key, id in pairs(STAT) do
-        local ok, text = pcall(GetComparisonStatistic, id)
+        local ok, text = pcall(get, id)
         if ok then stats[key] = parse(readable(text), MONEY[key]) end
+        if stats[key] then n = n + 1 end
     end
+    p.readable = n
     local profs = {}
     for _, prof in ipairs(PROFESSIONS) do
-        local ok, text = pcall(GetComparisonStatistic, prof.id)
+        local ok, text = pcall(get, prof.id)
         local value = ok and parse(readable(text), false)
         if value and value > 0 then profs[#profs + 1] = { key = prof.key, value = value } end
     end
-    local ok, done, month, day, year = pcall(GetAchievementComparisonInfo, LEVEL_10)
+    local ok, done, month, day, year
+    if p.own then
+        local _, _, _, completed, m, d, y = GetAchievementInfo(LEVEL_10)
+        ok, done, month, day, year = true, completed, m, d, y
+    else
+        ok, done, month, day, year = pcall(GetAchievementComparisonInfo, LEVEL_10)
+    end
     if ok and readable(done) == true and readable(day) and readable(month) and readable(year) then
         p.level10 = ("%02d.%02d.%02d"):format(day, month, year % 100)
     end
@@ -156,22 +177,88 @@ end
 
 local refresh
 
-local function finish(p, ok)
+-- THE COMPARISON SLOT
+--
+-- The client has ONE comparison request at a time, shared by the
+-- achievement window and every addon. Ours is marked while we hold it
+-- (`owning`); our own calls run with `internal` set, so the hooks below can
+-- tell another caller apart. Someone else setting or clearing it while we
+-- wait means the reply that comes may be for someone else: the scan is
+-- dropped and says so, and our next request waits a moment.
+local owning, internal = false, false
+local nextRequest, externalUntil = 0, 0
+
+local function release()
+    if not owning then return end
+    owning = false
+    -- leave the comparison to the achievement window if it is using it
+    local cmp = _G.AchievementFrameComparison
+    if cmp and cmp:IsShown() then return end
+    internal = true
+    pcall(ClearAchievementComparisonUnit)
+    internal = false
+end
+
+local function finish(p, ok, reason)
     if pending ~= p then return end
     pending = nil
-    p.done, p.failed = true, not ok
+    p.done, p.failed, p.reason = true, not ok, reason
     if ok then
         readStats(p)
         save(p)
     end
-    -- leave the comparison to the achievement window if it is using it
-    local cmp = _G.AchievementFrameComparison
-    if not (cmp and cmp:IsShown()) then pcall(ClearAchievementComparisonUnit) end
+    release()
     result = p
     refresh()
 end
 
--- Starts reading `unit`'s statistics. The answer arrives as an event.
+local hooked
+local function hookSlot()
+    if hooked then return end
+    hooked = true
+    local function displaced()
+        if internal then return end
+        owning = false
+        externalUntil = GetTime() + SPACING
+        if pending and not pending.queued then finish(pending, false, "displaced") end
+    end
+    hooksecurefunc("SetAchievementComparisonUnit", displaced)
+    hooksecurefunc("ClearAchievementComparisonUnit", displaced)
+end
+
+-- Sends the request for a scan, now or -- while the server would throttle
+-- it -- when the spacing has passed. Everything is checked again when it
+-- goes out: a queued scan may wait seconds.
+local function send(p)
+    if pending ~= p then return end
+    p.queued = nil
+    if not (UnitExists(p.unit) and readable(UnitGUID(p.unit)) == p.guid) then return finish(p, false, "gone") end
+    if InCombatLockdown() then return finish(p, false, "combat") end
+    -- a trade partner ("npc") stands next to you; anyone else must be in reach
+    if p.unit ~= "npc" and CanInspect and not CanInspect(p.unit, false) then return finish(p, false, "reach") end
+    local ach = _G.AchievementFrame
+    if ach and ach:IsShown() and ach.isComparison then return finish(p, false, "busy") end
+    local wait = math.max(nextRequest, externalUntil) - GetTime()
+    if wait > 0 then
+        p.queued = true
+        C_Timer.After(wait, function() send(p) end)
+        refresh()
+        return
+    end
+    hookSlot()
+    nextRequest = GetTime() + SPACING
+    internal = true
+    local ok = pcall(SetAchievementComparisonUnit, p.unit)
+    internal = false
+    if not ok then return finish(p, false, "refused") end
+    owning = true
+    p.deadline = GetTime() + TIMEOUT
+    C_Timer.After(TIMEOUT, function() finish(p, false, "timeout") end)
+    refresh()
+end
+
+-- Starts reading `unit`'s statistics. Another player's answer arrives as an
+-- event; your own are read at once.
 function TC.Scan(unit)
     if not (UnitExists(unit) and UnitIsPlayer(unit)) then return false end
     local name, key = unitName(unit)
@@ -184,22 +271,21 @@ function TC.Scan(unit)
         level = readable(UnitLevel(unit)),
         class = readable(class), className = readable(className),
         guild = readable(GetGuildInfo(unit)),
+        own = UnitIsUnit(unit, "player"),
     }
+    if pending and pending ~= p then finish(pending, false, "replaced") end
     pending, result = p, p
-    pcall(ClearAchievementComparisonUnit)
-    if not pcall(SetAchievementComparisonUnit, unit) then
-        -- refused: the panel says so rather than vanishing
-        finish(p, false)
+    if p.own then
+        finish(p, true)
         return true
     end
-    C_Timer.After(TIMEOUT, function() finish(p, false) end)
-    refresh()
+    send(p)
     return true
 end
 
 local function onReady(_, guid)
     local p = pending
-    if not p then return end
+    if not p or p.queued then return end
     guid = readable(guid)
     if p.guid and guid and guid ~= p.guid then return end
     finish(p, true)
@@ -210,12 +296,16 @@ end
 local function analyse(p, offer)
     local s = p.stats or {}
     local a = { offer = offer }
+    -- the client's own total; the four sources only stand in for it when all
+    -- four are known -- a missing one is not zero
     local acq = s.acquired
-    if not acq and (s.looted or s.quest or s.vendor or s.auction) then
-        acq = (s.looted or 0) + (s.quest or 0) + (s.vendor or 0) + (s.auction or 0)
+    if not acq and s.looted and s.quest and s.vendor and s.auction then
+        acq = s.looted + s.quest + s.vendor + s.auction
     end
     a.peak, a.acq = s.peak, acq
-    a.spent = (s.travel or 0) + (s.barber or 0) + (s.postage or 0)
+    if s.travel or s.barber or s.postage or s.respec then
+        a.spent = (s.travel or 0) + (s.barber or 0) + (s.postage or 0) + (s.respec or 0)
+    end
     if a.peak and acq then
         a.explained = math.min(a.peak, acq)
         a.unexplained = math.max(0, a.peak - acq)
@@ -230,9 +320,10 @@ local function analyse(p, offer)
     end
     if offer and acq and acq > 0 then a.ratio = offer / acq end
 
+    -- judged only on what was reported: a missing counter is not "no play"
     local level = p.level or 1
-    local quests, kills = s.quests or 0, s.kills or 0
-    a.gameplay = (quests >= math.max(5, level)) or (kills >= level * 40)
+    local quests, kills = s.quests, s.kills
+    a.gameplay = (quests ~= nil and quests >= math.max(5, level)) or (kills ~= nil and kills >= level * 40)
 
     local obs = {}
     if a.state == "good" then
@@ -243,7 +334,7 @@ local function analyse(p, offer)
     if p.stored then
         obs[#obs + 1] = { "none", L["From your scan on %s -- they are not in reach now."]:format(date("%d.%m.%Y", p.at)) }
     end
-    if s.quests or s.kills then
+    if s.quests and s.kills then
         obs[#obs + 1] = { a.gameplay and "good" or "bad",
             (a.gameplay and L["Real gameplay present. %d quests and %d kills at level %d."]
                 or L["Little gameplay: %d quests and %d kills at level %d."]):format(quests, kills, level) }
@@ -272,10 +363,23 @@ local STATE_COLOR = {
     none = { 0.60, 0.60, 0.65 },
 }
 
+-- Why a scan came back empty, in words the player can act on. Spelled out
+-- per reason so every text is a literal key.
+local function failedText(reason)
+    if reason == "combat" then return L["Not in combat -- scan again once the fight is over."] end
+    if reason == "reach" then return L["Out of reach -- move closer and scan again."] end
+    if reason == "busy" then return L["The achievement comparison is open -- close it and scan again."] end
+    if reason == "displaced" then return L["Another window took over the comparison -- scan again."] end
+    if reason == "timeout" then return L["No answer within 15 seconds -- move closer and scan again."] end
+    if reason == "gone" then return L["They are no longer your target."] end
+    return L["No statistics -- they are out of reach or the client refused."]
+end
+
 local function headline(a, p)
     if p.unknown then return L["Not in reach, and you have never scanned them. Target them when you meet them and use Scan your target."], nil end
+    if p.queued then return L["Waiting a moment -- the server only answers every few seconds."], nil end
     if not p.done then return L["Reading their statistics..."], nil end
-    if p.failed then return L["No statistics -- they are out of reach or the client refused."], nil end
+    if p.failed then return failedText(p.reason), nil end
     if a.state == "good" then
         return L["Gold matches recorded income"], L["Recorded income covers %d%% of their peak."]:format(math.floor(a.share * 100 + 0.5))
     elseif a.state == "warn" then
@@ -446,7 +550,7 @@ end
 
 -- ------------------------------------------------------------- window --
 
-local W, H = 640, 500
+local W, H = 640, 560
 
 local function column(parent, x, y, title, n)
     local c = {}
@@ -526,20 +630,20 @@ local function buildWindow()
     f.legend:SetPoint("TOPLEFT", 16, -174)
 
     local colX = { 16, 16 + 206, 16 + 412 }
-    f.cIncome  = column(f, colX[1], -200, L["Income sources"], 5)
-    f.cSpend   = column(f, colX[2], -200, L["Spending"], 4)
+    f.cIncome  = column(f, colX[1], -200, L["Income sources"], 6)
+    f.cSpend   = column(f, colX[2], -200, L["Spending"], 5)
     f.cAuction = column(f, colX[3], -200, L["Auction activity"], 4)
-    f.cPlay    = column(f, colX[1], -300, L["Gameplay footprint"], 6)
-    f.cProf    = column(f, colX[2], -300, L["Professions"], 6)
-    f.cHist    = column(f, colX[3], -300, L["Your history with them"], 3)
+    f.cPlay    = column(f, colX[1], -320, L["Gameplay footprint"], 7)
+    f.cProf    = column(f, colX[2], -320, L["Professions"], 7)
+    f.cHist    = column(f, colX[3], -320, L["Your history with them"], 3)
 
     f.obsTitle = text(f, 12, ns.TC("heading"))
-    f.obsTitle:SetPoint("TOPLEFT", 16, -408)
+    f.obsTitle:SetPoint("TOPLEFT", 16, -452)
     f.obsTitle:SetText(L["Observations"])
     f.obs = {}
     for i = 1, 4 do
         local d = dot(f, 7)
-        d:SetPoint("TOPLEFT", 18, -428 - (i - 1) * 15)
+        d:SetPoint("TOPLEFT", 18, -472 - (i - 1) * 15)
         local fs = text(f, 11, ns.TC("textSoft"))
         fs:SetPoint("LEFT", d, "RIGHT", 7, 0)
         fs:SetWidth(W - 60)
@@ -553,6 +657,9 @@ local function buildWindow()
     f.rescan = ns.UI:CreateButton(f, { label = L["Scan your target"], width = 130, height = 22,
         onClick = function() TC.Scan("target") end })
     f.rescan:SetPoint("RIGHT", f.copy, "LEFT", -8, 0)
+    f.self = ns.UI:CreateButton(f, { label = L["Check yourself"], width = 120, height = 22,
+        onClick = function() TC.Scan("player") end })
+    f.self:SetPoint("RIGHT", f.rescan, "LEFT", -8, 0)
 
     f:Hide()
     window = f
@@ -599,7 +706,12 @@ local function updateWindow()
         p.guild and ("<" .. p.guild .. ">") or L["No guild"]))
     local entry = store()[p.key]
     local nScans = entry and entry.scans and #entry.scans or 0
-    f.snaps:SetText(L["%d scans saved"]:format(nScans) .. "\n" .. ago(p.at))
+    local lines = L["%d scans saved"]:format(nScans) .. "\n" .. ago(p.at)
+    -- how much of the record the client gave; a missing counter is not zero
+    if p.done and not p.failed and p.readable then
+        lines = lines .. "\n" .. L["%d / %d counters readable"]:format(p.readable, NUM_STATS)
+    end
+    f.snaps:SetText(lines)
 
     local line, sub = headline(a, p)
     setDot(f.bdot, p.done and a.state or "none")
@@ -626,12 +738,14 @@ local function updateWindow()
         { L["Vendor sales"], money(s.vendor) },
         { L["Auction earnings"], money(s.auction) },
         { L["Total gold acquired"], money(a.acq) },
+        { L["Average earned per day"], money(s.daily) },
     })
-    local pct = (a.acq and a.acq > 0) and ("%d%%"):format(math.floor(a.spent / a.acq * 100 + 0.5)) or "--"
+    local pct = (a.spent and a.acq and a.acq > 0) and ("%d%%"):format(math.floor(a.spent / a.acq * 100 + 0.5)) or "--"
     fillColumn(f.cSpend, {
         { L["Travel"], money(s.travel) },
         { L["Postage"], money(s.postage) },
         { L["Barber shops"], money(s.barber) },
+        { L["Talent respecs"], money(s.respec) },
         { L["Spent vs acquired"], pct },
     })
     fillColumn(f.cAuction, {
@@ -646,11 +760,12 @@ local function updateWindow()
         { L["Dungeons entered"], count(s.dungeons) },
         { L["Deaths"], count(s.deaths) },
         { L["Flight paths taken"], count(s.flights) },
+        { L["Honorable kills"], count(s.honor) },
         { L["Level 10 reached"], p.level10 or "--" },
     })
     local profs = {}
     for i, prof in ipairs(p.professions or {}) do
-        if i > 6 then break end
+        if i > 7 then break end
         profs[i] = { profName(prof.key), tostring(prof.value) }
     end
     if #profs == 0 then profs[1] = { L["None recorded"], "" } end
@@ -862,6 +977,48 @@ function TC.CopyReport()
     ns.UI:ShowCopyDialog(L["Copy report"], table.concat(out, "\n"))
 end
 
+-- ------------------------------------------------------------- inspect --
+--
+-- A "Gold check" button under the inspect window, and -- when switched on --
+-- a scan each time the window opens, so a check does not need a trade.
+local inspectButton
+
+local function nextToInspect()
+    buildWindow()
+    local ins = _G.InspectFrame
+    if ins and ins:IsShown() then
+        window:ClearAllPoints()
+        window:SetPoint("TOPLEFT", ins, "TOPRIGHT", 12, 0)
+    end
+end
+
+local function checkInspected()
+    local ins = _G.InspectFrame
+    local unit = ins and ins.unit
+    if not unit then return end
+    nextToInspect()
+    TC.Scan(unit)
+    TC.ShowWindow()
+end
+
+local function hookInspect()
+    local ins = _G.InspectFrame
+    if inspectButton or not ins then return end
+    -- a child of a panel the client manages: made out of combat only
+    if InCombatLockdown() then return end
+    inspectButton = ns.UI:CreateButton(ins, { label = L["Gold check"], width = 110, height = 22,
+        onClick = checkInspected })
+    inspectButton:SetPoint("TOPRIGHT", ins, "BOTTOMRIGHT", -18, 0)
+    ins:HookScript("OnShow", function()
+        inspectButton:SetShown(registered == true)
+        if registered and db().inspectAuto then checkInspected() end
+    end)
+end
+
+local function onAddonLoaded(_, name)
+    if name == "Blizzard_InspectUI" then hookInspect() end
+end
+
 -- -------------------------------------------------------------- events --
 
 local function onTradeShow()
@@ -893,6 +1050,8 @@ local EVENTS = {
     TRADE_MONEY_CHANGED = onTradeChanged,
     TRADE_TARGET_ITEM_CHANGED = onTradeChanged,
     INSPECT_ACHIEVEMENT_READY = onReady,
+    ADDON_LOADED = onAddonLoaded,
+    PLAYER_REGEN_ENABLED = function() if _G.InspectFrame then hookInspect() end end,
     UI_INFO_MESSAGE = onInfo,
     MAIL_SHOW = onMailShow,
 }
@@ -902,6 +1061,8 @@ function TC.Apply()
     if on == registered then return end
     registered = on
     for event, fn in pairs(EVENTS) do QoL.SyncEvent(on, event, fn) end
+    if on and _G.InspectFrame then hookInspect() end
+    if inspectButton then inspectButton:SetShown(on) end
     if not on and panel then panel:Hide() end
     if mailPanel and not (on and db().mailCheck) then mailPanel:Hide() end
 end
@@ -913,4 +1074,5 @@ function TC.Disable()
     registered = nil
     if panel then panel:Hide() end
     if mailPanel then mailPanel:Hide() end
+    if inspectButton then inspectButton:Hide() end
 end

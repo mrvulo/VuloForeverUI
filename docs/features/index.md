@@ -47,6 +47,7 @@ jemand ohne den Code prüfen kann.
 | F-26 | Erinnerung an Fläschchen, Elixier und Essen aus den Taschen | Erinnerungen | gebaut | – |
 | F-27 | Mögliche Buffs anklickbar (wirken / benutzen) | Erinnerungen | gebaut | – |
 | F-28 | Fenster-Skins: Charakter- und Betrachten-Fenster, Standard / Modern | Skins | gebaut | – |
+| F-31 | Goldprüfung: zuverlässige Abfrage, fehlend ≠ null, mehr Zähler, aus dem Betrachten-Fenster | Komfort | gebaut | – |
 | F-30 | Levelführer-Skin (Standard / Modern) | Skins | gebaut | – |
 | F-29 | Schmuckstücke: Auswahl-Raster beim Drüberfahren, Vormerken im Kampf, Warteschlange respektiert Handwahl | Komfort | gebaut | – |
 
@@ -174,6 +175,12 @@ jemand ohne den Code prüfen kann.
 - **Dann** ist der Wegpfeil gold (Standard) bzw. in der Akzentfarbe (Modern), und das Fenster „Active Targets“ samt Titel-Reiter hat denselben Rahmen; im Kampf neu geöffnet bekommt es ihn nach dem Kampf.
 - **Wenn** du über einen Schritt in der Liste fährst, **dann** hellt er sich leicht auf und wird beim Verlassen wieder dunkel.
 - **Wenn** du den Stil wechselst oder der Guide einen neuen Abschnitt lädt, **dann** sitzt der Skin sofort richtig; ausschalten wirkt nach /reload.
+
+### F-31 Goldprüfung
+- **Wenn** du jemanden betrachtest, **dann** steht unter dem Betrachten-Fenster ein Knopf „Goldprüfung“; ein Klick öffnet die Prüfung daneben und liest die Statistiken. Mit „Gold beim Betrachten prüfen“ passiert das bei jedem Betrachten von selbst.
+- **Wenn** du zweimal kurz hintereinander prüfst, **dann** steht „Kurz warten …“ und die zweite Abfrage geht nach wenigen Sekunden von selbst raus.
+- Angenommen der Spieler ist zu weit weg, du bist im Kampf oder der Erfolgsvergleich ist offen, **dann** sagt die Prüfung genau das statt nur „keine Statistiken“.
+- **Dann** stehen Werte, die das Spiel nicht liefert, als „--“ da, und oben rechts „x / y Zähler lesbar“; neu sind „Durchschnittlich verdient pro Tag“, „Talentumverteilungen“, „Ehrenhafte Siege“; „Mich prüfen“ zeigt die eigenen Zahlen.
 
 ---
 

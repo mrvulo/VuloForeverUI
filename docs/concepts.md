@@ -209,6 +209,11 @@ These apply to every visible change, in every module.
 
 - Quick loot hides the client loot window by **scale** during the run and
   restores it when something is left (full bags, roll, confirmation).
+- **Gold check** (`TradeCheck.lua`): the achievement comparison slot is
+  shared with the client and other addons — one request at a time, 5 s
+  apart, 15 s deadline; a scan whose slot was taken by someone else is
+  dropped, never read. Missing counters are "--", never 0 in any sum or
+  verdict. Entry points: trade window, gold mail, inspect window button.
 - **Trinkets** (`Trinkets.lua`, `TrinketFlyout.lua`): the click is a secure
   button running `/use 13|14`; everything else is plain frames. The pick grid
   on hover is NOT secure (equipping is refused in combat anyway): a click in

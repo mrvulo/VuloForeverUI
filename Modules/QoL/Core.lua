@@ -135,6 +135,7 @@ local mod = ns:RegisterModule("qol", {
             session    = true,
             tradeCheck = true,
             mailCheck  = true,
+            inspectAuto = false,   -- scan whenever the inspect window opens
         },
 
         -- -------------------------------------------------------------- quest
