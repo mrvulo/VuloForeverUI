@@ -213,7 +213,8 @@ These apply to every visible change, in every module.
   shared with the client and other addons — one request at a time, 5 s
   apart, 15 s deadline; a scan whose slot was taken by someone else is
   dropped, never read. Missing counters are "--", never 0 in any sum or
-  verdict. Entry points: trade window, gold mail, inspect window button.
+  verdict. Entry points: trade window, gold mail, inspect window button,
+  "Gold check" in the right-click menu on a player (Menu.ModifyMenu).
   Verdicts beyond green/yellow/red, so red never claims more than the
   counters carry: young (level < 10 or peak < 10 g), bank (≥ 500 auctions,
   little play), partial (an income source not reported; never red then).

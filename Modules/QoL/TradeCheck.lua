@@ -1423,6 +1423,49 @@ local function hookInspect()
     end)
 end
 
+-- ---------------------------------------------------------- unit menu --
+--
+-- "Gold check" at the end of the client's right-click menu on a player. The
+-- client runs every addon's addition in its own secure call after its own
+-- entries are built (Menu.PopulateDescription), so Set Focus and the other
+-- protected entries stay untainted. A chat name has no unit: it gets the entry
+-- only while that player is your target, focus, mouseover or in your group.
+local MENU_TAGS = { "MENU_UNIT_PLAYER", "MENU_UNIT_PARTY", "MENU_UNIT_RAID_PLAYER",
+    "MENU_UNIT_RAID", "MENU_UNIT_FRIEND" }
+local menuHooked
+
+local function menuUnit(ctx)
+    local unit = ctx and ctx.unit
+    if unit then
+        if UnitExists(unit) and UnitIsPlayer(unit) and not UnitIsUnit(unit, "player") then return unit end
+        return nil
+    end
+    local name = ctx and readable(ctx.name)
+    if type(name) ~= "string" then return nil end
+    if not name:find("-", 1, true) then
+        local server = readable(ctx.server)
+        name = name .. "-" .. ((type(server) == "string" and server ~= "") and server or GetRealmName())
+    end
+    return unitFor(name)
+end
+
+local function addMenuEntry(_, root, ctx)
+    if not (registered and root and root.CreateButton) then return end
+    local unit = menuUnit(ctx)
+    if not unit then return end
+    if root.CreateDivider then root:CreateDivider() end
+    root:CreateButton(L["Gold check"], function()
+        TC.Scan(unit)
+        TC.ShowWindow()
+    end)
+end
+
+local function hookMenu()
+    if menuHooked or not (Menu and Menu.ModifyMenu) then return end
+    menuHooked = true
+    for _, tag in ipairs(MENU_TAGS) do Menu.ModifyMenu(tag, addMenuEntry) end
+end
+
 local function onAddonLoaded(_, name)
     if name == "Blizzard_InspectUI" then hookInspect() end
 end
@@ -1470,6 +1513,7 @@ function TC.Apply()
     registered = on
     for event, fn in pairs(EVENTS) do QoL.SyncEvent(on, event, fn) end
     if on and _G.InspectFrame then hookInspect() end
+    if on then hookMenu() end
     if inspectButton then inspectButton:SetShown(on) end
     if not on and panel then panel:Hide() end
     if mailPanel and not (on and db().mailCheck) then mailPanel:Hide() end

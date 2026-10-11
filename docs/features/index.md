@@ -52,6 +52,7 @@ jemand ohne den Code prüfen kann.
 | F-29 | Schmuckstücke: Auswahl-Raster beim Drüberfahren, Vormerken im Kampf, Warteschlange respektiert Handwahl | Komfort | gebaut | – |
 | F-32 | Bedrohung in Prozent am Ziel- und Fokusrahmen (Classic / Standard) | Einheitenfenster | gebaut | – |
 | F-33 | Buffs und Debuffs abgerundet, Spirale und Ring in derselben Form | Auren | gebaut | – |
+| F-34 | Goldprüfung aus dem Rechtsklick-Menü auf einen Spieler | Komfort | gebaut | – |
 
 ---
 
@@ -201,6 +202,11 @@ jemand ohne den Code prüfen kann.
 - Angenommen „Abgerundete Symbole“ ist bei Buffs an, **dann** sind Symbol, Rand-Ring und Waffenverzauberungen abgerundet wie die Taschen.
 - **Wenn** ein Buff abläuft, **dann** deckt die dunkle Spirale das Symbol bis an den Ring ab; zwischen Spirale und Ring bleibt kein heller Streifen (gilt ebenso für die runden Schmuck-Plätze unter Komfort).
 - **Dann** blitzt am Ende der Laufzeit nichts Eckiges über die runden Ecken.
+
+### F-34 Goldprüfung aus dem Rechtsklick-Menü
+- Angenommen die Goldprüfung ist an, **wenn** du einen Spieler im Ziel- oder Gruppenrahmen rechts anklickst, **dann** steht unten im Menü „Goldprüfung“; ein Klick scannt ihn und öffnet das Fenster mit dem Ergebnis.
+- **Wenn** du danach „Fokus setzen“ aus demselben Menü wählst, **dann** klappt das ohne Fehlermeldung über eine blockierte Aktion.
+- Angenommen ein Name im Chat, **dann** gibt es den Eintrag nur, wenn der Spieler gerade Ziel, Fokus oder in deiner Gruppe ist; bei dir selbst und bei NPCs fehlt er.
 
 ---
 
