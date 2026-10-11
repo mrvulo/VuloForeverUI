@@ -21,6 +21,8 @@ ns:RegisterLocale("frFR", {
     ["Extras on Blizzard's frames"] = "Extras sur les cadres de Blizzard",
     ["Class color on the health bar"] = "Couleur de classe sur la barre de vie",
     ["Threat display on the target frame"] = "Affichage de la menace sur le cadre de la cible",
+    ["Threat in percent"] = "Menace en pourcentage",
+    ["The game's own percent box above the target and focus frames, coloured by threat. A game setting."] = "La case de pourcentage du jeu au-dessus des cadres de la cible et de la focalisation, colorée selon la menace. Un réglage du jeu.",
     ["Class icon on the portrait"] = "Icône de classe sur le portrait",
     ["Class icon on the target portrait"] = "Icône de classe sur le portrait de la cible",
     ["Elite dragon on the player frame"] = "Dragon d'élite sur le cadre du joueur",

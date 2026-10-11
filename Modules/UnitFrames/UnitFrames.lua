@@ -386,6 +386,14 @@ function mod:GetOptions()
         { type = "spacer", height = 8 },
     }
 
+    -- Blizzard's own percent box on target and focus. A game setting, not
+    -- ours: both styles that keep Blizzard's frames show it (Classic moves it
+    -- above the art), and the client draws it only while you have threat.
+    local numericThreat = { type = "toggle", label = L["Threat in percent"],
+        tooltip = L["The game's own percent box above the target and focus frames, coloured by threat. A game setting."],
+        get = function() return C_CVar.GetCVar("threatShowNumeric") == "1" end,
+        set = function(_, v) C_CVar.SetCVar("threatShowNumeric", v and "1" or "0") end }
+
     if mod.db.style == "standard" then
         items[#items + 1] = { type = "header", text = L["Extras on Blizzard's frames"] }
         items[#items + 1] = { type = "toggle", label = L["Class color on the health bar"],
@@ -394,6 +402,7 @@ function mod:GetOptions()
         items[#items + 1] = { type = "toggle", label = L["Threat display on the target frame"],
             get = function() return mod.db.threat end,
             set = function(_, v) mod.db.threat = v; applyStyle() end }
+        items[#items + 1] = numericThreat
         items[#items + 1] = { type = "toggle", label = L["Class icon on the portrait"],
             get = function() return mod.db.classIcon end,
             set = function(_, v) mod.db.classIcon = v; applyStyle() end }
@@ -408,6 +417,7 @@ function mod:GetOptions()
         items[#items + 1] = { type = "toggle", label = L["Class icon on the target portrait"],
             get = function() return mod.db.classicClassIcon end,
             set = function(_, v) mod.db.classicClassIcon = v; applyStyle() end }
+        items[#items + 1] = numericThreat
         items[#items + 1] = { type = "toggle", label = L["Status text on the bars"],
             tooltip = L["Sets Blizzard's status text to percent and value, always shown. Change it back under Blizzard's options."],
             get = function() return mod.db.classicStatusText end,

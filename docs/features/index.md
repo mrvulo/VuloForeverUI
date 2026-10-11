@@ -50,6 +50,7 @@ jemand ohne den Code prüfen kann.
 | F-31 | Goldprüfung: zuverlässige Abfrage, fehlend ≠ null, mehr Zähler, aus dem Betrachten-Fenster | Komfort | gebaut | – |
 | F-30 | Levelführer-Skin (Standard / Modern) | Skins | gebaut | – |
 | F-29 | Schmuckstücke: Auswahl-Raster beim Drüberfahren, Vormerken im Kampf, Warteschlange respektiert Handwahl | Komfort | gebaut | – |
+| F-32 | Bedrohung in Prozent am Ziel- und Fokusrahmen (Classic / Standard) | Einheitenfenster | gebaut | – |
 
 ---
 
@@ -189,6 +190,11 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du zweimal kurz hintereinander prüfst, **dann** steht „Kurz warten …“ und die zweite Abfrage geht nach wenigen Sekunden von selbst raus.
 - Angenommen der Spieler ist zu weit weg, du bist im Kampf oder der Erfolgsvergleich ist offen, **dann** sagt die Prüfung genau das statt nur „keine Statistiken“.
 - **Dann** stehen Werte, die das Spiel nicht liefert, als „--“ da, und oben rechts „x / y Zähler lesbar“; neu sind „Durchschnittlich verdient pro Tag“, „Talentumverteilungen“, „Ehrenhafte Siege“; „Mich prüfen“ zeigt die eigenen Zahlen.
+
+### F-32 Bedrohung in Prozent
+- Angenommen Stil Classic oder Standard, **wenn** du unter Einheitenfenster „Bedrohung in Prozent“ einschaltest und einen Gegner angreifst, **dann** steht über dem Zielrahmen ein Kästchen mit deiner Bedrohung in Prozent, gefärbt gelb → orange → rot.
+- **Dann** überdeckt das Kästchen im Classic-Stil weder Namen noch Porträt; ohne Bedrohung (außer Kampf) ist es weg.
+- **Wenn** du den Schalter ausmachst, **dann** verschwindet das Kästchen beim nächsten Bedrohungswechsel; das rote Aggro-Leuchten bleibt.
 
 ---
 

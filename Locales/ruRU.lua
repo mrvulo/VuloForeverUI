@@ -21,6 +21,8 @@ ns:RegisterLocale("ruRU", {
     ["Extras on Blizzard's frames"] = "Дополнения для рамок Blizzard",
     ["Class color on the health bar"] = "Цвет класса на полосе здоровья",
     ["Threat display on the target frame"] = "Отображение угрозы на рамке цели",
+    ["Threat in percent"] = "Угроза в процентах",
+    ["The game's own percent box above the target and focus frames, coloured by threat. A game setting."] = "Собственное поле процентов игры над рамками цели и фокуса, окрашенное по уровню угрозы. Настройка игры.",
     ["Class icon on the portrait"] = "Значок класса на портрете",
     ["Class icon on the target portrait"] = "Значок класса на портрете цели",
     ["Elite dragon on the player frame"] = "Элитный дракон на рамке игрока",
