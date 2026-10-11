@@ -87,8 +87,8 @@ local function paint(button)
 end
 
 -- The average item level, in the level strip between "Level 24, Shaman" and
--- the pane toggle: the equipped average the client's own stat shows, with one
--- decimal. Coloured by the rounded mean quality of the pieces that carry a
+-- the pane toggle: the equipped average the client's own stat shows, rounded
+-- down as it does. Coloured by the rounded mean quality of the pieces that carry a
 -- level, or in the player's own colour.
 local avg
 
@@ -132,7 +132,7 @@ local function paintAverage()
         return
     end
     ns.UI.FontFor("skins", avg, 13, "OUTLINE")
-    avg:SetFormattedText(L["iLvl %.1f"], math.floor(equipped * 10) / 10)
+    avg:SetFormattedText(L["iLvL %d"], math.floor(equipped))
     local c = db.avgItemLevelCustom
     if db.avgItemLevelColor == "custom" and type(c) == "table" then
         avg:SetTextColor(c.r, c.g, c.b)

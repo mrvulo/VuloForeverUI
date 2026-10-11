@@ -210,7 +210,7 @@ jemand ohne den Code prüfen kann.
 - Angenommen ein Name im Chat, **dann** gibt es den Eintrag nur, wenn der Spieler gerade Ziel, Fokus oder in deiner Gruppe ist; bei dir selbst und bei NPCs fehlt er.
 
 ### F-35 Durchschnittliche Gegenstandsstufe im Charakterfenster
-- Angenommen der Charakterfenster-Skin ist an (Standard oder Modern), **wenn** du das Charakterfenster öffnest, **dann** steht in der Stufen-Leiste zwischen „Stufe 24, Schamanin“ und dem Pfeil-Knopf mittig „iLvl 22.7“ (Durchschnitt der angelegten Ausrüstung, eine Nachkommastelle).
+- Angenommen der Charakterfenster-Skin ist an (Standard oder Modern), **wenn** du das Charakterfenster öffnest, **dann** steht in der Stufen-Leiste zwischen „Stufe 24, Schamanin“ und dem Pfeil-Knopf mittig „iLvL 22“ (Durchschnitt der angelegten Ausrüstung, abgerundet wie in den Werten).
 - Angenommen Farbe „Nach Qualität“, **dann** hat der Text die Farbe der durchschnittlichen Qualität deiner Teile (meist grün); mit „Eigene Farbe“ die gewählte Farbe, sofort beim Ändern.
 - **Wenn** du ein Teil wechselst, **dann** ändert sich der Wert gleich; mit dem Schalter aus oder dem Skin auf „Aus“ ist der Text weg.
 

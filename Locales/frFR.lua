@@ -22,7 +22,7 @@ ns:RegisterLocale("frFR", {
     ["Class color on the health bar"] = "Couleur de classe sur la barre de vie",
     ["Threat display on the target frame"] = "Affichage de la menace sur le cadre de la cible",
     ["Threat in percent"] = "Menace en pourcentage",
-    ["iLvl %.1f"] = "iLvl %.1f",
+    ["iLvL %d"] = "iLvL %d",
     ["Average item level"] = "Niveau d'objet moyen",
     ["Show average item level"] = "Afficher le niveau d'objet moyen",
     ["Beside your level above the model: the average of what you wear, as the stats show it."] = "À côté de votre niveau, au-dessus du modèle : la moyenne de ce que vous portez, comme dans les caractéristiques.",

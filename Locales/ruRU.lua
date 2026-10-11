@@ -22,7 +22,7 @@ ns:RegisterLocale("ruRU", {
     ["Class color on the health bar"] = "Цвет класса на полосе здоровья",
     ["Threat display on the target frame"] = "Отображение угрозы на рамке цели",
     ["Threat in percent"] = "Угроза в процентах",
-    ["iLvl %.1f"] = "iLvl %.1f",
+    ["iLvL %d"] = "iLvL %d",
     ["Average item level"] = "Средний уровень предметов",
     ["Show average item level"] = "Показывать средний уровень предметов",
     ["Beside your level above the model: the average of what you wear, as the stats show it."] = "Рядом с уровнем над моделью: средний уровень надетой экипировки, как в характеристиках.",
