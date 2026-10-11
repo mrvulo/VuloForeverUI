@@ -387,7 +387,8 @@ end
 local function layout()
     local d = db()
     local size = slotSize()
-    local gap = standard() and 6 or 4
+    -- Standard: the action bars' own default padding between buttons
+    local gap = standard() and 2 or 4
     for i, b in ipairs(buttons) do
         b.view:SetSize(size, size)
         b.view:ClearAllPoints()
