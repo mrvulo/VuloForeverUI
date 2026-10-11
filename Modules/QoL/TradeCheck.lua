@@ -751,9 +751,13 @@ local function updateWindow()
     local f = window
     if not (f and f:IsShown()) then return end
     local p = result
+    -- nothing scanned yet: the start view instead of an empty frame
+    if TC.RenderEmpty then TC.RenderEmpty(p == nil) end
+    f.copy:SetShown(p ~= nil)
+    if f.histBtn then f.histBtn:SetShown(p ~= nil) end
     if not p then
-        f.name:SetText(L["No scan yet"])
-        f.info:SetText(L["Open a trade, or target a player and press Scan your target."])
+        f.name:SetText("")
+        f.info:SetText("")
         return
     end
     local tradeOpen = TradeFrame and TradeFrame:IsShown()
@@ -1177,6 +1181,84 @@ function TC.BuildViews(f)
     hist.note:SetPoint("BOTTOMLEFT", 15, 8)
     hist.note:SetText(L["The rise is shown only between two scans whose totals both are known and did not fall."])
 
+    -- ---- start view: shown while nothing has been scanned this session
+    local empty = CreateFrame("Frame", nil, f)
+    f.emptyView = empty
+    empty:SetPoint("TOPLEFT", f, "TOPLEFT", 1, -30)
+    empty:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -1, VIEW_BOTTOM)
+    empty:SetFrameLevel(f:GetFrameLevel() + 15)
+    empty:EnableMouse(true)
+    local ebg = empty:CreateTexture(nil, "BACKGROUND")
+    ebg:SetAllPoints(empty)
+    ebg:SetColorTexture(ns.COLORS.bg.r, ns.COLORS.bg.g, ns.COLORS.bg.b, 1)
+    empty:Hide()
+
+    local coinIcon = empty:CreateTexture(nil, "ARTWORK")
+    coinIcon:SetSize(44, 44)
+    coinIcon:SetPoint("TOP", empty, "TOP", 0, -18)
+    coinIcon:SetTexture("Interface\\Icons\\INV_Misc_Coin_02")
+    coinIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    local et = text(empty, 17)
+    et:SetPoint("TOP", coinIcon, "BOTTOM", 0, -10)
+    et:SetText(L["No player checked yet"])
+    local es = text(empty, 12, ns.TC("textSoft"))
+    es:SetPoint("TOP", et, "BOTTOM", 0, -6)
+    es:SetWidth(W - 160); es:SetJustifyH("CENTER")
+    es:SetText(L["The gold check sets the most gold a character ever owned against everything it earned itself."])
+
+    -- the three ways to a check, numbered
+    local steps = {
+        L["Open a trade -- the check runs by itself beside the trade window."],
+        L["Inspect a player and press Gold check under the inspect window."],
+        L["Target a player in reach and press Scan your target below."],
+    }
+    local card = CreateFrame("Frame", nil, empty)
+    card:SetPoint("TOP", es, "BOTTOM", 0, -16)
+    card:SetSize(W - 120, #steps * 26 + 16)
+    ns.UI:StyleBackdrop(card, { bg = ns.COLORS.card or ns.COLORS.bg, border = ns.COLORS.border })
+    for i, line in ipairs(steps) do
+        local badge = card:CreateTexture(nil, "ARTWORK")
+        badge:SetSize(18, 18)
+        badge:SetPoint("TOPLEFT", card, "TOPLEFT", 14, -10 - (i - 1) * 26)
+        local ac = ns.COLORS.accent
+        badge:SetColorTexture(ac.r, ac.g, ac.b, 0.85)
+        local num = text(card, 11)
+        num:SetPoint("CENTER", badge, "CENTER", 0, 0)
+        num:SetText(tostring(i))
+        local fs = text(card, 12)
+        fs:SetPoint("LEFT", badge, "RIGHT", 10, 0)
+        fs:SetWidth(W - 190); fs:SetJustifyH("LEFT")
+        fs:SetText(line)
+    end
+
+    -- the last checked characters, one click away
+    local recentTitle = text(empty, 12, ns.TC("heading"))
+    recentTitle:SetPoint("TOPLEFT", card, "BOTTOMLEFT", 0, -18)
+    recentTitle:SetText(L["Checked lately"])
+    empty.recentTitle = recentTitle
+    empty.recent = {}
+    for i = 1, 5 do
+        local r = CreateFrame("Button", nil, empty)
+        r:SetPoint("TOPLEFT", recentTitle, "BOTTOMLEFT", 0, -6 - (i - 1) * 20)
+        r:SetSize(W - 120, 20)
+        local hl = r:CreateTexture(nil, "HIGHLIGHT")
+        hl:SetAllPoints(r); hl:SetColorTexture(1, 1, 1, 0.06)
+        r.dot = dot(r, 8); r.dot:SetPoint("LEFT", r, "LEFT", 4, 0)
+        r.name = text(r, 12); r.name:SetPoint("LEFT", r, "LEFT", 20, 0)
+        r.name:SetWidth(220); r.name:SetJustifyH("LEFT"); r.name:SetWordWrap(false)
+        r.verdict = text(r, 11, ns.TC("textSoft")); r.verdict:SetPoint("LEFT", r, "LEFT", 250, 0)
+        r.when = text(r, 11, ns.TC("textDim")); r.when:SetPoint("RIGHT", r, "RIGHT", -4, 0)
+        r:SetScript("OnClick", function(self)
+            local pp = self.key and kept(self.key, nameOf(self.key))
+            if pp then TC.ShowWindow(pp) end
+        end)
+        empty.recent[i] = r
+    end
+    empty.note = text(empty, 10, ns.TC("textDim"))
+    empty.note:SetPoint("BOTTOM", empty, "BOTTOM", 0, 10)
+    empty.note:SetWidth(W - 80); empty.note:SetJustifyH("CENTER")
+    empty.note:SetText(L["A hint, not proof: a guild bank or a generous friend looks the same as bought gold."])
+
     -- ---- switches
     local function toggle(view, other)
         other:Hide()
@@ -1191,6 +1273,34 @@ function TC.BuildViews(f)
     f.histBtn = ns.UI:CreateButton(f, { label = L["History"], width = 100, height = 22,
         onClick = function() toggle(hist, list) end })
     f.histBtn:SetPoint("LEFT", f.listBtn, "RIGHT", 8, 0)
+end
+
+function TC.RenderEmpty(on)
+    local empty = window and window.emptyView
+    if not empty then return end
+    empty:SetShown(on)
+    if not on then return end
+    -- newest scans first, reusing the player list's own ordering
+    local sort, desc, query = listState.sort, listState.desc, listState.query
+    listState.sort, listState.desc, listState.query = "seen", true, ""
+    local rows = listRows()
+    listState.sort, listState.desc, listState.query = sort, desc, query
+    empty.recentTitle:SetShown(#rows > 0)
+    for i, r in ipairs(empty.recent) do
+        local d = rows[i]
+        r.key = d and d.key
+        if d then
+            local cc = d.class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[d.class]
+            r.name:SetText(d.name)
+            if cc then r.name:SetTextColor(cc.r, cc.g, cc.b) else r.name:SetTextColor(1, 1, 1) end
+            r.verdict:SetText(shortVerdict(d.state))
+            setDot(r.dot, d.state or "none")
+            r.when:SetText(d.seen > 0 and date("%d.%m.%y %H:%M", d.seen) or "")
+            r:Show()
+        else
+            r:Hide()
+        end
+    end
 end
 
 function TC.RenderList()
