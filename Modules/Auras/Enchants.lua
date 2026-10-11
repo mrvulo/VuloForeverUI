@@ -78,11 +78,32 @@ local function styleButton(button, db, holder)
 
     button.icon:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom)
 
+    -- rounded like the buffs they stand with (Style.ROUND)
+    local R = A.Style.ROUND
+    local round = db.buffRound == true
+    if button.round ~= round then
+        if round then button.icon:AddMaskTexture(button.mask) else button.icon:RemoveMaskTexture(button.mask) end
+        button.round = round
+    end
+    local e = size * R.MARGIN
+    for _, t in ipairs({ button.mask, button.ring }) do
+        t:ClearAllPoints()
+        t:SetPoint("TOPLEFT", button, "TOPLEFT", -e, e)
+        t:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", e, -e)
+    end
+
     local bSize, c = db.buffBorderSize, db.buffBorderColor
-    if bSize > 0 then
+    if bSize > 0 and round then
+        for _, t in pairs(button.edges) do t:Hide() end
+        button.ring:SetTexture(bSize >= 3 and R.RING_THICK or R.RING)
+        button.ring:SetVertexColor(c.r, c.g, c.b, c.a or 1)
+        button.ring:Show()
+    elseif bSize > 0 then
+        button.ring:Hide()
         ns.LayoutEdgesAt(button.edges, button, bSize * px, c.r, c.g, c.b, c.a or 1)
         for _, t in pairs(button.edges) do t:Show() end
     else
+        button.ring:Hide()
         for _, t in pairs(button.edges) do t:Hide() end
     end
 
@@ -107,6 +128,10 @@ local function newButton(holder, slot)
     b.icon = b:CreateTexture(nil, "ARTWORK")
     b.icon:SetAllPoints(b)
     b.edges = ns.MakeEdges(b, "OVERLAY")
+    b.mask = b:CreateMaskTexture()
+    b.mask:SetTexture(A.Style.ROUND.MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    b.ring = b:CreateTexture(nil, "OVERLAY", nil, 1)
+    b.ring:Hide()
     for _, t in pairs(b.edges) do
         if t.SetSnapToPixelGrid then t:SetSnapToPixelGrid(false) end
         if t.SetTexelSnappingBias then t:SetTexelSnappingBias(0) end

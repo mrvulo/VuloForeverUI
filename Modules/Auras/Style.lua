@@ -229,6 +229,8 @@ function Style.Initializer(kind, db, holder)
             -- the swipe in the rounded shape too
             cd:SetSwipeTexture(MASK)
             cd:SetSwipeColor(0, 0, 0, 0.8)
+            -- the square flash at the end would show past the rounded corners
+            if cd.SetDrawBling then cd:SetDrawBling(false) end
         end
 
         if bSize > 0 then
