@@ -177,6 +177,12 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du den Stil wechselst oder der Guide einen neuen Abschnitt lädt, **dann** sitzt der Skin sofort richtig; ausschalten wirkt nach /reload.
 
 ### F-31 Goldprüfung
+- **Dann** überlappt in den Spalten nichts: lange Bezeichnungen enden in „…“, Beträge bleiben ganz lesbar.
+- Angenommen ein Charakter unter Stufe 10 oder mit unter 10 Gold Höchststand, **dann** heißt das Urteil „Zu wenig Verlauf zum Urteilen“ (grau), nicht rot.
+- Angenommen sehr viele Auktionen (≥ 500) und kaum Quests/Kills, **dann** heißt es „Wahrscheinlich ein Bank- oder Handelscharakter“ (blau).
+- Angenommen eine Einkommensquelle wird nicht gemeldet, **dann** steht „Teilweise Daten“ bzw. eine Beobachtung „Nicht gemeldet: …“, und das Urteil ist höchstens gelb.
+- **Wenn** du unten „Spieler“ klickst, **dann** erscheinen alle geprüften Charaktere mit Suche und sortierbaren Spalten (Name, Stufe, Höchststand, Urteil, letzter Scan); ein Klick öffnet ihre letzte Prüfung.
+- **Wenn** du „Verlauf“ klickst, **dann** stehen die gespeicherten Scans des angezeigten Spielers mit Höchststand, Gesamteinkommen und Zuwachs.
 - **Wenn** du jemanden betrachtest, **dann** steht unter dem Betrachten-Fenster ein Knopf „Goldprüfung“; ein Klick öffnet die Prüfung daneben und liest die Statistiken. Mit „Gold beim Betrachten prüfen“ passiert das bei jedem Betrachten von selbst.
 - **Wenn** du zweimal kurz hintereinander prüfst, **dann** steht „Kurz warten …“ und die zweite Abfrage geht nach wenigen Sekunden von selbst raus.
 - Angenommen der Spieler ist zu weit weg, du bist im Kampf oder der Erfolgsvergleich ist offen, **dann** sagt die Prüfung genau das statt nur „keine Statistiken“.

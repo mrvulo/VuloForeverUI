@@ -214,6 +214,11 @@ These apply to every visible change, in every module.
   apart, 15 s deadline; a scan whose slot was taken by someone else is
   dropped, never read. Missing counters are "--", never 0 in any sum or
   verdict. Entry points: trade window, gold mail, inspect window button.
+  Verdicts beyond green/yellow/red, so red never claims more than the
+  counters carry: young (level < 10 or peak < 10 g), bank (≥ 500 auctions,
+  little play), partial (an income source not reported; never red then).
+  Window views: Players (every scan, search + sort) and History (scans of
+  the character on show).
 - **Trinkets** (`Trinkets.lua`, `TrinketFlyout.lua`): the click is a secure
   button running `/use 13|14`; everything else is plain frames. The pick grid
   on hover is NOT secure (equipping is refused in combat anyway): a click in

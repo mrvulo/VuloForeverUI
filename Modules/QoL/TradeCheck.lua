@@ -56,6 +56,9 @@ local PROFESSIONS = {
 }
 local LEVEL_10 = 6          -- the "Level 10" achievement: roughly the character's age
 local MAX_SCANS = 10
+local YOUNG_PEAK = 10 * 10000     -- under 10 gold ever owned: too little to judge
+local YOUNG_LEVEL = 10
+local BANK_AUCTIONS = 500         -- posted + bought: a trading character
 -- The reply to a comparison request can take its time on a busy server, and
 -- the server throttles requests that come quicker than every few seconds.
 local TIMEOUT = 15
@@ -325,11 +328,39 @@ local function analyse(p, offer)
     local quests, kills = s.quests, s.kills
     a.gameplay = (quests ~= nil and quests >= math.max(5, level)) or (kills ~= nil and kills >= level * 40)
 
+    -- WHAT THE NUMBERS CAN CARRY
+    --
+    -- Three cases where red or green would claim more than the counters show:
+    --   young    a low character or a small peak: too little history to judge
+    --   bank     many auctions and little questing or fighting: a bank or
+    --            trading character, whose gold arrives by mail by design
+    --   partial  an income source the client did not report: no total to
+    --            compare, or a gap that may be overstated -- never red then
+    local missing = {}
+    if s.looted == nil then missing[#missing + 1] = L["Gold looted"] end
+    if s.quest == nil then missing[#missing + 1] = L["Quest rewards"] end
+    if s.vendor == nil then missing[#missing + 1] = L["Vendor sales"] end
+    if s.auction == nil then missing[#missing + 1] = L["Auction earnings"] end
+    a.missing = missing
+    if s.posted or s.bought then a.auctions = (s.posted or 0) + (s.bought or 0) end
+    if a.peak and (a.peak < YOUNG_PEAK or level < YOUNG_LEVEL) then
+        a.state = "young"
+    elseif (a.state == "warn" or a.state == "bad") and a.auctions and a.auctions >= BANK_AUCTIONS and not a.gameplay then
+        a.state = "bank"
+    elseif not a.state and a.peak and not acq then
+        a.state = "partial"
+    elseif a.state == "bad" and #missing > 0 then
+        a.state = "warn"
+    end
+
     local obs = {}
     if a.state == "good" then
         obs[#obs + 1] = { "good", L["Explained income. Recorded income covers %d%% of their peak."]:format(math.floor(a.share * 100 + 0.5)) }
     elseif a.state then
         obs[#obs + 1] = { a.state, L["%s of their peak gold has no recorded source -- it came by trade or mail."]:format(plainMoney(a.unexplained)) }
+    end
+    if #missing > 0 and a.peak then
+        obs[#obs + 1] = { "none", L["Not reported: %s -- the gap may be overstated."]:format(table.concat(missing, ", ")) }
     end
     if p.stored then
         obs[#obs + 1] = { "none", L["From your scan on %s -- they are not in reach now."]:format(date("%d.%m.%Y", p.at)) }
@@ -361,6 +392,9 @@ local STATE_COLOR = {
     warn = { 1.00, 0.75, 0.20 },
     bad  = { 0.95, 0.35, 0.30 },
     none = { 0.60, 0.60, 0.65 },
+    young = { 0.60, 0.60, 0.65 },
+    partial = { 0.60, 0.60, 0.65 },
+    bank = { 0.40, 0.65, 1.00 },
 }
 
 -- Why a scan came back empty, in words the player can act on. Spelled out
@@ -386,8 +420,25 @@ local function headline(a, p)
         return L["Part of their gold is unexplained"], L["Recorded income covers %d%% of their peak."]:format(math.floor(a.share * 100 + 0.5))
     elseif a.state == "bad" then
         return L["Most of their gold is unexplained"], L["Recorded income covers %d%% of their peak."]:format(math.floor(a.share * 100 + 0.5))
+    elseif a.state == "young" then
+        return L["Too little history to judge"], L["Level %s, at most %s ever owned."]:format(p.level or "?", plainMoney(a.peak))
+    elseif a.state == "bank" then
+        return L["Likely a bank or trading character"], L["%d auctions posted or bought, little questing or fighting. Gold by mail is normal here."]:format(a.auctions)
+    elseif a.state == "partial" then
+        return L["Partial data -- no verdict"], L["Not reported: %s"]:format(table.concat(a.missing, ", "))
     end
     return L["Not enough statistics to judge"], nil
+end
+
+-- One or two words for a list row.
+local function shortVerdict(state)
+    if state == "good" then return L["Explained"] end
+    if state == "warn" then return L["Partly unexplained"] end
+    if state == "bad" then return L["Mostly unexplained"] end
+    if state == "young" then return L["Too little history"] end
+    if state == "bank" then return L["Bank character"] end
+    if state == "partial" then return L["Partial data"] end
+    return "--"
 end
 
 local function offerNow()
@@ -668,6 +719,8 @@ local function buildWindow()
     f.self = ns.UI:CreateButton(f, { label = L["Check yourself"], width = 120, height = 22,
         onClick = function() TC.Scan("player") end })
     f.self:SetPoint("RIGHT", f.rescan, "LEFT", -8, 0)
+    -- the two other views of the same window (built further down)
+    if TC.BuildViews then TC.BuildViews(f) end
 
     f:Hide()
     window = f
@@ -960,9 +1013,246 @@ refresh = function()
     updateWindow()
 end
 
+-- ---------------------------------------------------------------- views --
+--
+-- Two more views in the gold check window, each laid over its middle:
+--   Players  every character you ever scanned, searchable and sortable;
+--            a click opens their last scan
+--   History  the saved scans of the character on show, with the rise of
+--            their recorded income between two scans
+
+local VIEW_TOP, VIEW_BOTTOM = 82, 46
+local ROWS, ROW_H = 15, 22
+
+local function nameOf(key)
+    return (type(key) == "string" and key:match("^(.-)%-[^%-]*$")) or key
+end
+
+local listState = { query = "", sort = "seen", desc = true }
+
+local function listRows()
+    local out, total = {}, 0
+    local q = listState.query:lower()
+    for key, entry in pairs(store()) do
+        local last = type(entry) == "table" and entry.last
+        if type(last) == "table" and type(last.stats) == "table" then
+            total = total + 1
+            local name = nameOf(key)
+            local hay = (key .. " " .. (last.guild or "") .. " " .. (last.className or "")):lower()
+            if q == "" or hay:find(q, 1, true) then
+                local p = kept(key, name)
+                local a = analyse(p, nil)
+                out[#out + 1] = { key = key, name = name, class = last.class, level = last.level,
+                    peak = a.peak, state = a.state, seen = last.at or 0, sortName = name:lower() }
+            end
+        end
+    end
+    local key, desc = listState.sort, listState.desc
+    local ORDER = { bad = 1, warn = 2, partial = 3, bank = 4, young = 5, good = 6 }
+    table.sort(out, function(x, y)
+        local a, b
+        if key == "name" then a, b = x.sortName, y.sortName
+        elseif key == "level" then a, b = x.level, y.level
+        elseif key == "peak" then a, b = x.peak, y.peak
+        elseif key == "verdict" then a, b = ORDER[x.state or ""] or 9, ORDER[y.state or ""] or 9
+        else a, b = x.seen, y.seen end
+        -- unknown values last, whichever way the column runs
+        if a == nil and b ~= nil then return false end
+        if b == nil and a ~= nil then return true end
+        if a ~= b then if desc then return a > b else return a < b end end
+        return x.sortName < y.sortName
+    end)
+    return out, total
+end
+
+function TC.BuildViews(f)
+    local function overlay()
+        local v = CreateFrame("Frame", nil, f)
+        v:SetPoint("TOPLEFT", f, "TOPLEFT", 1, -VIEW_TOP)
+        v:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -1, VIEW_BOTTOM)
+        v:SetFrameLevel(f:GetFrameLevel() + 20)
+        v:EnableMouse(true)
+        local bg = v:CreateTexture(nil, "BACKGROUND")
+        bg:SetAllPoints(v)
+        bg:SetColorTexture(ns.COLORS.bg.r, ns.COLORS.bg.g, ns.COLORS.bg.b, 1)
+        v:Hide()
+        return v
+    end
+
+    -- ---- players
+    local list = overlay()
+    f.listView = list
+    list.search = ns.UI:CreateSearchBox(list, { width = 220, onText = function(self)
+        listState.query = self:GetText() or ""
+        list.offset = 0
+        TC.RenderList()
+    end })
+    list.search:SetPoint("TOPLEFT", 15, -6)
+    list.caption = text(list, 11, ns.TC("textDim"))
+    list.caption:SetPoint("TOPRIGHT", -16, -8)
+    local cols = {
+        { "name", L["Character"], 15, 200, "LEFT" },
+        { "level", L["Level"], 220, 50, "RIGHT" },
+        { "peak", L["Peak gold"], 280, 140, "RIGHT" },
+        { "verdict", L["Verdict"], 440, 140, "LEFT" },
+        { "seen", L["Last scan"], 590, 90, "RIGHT" },
+    }
+    list.cols = cols
+    for _, c in ipairs(cols) do
+        local h = CreateFrame("Button", nil, list)
+        h:SetPoint("TOPLEFT", list, "TOPLEFT", c[3], -32)
+        h:SetSize(c[4], 16)
+        h.fs = text(h, 11, ns.TC("heading"))
+        h.fs:SetAllPoints(h); h.fs:SetJustifyH(c[5]); h.fs:SetText(c[2])
+        h:SetScript("OnClick", function()
+            if listState.sort == c[1] then listState.desc = not listState.desc
+            else listState.sort, listState.desc = c[1], c[1] ~= "name" end
+            TC.RenderList()
+        end)
+    end
+    list.rows = {}
+    for i = 1, ROWS do
+        local r = CreateFrame("Button", nil, list)
+        r:SetPoint("TOPLEFT", list, "TOPLEFT", 10, -52 - (i - 1) * ROW_H)
+        r:SetPoint("RIGHT", list, "RIGHT", -10, 0)
+        r:SetHeight(ROW_H)
+        if i % 2 == 1 then
+            local st = r:CreateTexture(nil, "BACKGROUND")
+            st:SetAllPoints(r); st:SetColorTexture(1, 1, 1, 0.03)
+        end
+        local hl = r:CreateTexture(nil, "HIGHLIGHT")
+        hl:SetAllPoints(r); hl:SetColorTexture(1, 1, 1, 0.06)
+        r.cells = {}
+        for n, c in ipairs(cols) do
+            local fs = text(r, 11)
+            fs:SetPoint("LEFT", r, "LEFT", c[3] - 10 + (n == 4 and 14 or 0), 0)
+            fs:SetWidth(c[4] - (n == 4 and 14 or 0)); fs:SetJustifyH(c[5]); fs:SetWordWrap(false)
+            r.cells[c[1]] = fs
+        end
+        r.dot = dot(r, 8)
+        r.dot:SetPoint("LEFT", r, "LEFT", cols[4][3] - 10, 0)
+        r:SetScript("OnClick", function(self)
+            if not self.key then return end
+            local p = kept(self.key, nameOf(self.key))
+            if p then list:Hide(); TC.ShowWindow(p) end
+        end)
+        list.rows[i] = r
+    end
+    list.empty = text(list, 12, ns.TC("textDim"))
+    list.empty:SetPoint("CENTER")
+    list.offset = 0
+    list:EnableMouseWheel(true)
+    list:SetScript("OnMouseWheel", function(_, delta)
+        list.offset = math.max(0, (list.offset or 0) - delta * 3)
+        TC.RenderList()
+    end)
+
+    -- ---- history
+    local hist = overlay()
+    f.histView = hist
+    hist.title = text(hist, 13, ns.TC("heading"))
+    hist.title:SetPoint("TOPLEFT", 15, -8)
+    local hcols = {
+        { L["Scanned"], 15, 160, "LEFT" }, { L["Level"], 180, 50, "RIGHT" },
+        { L["Peak gold"], 240, 140, "RIGHT" }, { L["Total gold acquired"], 390, 140, "RIGHT" },
+        { L["Increase"], 540, 140, "RIGHT" },
+    }
+    for _, c in ipairs(hcols) do
+        local fs = text(hist, 11, ns.TC("heading"))
+        fs:SetPoint("TOPLEFT", hist, "TOPLEFT", c[2], -32)
+        fs:SetWidth(c[3]); fs:SetJustifyH(c[4]); fs:SetText(c[1])
+    end
+    hist.rows = {}
+    for i = 1, MAX_SCANS do
+        local cells = {}
+        for n, c in ipairs(hcols) do
+            local fs = text(hist, 11)
+            fs:SetPoint("TOPLEFT", hist, "TOPLEFT", c[2], -52 - (i - 1) * ROW_H)
+            fs:SetWidth(c[3]); fs:SetJustifyH(c[4]); fs:SetWordWrap(false)
+            cells[n] = fs
+        end
+        hist.rows[i] = cells
+    end
+    hist.note = text(hist, 10, ns.TC("textDim"))
+    hist.note:SetPoint("BOTTOMLEFT", 15, 8)
+    hist.note:SetText(L["The rise is shown only between two scans whose totals both are known and did not fall."])
+
+    -- ---- switches
+    local function toggle(view, other)
+        other:Hide()
+        view:SetShown(not view:IsShown())
+        if view:IsShown() then
+            if view == list then TC.RenderList() else TC.RenderHistory() end
+        end
+    end
+    f.listBtn = ns.UI:CreateButton(f, { label = L["Players"], width = 100, height = 22,
+        onClick = function() toggle(list, hist) end })
+    f.listBtn:SetPoint("BOTTOMLEFT", 16, 12)
+    f.histBtn = ns.UI:CreateButton(f, { label = L["History"], width = 100, height = 22,
+        onClick = function() toggle(hist, list) end })
+    f.histBtn:SetPoint("LEFT", f.listBtn, "RIGHT", 8, 0)
+end
+
+function TC.RenderList()
+    local list = window and window.listView
+    if not (list and list:IsShown()) then return end
+    local rows, total = listRows()
+    local maxOff = math.max(0, #rows - ROWS)
+    list.offset = math.min(list.offset or 0, maxOff)
+    list.caption:SetText(L["%d of %d characters"]:format(#rows, total))
+    for i, r in ipairs(list.rows) do
+        local d = rows[list.offset + i]
+        r.key = d and d.key
+        if d then
+            local cc = d.class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[d.class]
+            r.cells.name:SetText(d.name)
+            if cc then r.cells.name:SetTextColor(cc.r, cc.g, cc.b) else r.cells.name:SetTextColor(1, 1, 1) end
+            r.cells.level:SetText(d.level and tostring(d.level) or "--")
+            r.cells.peak:SetText(money(d.peak))
+            r.cells.verdict:SetText(shortVerdict(d.state))
+            setDot(r.dot, d.state or "none")
+            r.cells.seen:SetText(d.seen > 0 and date("%d.%m.%y", d.seen) or "--")
+            r:Show()
+        else
+            r:Hide()
+        end
+    end
+    list.empty:SetShown(#rows == 0)
+    list.empty:SetText(total == 0 and L["No characters scanned yet."] or L["No character matches the search."])
+end
+
+function TC.RenderHistory()
+    local hist = window and window.histView
+    if not (hist and hist:IsShown()) then return end
+    local p = result
+    local entry = p and store()[p.key]
+    local scans = entry and entry.scans or {}
+    hist.title:SetText(p and L["History: %s"]:format(p.name or p.key) or L["No scan yet"])
+    -- newest first
+    for i, cells in ipairs(hist.rows) do
+        local idx = #scans - i + 1
+        local sc, prev = scans[idx], scans[idx - 1]
+        if sc then
+            cells[1]:SetText(date("%d.%m.%y %H:%M", sc.at or 0))
+            cells[2]:SetText(sc.level and tostring(sc.level) or "--")
+            cells[3]:SetText(money(sc.peak))
+            cells[4]:SetText(money(sc.acquired))
+            local rise = prev and prev.acquired and sc.acquired and sc.acquired >= prev.acquired
+                and (sc.acquired - prev.acquired) or nil
+            cells[5]:SetText(rise and ("+ " .. coinText(rise)) or "--")
+            for _, c in ipairs(cells) do c:Show() end
+        else
+            for _, c in ipairs(cells) do c:Hide() end
+        end
+    end
+end
+
 function TC.ShowWindow(p)
     if p and p.stats then result = p end
     buildWindow()
+    -- a character opened from the list goes back to the main view
+    if window.listView then window.listView:Hide() end
+    if window.histView and window.histView:IsShown() then TC.RenderHistory() end
     window:Show()
     window:Raise()
     updateWindow()
