@@ -1,33 +1,38 @@
-## 0.14.0
+## 0.15.0
 
 **New**
 
-- **Skins** — a new module under Unit Frames. "Window skins" restyles the
-  character window and the inspect window: Standard keeps the game's frame,
-  Modern makes it flat and dark (title bar, level line, stats, tabs). In
-  both, the equipment slots are rounded and ringed in their item's quality
-  colour and can show item level, enchant (and the poison, oil or stone on a
-  weapon), durability and weapon DPS. Stat sections fold with a click.
-- **Reminders** — flasks, elixirs and Well Fed food that suit your role show
-  up in the reminder row when you carry them but they are not on you; a
-  click uses them. Dungeons and raids only by default.
-- **Reminders** — "Possible buffs" is clickable: cast your own buff, use an
-  item from your bags, put a weapon item on the main hand (left click) or
-  off hand (right click). In a group, buffs nobody there can give are shown
-  dimmed at the bottom.
+- **Quality of Life** — hovering a trinket slot opens a grid of every trinket
+  in your bags with its cooldown: left click puts it in the upper slot, right
+  click in the lower one, alt-click hides it from the grid. In combat the
+  pick is noted on the slot and goes on when the fight ends.
+- **Skins** — a skin for your levelling guide addon: its guide window,
+  current-step boxes, waypoint arrow and targets window in the game's
+  tooltip look or flat and dark.
+- **Quality of Life** — the gold check has a player list (search, sortable
+  columns) and a history per player, and a Gold check button under the
+  inspect window, optionally scanning on every inspect. "Check yourself"
+  shows your own numbers.
 
 **Changed**
 
-- **Options** — every settings page uses the two-column grid: a setting alone
-  on its line keeps its half, so all switches and boxes line up.
-- **Chat** — "Copy chat" shows the chat's colours and the same small font in
-  both views.
-- **Bags** — a cooldown or a picked-up item only redraws what changed, which
-  makes looting and fights lighter.
+- **Skins** — the settings are a list of cards, one per window, each with
+  its own Off / Standard / Modern and its settings folding out underneath.
+- **Quality of Life** — trinket slots and **Reminders** icons have a style:
+  Standard wears the game's gold action button frame (trinket slots as big
+  as your action buttons), Modern our own frame, rounded or square.
+- **Auras** — buffs and debuffs can each have rounded icons, dispel colours
+  and weapon enchants included.
+- **Quality of Life** — the gold check gives a careful verdict where the
+  numbers cannot carry a judgment (too little history, a bank character,
+  partial data), shows unreported counters as "--" instead of zero, waits
+  longer for the server and never reads another player's numbers by
+  mistake. New counters: average earned per day, talent respecs, honorable
+  kills. A start page replaces the empty window.
 
 **Fixed**
 
-- **Reminders** — buffs from other classes now appear in "Possible buffs".
-- **Reminders** — the best foods (Nightfin Soup, Grilled Squid and others)
-  count as eaten even though their buff is not called Well Fed.
-- **Bags** — the first open of a session no longer stutters.
+- **Quality of Life** — a trinket you put on yourself (e.g. a riding crop)
+  is no longer swapped back by the auto-queue.
+- **Quality of Life** — labels in the gold check no longer run under the
+  amounts.
