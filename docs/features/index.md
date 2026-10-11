@@ -140,6 +140,7 @@ jemand ohne den Code prüfen kann.
 - **Wenn** jemand der Gruppe beitritt oder sie verlässt, **dann** ordnet sich die Liste sofort neu.
 
 ### F-26 Erinnerung an Verbrauchsgüter
+- **Wenn** unter Erinnerungen „Stil“ auf Standard steht, **dann** tragen die Symbole den Aktionsknopf-Rahmen des Spiels; Modern zeigt unseren Rand in der Farbe des Zustands (rot fehlt, gold läuft ab), mit „Abgerundete Symbole“ abgerundet wie die Taschen — in der Leiste und in der Vorschau gleich.
 - Angenommen du bist in einem Dungeon, hast ein für deine Rolle passendes Elixier in den Taschen und keins aktiv, **dann** zeigt die Erinnerungsleiste dessen Symbol; ein Linksklick trinkt es, danach verschwindet das Symbol.
 - Angenommen du hast nur Essen ohne „Satt“-Wirkung oder gar nichts Passendes dabei, **dann** erscheint kein Symbol.
 - **Wenn** „Nur in Dungeons und Schlachtzügen“ aus ist, **dann** gilt das auch in der offenen Welt.
@@ -166,7 +167,8 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du im Raster links klickst, **dann** kommt das Schmuckstück in den oberen Platz, rechts in den unteren.
 - Angenommen du bist im Kampf, **wenn** du klickst, **dann** wird es vorgemerkt (kleines Symbol unten rechts im Platz) und nach dem Kampf angelegt; ein zweiter Klick auf dasselbe hebt die Vormerkung auf.
 - **Wenn** du Alt-Klick auf ein Schmuckstück im Raster machst, **dann** verschwindet es aus dem Raster; mit gedrückter Alt-Taste erscheinen ausgeblendete grau und lassen sich per Alt-Klick zurückholen.
-- Angenommen „Abgerundete Plätze“ ist an (Standard), **dann** sind beide Plätze und jedes Feld im Raster abgerundet wie die Taschen, mit Ring in der Qualitätsfarbe; die Abklingzeit-Spirale folgt der runden Form; eine Vormerkung im Raster hat einen goldenen Ring.
+- **Wenn** „Stil“ auf Standard steht, **dann** tragen beide Plätze den Aktionsknopf-Rahmen des Spiels (Bronzering, leer die offene Fassung) und sind so groß wie deine Aktionsknöpfe.
+- Angenommen Stil Modern und „Abgerundete Plätze“ an (Standard), **dann** sind beide Plätze und jedes Feld im Raster abgerundet wie die Taschen, mit Ring in der Qualitätsfarbe; die Abklingzeit-Spirale folgt der runden Form; eine Vormerkung im Raster hat einen goldenen Ring.
 - Angenommen die Warteschlange eines Platzes ist an, **wenn** du von Hand ein passives oder nicht gelistetes Schmuckstück anlegst (z. B. Reitgerte), **dann** bleibt es liegen; der Pfeil wird grau, bis du es wieder ablegst.
 
 ### F-30 Levelführer-Skin

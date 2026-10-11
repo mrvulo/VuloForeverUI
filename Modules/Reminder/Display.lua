@@ -18,6 +18,68 @@ local MAX_SHOWN = 8
 
 function R.IsBuilt() return holder ~= nil end
 
+-- ---------------------------------------------------------------- look --
+--
+-- One frame for an icon, three looks (shared with the settings preview):
+--   Standard         the game's action button ring (the 1.x art, 66/36 of
+--                    the button, one step low)
+--   Modern, rounded  the rounded square the bags use, its ring in the
+--                    state's colour (red missing, gold running out)
+--   Modern, square   a one-pixel edge in that colour
+-- f carries .icon and .border (a BackdropTemplate frame over it).
+local MASK = "Interface\\AddOns\\VuloForeverUI\\Media\\Masks\\csquare_mask.tga"
+local RING = "Interface\\AddOns\\VuloForeverUI\\Media\\Masks\\csquare_ring.tga"
+local STD_RING = "Interface\\Buttons\\UI-Quickslot2"
+local MARGIN = 10 / 108
+local looks = setmetatable({}, { __mode = "k" })
+
+function R.StyleIcon(f, size, r, g, b)
+    local d = looks[f]
+    if not d then
+        d = {}
+        d.mask = f:CreateMaskTexture()
+        d.mask:SetTexture(MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        d.ring = f.border:CreateTexture(nil, "OVERLAY", nil, 2)
+        d.ring:SetTexture(RING)
+        d.std = f.border:CreateTexture(nil, "OVERLAY", nil, 1)
+        d.std:SetTexture(STD_RING)
+        looks[f] = d
+    end
+    local db = R.mod.db
+    local std = db.style == "standard"
+    local round = not std and db.round ~= false
+    local e = size * MARGIN
+    for _, t in ipairs({ d.mask, d.ring }) do
+        t:ClearAllPoints()
+        t:SetPoint("TOPLEFT", f, "TOPLEFT", -e, e)
+        t:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", e, -e)
+    end
+    if d.round ~= round then
+        if round then f.icon:AddMaskTexture(d.mask) else f.icon:RemoveMaskTexture(d.mask) end
+        d.round = round
+    end
+    -- the icon fills the frame in the rounded and Standard looks, keeps its
+    -- crop in the square one
+    if std then
+        local s = size / 36
+        d.std:ClearAllPoints()
+        d.std:SetPoint("CENTER", f, "CENTER", 0, -s)
+        d.std:SetSize(66 * s, 66 * s)
+        d.std:Show()
+        d.ring:Hide()
+        f.border:SetBackdropBorderColor(0, 0, 0, 0)
+    elseif round then
+        d.std:Hide()
+        d.ring:SetVertexColor(r, g, b, 1)
+        d.ring:Show()
+        f.border:SetBackdropBorderColor(0, 0, 0, 0)
+    else
+        d.std:Hide()
+        d.ring:Hide()
+        f.border:SetBackdropBorderColor(r, g, b, 1)
+    end
+end
+
 local laidOut
 function R.Layout()
     local db = R.mod.db
@@ -124,9 +186,9 @@ function R.Show(items)
             b:SetPoint("LEFT", holder, "CENTER", -width / 2 + (i - 1) * (size + gap), 0)
             b.icon:SetTexture(it.icon or 134400)
             if it.soon then
-                b.border:SetBackdropBorderColor(1, 0.82, 0, 1)
+                R.StyleIcon(b, size, 1, 0.82, 0)
             else
-                b.border:SetBackdropBorderColor(0.9, 0.2, 0.2, 1)
+                R.StyleIcon(b, size, 0.9, 0.2, 0.2)
             end
             b.label:SetWidth(size + gap)
             b.label:SetText(db.showLabels and it.short or "")

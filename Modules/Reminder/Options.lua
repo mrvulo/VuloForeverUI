@@ -60,6 +60,13 @@ function mod:GetOptions()
         slider("size", L["Icon size"], 24, 64),
         slider("spacing", L["Spacing"], 0, 20),
         flag("showLabels", L["Show names under the icons"]),
+        { type = "dropdown", label = L["Style"], values = {
+            { value = "standard", text = L["Standard"] },
+            { value = "modern",   text = L["Modern"] },
+          }, tooltip = L["Standard: the game's action button frame. Modern: our own edge in the state's colour (red missing, gold running out)."],
+          get = function() return db.style or "modern" end,
+          set = function(_, v) db.style = v; R.Relayout(); R.Queue() end },
+        flag("round", L["Rounded icons"], L["Modern only: rounded corners instead of square ones."]),
         slider("warnMinutes", L["Warn before it runs out (minutes)"], 0, 10, L["0 = only when it is missing."]),
 
         { type = "header", text = L["Show in"] },

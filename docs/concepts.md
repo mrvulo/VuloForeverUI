@@ -225,6 +225,12 @@ These apply to every visible change, in every module.
   a fight only notes the pick, applied at PLAYER_REGEN_ENABLED / alive. A
   trinket the player put on by hand that is passive or not listed above the
   stop marker holds the queue of its slot until it leaves the slot.
+  Look: Standard = the client's action button ring/socket at the size of
+  ActionButton1 on screen; Modern = our frame, rounded or square.
+- **Icon looks, house-wide:** where a row of icons has a look setting it is
+  Standard (the 1.x action button ring, 66/36 of the button, one step low)
+  or Modern (rounded square from Media/Masks with a coloured ring, or a 1 px
+  square edge). Trinket slots and reminder icons follow this.
 
 ## Chat (`Modules/Chat/`, copy dialog in `UI/StringDialog.lua`)
 

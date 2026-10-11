@@ -48,10 +48,26 @@ local STOP = 0              -- the stop marker's id in a queue list
 local READY_LEFT = 30       -- seconds of cooldown that still count as ready
 local USE_GRACE = 20        -- seconds after a use in which the slot is left alone
 local SIZE = 36
+-- Standard: the client's action button art, the 1.x ring drawn around the
+-- 36 pixel button it was made for (66/36 of the button, one step low), the
+-- open socket when the slot is empty -- the art our action bar skin uses.
+local STD_RING, STD_SOCKET = "Interface\\Buttons\\UI-Quickslot2", "Interface\\Buttons\\UI-Quickslot"
 
 local holder, buttons, ticker, pending
 
 local function db() return QoL.db().trinkets end
+
+local function standard() return db().style == "standard" end
+
+-- A slot's size: Modern its own, Standard as big on screen as the first
+-- action button (in UIParent units; the window's own scale goes on top).
+local function slotSize()
+    if not standard() then return SIZE end
+    local ab = _G.ActionButton1
+    local w = ab and ab:GetWidth()
+    if not (w and w > 0) then return 45 end
+    return w * ab:GetEffectiveScale() / UIParent:GetEffectiveScale()
+end
 
 -- ---------------------------------------------------------------- round look --
 --
@@ -315,7 +331,26 @@ local function paintSlot(b)
     local waiting = held[inv] ~= nil and held[inv] == GetInventoryItemID("player", inv)
     b.mark:SetDesaturated(waiting)
     b.mark:SetAlpha(waiting and 0.6 or 1)
-    Trinkets.ApplyRound(b.look, db().round ~= false, GetInventoryItemQuality("player", inv))
+    if standard() then
+        -- the action button frame: no ring of ours, no square edge, no dark
+        -- ground (the socket art is the ground), the icon only when worn
+        Trinkets.ApplyRound(b.look, false)
+        for _, t in pairs(b.look.edges) do t:Hide() end
+        b.look.ground:Hide()
+        b.icon:SetShown(tex ~= nil)
+        local size = b.view:GetWidth()
+        local s = size / 36
+        b.std:SetTexture(tex and STD_RING or STD_SOCKET)
+        b.std:ClearAllPoints()
+        b.std:SetPoint("CENTER", b.view, "CENTER", 0, -s)
+        b.std:SetSize(66 * s, 66 * s)
+        b.std:Show()
+    else
+        b.std:Hide()
+        b.look.ground:Show()
+        b.icon:Show()
+        Trinkets.ApplyRound(b.look, db().round ~= false, GetInventoryItemQuality("player", inv))
+    end
     local p = pendingPick[inv]
     if p then
         b.pend:SetTexture(Trinkets.ItemIcon(p))
@@ -332,16 +367,19 @@ end
 
 local function layout()
     local d = db()
+    local size = slotSize()
+    local gap = standard() and 6 or 4
     for i, b in ipairs(buttons) do
+        b.view:SetSize(size, size)
         b.view:ClearAllPoints()
         if d.vertical then
-            b.view:SetPoint("TOP", holder, "TOP", 0, -(i - 1) * (SIZE + 4))
+            b.view:SetPoint("TOP", holder, "TOP", 0, -(i - 1) * (size + gap))
         else
-            b.view:SetPoint("LEFT", holder, "LEFT", (i - 1) * (SIZE + 4), 0)
+            b.view:SetPoint("LEFT", holder, "LEFT", (i - 1) * (size + gap), 0)
         end
     end
-    local w, h = SIZE * 2 + 4, SIZE
-    if d.vertical then w, h = SIZE, SIZE * 2 + 4 end
+    local w, h = size * 2 + gap, size
+    if d.vertical then w, h = size, size * 2 + gap end
     holder:SetSize(w, h)
     -- the scale is the mover's: it applies db.scale with the position
     if holder.mover then
@@ -430,6 +468,8 @@ local function build()
         ns.LayoutEdges(edges, view, 1, 0, 0, 0, 1)
         local look = { frame = view, icon = icon, ground = bg, cd = cd, edges = edges }
         Trinkets.MakeRound(look, SIZE)
+        local std = view:CreateTexture(nil, "OVERLAY", nil, 1)
+        std:Hide()
         -- the trinket picked in a fight, waiting to go on
         local pendFrame = CreateFrame("Frame", nil, view)
         pendFrame:SetSize(15, 15)
@@ -458,7 +498,7 @@ local function build()
         b:SetScript("OnEnter", onEnter)
         b:SetScript("OnLeave", function() GameTooltip:Hide() end)
         b.key, b.inv, b.view, b.icon, b.cd, b.mark = s.key, s.inv, view, icon, cd, mark
-        b.pend, b.pendFrame, b.look = pend, pendFrame, look
+        b.pend, b.pendFrame, b.look, b.std = pend, pendFrame, look, std
         buttons[#buttons + 1] = b
     end
     holder.mover = ns:CreateMover(holder, {

@@ -231,7 +231,8 @@ local mod = ns:RegisterModule("qol", {
             vertical = false,
             tooltips = true,
             grid     = true,      -- the pick grid on hover (TrinketFlyout.lua)
-            round    = true,      -- rounded slots with a quality ring
+            style    = "modern",  -- "standard": the action button look and size; "modern": our own
+            round    = true,      -- Modern: rounded with a quality ring, else square
             gridColumns = 4,
             freeMove = false,     -- moved without Edit Mode while on
             x = 0, y = -120, scale = 1,

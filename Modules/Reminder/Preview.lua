@@ -77,11 +77,11 @@ function R.RefreshPreview(force)
             f.icon:SetDesaturated(not it.due)
             f:SetAlpha(it.due and 1 or 0.45)
             if not it.due then
-                f.border:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+                R.StyleIcon(f, size, 0.3, 0.3, 0.3)
             elseif it.soon then
-                f.border:SetBackdropBorderColor(1, 0.82, 0, 1)
+                R.StyleIcon(f, size, 1, 0.82, 0)
             else
-                f.border:SetBackdropBorderColor(0.9, 0.2, 0.2, 1)
+                R.StyleIcon(f, size, 0.9, 0.2, 0.2)
             end
             f.label:SetWidth(size + gap)
             f.label:SetText(db.showLabels and it.short or "")

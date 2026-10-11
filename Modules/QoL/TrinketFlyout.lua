@@ -118,7 +118,7 @@ function render()
         else
             ns.LayoutEdges(c.edges, c, 1, 0, 0, 0, 1)
         end
-        local round = Trinkets.Db().round ~= false
+        local round = Trinkets.Db().style ~= "standard" and Trinkets.Db().round ~= false
         local _, _, quality = C_Item.GetItemInfo(id)
         Trinkets.ApplyRound(c.look, round, quality)
         if round and picked[id] then c.look.ring:SetVertexColor(1, 0.82, 0, 1) end

@@ -52,6 +52,8 @@ local mod = ns:RegisterModule("reminders", {
         warnMinutes = 0,        -- 0 = only when missing
         hideResting = true,
         showLabels  = true,
+        style       = "modern",  -- "standard": the action button ring; "modern": our own
+        round       = true,      -- Modern: rounded, else square
         size        = 40,
         spacing     = 6,
         where       = { world = true, party = true, raid = true, pvp = false },
