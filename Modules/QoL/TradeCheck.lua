@@ -433,18 +433,26 @@ local function box(parent)
 end
 
 -- A two-column row inside a box: label grey left, value right.
+-- A label on the left, its value on the right. The value keeps its full
+-- width (a gold amount must stay readable); the label gets what is left
+-- and ends in "..." rather than running under the value.
 local function pairRow(parent, y, x, width)
     local l = text(parent, 11, ns.TC("textDim"))
     l:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    l:SetJustifyH("LEFT")
+    l:SetWordWrap(false)
     local r = text(parent, 11)
     r:SetJustifyH("RIGHT")
+    r:SetWordWrap(false)
     r:SetPoint("TOPRIGHT", parent, "TOPLEFT", x + width, y)
-    return { l = l, r = r }
+    return { l = l, r = r, width = width }
 end
 
 local function setPair(row, label, value)
-    row.l:SetText(label or "")
     row.r:SetText(value or "")
+    local vw = (value and value ~= "") and math.ceil(row.r:GetUnboundedStringWidth()) or 0
+    row.l:SetWidth(math.max(20, row.width - vw - 8))
+    row.l:SetText(label or "")
 end
 
 -- -------------------------------------------------------------- panel --
@@ -550,7 +558,7 @@ end
 
 -- ------------------------------------------------------------- window --
 
-local W, H = 640, 560
+local W, H = 700, 560
 
 local function column(parent, x, y, title, n)
     local c = {}
@@ -558,7 +566,7 @@ local function column(parent, x, y, title, n)
     c.title:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
     c.title:SetText(title)
     c.rows = {}
-    for i = 1, n do c.rows[i] = pairRow(parent, y - 18 - (i - 1) * 15, x, 190) end
+    for i = 1, n do c.rows[i] = pairRow(parent, y - 18 - (i - 1) * 15, x, 212) end
     return c
 end
 
@@ -629,7 +637,7 @@ local function buildWindow()
     f.legend = text(f, 11, ns.TC("textDim"))
     f.legend:SetPoint("TOPLEFT", 16, -174)
 
-    local colX = { 16, 16 + 206, 16 + 412 }
+    local colX = { 16, 16 + 226, 16 + 452 }
     f.cIncome  = column(f, colX[1], -200, L["Income sources"], 6)
     f.cSpend   = column(f, colX[2], -200, L["Spending"], 5)
     f.cAuction = column(f, colX[3], -200, L["Auction activity"], 4)
