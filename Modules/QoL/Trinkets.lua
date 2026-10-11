@@ -48,10 +48,15 @@ local STOP = 0              -- the stop marker's id in a queue list
 local READY_LEFT = 30       -- seconds of cooldown that still count as ready
 local USE_GRACE = 20        -- seconds after a use in which the slot is left alone
 local SIZE = 36
--- Standard: the client's action button art, the 1.x ring drawn around the
--- 36 pixel button it was made for (66/36 of the button, one step low), the
--- open socket when the slot is empty -- the art our action bar skin uses.
-local STD_RING, STD_SOCKET = "Interface\\Buttons\\UI-Quickslot2", "Interface\\Buttons\\UI-Quickslot"
+-- Standard: the action button of this client (Blizzard_ActionBar,
+-- ActionButtonTemplate), drawn for a 45 px button: the gold frame
+-- (UI-HUD-ActionBar-IconFrame, 46 x 45, from the top left), the icon under
+-- the client's icon mask, and -- with nothing in the slot -- its background
+-- and socket in place of the icon.
+local STD_FRAME = "UI-HUD-ActionBar-IconFrame"
+local STD_BG    = "UI-HUD-ActionBar-IconFrame-Background"
+local STD_SLOT  = "UI-HUD-ActionBar-IconFrame-Slot"
+local STD_MASK  = "UI-HUD-ActionBar-IconFrame-Mask"
 
 local holder, buttons, ticker, pending
 
@@ -59,14 +64,19 @@ local function db() return QoL.db().trinkets end
 
 local function standard() return db().style == "standard" end
 
--- A slot's size: Modern its own, Standard as big on screen as the first
--- action button (in UIParent units; the window's own scale goes on top).
+-- A slot's size: Modern its own, Standard exactly as big on screen as an
+-- action button that is shown -- measured against the trinket window's own
+-- scale, so its size setting does not make it bigger than the bars.
 local function slotSize()
     if not standard() then return SIZE end
-    local ab = _G.ActionButton1
-    local w = ab and ab:GetWidth()
-    if not (w and w > 0) then return 45 end
-    return w * ab:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    local ab
+    for _, name in ipairs({ "ActionButton1", "MultiBarBottomLeftButton1", "MultiBarBottomRightButton1" }) do
+        local b = _G[name]
+        if b and b:IsVisible() and (b:GetWidth() or 0) > 0 then ab = b; break end
+    end
+    if not ab then return 45 end
+    local own = holder and holder:GetEffectiveScale() or UIParent:GetEffectiveScale()
+    return ab:GetWidth() * ab:GetEffectiveScale() / own
 end
 
 -- ---------------------------------------------------------------- round look --
@@ -331,22 +341,31 @@ local function paintSlot(b)
     local waiting = held[inv] ~= nil and held[inv] == GetInventoryItemID("player", inv)
     b.mark:SetDesaturated(waiting)
     b.mark:SetAlpha(waiting and 0.6 or 1)
+    local st = b.std
     if standard() then
-        -- the action button frame: no ring of ours, no square edge, no dark
-        -- ground (the socket art is the ground), the icon only when worn
+        -- the action button: none of our ring, edge or ground
         Trinkets.ApplyRound(b.look, false)
         for _, t in pairs(b.look.edges) do t:Hide() end
         b.look.ground:Hide()
-        b.icon:SetShown(tex ~= nil)
         local size = b.view:GetWidth()
-        local s = size / 36
-        b.std:SetTexture(tex and STD_RING or STD_SOCKET)
-        b.std:ClearAllPoints()
-        b.std:SetPoint("CENTER", b.view, "CENTER", 0, -s)
-        b.std:SetSize(66 * s, 66 * s)
-        b.std:Show()
+        local k = size / 45
+        b.icon:ClearAllPoints()
+        b.icon:SetAllPoints(b.view)
+        b.icon:SetTexCoord(0, 1, 0, 1)
+        if not st.masked then b.icon:AddMaskTexture(st.mask); st.masked = true end
+        st.mask:SetSize(64 * k, 64 * k)
+        st.frame:SetSize(46 * k, 45 * k)
+        b.icon:SetShown(tex ~= nil)
+        st.bg:SetShown(tex == nil)
+        st.slot:SetShown(tex == nil)
+        st.frame:Show()
     else
-        b.std:Hide()
+        if st.masked then b.icon:RemoveMaskTexture(st.mask); st.masked = false end
+        st.bg:Hide(); st.slot:Hide(); st.frame:Hide()
+        b.icon:ClearAllPoints()
+        b.icon:SetPoint("TOPLEFT", 1, -1)
+        b.icon:SetPoint("BOTTOMRIGHT", -1, 1)
+        b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
         b.look.ground:Show()
         b.icon:Show()
         Trinkets.ApplyRound(b.look, db().round ~= false, GetInventoryItemQuality("player", inv))
@@ -468,8 +487,19 @@ local function build()
         ns.LayoutEdges(edges, view, 1, 0, 0, 0, 1)
         local look = { frame = view, icon = icon, ground = bg, cd = cd, edges = edges }
         Trinkets.MakeRound(look, SIZE)
-        local std = view:CreateTexture(nil, "OVERLAY", nil, 1)
-        std:Hide()
+        -- the Standard art (the client's action button, see STD_FRAME)
+        local std = {}
+        std.bg = view:CreateTexture(nil, "BACKGROUND", nil, 2)
+        std.bg:SetAtlas(STD_BG); std.bg:SetAllPoints(view); std.bg:Hide()
+        std.slot = view:CreateTexture(nil, "BACKGROUND", nil, 3)
+        std.slot:SetAtlas(STD_SLOT); std.slot:SetAllPoints(view); std.slot:Hide()
+        std.mask = view:CreateMaskTexture()
+        std.mask:SetAtlas(STD_MASK)
+        std.mask:SetPoint("CENTER", icon, "CENTER")
+        std.frame = view:CreateTexture(nil, "OVERLAY", nil, 1)
+        std.frame:SetAtlas(STD_FRAME)
+        std.frame:SetPoint("TOPLEFT", view, "TOPLEFT")
+        std.frame:Hide()
         -- the trinket picked in a fight, waiting to go on
         local pendFrame = CreateFrame("Frame", nil, view)
         pendFrame:SetSize(15, 15)

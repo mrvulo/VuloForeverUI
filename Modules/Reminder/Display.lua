@@ -21,15 +21,16 @@ function R.IsBuilt() return holder ~= nil end
 -- ---------------------------------------------------------------- look --
 --
 -- One frame for an icon, three looks (shared with the settings preview):
---   Standard         the game's action button ring (the 1.x art, 66/36 of
---                    the button, one step low)
+--   Standard         the action button of this client: its gold frame
+--                    (UI-HUD-ActionBar-IconFrame, 46 x 45 for a 45 px
+--                    button) and its icon mask
 --   Modern, rounded  the rounded square the bags use, its ring in the
 --                    state's colour (red missing, gold running out)
 --   Modern, square   a one-pixel edge in that colour
 -- f carries .icon and .border (a BackdropTemplate frame over it).
 local MASK = "Interface\\AddOns\\VuloForeverUI\\Media\\Masks\\csquare_mask.tga"
 local RING = "Interface\\AddOns\\VuloForeverUI\\Media\\Masks\\csquare_ring.tga"
-local STD_RING = "Interface\\Buttons\\UI-Quickslot2"
+local STD_FRAME, STD_MASK = "UI-HUD-ActionBar-IconFrame", "UI-HUD-ActionBar-IconFrame-Mask"
 local MARGIN = 10 / 108
 local looks = setmetatable({}, { __mode = "k" })
 
@@ -42,7 +43,11 @@ function R.StyleIcon(f, size, r, g, b)
         d.ring = f.border:CreateTexture(nil, "OVERLAY", nil, 2)
         d.ring:SetTexture(RING)
         d.std = f.border:CreateTexture(nil, "OVERLAY", nil, 1)
-        d.std:SetTexture(STD_RING)
+        d.std:SetAtlas(STD_FRAME)
+        d.std:SetPoint("TOPLEFT", f, "TOPLEFT")
+        d.stdMask = f:CreateMaskTexture()
+        d.stdMask:SetAtlas(STD_MASK)
+        d.stdMask:SetPoint("CENTER", f, "CENTER")
         looks[f] = d
     end
     local db = R.mod.db
@@ -58,13 +63,15 @@ function R.StyleIcon(f, size, r, g, b)
         if round then f.icon:AddMaskTexture(d.mask) else f.icon:RemoveMaskTexture(d.mask) end
         d.round = round
     end
-    -- the icon fills the frame in the rounded and Standard looks, keeps its
-    -- crop in the square one
+    if d.std2 ~= std then
+        if std then f.icon:AddMaskTexture(d.stdMask) else f.icon:RemoveMaskTexture(d.stdMask) end
+        f.icon:SetTexCoord(std and 0 or 0.08, std and 1 or 0.92, std and 0 or 0.08, std and 1 or 0.92)
+        d.std2 = std
+    end
     if std then
-        local s = size / 36
-        d.std:ClearAllPoints()
-        d.std:SetPoint("CENTER", f, "CENTER", 0, -s)
-        d.std:SetSize(66 * s, 66 * s)
+        local k = size / 45
+        d.std:SetSize(46 * k, 45 * k)
+        d.stdMask:SetSize(64 * k, 64 * k)
         d.std:Show()
         d.ring:Hide()
         f.border:SetBackdropBorderColor(0, 0, 0, 0)
