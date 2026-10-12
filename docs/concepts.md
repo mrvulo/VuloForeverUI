@@ -102,6 +102,14 @@ These apply to every visible change, in every module.
   `/vfuiprof` before and after any change for speed. A lock repaints only
   its slot (`Bags.RepaintSlot`), a cooldown only the swirls
   (`Bags.RepaintCooldowns`); the whole repaint is the fallback.
+- **Bags full helper** (`FullHelper.lua`, `fullHelper`): only on the
+  client's "Inventory is full" while looting, looked at again 0.25 s later
+  (a stack may have taken it, the QoL junk discard may have made room). Only
+  general bags count. Junk first, then cheapest by vendor price; never quest
+  items, profession tools, class reagents, ammo, quivers, bags, keys, no-value
+  items, pinned items, gear above grey or anything rare and up. Destroy only
+  from the player's click, after re-checking the stack; loot on the first
+  BAG_UPDATE_DELAYED that shows a free general slot, never before.
 - **Client tutorials** that wait for the client's bag frame (reagent bag step
   1 and 2) are faded out while the takeover is on (`Tutorials.lua`).
 

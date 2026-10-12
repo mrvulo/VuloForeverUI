@@ -54,6 +54,7 @@ jemand ohne den Code prüfen kann.
 | F-33 | Buffs und Debuffs abgerundet, Spirale und Ring in derselben Form | Auren | gebaut | – |
 | F-34 | Goldprüfung aus dem Rechtsklick-Menü auf einen Spieler | Komfort | gebaut | – |
 | F-35 | Durchschnittliche Gegenstandsstufe im Charakterfenster, Farbe wählbar | Skins | gebaut | – |
+| F-36 | Taschen-voll-Helfer: Vorschlag zum Löschen und Plündern mit einem Klick | Taschen | gebaut | – |
 
 ---
 
@@ -213,6 +214,13 @@ jemand ohne den Code prüfen kann.
 - Angenommen der Charakterfenster-Skin ist an (Standard oder Modern), **wenn** du das Charakterfenster öffnest, **dann** steht in der Stufen-Leiste zwischen „Stufe 24, Schamanin“ und dem Pfeil-Knopf mittig „iLvL 22“ (Durchschnitt der angelegten Ausrüstung, abgerundet wie in den Werten).
 - Angenommen Farbe „Nach Qualität“, **dann** hat der Text die Farbe der durchschnittlichen Qualität deiner Teile (meist grün); mit „Eigene Farbe“ die gewählte Farbe, sofort beim Ändern.
 - **Wenn** du ein Teil wechselst, **dann** ändert sich der Wert gleich; mit dem Schalter aus oder dem Skin auf „Aus“ ist der Text weg.
+
+### F-36 Taschen-voll-Helfer
+- Angenommen die allgemeinen Taschen sind voll, **wenn** du plünderst und „Inventar ist voll“ kommt, **dann** erscheint unter dem Beutefenster eine Leiste „Taschen voll“ mit Symbol, Name und Händlerwert eines Stapels.
+- **Dann** ist der Vorschlag Schrott (grau oder markiert), solange es welchen gibt, sonst der billigste andere Stapel; „Anderer“ blättert durch die übrigen Vorschläge.
+- **Nie** vorgeschlagen werden Quest-Gegenstände, Berufswerkzeuge (Spitzhacke, Kürschnermesser, Schmiedehammer, Runenrute …), Klassenreagenzien, Munition, Köcher, Taschen, Schlüssel, Gegenstände ohne Verkaufswert, angepinnte Gegenstände, Rüstung/Waffen über Grau und alles ab Selten (blau). Nichts davon → „Nichts in deinen Taschen kann gefahrlos weg.“
+- **Wenn** du „Löschen & plündern“ klickst, **dann** verschwindet der Stapel (Chatzeile „Taschen voll: … zerstört“) und die liegengebliebene Beute landet in den Taschen; passt danach noch etwas nicht, kommt der nächste Vorschlag.
+- Angenommen die Beute passt auf einen angefangenen Stapel oder ein Platz ist frei, **dann** erscheint keine Leiste; beim Schließen des Beutefensters geht sie weg.
 
 ---
 

@@ -120,6 +120,7 @@ local mod = ns:RegisterModule("bags", {
         moveWithoutShift = false,
         stackSplitter  = false,
         hideBagWarnings = false,
+        fullHelper     = true,      -- bags full while looting: suggest a stack to destroy (FullHelper.lua)
         pinned         = {},
 
         -- the bank, which groups and filters on its own switches
@@ -328,6 +329,7 @@ function mod:OnEnable()
         Bags.Repaint()
     end)
     Bags.Context.Register(self)
+    Bags.FullHelper.Apply()
     self:RegisterEvent("BAG_UPDATE_COOLDOWN", function() Bags.RepaintCooldowns() end)
     -- A quest taken from an item: its "!" goes, though no bag changed.
     self:RegisterEvent("QUEST_ACCEPTED", function() Bags.Repaint() end)
@@ -390,6 +392,7 @@ end
 function mod:OnDisable()
     -- a frame later, once the module counts as off: the muted tip comes back
     ns.NextFrame(Bags.Tutorials.Update)
+    ns.NextFrame(Bags.FullHelper.Apply)
     if Bags.Window then Bags.Window.Close() end
     if Bags.Bank then Bags.Bank.Close() end
     -- What we took from the client is given back -- the bank frame above all,

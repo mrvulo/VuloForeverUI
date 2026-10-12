@@ -179,6 +179,10 @@ local function bagsPage()
         slider("recentMinutes", L["Recent for (minutes)"], 1, 30, 1,
             { disabled = function() return not d.showRecent end }),
 
+        toggle("fullHelper", L["Bags full helper"], {
+            tooltip = L["When an item does not fit while looting, a bar under the loot window suggests a stack to destroy -- junk first, then the cheapest -- and loots in one click. Quest items, profession tools, class reagents, ammunition, bags, keys, pinned items, gear above grey and anything rare are never suggested."],
+            after = function() Bags.FullHelper.Apply() end }),
+
         toggle("pinnedTips", L["Show pinned & recent tips"]),
         toggle("hideBagWarnings", L["Hide the bag warnings"],
             L["The window says when a fight stopped it from building more slots. This silences that."]),
