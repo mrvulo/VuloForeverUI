@@ -265,6 +265,13 @@ function Character.Enable(mod)
         hooksecurefunc("PaperDollItemSlotButton_Update", function(button)
             if sideOf[button] then paint(button) end
         end)
+        -- The client writes the level line on every open of the window
+        -- (PaperDollFrame_OnShow) and on a level-up. The average goes with
+        -- it: at login the client answers 0 until the gear has loaded, and
+        -- PLAYER_AVG_ITEM_LEVEL_UPDATE may come while the window is closed.
+        if _G.PaperDollFrame_SetLevel then
+            hooksecurefunc("PaperDollFrame_SetLevel", paintAverage)
+        end
     end
     local function changed()
         wipe(enchantCache)
