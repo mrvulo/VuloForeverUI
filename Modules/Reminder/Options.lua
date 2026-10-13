@@ -50,6 +50,12 @@ end
 function mod:GetOptions()
     local db = mod.db
     local o = {
+        { type = "desc", text = L["|cffaaaaaaFor buffs and consumables outside of combat: what is missing or about to run out before the next pull. Buffs and procs during a fight belong on the Cooldown Manager's Buffs bar.|r"] },
+        { type = "group", layout = "row", gap = 10, align = "center", items = {
+            { type = "button", label = L["Open the Buffs bar"], width = 200,
+              tooltip = L["Opens the Cooldown Manager on its Buffs bar: auras that matter in combat and in your rotation."],
+              onClick = function() if ns.CM and ns.CM.ShowBuffsBar then ns.CM.ShowBuffsBar() end end },
+        } },
         { type = "group", layout = "row", gap = 10, align = "center", items = {
             { type = "button", label = L["Open Edit Mode"], width = 200, primary = true,
               onClick = function() ns:SetEditMode(true) end },

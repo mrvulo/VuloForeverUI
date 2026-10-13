@@ -49,6 +49,21 @@ local function bar()
     return CM.Bar(currentKey())
 end
 
+-- Opens this page on the first buff bar (seed TrackedBuff), from another
+-- module's page. Without one the page opens on its first bar, where "Add a
+-- buff bar" is.
+function CM.ShowBuffsBar()
+    local db = CM.db()
+    CM.EnsureBars()
+    for _, key in ipairs(db.barOrder) do
+        local b = db.bars[key]
+        if b and b.seed == "TrackedBuff" then selected, selectedRow = key, nil; break end
+    end
+    local UI = ns.UI
+    UI:ShowModulePage("cooldownmanager")
+    if UI.currentTab ~= "spells" then UI:ShowTab("spells") end
+end
+
 local function apply()
     CM.RestyleAll()
     CM.UpdateVisibilityAll()

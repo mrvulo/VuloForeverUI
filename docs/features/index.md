@@ -55,6 +55,7 @@ jemand ohne den Code prüfen kann.
 | F-34 | Goldprüfung aus dem Rechtsklick-Menü auf einen Spieler | Komfort | gebaut | – |
 | F-35 | Durchschnittliche Gegenstandsstufe im Charakterfenster, Farbe wählbar | Skins | gebaut | – |
 | F-36 | Taschen-voll-Helfer: Vorschlag zum Löschen und Plündern mit einem Klick | Taschen | gebaut | – |
+| F-37 | Erinnerungen: Hinweis auf den Zweck und Knopf zur Buffs-Leiste des Cooldown Managers | Erinnerungen | gebaut | – |
 
 ---
 
@@ -221,6 +222,10 @@ jemand ohne den Code prüfen kann.
 - **Nie** vorgeschlagen werden Quest-Gegenstände, Berufswerkzeuge (Spitzhacke, Kürschnermesser, Schmiedehammer, Runenrute …), Klassenreagenzien, Munition, Köcher, Taschen, Schlüssel, Gegenstände ohne Verkaufswert, angepinnte Gegenstände, Rüstung/Waffen über Grau und alles ab Selten (blau). Nichts davon → „Nichts in deinen Taschen kann gefahrlos weg.“
 - **Wenn** du „Löschen & plündern“ klickst, **dann** verschwindet der Stapel (Chatzeile „Taschen voll: … zerstört“) und die liegengebliebene Beute landet in den Taschen; passt danach noch etwas nicht, kommt der nächste Vorschlag.
 - Angenommen die Beute passt auf einen angefangenen Stapel oder ein Platz ist frei, **dann** erscheint keine Leiste; beim Schließen des Beutefensters geht sie weg.
+
+### F-37 Erinnerungen: Zweck und Verweis auf die Buffs-Leiste
+- **Wenn** du die Erinnerungen-Seite öffnest, **dann** steht ganz oben grau: für Buffs und Verbrauchsgüter außerhalb des Kampfes; Buffs und Procs im Kampf gehören in die Buffs-Leiste des Cooldown Managers.
+- **Wenn** du „Buffs-Leiste öffnen“ klickst, **dann** springt das Fenster zum Cooldown Manager, Reiter „Zauber“, mit der Leiste „Buffs“ ausgewählt; gibt es keine Buffs-Leiste, steht die erste Leiste da (mit „Neue Stärkungszauberleiste hinzufügen“).
 
 ---
 

@@ -189,6 +189,10 @@ These apply to every visible change, in every module.
 
 ## Reminders (`Modules/Reminder/`)
 
+- **Scope:** buffs and consumables out of combat (missing or running out
+  before a pull). In-combat and rotational auras belong on the Cooldown
+  Manager's Buffs bar; the options page says so first and links there
+  (`CM.ShowBuffsBar`).
 - The row shows only what is missing and switched on; a click casts or
   re-applies the weapon item used last (learned per slot, per character).
 - **Possible buffs** (`Catalog.lua`, button on the options page): a plain,
