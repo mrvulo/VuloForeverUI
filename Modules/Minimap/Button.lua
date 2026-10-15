@@ -15,12 +15,8 @@ local mod = ns:RegisterModule("minimap", {
 
 local button
 
--- We ship vui4.tga locally (VuloForeverUI/Media/Icons/ui/vui4.tga).
--- If someone has VuloMedia installed instead, that works too.
+-- The addon's logo, the same file as the addon list and the settings title.
 local function iconPath()
-    if C_AddOns.IsAddOnLoaded("VuloMedia") then
-        return "Interface\\AddOns\\VuloMedia\\Icons\\vui4"
-    end
     return "Interface\\AddOns\\VuloForeverUI\\Media\\Icons\\ui\\vui4"
 end
 
