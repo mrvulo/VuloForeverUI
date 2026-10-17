@@ -372,6 +372,9 @@ function Skins.PaintSlot(button, side, info, off, after)
         d.dps:SetPoint(point, from, rel, x, showE and 6 or 0)
         d.enchant:SetPoint(point, from, rel, x, showD and -6 or 0)
     end
+    if d.side == "left" or d.side == "right" then
+        d.enchant:SetWidth(info and info.textWidth or 115)
+    end
     if showE then d.enchant:SetText(info.enchant); d.enchant:Show() else d.enchant:Hide() end
     if showD then
         d.dps:SetText(L["%.1f DPS"]:format(info.dps))
@@ -401,15 +404,67 @@ local function stripEnchanted(text)
     return text:match(enchantPattern) or text
 end
 
--- The permanent enchant line of a tooltip, or nil.
+-- Short forms for the enchant text beside a slot. The text is the CLIENT's
+-- tooltip line, so this follows the client language (GetLocale), not the
+-- addon's: a German client writes "Ausdauer +3 und Rüstung +10", which
+-- becomes "Ausd +3, Rüst +10". Longest phrases first; whole words only, so
+-- "Intelligenz" is not hit inside another word. A language without a table
+-- keeps its text, and what is still too long ends in "..." at the column.
+local SHORT = {
+    deDE = {
+        { "Schwache Temposteigerung", "Tempo" }, { "Schwache Tempo%-Steigerung", "Tempo" },
+        { "Geringe Temposteigerung", "Tempo" }, { "Temposteigerung", "Tempo" },
+        { "Alle Widerstandsarten", "Alle Wid" }, { "Alle Widerstände", "Alle Wid" },
+        { "Angriffskraft", "AK" }, { "Zaubermacht", "ZM" }, { "Zauberschaden", "Zaub" },
+        { "Waffenschaden", "Schaden" }, { "Kritische Trefferwertung", "Krit" }, { "Trefferwertung", "Treffer" },
+        { "Beweglichkeit", "Bew" }, { "Ausdauer", "Ausd" }, { "Intelligenz", "Int" },
+        { "Willenskraft", "Wil" }, { "Stärke", "Str" }, { "Rüstung", "Rüst" },
+        { "Verteidigung", "Vert" }, { "Gesundheit", "Leben" }, { "Widerstand", "Wid" },
+        { "Heilung", "Heil" }, { "alle 5 Sek%.", "/5s" }, { "pro 5 Sek%.", "/5s" },
+        { "Erhöht ", "" }, { " und ", ", " },
+    },
+    enUS = {
+        { "Minor Speed Increase", "Speed" }, { "Minor Movement Speed", "Speed" }, { "Movement Speed", "Speed" },
+        { "All Resistances", "All Res" },
+        { "Attack Power", "AP" }, { "Spell Power", "SP" }, { "Spell Damage", "SpDmg" },
+        { "Weapon Damage", "Dmg" }, { "Critical Strike", "Crit" },
+        { "Agility", "Agi" }, { "Stamina", "Sta" }, { "Intellect", "Int" }, { "Spirit", "Spi" },
+        { "Strength", "Str" }, { "Armor", "Arm" }, { "Defense", "Def" }, { "Health", "HP" },
+        { "Resistance", "Res" }, { "Healing", "Heal" }, { "every 5 sec%.", "/5s" }, { "per 5 sec%.", "/5s" },
+        { "Increases ", "" }, { " and ", ", " },
+    },
+}
+SHORT.enGB = SHORT.enUS
+
+local function shorten(text)
+    local list = SHORT[GetLocale()]
+    if not list then return text end
+    for _, pair in ipairs(list) do
+        text = text:gsub(pair[1], pair[2])
+    end
+    return (text:gsub("^%s+", ""):gsub("%s+$", ""):gsub("%s%s+", " "))
+end
+Skins.ShortEnchant = shorten
+
+-- The permanent enchant line of a tooltip, shortened, or nil.
 function Skins.EnchantFrom(data)
     if type(data) ~= "table" or not ns.CanRead(data) or type(data.lines) ~= "table" then return nil end
     local want = Enum.TooltipDataLineType and Enum.TooltipDataLineType.ItemEnchantmentPermanent
     for _, line in ipairs(data.lines) do
         if line.type == want and type(line.leftText) == "string" and ns.CanRead(line.leftText) then
-            return stripEnchanted(line.leftText)
+            return shorten(stripEnchanted(line.leftText))
         end
     end
+end
+
+-- How wide a side text may run: half the room between the two slot columns
+-- (the model), less a gap, so a left text and a right text on the same row
+-- never meet. Before the window is laid out there is no room to measure.
+function Skins.SideTextWidth(leftSlot, rightSlot)
+    local l = leftSlot and leftSlot:GetRight()
+    local r = rightSlot and rightSlot:GetLeft()
+    if not (l and r) or r - l < 40 then return nil end
+    return math.floor((r - l) / 2 - 8)
 end
 
 -- ---------------------------------------------------------------- lifecycle --

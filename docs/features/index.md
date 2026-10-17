@@ -59,6 +59,7 @@ jemand ohne den Code prüfen kann.
 | F-38 | Beim Händler mehrere Stapel kaufen, „Max“ = bezahlbar und passt in die Taschen | Komfort | gebaut | – |
 | F-39 | Schadensmesser: Umrandung und Schatten für alle Texte | Schadensmesser | gebaut | – |
 | F-40 | Durchschnittliche Gegenstandsstufe im Betrachten-Fenster | Skins | gebaut | – |
+| F-41 | Verzauberungstexte gekürzt und auf den Modellbereich begrenzt | Skins | gebaut | – |
 
 ---
 
@@ -245,6 +246,11 @@ jemand ohne den Code prüfen kann.
 - Angenommen der Betrachten-Skin ist an, **wenn** du einen Spieler betrachtest, **dann** steht rechts neben „Stufe 30, Jäger“ „iLvL …“ (der Wert des Spiels für diesen Spieler), sobald seine Daten da sind.
 - **Dann** hat der Text dieselbe Farbregel wie dein Charakterfenster (nach Qualität seiner Teile oder deine eigene Farbe) und überlappt weder den Stufentext noch den Rahmen.
 - **Wenn** du „Durchschnittliche Gegenstandsstufe anzeigen“ in der Karte Betrachten-Fenster ausschaltest, **dann** ist der Text weg.
+
+### F-41 Verzauberungstexte gekürzt
+- **Wenn** du Charakter- oder Betrachten-Fenster öffnest, **dann** stehen Verzauberungen kurz da: „Ausdauer +3 und Rüstung +10“ → „Ausd +3, Rüst +10“, „Beweglichkeit +5“ → „Bew +5“, „Schwache Tempo-Steigerung“ → „Tempo“.
+- **Dann** bleiben die Texte im Modellbereich zwischen den Platz-Spalten: jede Seite höchstens bis zur Mitte, linke und rechte Texte derselben Zeile berühren sich nie; was trotzdem zu lang ist, endet in „…“.
+- Angenommen ein englischer Client, **dann** gilt dasselbe mit „Sta“, „Agi“, „Arm“ usw.; andere Sprachen behalten den Text und werden nur begrenzt.
 
 ---
 

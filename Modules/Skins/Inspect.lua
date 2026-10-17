@@ -42,6 +42,7 @@ local function slotInfo(slot)
         enchantByLink[link] = e
     end
     info.enchant = e or nil
+    info.textWidth = Skins.SideTextWidth(_G.InspectHeadSlot, _G.InspectHandsSlot)
     return info
 end
 
