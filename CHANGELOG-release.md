@@ -1,20 +1,30 @@
-## 0.17.0
+## 0.18.0
 
 **New**
 
-- **Bags** — when your bags are full while looting, a bar under the loot
-  window suggests a stack to destroy: junk first, then the cheapest by
-  vendor price. One click destroys it and loots what was left lying. Quest
-  items, profession tools, class reagents, ammunition, bags, keys, pinned
-  items, gear above grey and anything rare are never suggested.
+- **General** — a new default look: unit frames in the Classic style,
+  rounded auras, bags with BoE tags, the damage meter with outlined text,
+  resource bars and the Expressway font for game text. Every module is on
+  except the Cooldown Manager. Settings you changed yourself stay as they
+  are.
+- **Quality of Life** — buy more than one stack at a merchant: shift-click
+  an item and the game's split window goes past one stack, Max fills in as
+  many as you can pay for, the merchant has and your bags can hold.
+- **Skins** — the inspect window shows the player's average item level
+  beside their level.
+- **Damage Meter** — outline and shadow for every text of the meter, with
+  a smooth outline where the client offers it.
+- A new addon logo in the addon list, the settings window and on the
+  minimap button.
 
 **Changed**
 
-- **Reminders** — the settings now say up front that the module is for
-  out-of-combat buff and consumable reminders, with a button to the
-  Cooldown Manager's Buffs bar for in-combat and rotational auras.
+- **Skins** — enchant texts beside the slots are shortened ("Sta +3, Arm
+  +10") and stay inside the model area, never reaching the other side.
+- **Bags** — the binding tag is called BoE only; this game has no
+  warbound items.
 
 **Fixed**
 
-- **Skins** — the average item level in the character window shows right
-  after logging in, not only after changing a piece of gear.
+- **Bags** — a BoE item that was worn once and is now bound no longer shows
+  the BoE tag.
