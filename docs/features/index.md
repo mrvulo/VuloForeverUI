@@ -60,6 +60,7 @@ jemand ohne den Code prüfen kann.
 | F-39 | Schadensmesser: Umrandung und Schatten für alle Texte | Schadensmesser | gebaut | – |
 | F-40 | Durchschnittliche Gegenstandsstufe im Betrachten-Fenster | Skins | gebaut | – |
 | F-41 | Verzauberungstexte gekürzt und auf den Modellbereich begrenzt | Skins | gebaut | – |
+| F-42 | Ausgelieferte Standards = Profil des Spielers (Werkzeug ship_profile.py) | Global | gebaut | – |
 
 ---
 
@@ -251,6 +252,12 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du Charakter- oder Betrachten-Fenster öffnest, **dann** stehen Verzauberungen kurz da: „Ausdauer +3 und Rüstung +10“ → „Ausd +3, Rüst +10“, „Beweglichkeit +5“ → „Bew +5“, „Schwache Tempo-Steigerung“ → „Tempo“.
 - **Dann** bleiben die Texte im Modellbereich zwischen den Platz-Spalten: jede Seite höchstens bis zur Mitte, linke und rechte Texte derselben Zeile berühren sich nie; was trotzdem zu lang ist, endet in „…“.
 - Angenommen ein englischer Client, **dann** gilt dasselbe mit „Sta“, „Agi“, „Arm“ usw.; andere Sprachen behalten den Text und werden nur begrenzt.
+
+### F-42 Ausgelieferte Standards aus dem Spielerprofil
+- Angenommen ein neuer Charakter ohne eigene Einstellungen (oder „Modul zurücksetzen“), **dann** sieht alles aus wie auf Vulo: Classic-Einheitenfenster, abgerundete Auren, Taschen mit BoE und Positionen, Schadensmesser mit Umrandung, Ressourcenleisten, Schrift Expressway auch für Spieltext.
+- **Dann** sind alle Module an außer dem Cooldown Manager.
+- Angenommen ein Spieler hat etwas selbst eingestellt, **dann** bleibt sein Wert; nur nie geänderte Einstellungen bekommen den neuen Standard.
+- Angenommen ein Krieger mit eigener Cooldown-Manager-Leiste, **dann** stehen dort keine Schamanen-Zauber.
 
 ---
 

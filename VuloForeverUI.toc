@@ -34,6 +34,7 @@ Core\SecretReport.lua
 Core\Database\Load.lua
 Core\Database\Profiles.lua
 Core\Database\Storage.lua
+Core\Database\Shipped.lua
 Core\Modules.lua
 Core\Events.lua
 Core\Schedule.lua

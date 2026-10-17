@@ -24,6 +24,8 @@ function ns:RegisterModule(key, def)
     if def.defaults.enabled == nil then
         def.defaults.enabled = true
     end
+    -- the shipped look (Core/Database/Shipped.lua) over the code's own
+    if ns.ApplyShipped then ns.ApplyShipped(key, def.defaults) end
     -- Never overwrite: a module that brought its own is left alone.
     def.RegisterEvent       = def.RegisterEvent       or modRegisterEvent
     def.UnregisterAllEvents = def.UnregisterAllEvents or modUnregisterAllEvents
