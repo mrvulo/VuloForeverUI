@@ -153,25 +153,17 @@ local function checkClassification(frame)
 
     Classic.Layout("target.classification.layout." .. frame.unit, function()
         local hb, hc = p.hb, p.hc
-        local y, textY = -1, 0
         if minus then
             overlay.Background:SetSize(119, 12)
             overlay.Background:SetPoint("BOTTOMLEFT", 7, 47)
-            y, textY = -6, -6
         else
             overlay.Background:SetSize(119, 25)
             overlay.Background:SetPoint("BOTTOMLEFT", 7, 35)
         end
-        hb.TextString:SetPoint("CENTER", hc, "CENTER", 0, textY)
-        hc.LeftText:SetPoint("LEFT", hc, "LEFT", 5, y)
-        hc.RightText:SetPoint("RIGHT", hc, "RIGHT", -7, y)
-        hc.DeadText:SetPoint("CENTER", hc, "CENTER", 0, y)
-        hc.UnconsciousText:SetPoint("CENTER", hc, "CENTER", 0, y)
-
+        Classic.PinBarTexts(overlay.HealthBar, hb.TextString, hc.LeftText, hc.RightText,
+            hc.DeadText, hc.UnconsciousText)
         local mb = p.mb
-        mb.TextString:SetPoint("CENTER", mb, "CENTER", -4, 3)
-        mb.LeftText:SetPoint("LEFT", mb, "LEFT", 5, 3)
-        mb.RightText:SetPoint("RIGHT", mb, "RIGHT", -15, 3)
+        Classic.PinBarTexts(overlay.ManaBar, mb.TextString, mb.LeftText, mb.RightText)
     end)
 end
 

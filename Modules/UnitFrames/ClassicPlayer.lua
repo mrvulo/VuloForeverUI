@@ -178,9 +178,7 @@ local function playerArt()
 
         local hb, hc, mb = p.hb, p.hc, p.mb
         alignBlizzardHealth(p, 87, -45, 119)       -- overlay -19,-4 + bar 106,-41
-        hb.TextString:SetPoint("CENTER", hc, "CENTER")
-        hb.LeftText:SetPoint("LEFT", hc, "LEFT", 4, 0)       -- reference: x = 91
-        hb.RightText:SetPoint("RIGHT", hc, "RIGHT", -1, 0)   -- reference: x = 205
+        Classic.PinBarTexts(overlay.HealthBar, hb.TextString, hb.LeftText, hb.RightText)
 
         for _, key in ipairs({ "MyHealPredictionBar", "OtherHealPredictionBar", "HealAbsorbBar", "TotalAbsorbBar" }) do
             local seg = hb[key]
@@ -200,9 +198,7 @@ local function playerArt()
 
         placeLossBar(p)
 
-        mb.TextString:SetPoint("CENTER", mb, "CENTER", 0, 3)
-        mb.LeftText:SetPoint("LEFT", mb, "LEFT", 6, 3)
-        mb.RightText:SetPoint("RIGHT", mb, "RIGHT", -4, 3)
+        Classic.PinBarTexts(overlay.ManaBar, mb.TextString, mb.LeftText, mb.RightText)
 
         if mb.FeedbackFrame then
             mb.FeedbackFrame:SetParent(overlay.ManaBar)
@@ -273,14 +269,10 @@ local function vehicleArt()
 
         local hb, hc, mb = p.hb, p.hc, p.mb
         alignBlizzardHealth(p, 100, -45, 100)      -- overlay -19,-4 + bar 119,-41
-        hb.TextString:SetPoint("CENTER", hc, "CENTER", -2, 0)   -- reference: 148,-51
-        hb.LeftText:SetPoint("LEFT", hc, "LEFT", -9, -1)        -- reference: x = 91
-        hb.RightText:SetPoint("RIGHT", hc, "RIGHT", 0, -1)      -- reference: x = 200
+        Classic.PinBarTexts(overlay.HealthBar, hb.TextString, hb.LeftText, hb.RightText)
         placeLossBar(p)
 
-        mb.TextString:SetPoint("CENTER", mb, "CENTER", -2, 3)
-        mb.LeftText:SetPoint("LEFT", mb, "LEFT", 0, 3)
-        mb.RightText:SetPoint("RIGHT", mb, "RIGHT", -4, 3)
+        Classic.PinBarTexts(overlay.ManaBar, mb.TextString, mb.LeftText, mb.RightText)
 
         p.ctx.GroupIndicator:ClearAllPoints()
         p.ctx.GroupIndicator:SetPoint("BOTTOMLEFT", overlay, "TOPLEFT", 97, -13)

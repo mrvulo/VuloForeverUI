@@ -265,6 +265,7 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du Schaden nimmst oder Mana verbrauchst, auch im Kampf, **dann** laufen Prozent und Wert mit.
 - Angenommen Wut oder Energie, **dann** steht nur der Wert (wie bei Blizzard). Tot, als Geist oder im Fahrzeug zeigt der Rahmen wieder Blizzards eigenen Text.
 - **Wenn** du „Statustext auf den Balken“ ausschaltest, **dann** sind unsere Texte weg und Blizzards Anzeige ist zurück.
+- **Dann** sitzen bei Spieler, Ziel und Fokus alle Balkentexte auf den sichtbaren Balken: in der Höhe mittig, links und rechts mit demselben Abstand (3 px) zum Balkenrand, Leben und Mana gleich.
 
 ---
 

@@ -47,12 +47,17 @@ local function blizzardAlpha(bar, a)
     end
 end
 
--- Two strings on a frame of ours over the bar, in the face, size and colour
--- of Blizzard's own, on the points Blizzard's left and right texts sit on.
+-- Two strings on a frame of ours, in the face, size and colour of Blizzard's
+-- own, on the points Blizzard's left and right texts sit on. The host hangs
+-- where Blizzard's TEXTS hang (the Classic player moves them onto the frame
+-- container), never on the bar: the Classic style keeps Blizzard's bars at
+-- alpha 0 under its own, and a child of the bar would be invisible with it.
 local function makePair(bar)
-    local host = CreateFrame("Frame", nil, bar)
-    host:SetAllPoints(bar)
-    host:SetFrameLevel(bar:GetFrameLevel() + 3)
+    local model = bar.LeftText or bar.TextString
+    local parent = (model and model:GetParent()) or bar
+    local host = CreateFrame("Frame", nil, parent)
+    host:SetAllPoints(parent)
+    host:SetFrameLevel(parent:GetFrameLevel() + 3)
     local function one(model, point)
         local fs = host:CreateFontString(nil, "OVERLAY")
         if model then

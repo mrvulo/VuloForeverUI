@@ -318,6 +318,22 @@ local function tintBlizzardManaBar(bar)
     end
 end
 
+-- Blizzard's bar texts onto the bar that is SEEN. The Classic style draws its
+-- own bars over Blizzard's (which stay, at alpha 0, where Blizzard put them),
+-- so texts anchored to Blizzard's bars sat off the visible ones: left and
+-- right at different insets, a pixel or two high or low. Here every text of
+-- a bar is centred in height on the visible bar, left and right at the same
+-- inset (the player's call, 2026-10-17: one level, nothing offset).
+local TEXT_INSET = 3
+function Classic.PinBarTexts(visible, center, left, right, ...)
+    if not visible then return end
+    for _, fs in ipairs({ center, ... }) do
+        if fs then fs:ClearAllPoints(); fs:SetPoint("CENTER", visible, "CENTER", 0, 0) end
+    end
+    if left then left:ClearAllPoints(); left:SetPoint("LEFT", visible, "LEFT", TEXT_INSET, 0) end
+    if right then right:ClearAllPoints(); right:SetPoint("RIGHT", visible, "RIGHT", -TEXT_INSET, 0) end
+end
+
 function Classic.RegisterManaBar(bar)
     if bar then manaBars[bar] = true end
 end
