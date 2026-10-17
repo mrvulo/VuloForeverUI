@@ -57,6 +57,7 @@ jemand ohne den Code prüfen kann.
 | F-36 | Taschen-voll-Helfer: Vorschlag zum Löschen und Plündern mit einem Klick | Taschen | gebaut | – |
 | F-37 | Erinnerungen: Hinweis auf den Zweck und Knopf zur Buffs-Leiste des Cooldown Managers | Erinnerungen | gebaut | – |
 | F-38 | Beim Händler mehrere Stapel kaufen, „Max“ = bezahlbar und passt in die Taschen | Komfort | gebaut | – |
+| F-39 | Schadensmesser: Umrandung und Schatten für alle Texte | Schadensmesser | gebaut | – |
 
 ---
 
@@ -232,6 +233,11 @@ jemand ohne den Code prüfen kann.
 - Angenommen genug Gold und freie Plätze, **wenn** du beim Händler Shift auf Wasser klickst, **dann** geht Blizzards Fenster über 20 hinaus, und „Max“ trägt so viele ein, wie in deine Taschen passen (freie Plätze plus angefangene Stapel), höchstens was dein Gold hergibt und der Händler vorrätig hat.
 - **Wenn** du „Okay“ klickst, **dann** kauft das Addon Stapel für Stapel (kurz hintereinander), und im Chat steht „N x … gekauft.“; schließt du den Händler mittendrin, hört es auf.
 - Angenommen eine Menge bis zu einem Stapel, **dann** kauft das Spiel wie gewohnt selbst. Waren, die mit Gegenständen bezahlt werden, behalten die Grenze des Spiels.
+
+### F-39 Schadensmesser: Umrandung und Schatten
+- **Wenn** du im Reiter „Text“ die Umrandung auf „Dicke Umrandung“ stellst, **dann** bekommen sofort alle Texte des Messers (Namen, Zahlen, Kopfzeile, Aufschlüsselung) den Rand; „Aus den Schrifteinstellungen“ nimmt wieder den aus Globale Einstellungen → Schriften.
+- **Wenn** du „Schatten“ einschaltest, **dann** liegt unter jedem Text ein dunkler Schatten, sofort sichtbar; aus = kein Schatten.
+- Angenommen Timer oder Bedrohungsmesser haben eine eigene Umrandung gewählt, **dann** behalten sie diese; auf „Aus den Schrifteinstellungen“ folgen sie dem Messer.
 
 ---
 

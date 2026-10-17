@@ -85,6 +85,8 @@ local mod = ns:RegisterModule("damagemeter", {
         leftTextUseClassColor = false, rightTextUseClassColor = false,
         leftTextColor = { r = 1, g = 1, b = 1 }, rightTextColor = { r = 1, g = 1, b = 1 },
         leftTextOffsetX = 0, leftTextOffsetY = 0, rightTextOffsetX = 0, rightTextOffsetY = 0,
+        textOutline = "INHERIT",    -- INHERIT (font settings) | NONE | OUTLINE | THICKOUTLINE
+        textShadow  = false,
 
         -- breakdown
         showHoverTooltip = true, showSpellTooltips = true,
@@ -362,8 +364,24 @@ function DM.BreakdownTexture()
     return DM.BarTexture(n)
 end
 
+-- Every text of the meter goes through here. Text without flags of its own
+-- takes the meter's outline (textOutline; INHERIT = the font settings), and
+-- all of it the meter's shadow, so the windows, the breakdown, the timer and
+-- the threat meter read alike.
 function DM.Font(fs, size, flags)
-    return ns.UI.FontFor("damagemeter", fs, size, flags)
+    local d = mod.db
+    if flags == nil and d then
+        local o = d.textOutline or "INHERIT"
+        if o == "NONE" then flags = "" elseif o ~= "INHERIT" then flags = o end
+    end
+    ns.UI.FontFor("damagemeter", fs, size, flags)
+    if d and d.textShadow then
+        fs:SetShadowColor(0, 0, 0, 1)
+        fs:SetShadowOffset(1, -1)
+    else
+        fs:SetShadowOffset(0, 0)
+    end
+    return fs
 end
 
 -- ---------------------------------------------------------------- sessions --

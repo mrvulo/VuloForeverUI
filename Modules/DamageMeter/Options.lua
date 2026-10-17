@@ -247,6 +247,12 @@ local function textOptions()
         toggle("hideNumbers", L["Hide the rank numbers"], { tooltip = L["Hides the 1. 2. 3. in front of each name."], after = restyle }),
 
         { type = "spacer", height = 6 },
+        { type = "header", text = L["Outline and shadow"] },
+        dropdown("textOutline", L["Outline"], ns.OutlineValues({ value = "INHERIT", text = L["From the font settings"] }),
+            { tooltip = L["The edge around every text of the meter: the windows, the breakdown, the timer and the threat meter unless they set their own."], after = restyle }),
+        toggle("textShadow", L["Shadow"], { tooltip = L["A dark shadow under every text of the meter, for a light or busy background."], after = restyle }),
+
+        { type = "spacer", height = 6 },
         { type = "header", text = L["Left text"] },
         slider("leftFontSize", L["Left text size"], 8, 18, 1, { after = restyle }),
         toggle("leftTextUseClassColor", L["Class color on the left"], { after = restyle }),
