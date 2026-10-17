@@ -236,7 +236,8 @@ jemand ohne den Code prüfen kann.
 
 ### F-39 Schadensmesser: Umrandung und Schatten
 - **Wenn** du im Reiter „Text“ die Umrandung auf „Dicke Umrandung“ stellst, **dann** bekommen sofort alle Texte des Messers (Namen, Zahlen, Kopfzeile, Aufschlüsselung) den Rand; „Aus den Schrifteinstellungen“ nimmt wieder den aus Globale Einstellungen → Schriften.
-- **Wenn** du „Schatten“ einschaltest, **dann** liegt unter jedem Text ein dunkler Schatten, sofort sichtbar; aus = kein Schatten.
+- **Wenn** du „Schatten“ einschaltest, **dann** liegt unter jedem Text ein dunkler Schatten (1 px nach rechts unten), sofort sichtbar; aus = kein Schatten.
+- Angenommen „Glatte Umrandung“ ist an und der Client kann es, **dann** hat die Umrandung weiche, gleichmäßige Kanten statt Pixelstufen; kann der Client es nicht, ist der Schalter grau.
 - Angenommen Timer oder Bedrohungsmesser haben eine eigene Umrandung gewählt, **dann** behalten sie diese; auf „Aus den Schrifteinstellungen“ folgen sie dem Messer.
 
 ---

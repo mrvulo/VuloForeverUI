@@ -22,6 +22,8 @@ ns:RegisterLocale("ptBR", {
     ["Class color on the health bar"] = "Cor da classe na barra de vida",
     ["Threat display on the target frame"] = "Exibição de ameaça na moldura do alvo",
     ["Threat in percent"] = "Ameaça em porcentagem",
+    ["Smooth outline"] = "Contorno suave",
+    ["Draws the outline with the game's vector renderer: even, soft edges instead of stepped pixels. Only where this client offers it."] = "Desenha o contorno com o renderizador vetorial do jogo: bordas uniformes e suaves em vez de pixels em degrau. Só onde este cliente oferece.",
     ["Outline and shadow"] = "Contorno e sombra",
     ["The edge around every text of the meter: the windows, the breakdown, the timer and the threat meter unless they set their own."] = "A borda de cada texto do medidor: janelas, detalhamento, cronômetro e medidor de ameaça, a menos que tenham a sua.",
     ["A dark shadow under every text of the meter, for a light or busy background."] = "Uma sombra escura sob cada texto do medidor, para fundos claros ou carregados.",

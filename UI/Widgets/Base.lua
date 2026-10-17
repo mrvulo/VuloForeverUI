@@ -41,6 +41,66 @@ function UI.FontFor(modKey, fs, size, flags)
     return fs
 end
 
+-- ------------------------------------------------------- text edge --
+--
+-- Two things about text edges on this client that are not what the API
+-- suggests:
+--
+--   * FontString:SetShadowOffset at runtime draws no drop shadow. A shadow
+--     shows only when it comes with a FONT OBJECT. So a string is first given
+--     one of two font objects of ours (shadow / none) and THEN its face and
+--     size with SetFont; the shadow survives the SetFont, the text colour too.
+--   * The engine can draw an outline through its vector renderer ("SLUG" in
+--     the flags): smooth, even edges instead of the stepped bitmap outline.
+--     Whether this client knows the token is asked once, at the first use: a
+--     probe string is given it and keeps it only when it is understood.
+local shadowObj, plainObj
+local function edgeObjects()
+    if shadowObj then return end
+    shadowObj = CreateFont("VuloForeverUIShadowFont")
+    shadowObj:SetFont(FONT_PATH, 12, "")
+    shadowObj:SetShadowColor(0, 0, 0, 1)
+    shadowObj:SetShadowOffset(1, -1)
+    plainObj = CreateFont("VuloForeverUIPlainFont")
+    plainObj:SetFont(FONT_PATH, 12, "")
+    plainObj:SetShadowColor(0, 0, 0, 0)
+    plainObj:SetShadowOffset(0, 0)
+end
+
+-- Call BEFORE SetFont / UI.FontFor: the font object would replace the face.
+function UI.TextShadow(fs, on)
+    if not (fs and fs.SetFontObject) then return end
+    edgeObjects()
+    fs:SetFontObject(on and shadowObj or plainObj)
+end
+
+local slugKnown
+local function slugSupported()
+    if slugKnown == nil then
+        slugKnown = false
+        local probe = UIParent:CreateFontString(nil, "OVERLAY")
+        local ok, set = pcall(probe.SetFont, probe, FONT_PATH, 12, "OUTLINE, SLUG")
+        if ok and set ~= false then
+            local _, _, flags = probe:GetFont()
+            slugKnown = type(flags) == "string" and flags:find("SLUG", 1, true) ~= nil
+        end
+        probe:Hide()
+    end
+    return slugKnown
+end
+
+-- The flags with the smooth renderer added, for an outline on a client that
+-- has it. Text without an outline stays as it is.
+function UI.SmoothFlags(flags)
+    if type(flags) ~= "string" or not flags:find("OUTLINE", 1, true) or flags:find("SLUG", 1, true) then
+        return flags
+    end
+    if not slugSupported() then return flags end
+    return flags .. ", SLUG"
+end
+
+function UI.SmoothSupported() return slugSupported() end
+
 -- SetGradient(tex, orient, ...): first color is bottom/left, second is top/right.
 function UI.SetGradient(tex, orient, r1, g1, b1, a1, r2, g2, b2, a2)
     tex:SetTexture("Interface\\Buttons\\WHITE8X8")

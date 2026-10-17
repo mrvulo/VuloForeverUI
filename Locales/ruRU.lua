@@ -22,6 +22,8 @@ ns:RegisterLocale("ruRU", {
     ["Class color on the health bar"] = "Цвет класса на полосе здоровья",
     ["Threat display on the target frame"] = "Отображение угрозы на рамке цели",
     ["Threat in percent"] = "Угроза в процентах",
+    ["Smooth outline"] = "Гладкая обводка",
+    ["Draws the outline with the game's vector renderer: even, soft edges instead of stepped pixels. Only where this client offers it."] = "Рисует обводку векторным рендером игры: ровные мягкие края вместо ступенчатых пикселей. Только если клиент это поддерживает.",
     ["Outline and shadow"] = "Обводка и тень",
     ["The edge around every text of the meter: the windows, the breakdown, the timer and the threat meter unless they set their own."] = "Обводка каждого текста измерителя: окна, разбивка, таймер и измеритель угрозы, если у них нет своей.",
     ["A dark shadow under every text of the meter, for a light or busy background."] = "Тёмная тень под каждым текстом измерителя для светлого или пёстрого фона.",

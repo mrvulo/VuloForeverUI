@@ -251,6 +251,8 @@ local function textOptions()
         dropdown("textOutline", L["Outline"], ns.OutlineValues({ value = "INHERIT", text = L["From the font settings"] }),
             { tooltip = L["The edge around every text of the meter: the windows, the breakdown, the timer and the threat meter unless they set their own."], after = restyle }),
         toggle("textShadow", L["Shadow"], { tooltip = L["A dark shadow under every text of the meter, for a light or busy background."], after = restyle }),
+        toggle("textSmooth", L["Smooth outline"], { tooltip = L["Draws the outline with the game's vector renderer: even, soft edges instead of stepped pixels. Only where this client offers it."],
+            disabled = function() return not ns.UI.SmoothSupported() end, after = restyle }),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Left text"] },

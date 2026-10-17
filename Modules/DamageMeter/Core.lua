@@ -87,6 +87,7 @@ local mod = ns:RegisterModule("damagemeter", {
         leftTextOffsetX = 0, leftTextOffsetY = 0, rightTextOffsetX = 0, rightTextOffsetY = 0,
         textOutline = "INHERIT",    -- INHERIT (font settings) | NONE | OUTLINE | THICKOUTLINE
         textShadow  = false,
+        textSmooth  = true,         -- outlines through the smooth renderer where the client has it
 
         -- breakdown
         showHoverTooltip = true, showSpellTooltips = true,
@@ -370,17 +371,16 @@ end
 -- the threat meter read alike.
 function DM.Font(fs, size, flags)
     local d = mod.db
+    local UI = ns.UI
     if flags == nil and d then
         local o = d.textOutline or "INHERIT"
         if o == "NONE" then flags = "" elseif o ~= "INHERIT" then flags = o end
     end
-    ns.UI.FontFor("damagemeter", fs, size, flags)
-    if d and d.textShadow then
-        fs:SetShadowColor(0, 0, 0, 1)
-        fs:SetShadowOffset(1, -1)
-    else
-        fs:SetShadowOffset(0, 0)
-    end
+    if flags == nil then flags = ns.ModuleFontFlags and ns.ModuleFontFlags("damagemeter") or UI.FONT_FLAGS end
+    if d and d.textSmooth ~= false then flags = UI.SmoothFlags(flags) end
+    -- the shadow comes with a font object, so it goes first (UI.TextShadow)
+    UI.TextShadow(fs, d and d.textShadow)
+    UI.FontFor("damagemeter", fs, size, flags)
     return fs
 end
 

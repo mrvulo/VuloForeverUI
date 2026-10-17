@@ -22,6 +22,8 @@ ns:RegisterLocale("deDE", {
     ["Class color on the health bar"] = "Klassenfarbe auf dem Lebensbalken",
     ["Threat display on the target frame"] = "Bedrohungsanzeige am Zielrahmen",
     ["Threat in percent"] = "Bedrohung in Prozent",
+    ["Smooth outline"] = "Glatte Umrandung",
+    ["Draws the outline with the game's vector renderer: even, soft edges instead of stepped pixels. Only where this client offers it."] = "Zeichnet die Umrandung mit dem Vektor-Renderer des Spiels: gleichmäßige, weiche Kanten statt Pixelstufen. Nur wo der Client das anbietet.",
     ["Outline and shadow"] = "Umrandung und Schatten",
     ["The edge around every text of the meter: the windows, the breakdown, the timer and the threat meter unless they set their own."] = "Der Rand um jeden Text des Messers: Fenster, Aufschlüsselung, Timer und Bedrohungsmesser, sofern sie keinen eigenen haben.",
     ["A dark shadow under every text of the meter, for a light or busy background."] = "Ein dunkler Schatten unter jedem Text des Messers, für hellen oder unruhigen Hintergrund.",
