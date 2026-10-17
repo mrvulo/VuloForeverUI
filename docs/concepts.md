@@ -221,6 +221,13 @@ These apply to every visible change, in every module.
 
 - Quick loot hides the client loot window by **scale** during the run and
   restores it when something is left (full bags, roll, confirmation).
+- **Stack split at a merchant** (`StackSplit.lua`, `stackSplit.merchantBuy`):
+  the client's own split frame, opened by shift-click, gets its cap raised to
+  what pays, what the merchant has and what fits (free slots + partial stacks
+  of that item, in bags that may hold it); Max fills it in. Above one
+  purchase the item button's SplitStack (wrapped once, original kept) buys
+  purchase by purchase, 0.3 s apart, while the merchant is open. Items with
+  an extended cost keep the client's cap.
 - **Gold check** (`TradeCheck.lua`): the achievement comparison slot is
   shared with the client and other addons — one request at a time, 5 s
   apart, 15 s deadline; a scan whose slot was taken by someone else is

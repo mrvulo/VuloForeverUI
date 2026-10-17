@@ -56,6 +56,7 @@ jemand ohne den Code prüfen kann.
 | F-35 | Durchschnittliche Gegenstandsstufe im Charakterfenster, Farbe wählbar | Skins | gebaut | – |
 | F-36 | Taschen-voll-Helfer: Vorschlag zum Löschen und Plündern mit einem Klick | Taschen | gebaut | – |
 | F-37 | Erinnerungen: Hinweis auf den Zweck und Knopf zur Buffs-Leiste des Cooldown Managers | Erinnerungen | gebaut | – |
+| F-38 | Beim Händler mehrere Stapel kaufen, „Max“ = bezahlbar und passt in die Taschen | Komfort | gebaut | – |
 
 ---
 
@@ -226,6 +227,11 @@ jemand ohne den Code prüfen kann.
 ### F-37 Erinnerungen: Zweck und Verweis auf die Buffs-Leiste
 - **Wenn** du die Erinnerungen-Seite öffnest, **dann** steht ganz oben grau: für Buffs und Verbrauchsgüter außerhalb des Kampfes; Buffs und Procs im Kampf gehören in die Buffs-Leiste des Cooldown Managers.
 - **Wenn** du „Buffs-Leiste öffnen“ klickst, **dann** springt das Fenster zum Cooldown Manager, Reiter „Zauber“, mit der Leiste „Buffs“ ausgewählt; gibt es keine Buffs-Leiste, steht die erste Leiste da (mit „Neue Stärkungszauberleiste hinzufügen“).
+
+### F-38 Beim Händler mehrere Stapel kaufen
+- Angenommen genug Gold und freie Plätze, **wenn** du beim Händler Shift auf Wasser klickst, **dann** geht Blizzards Fenster über 20 hinaus, und „Max“ trägt so viele ein, wie in deine Taschen passen (freie Plätze plus angefangene Stapel), höchstens was dein Gold hergibt und der Händler vorrätig hat.
+- **Wenn** du „Okay“ klickst, **dann** kauft das Addon Stapel für Stapel (kurz hintereinander), und im Chat steht „N x … gekauft.“; schließt du den Händler mittendrin, hört es auf.
+- Angenommen eine Menge bis zu einem Stapel, **dann** kauft das Spiel wie gewohnt selbst. Waren, die mit Gegenständen bezahlt werden, behalten die Grenze des Spiels.
 
 ---
 
