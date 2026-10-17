@@ -240,6 +240,10 @@ local function grow(t, anchor)
     t:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", e, -e)
 end
 
+-- How far a side text starts from its slot: off the slot's edge, a little
+-- into the model (the player's call, 2026-10-17).
+local SIDE_GAP = 12
+
 -- side: "left" (text to the right), "right" (text to the left), "above"
 -- (text over the slot, centred), "none" (no enchant text: the ammo slot).
 -- The weapon row sits 43 px apart, so its three slots each send their text
@@ -367,8 +371,8 @@ function Skins.PaintSlot(button, side, info, off, after)
         d.dps:SetPoint("BOTTOM", showE and d.enchant or button, "TOP", 0, showE and 1 or 3)
     elseif d.side ~= "none" then
         local from = (d.side == "left") and (after or button) or button
-        local point, rel, x = "LEFT", "RIGHT", 5
-        if d.side == "right" then point, rel, x = "RIGHT", "LEFT", -5 end
+        local point, rel, x = "LEFT", "RIGHT", SIDE_GAP
+        if d.side == "right" then point, rel, x = "RIGHT", "LEFT", -SIDE_GAP end
         d.dps:SetPoint(point, from, rel, x, showE and 6 or 0)
         d.enchant:SetPoint(point, from, rel, x, showD and -6 or 0)
     end
@@ -464,7 +468,7 @@ function Skins.SideTextWidth(leftSlot, rightSlot)
     local l = leftSlot and leftSlot:GetRight()
     local r = rightSlot and rightSlot:GetLeft()
     if not (l and r) or r - l < 40 then return nil end
-    return math.floor((r - l) / 2 - 8)
+    return math.floor((r - l) / 2 - SIDE_GAP - 4)
 end
 
 -- ---------------------------------------------------------------- lifecycle --
