@@ -124,6 +124,7 @@ Modules\UnitFrames\ClassicPlayer.lua
 Modules\UnitFrames\ClassicTarget.lua
 Modules\UnitFrames\ClassicCastBar.lua
 Modules\UnitFrames\ClassicPet.lua
+Modules\UnitFrames\ClassicStatusText.lua
 Modules\UnitFrames\Movers.lua
 Modules\UnitFrames\Preview.lua
 Modules\UnitFrames\UnitFrames.lua

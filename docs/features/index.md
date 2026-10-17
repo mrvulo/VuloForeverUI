@@ -61,6 +61,7 @@ jemand ohne den Code prüfen kann.
 | F-40 | Durchschnittliche Gegenstandsstufe im Betrachten-Fenster | Skins | gebaut | – |
 | F-41 | Verzauberungstexte gekürzt und auf den Modellbereich begrenzt | Skins | gebaut | – |
 | F-42 | Ausgelieferte Standards = Profil des Spielers (Werkzeug ship_profile.py) | Global | gebaut | – |
+| F-43 | Classic-Spielerrahmen: Prozent links, Wert rechts wie beim Ziel | Einheitenfenster | gebaut | – |
 
 ---
 
@@ -258,6 +259,12 @@ jemand ohne den Code prüfen kann.
 - **Dann** sind alle Module an außer dem Cooldown Manager.
 - Angenommen ein Spieler hat etwas selbst eingestellt, **dann** bleibt sein Wert; nur nie geänderte Einstellungen bekommen den neuen Standard.
 - Angenommen ein Krieger mit eigener Cooldown-Manager-Leiste, **dann** stehen dort keine Schamanen-Zauber.
+
+### F-43 Classic-Spielerrahmen: Statustext wie beim Ziel
+- Angenommen Stil Classic und „Statustext auf den Balken“ an, **dann** zeigt der Spielerrahmen „100%“ links und „594“ rechts auf dem Lebensbalken, beim Mana „100%“ und „796“ — in Höhe und Schrift genau wie der Zielrahmen daneben; kein mittiges „594 / 594“ mehr.
+- **Wenn** du Schaden nimmst oder Mana verbrauchst, auch im Kampf, **dann** laufen Prozent und Wert mit.
+- Angenommen Wut oder Energie, **dann** steht nur der Wert (wie bei Blizzard). Tot, als Geist oder im Fahrzeug zeigt der Rahmen wieder Blizzards eigenen Text.
+- **Wenn** du „Statustext auf den Balken“ ausschaltest, **dann** sind unsere Texte weg und Blizzards Anzeige ist zurück.
 
 ---
 

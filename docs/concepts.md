@@ -60,6 +60,7 @@ These apply to every visible change, in every module.
 | Client alpha animations (`ShowAnim`/`HideAnim` from 1 → 0) override `SetAlpha`. To hide a client panel during a run, change its **scale**, not its alpha. | Loot window still flashed during quick loot. | — |
 | An EditBox does not switch font faces per character. A font family on it (ours or the client's `ChatFontNormal`) draws everything in ONE member face: ours drew nothing, the client's lost the German umlauts. Mixed alphabets need one font file that covers them all (`/vfdiag fonts` shows which). | Chat copy box, 2026-10-09. | — |
 | Every combat value may be secret: display it, never decide on it. | CLAUDE.md rule 2. | `secretlint` |
+| The player's health and power are secret even out of combat; Blizzard's TextStatusBar then cannot make a percent and shows "x / y". Text that needs the percent uses `UnitHealthPercent` / `UnitPowerPercent` with `CurveConstants.ScaleTo100` (Classic player: `ClassicStatusText.lua`). | Player and target frame showed different text layouts, 2026-10-17. | — |
 | `FontString:SetShadowOffset` at runtime draws **no** shadow. A shadow comes only with a font object: `UI.TextShadow(fs, on)` (SetFontObject) BEFORE `SetFont`. | Damage meter "Shadow" switch did nothing, 2026-10-17. | — |
 
 ---
