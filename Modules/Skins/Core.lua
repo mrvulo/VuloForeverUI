@@ -42,6 +42,7 @@ local mod = ns:RegisterModule("skins", {
             avgItemLevel = true,         -- average in the level strip
             avgItemLevelColor  = "quality",   -- "quality" | "custom"
             avgItemLevelCustom = { r = 1, g = 0.82, b = 0 },
+            inspectAvgItemLevel = true,       -- the same beside the inspected player's level
             enchants     = true,
             durability   = true,
             weaponDps    = true,

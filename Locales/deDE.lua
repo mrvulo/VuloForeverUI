@@ -22,6 +22,7 @@ ns:RegisterLocale("deDE", {
     ["Class color on the health bar"] = "Klassenfarbe auf dem Lebensbalken",
     ["Threat display on the target frame"] = "Bedrohungsanzeige am Zielrahmen",
     ["Threat in percent"] = "Bedrohung in Prozent",
+    ["Beside the player's level, in the colour chosen for your character window."] = "Neben der Stufe des Spielers, in der Farbe, die du für dein Charakterfenster gewählt hast.",
     ["Smooth outline"] = "Glatte Umrandung",
     ["Draws the outline with the game's vector renderer: even, soft edges instead of stepped pixels. Only where this client offers it."] = "Zeichnet die Umrandung mit dem Vektor-Renderer des Spiels: gleichmäßige, weiche Kanten statt Pixelstufen. Nur wo der Client das anbietet.",
     ["Outline and shadow"] = "Umrandung und Schatten",

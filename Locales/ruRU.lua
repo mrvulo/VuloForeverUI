@@ -22,6 +22,7 @@ ns:RegisterLocale("ruRU", {
     ["Class color on the health bar"] = "Цвет класса на полосе здоровья",
     ["Threat display on the target frame"] = "Отображение угрозы на рамке цели",
     ["Threat in percent"] = "Угроза в процентах",
+    ["Beside the player's level, in the colour chosen for your character window."] = "Рядом с уровнем игрока, в цвете, выбранном для вашего окна персонажа.",
     ["Smooth outline"] = "Гладкая обводка",
     ["Draws the outline with the game's vector renderer: even, soft edges instead of stepped pixels. Only where this client offers it."] = "Рисует обводку векторным рендером игры: ровные мягкие края вместо ступенчатых пикселей. Только если клиент это поддерживает.",
     ["Outline and shadow"] = "Обводка и тень",

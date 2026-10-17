@@ -22,6 +22,7 @@ ns:RegisterLocale("ptBR", {
     ["Class color on the health bar"] = "Cor da classe na barra de vida",
     ["Threat display on the target frame"] = "Exibição de ameaça na moldura do alvo",
     ["Threat in percent"] = "Ameaça em porcentagem",
+    ["Beside the player's level, in the colour chosen for your character window."] = "Ao lado do nível do jogador, na cor escolhida para a sua janela de personagem.",
     ["Smooth outline"] = "Contorno suave",
     ["Draws the outline with the game's vector renderer: even, soft edges instead of stepped pixels. Only where this client offers it."] = "Desenha o contorno com o renderizador vetorial do jogo: bordas uniformes e suaves em vez de pixels em degrau. Só onde este cliente oferece.",
     ["Outline and shadow"] = "Contorno e sombra",

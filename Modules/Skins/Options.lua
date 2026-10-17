@@ -70,7 +70,11 @@ function mod:GetOptions()
     items[#items + 1] = { type = "card", key = "inspect", icon = "Interface\\Icons\\INV_Misc_Spyglass_02",
         title = L["Inspect window"],
         desc = L["Another player's equipment: quality rings, item level and enchants, like your own window."],
-        values = looks(), get = get, set = set }
+        values = looks(), get = get, set = set,
+        items = {
+            rows.toggle("inspectAvgItemLevel", L["Show average item level"],
+                L["Beside the player's level, in the colour chosen for your character window."]),
+        } }
 
     get, set = lookOf("enabled", "style", guide)
     local installed = Skins.Guide and Skins.Guide.Installed()

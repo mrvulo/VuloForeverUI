@@ -22,6 +22,7 @@ local T = {
     ["Class color on the health bar"] = "Color de clase en la barra de salud",
     ["Threat display on the target frame"] = "Indicador de amenaza en el marco del objetivo",
     ["Threat in percent"] = "Amenaza en porcentaje",
+    ["Beside the player's level, in the colour chosen for your character window."] = "Junto al nivel del jugador, en el color elegido para tu ventana de personaje.",
     ["Smooth outline"] = "Contorno suave",
     ["Draws the outline with the game's vector renderer: even, soft edges instead of stepped pixels. Only where this client offers it."] = "Dibuja el contorno con el renderizador vectorial del juego: bordes uniformes y suaves en lugar de píxeles escalonados. Solo donde este cliente lo ofrece.",
     ["Outline and shadow"] = "Contorno y sombra",

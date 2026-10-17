@@ -58,6 +58,7 @@ jemand ohne den Code prüfen kann.
 | F-37 | Erinnerungen: Hinweis auf den Zweck und Knopf zur Buffs-Leiste des Cooldown Managers | Erinnerungen | gebaut | – |
 | F-38 | Beim Händler mehrere Stapel kaufen, „Max“ = bezahlbar und passt in die Taschen | Komfort | gebaut | – |
 | F-39 | Schadensmesser: Umrandung und Schatten für alle Texte | Schadensmesser | gebaut | – |
+| F-40 | Durchschnittliche Gegenstandsstufe im Betrachten-Fenster | Skins | gebaut | – |
 
 ---
 
@@ -239,6 +240,11 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du „Schatten“ einschaltest, **dann** liegt unter jedem Text ein dunkler Schatten (1 px nach rechts unten), sofort sichtbar; aus = kein Schatten.
 - Angenommen „Glatte Umrandung“ ist an und der Client kann es, **dann** hat die Umrandung weiche, gleichmäßige Kanten statt Pixelstufen; kann der Client es nicht, ist der Schalter grau.
 - Angenommen Timer oder Bedrohungsmesser haben eine eigene Umrandung gewählt, **dann** behalten sie diese; auf „Aus den Schrifteinstellungen“ folgen sie dem Messer.
+
+### F-40 Durchschnittliche Gegenstandsstufe im Betrachten-Fenster
+- Angenommen der Betrachten-Skin ist an, **wenn** du einen Spieler betrachtest, **dann** steht rechts neben „Stufe 30, Jäger“ „iLvL …“ (der Wert des Spiels für diesen Spieler), sobald seine Daten da sind.
+- **Dann** hat der Text dieselbe Farbregel wie dein Charakterfenster (nach Qualität seiner Teile oder deine eigene Farbe) und überlappt weder den Stufentext noch den Rahmen.
+- **Wenn** du „Durchschnittliche Gegenstandsstufe anzeigen“ in der Karte Betrachten-Fenster ausschaltest, **dann** ist der Text weg.
 
 ---
 
