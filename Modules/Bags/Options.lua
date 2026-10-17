@@ -134,9 +134,9 @@ local function bagsPage()
             }, { disabled = function() return not d.showSetNames end }),
         } }),
 
-        toggle("showBindTags", L["Show BoE / warbound"], { inline = {
+        toggle("showBindTags", L["Show BoE"], { inline = {
             swatch("bindTagColor", { tooltip = L["BoE color"], disabled = function() return not d.showBindTags end }),
-            gear(L["BoE / warbound"], {
+            gear(L["BoE"], {
                 slider("bindTagSize", L["Size"], 6, 16, 1),
             }, { disabled = function() return not d.showBindTags end }),
         } }),
@@ -234,7 +234,7 @@ local function bagsPage()
         corner("cornerUpgrade", L["Upgrade arrow"], function() return not d.showUpgrades end),
         corner("cornerLevel", L["Item level"], function() return not d.showItemLevel end),
         corner("cornerPin", L["Pin"], function() return not d.showPinned end),
-        corner("cornerBind", L["BoE / warbound"], function() return not d.showBindTags end),
+        corner("cornerBind", L["BoE"], function() return not d.showBindTags end),
         corner("cornerSet", L["Set names"], function() return not d.showSetNames end),
         corner("cornerJunk", L["Junk C"], function() return d.markJunk == false end),
     })

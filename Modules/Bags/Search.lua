@@ -242,7 +242,7 @@ function Search.ShowHelp(owner)
     GameTooltip:AddLine(L["Words look in the name. #word is a keyword, a number with < > or a range is the item level."], 0.8, 0.8, 0.8, true)
     GameTooltip:AddLine(" ")
     local rows = {
-        { "#boe  #bop  #warbound", L["Binding"] },
+        { "#boe  #bop", L["Binding"] },
         { "#grau #weiß #grün #blau #lila", L["Quality"] },
         { "#waffe #rüstung #trank #stoff …", L["Type, subtype or slot"] },
         { "#neu  #angeheftet  #set  #schrott  #upgrade", L["Marks"] },
