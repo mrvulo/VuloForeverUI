@@ -102,6 +102,14 @@ local mod = ns:RegisterModule("qol", {
             trainAll   = false,
         },
 
+        -- ------------------------------------------------------------ fishing
+        fishing = {
+            enabled     = true,     -- the key (bound in the client's key bindings)
+            lure        = true,     -- apply a lure when the pole has none
+            doubleClick = false,    -- double right-click casts
+            indicator   = true,     -- the client's interact icon over the bobber
+        },
+
         -- --------------------------------------------------------- stack split
         stackSplit = {
             maxButton = false,
@@ -275,6 +283,7 @@ mod.tabs = {
     { id = "trinkets", label = "Trinkets" },
     { id = "gold",    label = "Gold" },
     { id = "quest",   label = "Quest" },
+    { id = "fishing", label = "Fishing" },
 }
 
 -- Re-runs every part. Options call this after a write: a part decides for

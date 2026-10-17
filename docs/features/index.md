@@ -62,6 +62,7 @@ jemand ohne den Code prüfen kann.
 | F-41 | Verzauberungstexte gekürzt und auf den Modellbereich begrenzt | Skins | gebaut | – |
 | F-42 | Ausgelieferte Standards = Profil des Spielers (Werkzeug ship_profile.py) | Global | gebaut | – |
 | F-43 | Classic-Spielerrahmen: Prozent links, Wert rechts wie beim Ziel | Einheitenfenster | gebaut | – |
+| F-44 | Angeltaste: Angel, Köder, Auswerfen, Einholen mit einer Taste; Doppelklick, Schwimmer-Markierung | Komfort | gebaut | – |
 
 ---
 
@@ -266,6 +267,13 @@ jemand ohne den Code prüfen kann.
 - Angenommen Wut oder Energie, **dann** steht nur der Wert (wie bei Blizzard). Tot, als Geist oder im Fahrzeug zeigt der Rahmen wieder Blizzards eigenen Text.
 - **Wenn** du „Statustext auf den Balken“ ausschaltest, **dann** sind unsere Texte weg und Blizzards Anzeige ist zurück.
 - **Dann** sitzen bei Spieler, Ziel und Fokus alle Balkentexte auf den sichtbaren Balken: in der Höhe mittig, links und rechts mit demselben Abstand (3 px) zum Balkenrand, Leben und Mana gleich.
+
+### F-44 Angeltaste
+- Angenommen eine Taste ist unter Tastenbelegung → AddOns → „VuloForeverUI: Angeln“ belegt und eine Waffe in der Hand, **wenn** du die Taste drückst, **dann** legt sie die Angel aus den Taschen an; nächster Druck: der beste Köder, den dein Angelskill erlaubt (wenn keiner drauf ist); nächster Druck: Auswerfen.
+- **Wenn** der Schwimmer draußen ist und anbeißt, **dann** holt dieselbe Taste ihn ein (Beute öffnet sich); über dem Schwimmer sitzt das Interaktionssymbol des Spiels.
+- **Dann** sind deine Soft-Target-Einstellungen ein paar Sekunden nach dem Angeln wieder wie vorher — auch nach Kampf oder `/reload` mitten im Angeln.
+- Angenommen „Mit Doppel-Rechtsklick auswerfen“ ist an, **wenn** du mit der Angel in der Hand schnell zweimal rechts in die Welt klickst, **dann** wirft sie aus; einfacher Rechtsklick dreht weiter die Kamera, und im Kampf verhält sich Rechtsklick ganz normal.
+- **Wenn** „Angeltaste“ aus ist, **dann** tut die belegte Taste nichts.
 
 ---
 

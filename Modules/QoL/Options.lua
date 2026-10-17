@@ -518,7 +518,26 @@ local function questPage()
     }
 end
 
+-- ---------------------------------------------------------------- fishing --
+
+local function fishingPage()
+    local key = QoL.Fishing and QoL.Fishing.KeyText()
+    return {
+        { type = "header", text = L["Fishing key"] },
+        { type = "desc", text = L["|cffaaaaaaOne key, a step per press: equips your pole, applies a lure, casts, and reels in while the bobber is out. Set the key in the game's key bindings under AddOns → VuloForeverUI: Fishing.|r"] },
+        { type = "desc", text = key and L["Current key: %s"]:format(key) or L["|cffff6666No key set yet.|r"] },
+        toggle("fishing", "enabled", L["Fishing key"]),
+        toggle("fishing", "lure", L["Apply a lure"],
+            L["When the pole has no lure, the next press puts the best one on that your fishing skill allows."]),
+        toggle("fishing", "doubleClick", L["Cast with a double right-click"],
+            L["Out of combat, with the pole in hand: a quick double right-click anywhere in the world casts."]),
+        toggle("fishing", "indicator", L["Mark the bobber"],
+            L["While the line is out, the game's interact icon sits over the bobber. Your own settings come back afterwards."]),
+    }
+end
+
 function mod:GetOptions(tabId)
+    if tabId == "fishing" then return fishingPage() end
     if tabId == "gold"    then return goldPage() end
     if tabId == "quest"   then return questPage() end
     if tabId == "vendor"  then return vendorPage() end

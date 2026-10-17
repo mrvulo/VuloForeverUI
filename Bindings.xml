@@ -1,0 +1,5 @@
+<Bindings>
+	<!-- The fishing key (Modules/QoL/Fishing.lua): a click on our secure button,
+	     set by the player in the client's key bindings under AddOns. -->
+	<Binding name="CLICK VuloForeverUIFishButton:LeftButton" header="VULOFOREVERUI" category="ADDONS"/>
+</Bindings>

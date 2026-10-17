@@ -238,6 +238,17 @@ These apply to every visible change, in every module.
   purchase the item button's SplitStack (wrapped once, original kept) buys
   purchase by purchase, 0.3 s apart, while the merchant is open. Items with
   an extended cost keep the client's cap.
+- **Fishing key** (`Fishing.lua`, `Bindings.xml`): a CLICK binding the
+  player sets in the client's key bindings ("VuloForeverUI: Fishing") on a
+  secure button; PreClick (out of combat, gated on the part being on) points
+  it at the next step: equip pole -> lure (target-slot 16) -> cast Fishing by
+  name. While the Fishing channel runs, every bound key is overridden to
+  INTERACTTARGET and soft interact is on for objects (the bobber). The
+  player's CVars are kept in `fishing.savedCVars`, restored out of combat,
+  also after a reload. PLAYER_REGEN_DISABLED clears every override. Double
+  right-click: a second secure button with `useOnKeyDown = false` (the
+  override is set on the second mouse-down, so only the release reaches it),
+  cleared after the click or after 1 s.
 - **Gold check** (`TradeCheck.lua`): the achievement comparison slot is
   shared with the client and other addons — one request at a time, 5 s
   apart, 15 s deadline; a scan whose slot was taken by someone else is
