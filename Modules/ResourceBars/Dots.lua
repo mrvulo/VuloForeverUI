@@ -39,6 +39,21 @@ local list = {}               -- the dots this character knows: { ids, set, icon
 
 local function db() return RB.db().dots end
 
+-- A colour per dot, in row order, until the player picks one (dots.colors).
+-- Green is not among them: green means "a recast would hit harder now".
+local PALETTE = {
+    { r = 0.85, g = 0.30, b = 0.25 },   -- red
+    { r = 0.60, g = 0.35, b = 0.90 },   -- purple
+    { r = 0.95, g = 0.60, b = 0.15 },   -- orange
+    { r = 0.25, g = 0.55, b = 0.95 },   -- blue
+    { r = 0.90, g = 0.80, b = 0.25 },   -- yellow
+}
+
+function Dots.Color(i, key)
+    local own = db().colors and db().colors[key]
+    return own or PALETTE[(i - 1) % #PALETTE + 1]
+end
+
 local F = AuraUtil and AuraUtil.AuraFilters or {}
 local FILTER = table.concat({ F.Harmful or "HARMFUL", F.Player or "PLAYER" }, "|")
 
@@ -106,7 +121,9 @@ local function filterIds(entry) return { includeSpellIDs = entry.set } end
 -- What the client registers on each button it creates: an icon over ours,
 -- the duration bar, the time. Read at the moment of the call, like the aura
 -- module does (Auras/Style.lua): a later settings change rebuilds.
-local function initializer(width, height)
+-- r: the row, which keeps the green overlay of every button its container
+-- makes, so "stronger now" can be shown on whichever one is in use.
+local function initializer(width, height, color, r)
     return function(button)
         local d = db()
         button:SetSize(width, height)
@@ -118,8 +135,16 @@ local function initializer(width, height)
         bar:SetPoint("TOPLEFT", height + 1, 0)
         bar:SetPoint("BOTTOMRIGHT")
         bar:SetStatusBarTexture(ns.MediaStatusbar(d.texture, "Interface\\Buttons\\WHITE8X8"))
-        local c = d.fillColor
-        bar:SetStatusBarColor(c.r, c.g, c.b, 1)
+        bar:SetStatusBarColor(color.r, color.g, color.b, 1)
+        -- the same fill in green, over the dot's colour, shown while a recast
+        -- would hit harder; it rides the fill texture the client sizes
+        local green = bar:CreateTexture(nil, "ARTWORK", nil, 2)
+        green:SetAllPoints(bar:GetStatusBarTexture())
+        green:SetTexture(ns.MediaStatusbar(d.texture, "Interface\\Buttons\\WHITE8X8"))
+        local b = d.betterColor
+        green:SetVertexColor(b.r, b.g, b.b, 1)
+        green:SetAlpha(r.stronger and 1 or 0)
+        r.greens[#r.greens + 1] = green
         local time = bar:CreateFontString(nil, "OVERLAY")
         ns.UI.FontFor("resourcebars", time, d.textSize, "OUTLINE")
         time:SetPoint("RIGHT", -3, 0)
@@ -155,23 +180,24 @@ local function newRow(i)
         c:SetAllPoints(r)
         r.container = c
     end
+    r.greens = {}
     rows[i] = r
     return r
 end
 
 -- What the client's buttons were made with. Their look is fixed when the
 -- client creates them, so a change of any of it means a fresh container.
-local function styleKey(width, height)
-    local d, c = db(), db().fillColor
-    return table.concat({ width, height, d.texture or "", c.r, c.g, c.b, d.textSize,
-        tostring(d.showTime) }, ":")
+local function styleKey(width, height, c)
+    local d, b = db(), db().betterColor
+    return table.concat({ width, height, d.texture or "", c.r, c.g, c.b, b.r, b.g, b.b,
+        d.textSize, tostring(d.showTime) }, ":")
 end
 
 -- (Re)builds the group of a row for its dot and the current size. A group is
 -- never removed; a container whose buttons carry an old look is let go (unit
 -- "none", hidden) and replaced, and a row with nothing to show is parked.
-local function setupRow(r, entry, width, height)
-    local key = styleKey(width, height)
+local function setupRow(r, entry, width, height, color)
+    local key = styleKey(width, height, color)
     if r.container and r.grouped and r.style ~= key then
         pcall(r.container.SetUnit, r.container, "none")
         r.container:Hide()
@@ -179,6 +205,7 @@ local function setupRow(r, entry, width, height)
         r.container = ok and c or nil
         if r.container then r.container:SetAllPoints(r) end
         r.grouped = false
+        r.greens = {}
     end
     r.style = key
     local c = r.container
@@ -187,7 +214,7 @@ local function setupRow(r, entry, width, height)
         r.grouped = pcall(c.AddAuraGroup, c, "dot", FILTER, {
             maxFrameCount = 1,
             candidateFilters = filterIds(entry),
-            initializeFrame = initializer(width, height),
+            initializeFrame = initializer(width, height, color, r),
             layout = { elementWidth = width, elementHeight = height, elementSpacing = 0, lineSpacing = 0 },
         })
         if c.SetFlowLayoutAnchorPoint then pcall(c.SetFlowLayoutAnchorPoint, c, "TOPLEFT") end
@@ -199,24 +226,34 @@ local function setupRow(r, entry, width, height)
     pcall(c.SetUnit, c, "target")
 end
 
+-- Only a gain counts (the player's call): a recast that would hit harder
+-- shows "+N%" and turns the bar green; anything else shows nothing.
+local function setStronger(r, on)
+    r.stronger = on
+    for _, g in ipairs(r.greens or {}) do pcall(g.SetAlpha, g, on and 1 or 0) end
+end
+
 local function paintPercent(i)
     local r, entry = rows[i], list[i]
     if not (r and entry) then return end
     local s = snaps[entry.key]
     local guid = targetGUID()
-    if not (db().showPercent and s and guid and s.guid == guid and GetTime() < s["until"]) then
-        r.pct:SetText("")
-        return
+    local pct
+    if db().showPercent and s and guid and s.guid == guid and GetTime() < s["until"] then
+        -- the rank that was cast, not the highest known: a downranked cast
+        -- compared with the top rank would show a gain that is not there
+        local ch = change(s.numbers, numbers(s.id))
+        if ch then pct = math.floor(ch * 100 + 0.5) end
     end
-    -- the rank that was cast, not the highest known: a downranked cast
-    -- compared with the top rank would show a gain that is not there
-    local ch = change(s.numbers, numbers(s.id))
-    if not ch then r.pct:SetText(""); return end
-    local pct = math.floor(ch * 100 + (ch >= 0 and 0.5 or -0.5))
-    if pct == 0 then r.pct:SetText(""); return end
-    local c = pct >= 0 and db().betterColor or db().worseColor
-    r.pct:SetTextColor(c.r, c.g, c.b)
-    r.pct:SetText(("%+d%%"):format(pct))
+    if pct and pct > 0 then
+        local c = db().betterColor
+        r.pct:SetTextColor(c.r, c.g, c.b)
+        r.pct:SetText(("+%d%%"):format(pct))
+        setStronger(r, true)
+    else
+        r.pct:SetText("")
+        setStronger(r, false)
+    end
 end
 
 local function paintAllPercent()
@@ -252,7 +289,7 @@ function Dots.Layout()
             ns.UI.FontFor("resourcebars", r.pct, d.textSize, "OUTLINE")
             r.pct:ClearAllPoints()
             r.pct:SetPoint("LEFT", r.icon, "RIGHT", 4, 0)
-            setupRow(r, entry, w, h)
+            setupRow(r, entry, w, h, Dots.Color(i, entry.key))
             r.top:SetFrameLevel((r.container and r.container:GetFrameLevel() or r:GetFrameLevel()) + 10)
             r:Show()
         elseif r then
@@ -387,7 +424,10 @@ function Dots.Catalog()
     local _, class = UnitClass("player")
     for _, entry in ipairs((RB.DOTS or {})[class] or {}) do
         local id = knownId(entry)
-        if id then out[#out + 1] = { key = entry.name, name = C_Spell.GetSpellName(id) or entry.name } end
+        if id then
+            out[#out + 1] = { key = entry.name, name = C_Spell.GetSpellName(id) or entry.name,
+                color = Dots.Color(#out + 1, entry.name) }
+        end
     end
     return out
 end

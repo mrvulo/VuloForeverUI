@@ -454,7 +454,7 @@ local function dotsPage()
     local r = dotRows
     local items = {
         { type = "header", text = L["DoT bars"] },
-        { type = "desc", text = L["|cffaaaaaaOne row per damage-over-time spell you know: grey while it is not on your target, filled with its remaining time while it is. The percent says how much stronger (green) or weaker a recast would be right now than the one that is ticking -- after gaining or losing a buff. Move the bars in Edit Mode.|r"] },
+        { type = "desc", text = L["|cffaaaaaaOne row per damage-over-time spell you know: grey while it is not on your target, filled with its remaining time while it is. When a buff makes a recast hit harder than the dot that is ticking, the bar turns green and shows by how much. Move the bars in Edit Mode.|r"] },
         r.toggle("enabled", L["Show DoT bars"]),
         r.toggle("hideWithoutTarget", L["Only with a hostile target"]),
         r.slider("width", L["Width"], 80, 400, 1),
@@ -462,13 +462,11 @@ local function dotsPage()
         r.slider("spacing", L["Spacing"], 0, 10, 1),
         r.slider("textSize", L["Text size"], 8, 18, 1),
         r.dropdown("texture", L["Bar texture"], ns.MediaStatusbarValues()),
-        r.color("fillColor", L["Bar color"]),
         r.color("emptyColor", L["Empty color"], { hasAlpha = true }),
         r.toggle("showTime", L["Show the remaining time"]),
         r.toggle("showPercent", L["Show recast strength in percent"],
             L["Compares the spell's damage now with when you cast it. Only for the target you cast it on."]),
         r.color("betterColor", L["Stronger color"]),
-        r.color("worseColor", L["Weaker color"]),
         { type = "header", text = L["Tracked spells"] },
     }
     for _, dot in ipairs(RB.Dots and RB.Dots.Catalog() or {}) do
@@ -479,7 +477,16 @@ local function dotsPage()
                 d.hidden = d.hidden or {}
                 d.hidden[dot.key] = (not v) or nil
                 if RB.Dots then RB.Dots.Apply() end
-            end }
+            end,
+            -- the dot's own bar colour, beside its switch
+            inline = { { kind = "color", tooltip = L["Bar color"],
+                get = function() return (RB.db().dots.colors or {})[dot.key] or dot.color end,
+                set = function(cr, cg, cb)
+                    local d = RB.db().dots
+                    d.colors = d.colors or {}
+                    d.colors[dot.key] = { r = cr, g = cg, b = cb }
+                    if RB.Dots then RB.Dots.Apply() end
+                end } } }
     end
     return items
 end

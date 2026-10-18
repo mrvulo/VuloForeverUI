@@ -190,13 +190,12 @@ local mod = ns:RegisterModule("resourcebars", {
             x = 260, y = -90,            -- above the target frame
             width = 220, height = 20, spacing = 2,
             texture = "Matte",
-            fillColor  = { r = 0.35, g = 0.80, b = 0.35 },
+            colors = {},                 -- [dot name] = colour; else the palette (Dots.lua)
             emptyColor = { r = 0.10, g = 0.10, b = 0.11, a = 0.85 },
             textSize = 11,
             showTime = true,
             showPercent = true,
-            betterColor = { r = 0.35, g = 1.00, b = 0.35 },
-            worseColor  = { r = 0.75, g = 0.50, b = 1.00 },
+            betterColor = { r = 0.35, g = 1.00, b = 0.35 },  -- bar and percent when a recast hits harder
             hideWithoutTarget = true,
             hidden = {},                 -- [dot name] = true: no row for it
         },
