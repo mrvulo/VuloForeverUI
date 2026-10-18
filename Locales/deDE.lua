@@ -2009,6 +2009,8 @@ ns:RegisterLocale("deDE", {
     ["Auto-queue waits: you picked this trinket yourself."] = "Warteschlange wartet: du hast dieses Schmuckstück selbst gewählt.",
     ["After the fight: %s"] = "Nach dem Kampf: %s",
     ["Left click: upper slot. Right click: lower slot. Alt-click: hide from this grid."] = "Linksklick: oberer Platz. Rechtsklick: unterer Platz. Alt-Klick: aus dem Raster ausblenden.",
+    ["Shift-click: into the auto-queue of the upper (left) or lower (right) slot, or out again."] = "Shift-Klick: in die Warteschlange des oberen (links) oder unteren (rechts) Platzes, oder wieder heraus.",
+    ["|cffaaaaaaThese lists belong to talent set %d; the other set keeps its own. Switching talents switches the lists.|r"] = "|cffaaaaaaDiese Listen gehören zur Talentverteilung %d; die andere behält ihre eigenen. Ein Talentwechsel wechselt die Listen.|r",
     ["Pick grid when hovering a slot"] = "Auswahl-Raster beim Drüberfahren",
     ["Columns of the pick grid"] = "Spalten des Auswahl-Rasters",
     ["Weapon DPS"] = "Waffen-DPS",

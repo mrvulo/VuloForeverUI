@@ -29,13 +29,17 @@
 --
 -- "Ready" is a cooldown that is over or has at most 30 seconds left -- the
 -- equip cooldown a freshly put-on trinket gets. When the trinket in the slot
--- is ready and has a use, it stays. When it is spent (or passive), the first
--- ready trinket above the stop marker that is in the bags goes on. A trinket
+-- is ready and has a use, it stays -- unless one ranked above it is in the
+-- bags and ready again: then that one comes back. When it is spent (or
+-- passive), the first ready trinket above the stop marker that is in the
+-- bags goes on. A trinket
 -- that was used in the last 20 seconds is left alone so its effect is not cut
 -- short, and nothing is swapped while casting or while the slot is locked.
 --
--- The lists are per CHARACTER (VuloForeverUICharDB): they name items that one
--- character carries. The window's look is in the profile.
+-- The lists are per CHARACTER (VuloForeverUICharDB) and per TALENT SET (dual
+-- spec, C_SpecializationInfo.GetActiveSpecGroup): they name items that one
+-- character carries, and a healing set wants other trinkets than a damage
+-- set. The window's look is in the profile.
 local _, ns = ...
 local L = ns.L
 
@@ -145,17 +149,65 @@ end
 
 -- ---------------------------------------------------------------- queue data --
 
+-- The talent set in use: 1 or 2 (dual spec), 1 while the client cannot say.
+function Trinkets.SpecSet()
+    local g = C_SpecializationInfo.GetActiveSpecGroup()
+    if type(g) == "number" and g == 2 then return 2 end
+    return 1
+end
+
+local function copyQueue(q)
+    if type(q) ~= "table" then return nil end
+    local list = {}
+    if type(q.list) == "table" then for i, id in ipairs(q.list) do list[i] = id end end
+    return { enabled = q.enabled == true, list = list }
+end
+
+-- set -> { top = queue, bottom = queue }. The single pair of lists from
+-- before the talent sets is copied into both sets once, so a switch does not
+-- leave the player with empty lists.
+local function queueSets(c)
+    if type(c.trinketQueues) ~= "table" then
+        c.trinketQueues = {}
+        local old = c.trinketQueue
+        if type(old) == "table" then
+            for set = 1, 2 do
+                c.trinketQueues[set] = { top = copyQueue(old.top), bottom = copyQueue(old.bottom) }
+            end
+        end
+        c.trinketQueue = nil
+    end
+    return c.trinketQueues
+end
+
 function Trinkets.Queue(key)
     local c = _G.VuloForeverUICharDB
     if type(c) ~= "table" then return { enabled = false, list = { STOP } } end
-    c.trinketQueue = type(c.trinketQueue) == "table" and c.trinketQueue or {}
-    local q = c.trinketQueue[key]
-    if type(q) ~= "table" then q = { enabled = false, list = { STOP } }; c.trinketQueue[key] = q end
+    local all = queueSets(c)
+    local set = Trinkets.SpecSet()
+    if type(all[set]) ~= "table" then all[set] = {} end
+    local q = all[set][key]
+    if type(q) ~= "table" then q = { enabled = false, list = { STOP } }; all[set][key] = q end
     if type(q.list) ~= "table" then q.list = { STOP } end
     local hasStop = false
     for _, id in ipairs(q.list) do if id == STOP then hasStop = true end end
     if not hasStop then q.list[#q.list + 1] = STOP end
     return q
+end
+
+-- Where an item stands in a slot's list: its rank (the stop marker not
+-- counted) and whether it is above the marker, i.e. taking part. nil when
+-- it is not listed.
+function Trinkets.Rank(key, id)
+    local rank, above = 0, true
+    for _, lid in ipairs(Trinkets.Queue(key).list) do
+        if lid == STOP then
+            above = false
+        else
+            rank = rank + 1
+            if lid == id then return rank, above end
+        end
+    end
 end
 
 -- ---------------------------------------------------------------- items --
@@ -216,6 +268,7 @@ end
 -- told apart (onEquip): that one is the player's own pick.
 local lastQueued = {}       -- inv -> item ID the queue equipped
 local held = {}             -- inv -> item ID the queue must leave alone
+local manual = {}           -- inv -> item ID the player put on: no swap-back while ready
 local pendingPick = {}      -- inv -> item ID picked in a fight, put on after it
 Trinkets.held, Trinkets.pendingPick = held, pendingPick
 
@@ -292,7 +345,10 @@ local function runQueue(key, inv)
         if ready and id == current then rank = i; break end
     end
     if not rank then return end
-    if ready and usable then return end            -- a usable one that is ready stays
+    -- a usable one that is ready stays, unless it is listed and something
+    -- ranked above it is back (the loop below only looks above rank)
+    -- (not one the player put on by hand: that stays until it is spent)
+    if ready and usable and (list[rank] ~= current or manual[inv] == current) then return end
 
     for i = 1, rank do
         local id = list[i]
@@ -580,16 +636,19 @@ local function onEquip(_, slot)
         if slot == nil or slot == s.inv then
             local id = GetInventoryItemID("player", s.inv)
             if held[s.inv] and held[s.inv] ~= id then held[s.inv] = nil end
+            if manual[s.inv] and manual[s.inv] ~= id then manual[s.inv] = nil end
             if id and lastQueued[s.inv] == id then
                 lastQueued[s.inv] = nil
-            elseif id and slot == s.inv and not queueKeeps(s.key, id) then
-                held[s.inv] = id
+            elseif id and slot == s.inv then
+                manual[s.inv] = id
+                if not queueKeeps(s.key, id) then held[s.inv] = id end
             end
         end
     end
     Trinkets.Refresh()
 end
 local function onCooldown() Trinkets.Refresh() end
+local onSpecSet             -- the talent set changed: its own lists apply (below)
 local function onRegen()
     if pending then Trinkets.Apply() end
     if QoL.mod.active and db().enabled then
@@ -607,6 +666,7 @@ function Trinkets.Apply()
     ns:RegisterEvent("PLAYER_REGEN_ENABLED", onRegen)
     QoL.SyncEvent(on, "PLAYER_UNGHOST", onRegen)
     QoL.SyncEvent(on, "PLAYER_ALIVE", onRegen)
+    QoL.SyncEvent(on, "ACTIVE_TALENT_GROUP_CHANGED", onSpecSet)
 
     -- Showing, hiding and building touch a frame with secure children: out
     -- of combat only, and a change asked for in a fight lands when it ends.
@@ -629,6 +689,7 @@ function Trinkets.Disable()
     QoL.SyncEvent(false, "SPELL_UPDATE_COOLDOWN", onCooldown)
     QoL.SyncEvent(false, "PLAYER_UNGHOST", onRegen)
     QoL.SyncEvent(false, "PLAYER_ALIVE", onRegen)
+    QoL.SyncEvent(false, "ACTIVE_TALENT_GROUP_CHANGED", onSpecSet)
     if Trinkets.HideGrid then Trinkets.HideGrid() end
     if ticker then ns:CancelTicker(ticker); ticker = nil end
     if holder then
@@ -640,4 +701,42 @@ end
 function Trinkets.QueueChanged()
     Trinkets.Refresh()
     syncTicker()
+end
+
+-- A list changed from outside the options (the grid, a talent switch): the
+-- trinket page, if it is the one on show, is built again. On the next frame,
+-- like the page's own rebuilds.
+local function rebuildPage()
+    C_Timer.After(0, function()
+        local UI = ns.UI
+        if UI.mainFrame and UI.mainFrame:IsShown() and UI.currentModule == "qol"
+            and UI.currentTab == "trinkets" and UI.BuildOptionsPage then
+            UI:BuildOptionsPage(UI.currentModule, UI.currentTab)
+        end
+    end)
+end
+
+-- Shift-click in the grid: in or out of a slot's list. In goes above the
+-- stop marker, so it takes part at once -- the same as "Add a trinket".
+function Trinkets.ToggleListed(key, id)
+    local list = Trinkets.Queue(key).list
+    for i, lid in ipairs(list) do
+        if lid == id then
+            table.remove(list, i)
+            Trinkets.QueueChanged()
+            rebuildPage()
+            return false
+        end
+    end
+    local at = #list
+    for i, v in ipairs(list) do if v == STOP then at = i; break end end
+    table.insert(list, at, id)
+    Trinkets.QueueChanged()
+    rebuildPage()
+    return true
+end
+
+onSpecSet = function()
+    Trinkets.QueueChanged()
+    rebuildPage()
 end

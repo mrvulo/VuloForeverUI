@@ -423,6 +423,10 @@ local function trinketsPage()
         slider("trinkets", "gridColumns", L["Columns of the pick grid"], 1, 8, 1),
         slider("trinkets", "scale", L["Size"], 0.5, 2, 0.05),
     }
+    -- with dual spec the lists on show are the active talent set's
+    if (GetNumSpecGroups() or 1) > 1 then
+        items[#items + 1] = { type = "desc", text = L["|cffaaaaaaThese lists belong to talent set %d; the other set keeps its own. Switching talents switches the lists.|r"]:format(QoL.Trinkets.SpecSet()) }
+    end
     for _, spec in ipairs({ { "top", L["Auto-queue: upper slot"] }, { "bottom", L["Auto-queue: lower slot"] } }) do
         for _, row in ipairs(queueRows(spec[1], spec[2])) do items[#items + 1] = row end
     end

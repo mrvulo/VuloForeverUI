@@ -1972,6 +1972,8 @@ ns:RegisterLocale("ptBR", {
     ["Auto-queue waits: you picked this trinket yourself."] = "A fila espera: você escolheu este berloque.",
     ["After the fight: %s"] = "Após o combate: %s",
     ["Left click: upper slot. Right click: lower slot. Alt-click: hide from this grid."] = "Clique esquerdo: espaço de cima. Direito: de baixo. Alt-clique: ocultar da grade.",
+    ["Shift-click: into the auto-queue of the upper (left) or lower (right) slot, or out again."] = "Shift-clique: na fila automática do espaço de cima (esquerdo) ou de baixo (direito), ou fora de novo.",
+    ["|cffaaaaaaThese lists belong to talent set %d; the other set keeps its own. Switching talents switches the lists.|r"] = "|cffaaaaaaEstas listas pertencem ao conjunto de talentos %d; o outro mantém as suas. Trocar de talentos troca as listas.|r",
     ["Pick grid when hovering a slot"] = "Grade de escolha ao passar o mouse",
     ["Columns of the pick grid"] = "Colunas da grade",
     ["Weapon DPS"] = "DPS das armas",

@@ -49,7 +49,7 @@ jemand ohne den Code prüfen kann.
 | F-28 | Fenster-Skins: Charakter- und Betrachten-Fenster, Standard / Modern | Skins | gebaut | – |
 | F-31 | Goldprüfung: zuverlässige Abfrage, fehlend ≠ null, mehr Zähler, aus dem Betrachten-Fenster | Komfort | gebaut | – |
 | F-30 | Levelführer-Skin (Standard / Modern) | Skins | gebaut | – |
-| F-29 | Schmuckstücke: Auswahl-Raster beim Drüberfahren, Vormerken im Kampf, Warteschlange respektiert Handwahl | Komfort | gebaut | – |
+| F-29 | Schmuckstücke: Auswahl-Raster beim Drüberfahren, Vormerken im Kampf, Warteschlange respektiert Handwahl, Vorrang kehrt zurück, Shift-Klick-Listen, Listen je Talentverteilung | Komfort | gebaut | – |
 | F-32 | Bedrohung in Prozent am Ziel- und Fokusrahmen (Classic / Standard) | Einheitenfenster | gebaut | – |
 | F-33 | Buffs und Debuffs abgerundet, Spirale und Ring in derselben Form | Auren | gebaut | – |
 | F-34 | Goldprüfung aus dem Rechtsklick-Menü auf einen Spieler | Komfort | gebaut | – |
@@ -185,6 +185,10 @@ jemand ohne den Code prüfen kann.
 - **Wenn** „Stil“ auf Standard steht, **dann** tragen beide Plätze den Aktionsknopf-Rahmen des Spiels (Bronzering, leer die offene Fassung) und sind so groß wie deine Aktionsknöpfe.
 - Angenommen Stil Modern und „Abgerundete Plätze“ an (Standard), **dann** sind beide Plätze und jedes Feld im Raster abgerundet wie die Taschen, mit Ring in der Qualitätsfarbe; die Abklingzeit-Spirale folgt der runden Form; eine Vormerkung im Raster hat einen goldenen Ring.
 - Angenommen die Warteschlange eines Platzes ist an, **wenn** du von Hand ein passives oder nicht gelistetes Schmuckstück anlegst (z. B. Reitgerte), **dann** bleibt es liegen; der Pfeil wird grau, bis du es wieder ablegst.
+- Angenommen die Warteschlange eines Platzes ist an und im Platz steckt ein bereites Schmuckstück von Rang 2, **wenn** das Schmuckstück von Rang 1 in der Tasche wieder bereit ist (höchstens 30 s Abklingzeit), **dann** kommt es außerhalb des Kampfes zurück in den Platz; ein Schmuckstück, das du in den letzten 20 s benutzt hast, bleibt bis dahin stecken, eines, das du selbst angelegt hast, bis es verbraucht ist.
+- **Wenn** du im Raster Shift-Linksklick auf ein Schmuckstück machst, **dann** kommt es in die Liste des oberen Platzes (über die Stoppmarke) bzw. fliegt wieder heraus; Shift-Rechtsklick tut dasselbe für den unteren Platz. Die Optionsseite zeigt die Änderung sofort.
+- **Dann** trägt jedes Feld im Raster, das in einer Liste steht, links oben seinen Rang in der oberen Liste (gold) und links unten den in der unteren (blau); unter der Stoppmarke grau.
+- Angenommen du hast die Doppelspezialisierung, **wenn** du die Talentverteilung wechselst, **dann** gelten die Listen (und ihr An/Aus) dieser Verteilung; die Optionsseite nennt, welche gerade bearbeitet wird. Beim ersten Start mit dieser Version bekommen beide Verteilungen eine Kopie der bisherigen Listen.
 
 ### F-30 Levelführer-Skin
 - Angenommen das Levelführer-Addon ist geladen und die Karte „Levelführer“ steht auf Standard oder Modern, **dann** haben Guide-Fenster (Kopf, Schrittliste, Fußzeile) und die Kästen mit dem aktuellen Schritt samt „Step N“-Reiter den Tooltip-Rahmen des Spiels (Standard) bzw. flach dunkle Flächen mit dünnem Rand (Modern); keine hellen runden Rahmen mehr.

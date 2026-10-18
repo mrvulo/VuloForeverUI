@@ -2009,6 +2009,8 @@ ns:RegisterLocale("frFR", {
     ["Auto-queue waits: you picked this trinket yourself."] = "La file attend : vous avez choisi ce bijou vous-même.",
     ["After the fight: %s"] = "Après le combat : %s",
     ["Left click: upper slot. Right click: lower slot. Alt-click: hide from this grid."] = "Clic gauche : emplacement du haut. Clic droit : du bas. Alt-clic : masquer de la grille.",
+    ["Shift-click: into the auto-queue of the upper (left) or lower (right) slot, or out again."] = "Maj-clic : dans la file auto de l'emplacement du haut (gauche) ou du bas (droit), ou l'en retirer.",
+    ["|cffaaaaaaThese lists belong to talent set %d; the other set keeps its own. Switching talents switches the lists.|r"] = "|cffaaaaaaCes listes appartiennent au jeu de talents %d ; l'autre garde les siennes. Changer de talents change les listes.|r",
     ["Pick grid when hovering a slot"] = "Grille de choix au survol",
     ["Columns of the pick grid"] = "Colonnes de la grille",
     ["Weapon DPS"] = "DPS des armes",

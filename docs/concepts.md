@@ -285,6 +285,14 @@ These apply to every visible change, in every module.
   a fight only notes the pick, applied at PLAYER_REGEN_ENABLED / alive. A
   trinket the player put on by hand that is passive or not listed above the
   stop marker holds the queue of its slot until it leaves the slot.
+  A ready, usable trinket stays in its slot unless one ranked ABOVE it in
+  the list is in the bags and ready -- then that one comes back (a use in
+  the last 20 s still blocks; one the player put on by hand is never swapped
+  back while ready). Lists are per character AND per talent set
+  (`C_SpecializationInfo.GetActiveSpecGroup()`, 1 or 2; `trinketQueues[set]`
+  in the char DB); the old single `trinketQueue` is copied into both sets
+  once. Shift-click in the grid adds/removes in the slot's list (left upper,
+  right lower), the same insert-above-the-stop-marker the options use.
   Look: Standard = this client's action button (atlases
   UI-HUD-ActionBar-IconFrame / -Background / -Slot / -Mask, drawn for 45 px)
   at the on-screen size of a shown action button, measured against the

@@ -2009,6 +2009,8 @@ ns:RegisterLocale("ruRU", {
     ["Auto-queue waits: you picked this trinket yourself."] = "Очередь ждёт: вы выбрали этот аксессуар сами.",
     ["After the fight: %s"] = "После боя: %s",
     ["Left click: upper slot. Right click: lower slot. Alt-click: hide from this grid."] = "ЛКМ: верхняя ячейка. ПКМ: нижняя. Alt-клик: скрыть из сетки.",
+    ["Shift-click: into the auto-queue of the upper (left) or lower (right) slot, or out again."] = "Shift-клик: в автоочередь верхней (ЛКМ) или нижней (ПКМ) ячейки или обратно из неё.",
+    ["|cffaaaaaaThese lists belong to talent set %d; the other set keeps its own. Switching talents switches the lists.|r"] = "|cffaaaaaaЭти списки относятся к набору талантов %d; у другого набора свои. Смена талантов меняет списки.|r",
     ["Pick grid when hovering a slot"] = "Сетка выбора при наведении",
     ["Columns of the pick grid"] = "Столбцы сетки выбора",
     ["Weapon DPS"] = "УВС оружия",

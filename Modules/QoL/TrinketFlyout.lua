@@ -4,6 +4,8 @@
 -- the bags, each with its own cooldown. Left click puts it into the upper
 -- slot, right click into the lower one; alt-click hides it from the grid
 -- (with Alt held the hidden ones show grey and come back the same way).
+-- Shift-click puts it into the auto-queue list of the upper (left) or lower
+-- (right) slot, or takes it out; each cell shows its rank in both lists.
 --
 -- A plain frame, never secure: equipping is refused in a fight anyway, so a
 -- click there only notes the pick (Trinkets.Pick) and it goes on when the
@@ -35,6 +37,7 @@ local function showTip(cell)
     GameTooltip:SetOwner(cell, "ANCHOR_RIGHT")
     GameTooltip:SetItemByID(id)
     GameTooltip:AddLine(L["Left click: upper slot. Right click: lower slot. Alt-click: hide from this grid."], 0.6, 0.6, 0.65, true)
+    GameTooltip:AddLine(L["Shift-click: into the auto-queue of the upper (left) or lower (right) slot, or out again."], 0.6, 0.6, 0.65, true)
     if InCombatLockdown() then
         GameTooltip:AddLine(L["In combat: the pick goes on after the fight."], 1, 0.82, 0, true)
     end
@@ -58,6 +61,11 @@ local function makeCell(i)
     c.cd = CreateFrame("Cooldown", nil, c, "CooldownFrameTemplate")
     c.cd:SetAllPoints(c.icon)
     c.edges = ns.MakeEdges(c, "OVERLAY")
+    -- rank in the upper list (top left) and the lower one (bottom left)
+    c.rankTop = c:CreateFontString(nil, "OVERLAY", nil, 7)
+    c.rankTop:SetPoint("TOPLEFT", 2, -1)
+    c.rankBottom = c:CreateFontString(nil, "OVERLAY", nil, 7)
+    c.rankBottom:SetPoint("BOTTOMLEFT", 2, 1)
     local hl = c:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints(c.icon)
     hl:SetColorTexture(1, 1, 1, 0.15)
@@ -73,6 +81,11 @@ local function makeCell(i)
             render()
             return
         end
+        if IsShiftKeyDown() then
+            Trinkets.ToggleListed(button == "RightButton" and "bottom" or "top", id)
+            render()
+            return
+        end
         Trinkets.Pick(id, button == "RightButton" and 14 or 13)
         GameTooltip:Hide()
         if not InCombatLockdown() then Trinkets.HideGrid() else render() end
@@ -81,6 +94,16 @@ local function makeCell(i)
     c:SetScript("OnLeave", function() GameTooltip:Hide() end)
     cells[i] = c
     return c
+end
+
+-- A cell's rank in one slot's list; grey below the stop marker.
+local function paintRank(fs, key, id, r, g, b)
+    local rank, above = Trinkets.Rank(key, id)
+    if not rank then fs:Hide(); return end
+    fs:SetFont(QoL.Font(), 10, "OUTLINE")
+    fs:SetText(rank)
+    if above then fs:SetTextColor(r, g, b) else fs:SetTextColor(0.5, 0.5, 0.5) end
+    fs:Show()
 end
 
 -- The trinkets to offer: in the bags, not worn, not hidden (Alt shows the
@@ -127,6 +150,8 @@ function render()
         if type(start) == "nil" then start = 0 end
         if type(dur) == "nil" then dur = 0 end
         pcall(c.cd.SetCooldown, c.cd, start, dur)
+        paintRank(c.rankTop, "top", id, 1, 0.82, 0)
+        paintRank(c.rankBottom, "bottom", id, 0.45, 0.75, 1)
         c:Show()
     end
     for i = #list + 1, #cells do cells[i]:Hide(); cells[i].id = nil end
