@@ -64,6 +64,7 @@ jemand ohne den Code prüfen kann.
 | F-43 | Classic-Spielerrahmen: Prozent links, Wert rechts wie beim Ziel | Einheitenfenster | gebaut | – |
 | F-44 | Angeltaste: Angel, Köder, Auswerfen, Einholen mit einer Taste; Doppelklick, Schwimmer-Markierung | Komfort | gebaut | – |
 | F-45 | Tägliches Wort: Wortspiel im Flug, /vfword | Komfort | gebaut | – |
+| F-46 | DoT-Leisten am Ziel mit Stärke beim Neuwirken | Ressourcenleisten | gebaut | – |
 
 ---
 
@@ -281,6 +282,13 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du ein Wort tippst (Tastatur oder Klick) und Enter drückst, **dann** färben sich die Felder: grün richtig, gelb an anderer Stelle, grau nicht im Wort; die Tastatur färbt die Buchstaben mit. Unbekannte Wörter: „Nicht in der Wortliste.“
 - **Wenn** du landest, **dann** schließt sich das Fenster; `/vfword` öffnet es wieder mit deinem Stand, auch auf einem anderen Charakter.
 - Angenommen gelöst oder sechs Fehlversuche, **dann** steht „Gelöst in N.“ bzw. „Das Wort war …“, und Gespielt/Gewonnen/Serie/Beste zählen weiter; am nächsten Tag kommt ein neues Wort.
+
+### F-46 DoT-Leisten
+- Angenommen ein Klassen-Charakter mit DoTs (z. B. Hexenmeister, Priester, Schamane) und ein feindliches Ziel, **dann** steht über dem Zielrahmen pro bekanntem DoT eine Zeile mit Symbol; ist der DoT nicht auf dem Ziel, ist die Zeile grau.
+- **Wenn** du den DoT wirkst, **dann** füllt sich die Leiste mit der Restzeit, das Symbol wird farbig und rechts steht die Zeit – auch im Kampf.
+- **Wenn** du danach einen Zaubermacht-Buff bekommst oder verlierst, **dann** steht links im Balken z. B. „+13%“ (grün) bzw. „-4%“ (lila): so viel stärker/schwächer wäre Neuwirken jetzt. Ohne Änderung steht nichts.
+- **Wenn** du das Ziel wechselst, **dann** zeigen die Leisten sofort die DoTs des neuen Ziels.
+- **Dann** lassen sich Position (Bearbeitungsmodus), Breite, Höhe, Abstand, Textur, Farben und die verfolgten Zauber einstellen, sichtbar nach kurzer Pause.
 
 ---
 

@@ -180,6 +180,8 @@ Modules\ResourceBars\CastSkin.lua
 Modules\ResourceBars\Cast.lua
 Modules\ResourceBars\Swing.lua
 Modules\ResourceBars\Experience.lua
+Modules\ResourceBars\DotData.lua
+Modules\ResourceBars\Dots.lua
 Modules\ResourceBars\Options.lua
 Modules\ResourceBars\Preview.lua
 

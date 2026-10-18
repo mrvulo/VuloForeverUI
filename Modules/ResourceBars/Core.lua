@@ -184,6 +184,22 @@ local mod = ns:RegisterModule("resourcebars", {
         -- module on.
         enabled = false,
         bars = {},
+        -- the DoT bars (Dots.lua): one row per dot you know, on the target
+        dots = {
+            enabled = true,
+            x = 260, y = -90,            -- above the target frame
+            width = 220, height = 20, spacing = 2,
+            texture = "Matte",
+            fillColor  = { r = 0.35, g = 0.80, b = 0.35 },
+            emptyColor = { r = 0.10, g = 0.10, b = 0.11, a = 0.85 },
+            textSize = 11,
+            showTime = true,
+            showPercent = true,
+            betterColor = { r = 0.35, g = 1.00, b = 0.35 },
+            worseColor  = { r = 0.75, g = 0.50, b = 1.00 },
+            hideWithoutTarget = true,
+            hidden = {},                 -- [dot name] = true: no row for it
+        },
     },
 })
 RB.mod = mod
@@ -280,6 +296,7 @@ function mod:OnEnable()
     RB.Cast.RegisterEvents(self)
     RB.Swing.RegisterEvents(self)
     RB.XP.RegisterEvents(self)
+    if RB.Dots then RB.Dots.ApplyNow() end
 
     self:RegisterEvent("PLAYER_REGEN_DISABLED", function() RB.Each(function(key) RB.UpdateVisibility(key) end) end)
     self:RegisterEvent("PLAYER_REGEN_ENABLED", function() RB.Each(function(key) RB.UpdateVisibility(key) end) end)
@@ -290,6 +307,7 @@ function mod:OnEnable()
             if not mod.active then return end
             RB.StyleAll()
             RB.UpdateAll()
+            if RB.Dots then RB.Dots.ApplyNow() end
         end)
     end
 
@@ -306,6 +324,7 @@ function mod:OnEnable()
             if not mod.active then return end
             RB.Each(function(key) RB.BuildBar(key) end)
             RB.Each(function(key) RB.UpdateVisibility(key) end)
+            if RB.Dots then RB.Dots.UpdateVisibility() end
         end)
     end
     if IsLoggedIn() then buildAll() end
@@ -328,6 +347,8 @@ function mod:OnDisable()
     -- the client's cast bar frame gets its border back
     if RB.CastSkin and RB.CastSkin.ApplyBorder then RB.CastSkin.ApplyBorder() end
     for _, frame in pairs(RB.frames or {}) do frame:Hide() end
+    -- a frame later, once the module counts as off
+    if RB.Dots then ns.NextFrame(RB.Dots.ApplyNow) end
 end
 
 -- The label of a bar, for the mover box and the options. Built lazily: a

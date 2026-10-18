@@ -125,7 +125,17 @@ These apply to every visible change, in every module.
 
 ## Resource Bars (`Modules/ResourceBars/`)
 
-- Tabs: Resources, Cast bar, Swing timer, XP bar.
+- Tabs: Resources, Cast bar, Swing timer, XP bar, Dots.
+- **DoT bars** (`Dots.lua`, ids in `DotData.lua`): one row per dot the
+  character knows; per row one client aura container on "target", filter
+  HARMFUL|PLAYER, candidate `includeSpellIDs` = every id of that spell (allowed
+  on hostile units). The client draws icon, duration bar (`SetDurationBar`)
+  and time; our grey row under it is the empty state. Target change ->
+  `UpdateAllAuras` on each container (SetUnit with the same token is a no-op).
+  A restyle needs new containers (the look is fixed at button creation), so
+  settings apply 0.3 s after the last change. The percent compares the
+  numbers of the cast rank's tooltip text at cast time with now (keyed by dot,
+  per target GUID, 60 s); locale thousands separators are joined first.
 - **XP bar** (`Experience.lua`): default style `client` = overlays and texts on
   the client's own experience bar (it keeps its place, look, blue-while-rested
   colour); style `own` = free-standing bar. Quest XP (orange) and rested

@@ -16,6 +16,7 @@ mod.tabs = {
     { id = "cast",      label = "Cast bar" },
     { id = "swing",     label = "Swing timer" },
     { id = "xp",        label = "XP bar" },
+    { id = "dots",      label = "Dots" },
 }
 
 -- Deferred: a dropdown writes its own label after set() returns, and
@@ -444,7 +445,47 @@ function RB.LeavePreview()
     RB.UpdateAll()
 end
 
+-- ---------------------------------------------------------------- dots --
+
+local dotRows
+local function dotsPage()
+    dotRows = dotRows or ns.OptionRows(function() return RB.db().dots end,
+        function() if RB.Dots then RB.Dots.Apply() end end, { dropdownWidth = 200 })
+    local r = dotRows
+    local items = {
+        { type = "header", text = L["DoT bars"] },
+        { type = "desc", text = L["|cffaaaaaaOne row per damage-over-time spell you know: grey while it is not on your target, filled with its remaining time while it is. The percent says how much stronger (green) or weaker a recast would be right now than the one that is ticking -- after gaining or losing a buff. Move the bars in Edit Mode.|r"] },
+        r.toggle("enabled", L["Show DoT bars"]),
+        r.toggle("hideWithoutTarget", L["Only with a hostile target"]),
+        r.slider("width", L["Width"], 80, 400, 1),
+        r.slider("height", L["Height"], 10, 40, 1),
+        r.slider("spacing", L["Spacing"], 0, 10, 1),
+        r.slider("textSize", L["Text size"], 8, 18, 1),
+        r.dropdown("texture", L["Bar texture"], ns.MediaStatusbarValues()),
+        r.color("fillColor", L["Bar color"]),
+        r.color("emptyColor", L["Empty color"], { hasAlpha = true }),
+        r.toggle("showTime", L["Show the remaining time"]),
+        r.toggle("showPercent", L["Show recast strength in percent"],
+            L["Compares the spell's damage now with when you cast it. Only for the target you cast it on."]),
+        r.color("betterColor", L["Stronger color"]),
+        r.color("worseColor", L["Weaker color"]),
+        { type = "header", text = L["Tracked spells"] },
+    }
+    for _, dot in ipairs(RB.Dots and RB.Dots.Catalog() or {}) do
+        items[#items + 1] = { type = "toggle", label = dot.name,
+            get = function() return not (RB.db().dots.hidden or {})[dot.key] end,
+            set = function(_, v)
+                local d = RB.db().dots
+                d.hidden = d.hidden or {}
+                d.hidden[dot.key] = (not v) or nil
+                if RB.Dots then RB.Dots.Apply() end
+            end }
+    end
+    return items
+end
+
 function mod:GetOptions(tabId)
+    if tabId == "dots"  then return dotsPage() end
     if tabId == "cast"  then return castPage() end
     if tabId == "swing" then return swingPage() end
     if tabId == "xp"    then return xpPage() end
@@ -453,5 +494,7 @@ end
 
 -- The bars of the tab, pinned above it (Preview.lua).
 function mod.BuildPageHeader(host, tabId)
+    -- the dot bars are live on screen; there is no preview of them
+    if tabId == "dots" then return 0 end
     return RB.BuildPreviewHeader(host, tabId)
 end
