@@ -367,6 +367,7 @@ function Word.AttachButton(bar)
     local b = ns.UI:CreateButton(bar, { label = L["Word"], width = 54, height = math.max(16, bar:GetHeight()),
         onClick = function() Word.Toggle() end })
     b:SetPoint("LEFT", bar, "RIGHT", 4, 0)
+    b.bar = bar
     b:SetScript("OnEnter", function(self)
         ns.UI:ShowTooltip(self, { title = L["Daily Word"], accent = true,
             lines = { L["Guess the word of the day while you fly. /vfword opens it any time."] } })
@@ -374,6 +375,22 @@ function Word.AttachButton(bar)
     b:SetScript("OnLeave", function() ns.UI:HideTooltip() end)
     buttonOnBar = b
     Word.Apply()
+end
+
+-- Beside the bar, behind the land-early button when that one is shown: both
+-- sit right of the bar, and on the same spot the word button covered it.
+function Word.Place()
+    local b = buttonOnBar
+    if not b then return end
+    local bar, land = b.bar, b.bar.land
+    b:ClearAllPoints()
+    if land and land:IsShown() then
+        b:SetPoint("LEFT", land, "RIGHT", 3, 0)
+        b:SetHeight(land:GetHeight())
+    else
+        b:SetPoint("LEFT", bar, "RIGHT", 4, 0)
+        b:SetHeight(math.max(16, bar:GetHeight()))
+    end
 end
 
 function Word.Apply()

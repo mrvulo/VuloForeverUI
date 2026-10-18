@@ -548,6 +548,7 @@ function Flight.Refresh()
     local d = db()
     bar.route:SetShown(d.showRoute and stops ~= nil and #stops > 1)
     bar.land:SetShown(d.landButton)
+    if QoL.DailyWord then QoL.DailyWord.Place() end
     local can = canLandEarly()
     bar.land:SetEnabled(can)
     -- the arrow keeps its red; a button that cannot land only fades
@@ -714,6 +715,7 @@ function showExample()
     bar.fill:SetValue(0.4)
     local d = db()
     bar.land:SetShown(d.landButton)
+    if QoL.DailyWord then QoL.DailyWord.Place() end
     bar.land:SetEnabled(true)
     bar.land:SetAlpha(1)
     bar.route:SetShown(d.showRoute)
