@@ -132,6 +132,8 @@ local function generalPage()
         toggle("flight", "showRoute", L["Show the route under the bar"],
             L["Every stop of the ride with the time until it. The list moves on by one each time a stop goes by."]),
         slider("flight", "routeRows", L["Stops shown"], 1, 8, 1),
+        toggle("dailyWord", "enabled", L["Daily word game on the flight bar"],
+            L["A button beside the flight bar opens a word game: guess the word of the day in six tries. Landing closes it; /vfword opens it any time."]),
         toggle("flight", "landButton", L["A button to land early"],
             L["Beside the bar. The ride ends at the next stop; a ride ended that way is not remembered as the route's time."]),
         slider("flight", "width", L["Bar width"], 120, 480, 5),

@@ -102,6 +102,11 @@ local mod = ns:RegisterModule("qol", {
             trainAll   = false,
         },
 
+        -- --------------------------------------------------------- daily word
+        dailyWord = {
+            enabled = true,         -- the button on the flight bar and /vfword
+        },
+
         -- ------------------------------------------------------------ fishing
         fishing = {
             enabled     = true,     -- the key (bound in the client's key bindings)

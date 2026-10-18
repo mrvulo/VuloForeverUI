@@ -236,6 +236,8 @@ local function build()
     bar:SetSize(d.width or 240, d.height or 18)
     bar:SetFrameStrata("MEDIUM")
     bar:Hide()
+    -- the daily word game's button rides on the bar (DailyWord.lua)
+    if QoL.DailyWord then QoL.DailyWord.AttachButton(bar) end
 
     local bg = bar:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints(bar)
@@ -630,6 +632,7 @@ function endFlight()
     clearRide()
     if ticker then ns:CancelTicker(ticker); ticker = nil end
     if bar then bar:Hide() end
+    if QoL.DailyWord then QoL.DailyWord.OnLanded() end
 
     -- Under five seconds is not a flight; that is the ride being cut short.
     -- A ride landed early is shorter than its route and teaches nothing.

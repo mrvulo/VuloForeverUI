@@ -249,6 +249,15 @@ These apply to every visible change, in every module.
   right-click: a second secure button with `useOnKeyDown = false` (the
   override is set on the second mouse-down, so only the release reaches it),
   cleared after the click or after 1 s.
+- **Daily word** (`DailyWord.lua`, data `DailyWordData.lua`): one word a
+  day by the player's own calendar day (day 1 = 18 Oct 2026), the same for
+  everyone of a language; German for a German addon language, English
+  otherwise. Answers are hand-picked, common words without umlauts; guesses
+  are checked against a larger list (licences in the data file header). A
+  button rides on the flight bar; landing CLOSES the window (the player's
+  call), `/vfword` opens it any time. State and statistics are account-wide
+  (`global.qolDailyWord`). Typing goes through a hidden, focused EditBox --
+  no protected keyboard propagation.
 - **Gold check** (`TradeCheck.lua`): the achievement comparison slot is
   shared with the client and other addons — one request at a time, 5 s
   apart, 15 s deadline; a scan whose slot was taken by someone else is

@@ -63,6 +63,7 @@ jemand ohne den Code prüfen kann.
 | F-42 | Ausgelieferte Standards = Profil des Spielers (Werkzeug ship_profile.py) | Global | gebaut | – |
 | F-43 | Classic-Spielerrahmen: Prozent links, Wert rechts wie beim Ziel | Einheitenfenster | gebaut | – |
 | F-44 | Angeltaste: Angel, Köder, Auswerfen, Einholen mit einer Taste; Doppelklick, Schwimmer-Markierung | Komfort | gebaut | – |
+| F-45 | Tägliches Wort: Wortspiel im Flug, /vfword | Komfort | gebaut | – |
 
 ---
 
@@ -274,6 +275,12 @@ jemand ohne den Code prüfen kann.
 - **Dann** sind deine Soft-Target-Einstellungen ein paar Sekunden nach dem Angeln wieder wie vorher — auch nach Kampf oder `/reload` mitten im Angeln.
 - Angenommen „Mit Doppel-Rechtsklick auswerfen“ ist an, **wenn** du mit der Angel in der Hand schnell zweimal rechts in die Welt klickst, **dann** wirft sie aus; einfacher Rechtsklick dreht weiter die Kamera, und im Kampf verhält sich Rechtsklick ganz normal.
 - **Wenn** „Angeltaste“ aus ist, **dann** tut die belegte Taste nichts.
+
+### F-45 Tägliches Wort
+- Angenommen die Flugleiste ist an, **wenn** du fliegst, **dann** sitzt rechts neben der Leiste ein Knopf „Wort“; ein Klick öffnet „Tägliches Wort #N“ mit 6 × 5 Feldern, QWERTZ-Tastatur, „Nächstes Wort in …“ und der Statistik.
+- **Wenn** du ein Wort tippst (Tastatur oder Klick) und Enter drückst, **dann** färben sich die Felder: grün richtig, gelb an anderer Stelle, grau nicht im Wort; die Tastatur färbt die Buchstaben mit. Unbekannte Wörter: „Nicht in der Wortliste.“
+- **Wenn** du landest, **dann** schließt sich das Fenster; `/vfword` öffnet es wieder mit deinem Stand, auch auf einem anderen Charakter.
+- Angenommen gelöst oder sechs Fehlversuche, **dann** steht „Gelöst in N.“ bzw. „Das Wort war …“, und Gespielt/Gewonnen/Serie/Beste zählen weiter; am nächsten Tag kommt ein neues Wort.
 
 ---
 
