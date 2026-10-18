@@ -1,30 +1,22 @@
-## 0.18.0
+## 0.19.0
 
 **New**
 
-- **General** — a new default look: unit frames in the Classic style,
-  rounded auras, bags with BoE tags, the damage meter with outlined text,
-  resource bars and the Expressway font for game text. Every module is on
-  except the Cooldown Manager. Settings you changed yourself stay as they
-  are.
-- **Quality of Life** — buy more than one stack at a merchant: shift-click
-  an item and the game's split window goes past one stack, Max fills in as
-  many as you can pay for, the merchant has and your bags can hold.
-- **Skins** — the inspect window shows the player's average item level
-  beside their level.
-- **Damage Meter** — outline and shadow for every text of the meter, with
-  a smooth outline where the client offers it.
-- A new addon logo in the addon list, the settings window and on the
-  minimap button.
-
-**Changed**
-
-- **Skins** — enchant texts beside the slots are shortened ("Sta +3, Arm
-  +10") and stay inside the model area, never reaching the other side.
-- **Bags** — the binding tag is called BoE only; this game has no
-  warbound items.
+- **Resource Bars** — a new Dots tab: your damage-over-time spells on the
+  target as bars, one row per dot, each in its own colour and grey while it
+  is not on the target. When a buff would make a recast hit harder than the
+  dot that is ticking, the bar turns green and shows by how much. Works in
+  combat; movable and sizable.
+- **Quality of Life** — a fishing key: one key equips your pole, applies
+  the best lure your skill allows, casts, and reels in while the bobber is
+  out. Optional double right-click casting and a marker over the bobber.
+  Set the key under Key Bindings → AddOns → "VuloForeverUI: Fishing".
+- **Quality of Life** — Daily Word: a word game for your flights. A button
+  beside the flight bar opens it; guess the word of the day in six tries.
+  Landing closes it, /vfword opens it any time.
 
 **Fixed**
 
-- **Bags** — a BoE item that was worn once and is now bound no longer shows
-  the BoE tag.
+- **Unit Frames** — in the Classic style the player frame shows percent and
+  value like the target frame, and the texts on all Classic bars sit
+  centred on the bars instead of a little off.
