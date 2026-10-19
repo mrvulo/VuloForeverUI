@@ -14,7 +14,7 @@ local R = ns.Reminder
 
 local holder, mover
 local buttons = {}
-local MAX_SHOWN = 8
+local MAX_SHOWN = 12        -- room for the active ones too
 
 function R.IsBuilt() return holder ~= nil end
 
@@ -87,6 +87,44 @@ function R.StyleIcon(f, size, r, g, b)
     end
 end
 
+-- The parts both the row and the preview draw on top of an icon: the bag
+-- count bottom right (red at or below "low stock") and the green check of
+-- something that is on you. f carries .icon and .border.
+function R.MakeMarks(f)
+    f.count = f.border:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+    f.count:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -1, 2)
+    f.check = f.border:CreateTexture(nil, "OVERLAY", nil, 3)
+    f.check:SetAtlas("common-icon-checkmark")
+    f.check:SetPoint("CENTER", f, "CENTER")
+end
+
+-- state: "due" (missing / running out), "on" (active, kept by "show active
+-- ones"), or "off" (the preview's switched on but not due).
+function R.PaintIcon(f, it, size, state)
+    f.icon:SetTexture(it.icon or 134400)
+    f.icon:SetDesaturated(state ~= "due")
+    if state == "on" then
+        R.StyleIcon(f, size, 0.2, 0.8, 0.2)
+    elseif state == "off" then
+        R.StyleIcon(f, size, 0.3, 0.3, 0.3)
+    elseif it.soon then
+        R.StyleIcon(f, size, 1, 0.82, 0)
+    else
+        R.StyleIcon(f, size, 0.9, 0.2, 0.2)
+    end
+    f.check:SetSize(size * 0.55, size * 0.55)
+    f.check:SetShown(state ~= "due" and it.active == true)
+    local n = it.count
+    if n then
+        local low = R.mod.db.lowStock or 0
+        f.count:SetText(n)
+        if low > 0 and n <= low then f.count:SetTextColor(1, 0.25, 0.25) else f.count:SetTextColor(1, 1, 1) end
+        f.count:Show()
+    else
+        f.count:Hide()
+    end
+end
+
 local laidOut
 function R.Layout()
     local db = R.mod.db
@@ -114,8 +152,12 @@ local function showTooltip(b)
     else
         GameTooltip:SetText(it.title or "", 1, 1, 1)
     end
-    GameTooltip:AddLine(it.line, 1, 0.82, 0)
-    if it.hint then GameTooltip:AddLine(it.hint, 0.6, 1, 0.6) end
+    if it.due then
+        GameTooltip:AddLine(it.line, 1, 0.82, 0)
+        if it.hint then GameTooltip:AddLine(it.hint, 0.6, 1, 0.6) end
+    elseif it.left and R.FmtLeft then
+        GameTooltip:AddLine(R.FmtLeft(it.left), 0.3, 1, 0.3)
+    end
     GameTooltip:AddLine(L["Middle click: hide until the next loading screen"], 0.6, 0.6, 0.6)
     GameTooltip:Show()
 end
@@ -136,6 +178,7 @@ local function newButton(i)
     b.label = b.border:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     b.label:SetPoint("TOP", b, "BOTTOM", 0, -3)
     b.label:SetWordWrap(false)
+    R.MakeMarks(b)
 
     -- a slow pulse, so the row reads as "do something"
     b.pulse = b.icon:CreateAnimationGroup()
@@ -191,17 +234,17 @@ function R.Show(items)
             b:SetSize(size, size)
             b:ClearAllPoints()
             b:SetPoint("LEFT", holder, "CENTER", -width / 2 + (i - 1) * (size + gap), 0)
-            b.icon:SetTexture(it.icon or 134400)
-            if it.soon then
-                R.StyleIcon(b, size, 1, 0.82, 0)
-            else
-                R.StyleIcon(b, size, 0.9, 0.2, 0.2)
-            end
+            R.PaintIcon(b, it, size, it.due and "due" or "on")
             b.label:SetWidth(size + gap)
             b.label:SetText(db.showLabels and it.short or "")
-            setAction(b, it)
+            -- one that is on you takes no click: no second flask by mistake
+            setAction(b, it.due and it or {})
             b:Show()
-            if not b.pulse:IsPlaying() then b.pulse:Play() end
+            if it.due then
+                if not b.pulse:IsPlaying() then b.pulse:Play() end
+            else
+                b.pulse:Stop()
+            end
         elseif b then
             b.item = nil
             setAction(b, {})

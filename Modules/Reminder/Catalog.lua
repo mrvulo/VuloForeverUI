@@ -61,6 +61,7 @@ local function fmtLeft(left)
     else t = L["%d s"]:format(math.max(0, math.floor(left))) end
     return L["Active · %s"]:format(t)
 end
+R.FmtLeft = fmtLeft      -- the row's and the preview's tooltips
 
 -- Seconds left on an aura of this name; nil = not on you, false = cannot be
 -- read right now (a fight). Unlike the reminder row, "unreadable" is shown as

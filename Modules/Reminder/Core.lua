@@ -52,6 +52,8 @@ local mod = ns:RegisterModule("reminders", {
         warnMinutes = 0,        -- 0 = only when missing
         hideResting = true,
         showLabels  = true,
+        showActive  = false,    -- keep what is on you in the row: grey, with a check
+        lowStock    = 3,        -- item count shown red at or below this; 0 = never
         style       = "modern",  -- "standard": the action button ring; "modern": our own
         round       = true,      -- Modern: rounded, else square
         size        = 40,
@@ -290,12 +292,16 @@ end
 R.dismissed = {}        -- [key] = true until the next loading screen
 
 -- all = the preview's question: every reminder that is switched on, whether
--- it is due or not, each marked `due`. The row asks only for the due ones.
+-- it is due or not, each marked `due`. The row asks for the due ones, and --
+-- with "show active ones" -- for those that are on you (`active`) as well.
 local function add(items, it, all)
-    if all or (it.due and not R.dismissed[it.key]) then items[#items + 1] = it end
+    if all then items[#items + 1] = it; return end
+    if R.dismissed[it.key] then return end
+    if it.due or (it.active and mod.db.showActive) then items[#items + 1] = it end
 end
 
--- item: { key, icon, title, short, line, hint, spell, tip, itemID, macro, soon, due }
+-- item: { key, icon, title, short, line, hint, spell, tip, itemID, count, macro,
+--         soon, left, active, due }
 function R.Collect(all)
     local items = {}
     local db = mod.db
@@ -317,6 +323,8 @@ function R.Collect(all)
                     hint  = L["Left click: cast"],
                     spell = cast,
                     soon  = left ~= nil,
+                    left  = left,
+                    active = left ~= nil,
                     due   = aurasOk and (not left or left < warn),
                 }, all)
             end
@@ -336,6 +344,8 @@ function R.Collect(all)
                     title = L[s.label],
                     line  = left and L["Weapon enchant runs out soon"] or L["No weapon enchant"],
                     soon  = left ~= nil,
+                    left  = left,
+                    active = armed and left ~= nil,
                     due   = armed and (not left or left < warn),
                 }
                 local cast = class == "SHAMAN" and R.CastFor(cfg, R.IMBUES) or nil
@@ -344,6 +354,7 @@ function R.Collect(all)
                     it.spell, it.icon, it.hint = cast, C_Spell.GetSpellTexture(cast), L["Left click: cast"]
                 elseif itemID and (C_Item.GetItemCount(itemID) or 0) > 0 then
                     it.itemID = itemID
+                    it.count  = C_Item.GetItemCount(itemID) or 0
                     it.icon   = C_Item.GetItemIconByID(itemID)
                     it.macro  = "/use item:" .. itemID .. "\n/use " .. s.inv
                     it.hint   = L["Left click: apply the item you used last"]
@@ -357,7 +368,7 @@ function R.Collect(all)
 
     -- flasks, elixirs and food the role wants and the bags hold
     if db.consumables and (all or not db.consumablesInstances or inInstance()) then
-        for _, it in ipairs(R.ConsumableReminders(all, aurasOk)) do add(items, it, all) end
+        for _, it in ipairs(R.ConsumableReminders(all, aurasOk, warn)) do add(items, it, all) end
     end
 
     if aurasOk or all then
@@ -367,13 +378,16 @@ function R.Collect(all)
         for _, id in ipairs(tracked) do
             local name = spellName(id)
             if name then
+                local left = aurasOk and auraLeft({ id }) or nil
                 add(items, {
                     key   = "id:" .. id,
                     icon  = C_Spell.GetSpellTexture(id),
                     short = name,
                     line  = L["Missing"],
                     tip   = id,       -- the spell's tooltip, but nothing to cast
-                    due   = aurasOk and not auraLeft({ id }),
+                    left  = left,
+                    active = left ~= nil,
+                    due   = aurasOk and not left,
                 }, all)
             end
         end

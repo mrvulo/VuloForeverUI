@@ -241,35 +241,46 @@ for _, id in ipairs(R.FOOD_BUFFS) do FOOD_BUFF_ID[id] = true end
 -- on its own counts as present, a false "missing" is the worse mistake.
 -- notFood: an aura of the same name that came from food does not count --
 -- Mageblood and Nightfin Soup both leave "Mana Regeneration".
-local function auraUp(name, notFood)
-    if not name then return false end
+-- Seconds left on it, math.huge when it does not run out or cannot be read,
+-- nil when it is not on you.
+local function auraLeft(name, notFood)
+    if not name then return nil end
     local aura = C_UnitAuras.GetAuraDataBySpellName("player", name, "HELPFUL")
-    if type(aura) ~= "table" then return false end
-    if notFood and ns.CanRead(aura) and FOOD_BUFF_ID[aura.spellId] then return false end
-    return true
+    if type(aura) ~= "table" then return nil end
+    if not ns.CanRead(aura) then return math.huge end
+    if notFood and FOOD_BUFF_ID[aura.spellId] then return nil end
+    local exp = aura.expirationTime
+    if ns.CanRead(exp) and type(exp) == "number" and exp > 0 then return exp - GetTime() end
+    return math.huge
 end
 
-local function chainActive(c)
+local function longer(a, b)
+    if not a then return b end
+    if not b then return a end
+    return math.max(a, b)
+end
+
+-- The longest time left on any rank of the chain, nil when none is on you.
+local function chainLeft(c)
+    local best
     if c.cat == "food" then
-        for _, id in ipairs(R.FOOD_BUFFS) do
-            if auraUp(R.SpellName(id)) then return true end
-        end
-        return false
+        for _, id in ipairs(R.FOOD_BUFFS) do best = longer(best, auraLeft(R.SpellName(id))) end
+        return best
     end
     for _, it in ipairs(c.items) do
         local name = C_Item.GetItemSpell(it[1])
         if name then
-            if auraUp(name, true) then return true end
+            best = longer(best, auraLeft(name, true))
         else
             C_Item.RequestLoadItemDataByID(it[1])
         end
     end
-    return false
+    return best
 end
 
 -- all = the preview's question (every chain, due or not); aurasOk = the
 -- auras may be read right now.
-function R.ConsumableReminders(all, aurasOk)
+function R.ConsumableReminders(all, aurasOk, warn)
     local out = {}
     local role, ctx = R.Role(), R.SupplyContext()
     for _, c in ipairs(R.SUPPLIES) do
@@ -278,17 +289,24 @@ function R.ConsumableReminders(all, aurasOk)
             for _, it in ipairs(c.items) do
                 if it[2] <= ctx.level and (C_Item.GetItemCount(it[1]) or 0) > 0 then pick = it[1]; break end
             end
-            local shown = pick or (all and R.BestRank(c.items, ctx.level))
+            local left = aurasOk and chainLeft(c) or nil
+            -- on you but none left in the bags: still shown (with a 0) to
+            -- the row that keeps active ones, so the empty stock is seen
+            local shown = pick or ((all or left) and R.BestRank(c.items, ctx.level))
             if shown then
                 out[#out + 1] = {
                     key    = "cons:" .. c.items[1][1],
                     icon   = C_Item.GetItemIconByID(shown),
                     itemID = shown,
+                    count  = C_Item.GetItemCount(shown) or 0,
                     short  = L[CONSUMABLE[c.cat]],
-                    line   = L["Not active"],
+                    line   = left and L["Runs out soon"] or L["Not active"],
                     hint   = pick and L["Left click: use"] or nil,
                     macro  = pick and ("/use item:" .. pick) or nil,
-                    due    = aurasOk and pick ~= nil and not chainActive(c),
+                    soon   = left ~= nil,
+                    left   = left,
+                    active = left ~= nil,
+                    due    = aurasOk and pick ~= nil and (not left or left < warn),
                 }
             end
         end

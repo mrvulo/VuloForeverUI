@@ -74,6 +74,10 @@ function mod:GetOptions()
           set = function(_, v) db.style = v; R.Relayout(); R.Queue() end },
         flag("round", L["Rounded icons"], L["Modern only: rounded corners instead of square ones."]),
         slider("warnMinutes", L["Warn before it runs out (minutes)"], 0, 10, L["0 = only when it is missing."]),
+        flag("showActive", L["Show active ones with a check"],
+            L["What is on you stays in the row, grey with a green check, and takes no click until it runs out soon."]),
+        slider("lowStock", L["Low stock from"], 0, 10,
+            L["The count on an item turns red at or below this. 0 = never."]),
 
         { type = "header", text = L["Show in"] },
         toggle(L["Open world"], function() return db.where.world end, function(v) db.where.world = v end),

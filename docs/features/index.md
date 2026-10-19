@@ -44,7 +44,7 @@ jemand ohne den Code prüfen kann.
 | F-23 | Fenster „Mögliche Buffs“ mit Empfehlungen pro Rolle | Erinnerungen | gebaut | – |
 | F-24 | Eigene DoTs auf Namensplaketten, auch ohne Plakettenkennung (PvP und PvE) | Namensplaketten | gebaut | – |
 | F-25 | Mögliche Buffs: wer in der Gruppe den Buff geben kann | Erinnerungen | gebaut | – |
-| F-26 | Erinnerung an Fläschchen, Elixier und Essen aus den Taschen | Erinnerungen | gebaut | – |
+| F-26 | Erinnerung an Fläschchen, Elixier und Essen aus den Taschen; Vorrat-Zahl, läuft bald ab, Aktive mit Haken | Erinnerungen | gebaut | – |
 | F-27 | Mögliche Buffs anklickbar (wirken / benutzen) | Erinnerungen | gebaut | – |
 | F-28 | Fenster-Skins: Charakter- und Betrachten-Fenster, Standard / Modern | Skins | gebaut | – |
 | F-31 | Goldprüfung: zuverlässige Abfrage, fehlend ≠ null, mehr Zähler, aus dem Betrachten-Fenster | Komfort | gebaut | – |
@@ -159,6 +159,10 @@ jemand ohne den Code prüfen kann.
 - Angenommen du bist in einem Dungeon, hast ein für deine Rolle passendes Elixier in den Taschen und keins aktiv, **dann** zeigt die Erinnerungsleiste dessen Symbol; ein Linksklick trinkt es, danach verschwindet das Symbol.
 - Angenommen du hast nur Essen ohne „Satt“-Wirkung oder gar nichts Passendes dabei, **dann** erscheint kein Symbol.
 - **Wenn** „Nur in Dungeons und Schlachtzügen“ aus ist, **dann** gilt das auch in der offenen Welt.
+- **Dann** zeigt jedes Symbol, das ein Gegenstand aus den Taschen ist (Fläschchen, Elixier, Essen, Gift/Öl/Stein), unten rechts, wie viele du davon hast; liegt die Zahl bei oder unter „Wenig Vorrat ab“ (Standard 3), ist sie rot. 0 schaltet die Warnung ab.
+- Angenommen „Warnen, bevor es ausläuft“ steht auf 5 Minuten, **wenn** dein Fläschchen, Elixier oder „Satt“ noch weniger als 5 Minuten hat, **dann** erscheint sein Symbol mit goldenem Rand („Läuft bald ab“), ein Linksklick erneuert es.
+- Angenommen „Aktive mit Haken zeigen“ ist an, **dann** bleiben Buffs, Waffenverzauberungen und Verbrauchsgüter, die gerade auf dir sind, in der Leiste: grau, mit grünem Haken und grünem Rand, ohne Pulsieren; ein Linksklick tut nichts. Läuft eins bald ab oder fehlt es, wird es wieder farbig und anklickbar. Ein aktives Verbrauchsgut, von dem nichts mehr in den Taschen ist, zeigt eine rote 0.
+- **Dann** zeigt die Vorschau auf der Optionsseite Haken und Zahl genauso.
 
 ### F-27 Mögliche Buffs anklickbar
 - **Wenn** du außerhalb des Kampfs im Fenster auf deinen eigenen Zauber klickst, **dann** wirkst du ihn; auf ein Elixier, Essen, einen Trank oder eine Rolle in den Taschen, **dann** wird es benutzt.

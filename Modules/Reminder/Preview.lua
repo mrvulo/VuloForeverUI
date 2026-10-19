@@ -27,6 +27,8 @@ local function showTooltip(f)
     end
     if it.due then
         GameTooltip:AddLine(it.line, 1, 0.82, 0)
+    elseif it.left and R.FmtLeft then
+        GameTooltip:AddLine(R.FmtLeft(it.left), 0.3, 1, 0.3)
     else
         GameTooltip:AddLine(L["Not due right now"], 0.6, 0.6, 0.6)
     end
@@ -45,6 +47,7 @@ local function makeIcon(i)
     f.label = f.border:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     f.label:SetPoint("TOP", f, "BOTTOM", 0, -3)
     f.label:SetWordWrap(false)
+    R.MakeMarks(f)
     f:EnableMouse(true)
     f:SetScript("OnEnter", showTooltip)
     f:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -73,16 +76,10 @@ function R.RefreshPreview(force)
             f:SetSize(size, size)
             f:ClearAllPoints()
             f:SetPoint("LEFT", row, "LEFT", (i - 1) * (size + gap), 0)
-            f.icon:SetTexture(it.icon or 134400)
-            f.icon:SetDesaturated(not it.due)
-            f:SetAlpha(it.due and 1 or 0.45)
-            if not it.due then
-                R.StyleIcon(f, size, 0.3, 0.3, 0.3)
-            elseif it.soon then
-                R.StyleIcon(f, size, 1, 0.82, 0)
-            else
-                R.StyleIcon(f, size, 0.9, 0.2, 0.2)
-            end
+            -- what the row would show: due, kept with a check, or faded
+            local state = it.due and "due" or ((db.showActive and it.active) and "on" or "off")
+            R.PaintIcon(f, it, size, state)
+            f:SetAlpha(state == "off" and 0.45 or 1)
             f.label:SetWidth(size + gap)
             f.label:SetText(db.showLabels and it.short or "")
             f:Show()

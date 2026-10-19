@@ -228,6 +228,13 @@ These apply to every visible change, in every module.
 - **Consumable reminders** (row): per flask/elixir/food chain of the role,
   only when a usable rank is in the bags and none is on you; food = Well Fed.
   Default: dungeons and raids only.
+- **Row states:** due = missing or below `warnMinutes` (consumables too,
+  from the aura's expiration) -> coloured, pulsing, clickable. With
+  `showActive` an item that is on you (`it.active`) stays in the row grey
+  with a green check (atlas `common-icon-checkmark`) and its secure action
+  cleared, so a click cannot use a second flask. Item reminders carry
+  `it.count` (the bag count of what a click uses), drawn bottom right, red at
+  or below `lowStock`.
 - Recommendations come from `Supplies.lua`: chains of ranks, best first, with
   required levels — every item and spell ID checked against the client's
   item/spell tables, never typed from memory. The role is picked per
