@@ -67,6 +67,10 @@ These apply to every visible change, in every module.
 
 ## Bags (`Modules/Bags/`)
 
+- **Bind tag in the corner:** "BoE" only on unbound GEAR (`Items.IsGear`:
+  an equip location that is not bag, quiver or none); a BoE consumable or
+  reagent shows nothing. "WuE" (warbound) on anything. The "boe" search
+  keyword still finds every BoE item.
 - **One factory, two windows** (bags, bank) in `Window.lua`; the offline bank
   view is `BankView.lua` and must follow every look change too.
 - **Two looks** (`db.style`): `modern` = flat window; `standard` = the same

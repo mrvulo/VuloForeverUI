@@ -68,6 +68,15 @@ function Items.BindTag(info)
     return nil
 end
 
+-- Gear: something worn in an equipment slot. Bags and quivers have an equip
+-- location too, and a consumable none; neither is gear.
+local NOT_GEAR = { INVTYPE_NON_EQUIP_IGNORE = true, INVTYPE_BAG = true, INVTYPE_QUIVER = true }
+function Items.IsGear(info)
+    local f = Items.Facts(info)
+    local loc = f and f.equipLoc
+    return loc ~= nil and not NOT_GEAR[loc]
+end
+
 -- Where a piece of gear is worn. INVTYPE_HEAD and its siblings are client
 -- strings as well, so the armoury groups come out in the player's language.
 function Items.EquipLoc(info)

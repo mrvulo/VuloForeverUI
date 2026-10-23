@@ -772,6 +772,8 @@ function Slots.Paint(slot, bagID, slotID, info)
     local tag = db.showBindTags and info and Bags.Items.BindTag(info) or nil
     -- the tag is the item's binding RULE; a BoE piece worn once is bound now
     if tag == "BoE" and info.isBound then tag = nil end
+    -- only on gear: a BoE potion or reagent needs no reminder in its corner
+    if tag == "BoE" and not Bags.Items.IsGear(info) then tag = nil end
     if tag then
         ns.UI.FontFor("bags", slot.tag, db.bindTagSize or 10, "OUTLINE")
         local c = (tag == "BoE") and db.bindTagColor or db.warboundColor
