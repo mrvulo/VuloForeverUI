@@ -67,6 +67,11 @@ These apply to every visible change, in every module.
 
 ## Bags (`Modules/Bags/`)
 
+- **Bag bar drops:** `PutItemInBag` / `PutItemInBackpack` are blocked for
+  addon code (ADDON_ACTION_BLOCKED, 2026-10-23) though the client's own bag
+  buttons call them. An item goes to the bag's first free slot via
+  `C_Container.PickupContainerItem`, a bag into its slot via
+  `PickupInventoryItem`; never the two `PutItem*` calls.
 - **Bind tag in the corner:** "BoE" only on unbound GEAR (`Items.IsGear`:
   an equip location that is not bag, quiver or none); a BoE consumable or
   reagent shows nothing. "WuE" (warbound) on anything. The "boe" search

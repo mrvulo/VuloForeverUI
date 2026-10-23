@@ -8,8 +8,11 @@
 --
 -- Hover lights the bag's slots in the window, a click shows that bag alone
 -- (a second click shows everything again), and a bag is dragged in, out or
--- across the way the client's own bag buttons do it. None of those calls is
--- protected: the client drives them from plain buttons too.
+-- across. NOT with the client's own calls: PutItemInBag and PutItemInBackpack
+-- are refused to addon code on this client (ADDON_ACTION_BLOCKED, 2026-10-23)
+-- although the client's bag buttons use them. An item goes into a free slot
+-- of the bag (C_Container.PickupContainerItem), a bag into its equipment slot
+-- (PickupInventoryItem).
 local _, ns = ...
 local L = ns.L
 local Bags = ns.Bags
@@ -100,14 +103,33 @@ local function bankList()
     return out
 end
 
--- An item on the cursor dropped onto a bag button: into the backpack, or
--- into that bag -- which, when the item is itself a bag, equips it there.
+-- A bag on the cursor: dropped on a bag slot it is equipped there.
+local function cursorIsBag()
+    local kind, itemID = GetCursorInfo()
+    if kind ~= "item" or type(itemID) ~= "number" then return false end
+    local _, _, _, equipLoc, _, classID = C_Item.GetItemInfoInstant(itemID)
+    return classID == Enum.ItemClass.Container or equipLoc == "INVTYPE_BAG" or equipLoc == "INVTYPE_QUIVER"
+end
+
+local function freeSlot(bag)
+    for slot = 1, C_Container.GetContainerNumSlots(bag) or 0 do
+        if not C_Container.GetContainerItemInfo(bag, slot) then return slot end
+    end
+end
+
+-- An item on the cursor dropped onto a bag button: a bag goes into that bag
+-- slot, anything else into the first free slot of that bag.
 local function drop(bag)
-    if bag == 0 then
-        PutItemInBackpack()
-    else
-        local inv = invSlot(bag)
-        if inv then PutItemInBag(inv) end
+    local inv = invSlot(bag)
+    if inv and cursorIsBag() then
+        PickupInventoryItem(inv)
+        return
+    end
+    local slot = freeSlot(bag)
+    if slot then
+        C_Container.PickupContainerItem(bag, slot)
+    elseif ERR_BAG_FULL then
+        UIErrorsFrame:AddMessage(ERR_BAG_FULL, 1, 0.1, 0.1, 1)
     end
 end
 
@@ -170,7 +192,7 @@ local function onDragStart(self)
         return
     end
     local inv = invSlot(self.bag)
-    if inv then PickupBagFromSlot(inv) end
+    if inv then PickupInventoryItem(inv) end
 end
 
 local function onReceiveDrag(self)
