@@ -146,7 +146,7 @@ function UI:CreateMainFrame()
     local sbBorder = CreateFrame("Frame", nil, searchBox, BackdropTemplateMixin and "BackdropTemplate")
     sbBorder:SetAllPoints(searchBox)
     if sbBorder.SetBackdrop then
-        sbBorder:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+        ns.PixelBackdrop(sbBorder)
         sbBorder:SetBackdropBorderColor(ns.COLORS.border.r, ns.COLORS.border.g, ns.COLORS.border.b, 1)
     end
 

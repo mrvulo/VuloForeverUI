@@ -47,12 +47,7 @@ local function createLevel(i)
     f:EnableMouse(true)
     f:SetClampedToScreen(true)
     if f.SetBackdrop then
-        f:SetBackdrop({
-            bgFile   = "Interface\\Buttons\\WHITE8X8",
-            edgeFile = "Interface\\Buttons\\WHITE8X8",
-            edgeSize = 1,
-            insets   = { left = 1, right = 1, top = 1, bottom = 1 },
-        })
+        ns.PixelBackdrop(f, { fill = true, inset = true })
         local _, bd = menuColors()
         f:SetBackdropColor(ns.TC("popup"))
         f:SetBackdropBorderColor(bd.r, bd.g, bd.b, 1)

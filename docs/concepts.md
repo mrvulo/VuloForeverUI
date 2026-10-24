@@ -44,6 +44,12 @@ These apply to every visible change, in every module.
   Never edit the file by hand; a new default is set in game, then the script
   runs again. Lists, class spell data and one-time markers are left out
   (SKIP in the script): defaults are merged INTO saved tables.
+- **Thin edges are physical pixels, not UI units** (2026-10-24): never
+  `edgeSize = 1` in a backdrop. Flat backdrops go through
+  `ns.PixelBackdrop(frame, { fill, inset, outset })`, texture edges through
+  `ns.LayoutEdges`; both size by `ns:Pixel`. Registered layouts run again on
+  UI_SCALE_CHANGED / DISPLAY_SIZE_CHANGED, a mover's or the settings
+  window's scale change and our own UI scale (`ns.RefreshPixels`).
 
 ---
 

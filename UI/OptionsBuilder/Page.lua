@@ -46,10 +46,7 @@ local function navChip(host, i)
     if c then c:SetParent(host); return c end
     c = CreateFrame("Button", nil, host, BackdropTemplateMixin and "BackdropTemplate")
     c:SetHeight(NAV_CHIP_H)
-    if c.SetBackdrop then
-        c:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8",
-                        edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-    end
+    ns.PixelBackdrop(c, { fill = true })
     local hl = c:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints(c)
     hl:SetColorTexture(ns.TC("textHi", 0.05))

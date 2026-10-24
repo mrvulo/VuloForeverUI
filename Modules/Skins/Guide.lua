@@ -44,6 +44,7 @@ local looks = {
             edgeFile = "Interface\\Buttons\\WHITE8X8",
             edgeSize = 1, insets = { left = 1, right = 1, top = 1, bottom = 1 },
         },
+        pixel = true,       -- edge and insets one physical pixel (backdropFor)
         bg = { 0.055, 0.055, 0.065, 0.95 }, hover = { 0.10, 0.10, 0.12, 0.97 },
         edge = { 0.22, 0.22, 0.26, 1 },
     },
@@ -76,6 +77,17 @@ end
 
 local deferred = false
 
+-- The look's backdrop for one frame: the modern edge is one physical pixel
+-- at that frame's scale, not one UI unit.
+local function backdropFor(f)
+    local lk = look()
+    if not lk.pixel then return lk.backdrop end
+    local px = ns:Pixel(f, 1)
+    local b = lk.backdrop
+    return { bgFile = b.bgFile, edgeFile = b.edgeFile, edgeSize = px,
+             insets = { left = px, right = px, top = px, bottom = px } }
+end
+
 local function skin(f)
     if not (f and f.SetBackdrop) then return end
     -- a frame holding secure buttons (the target window) waits for the
@@ -88,7 +100,7 @@ local function skin(f)
     if skinned[f] == name then return end
     skinned[f] = name
     painting = true
-    f:SetBackdrop(look().backdrop)
+    f:SetBackdrop(backdropFor(f))
     painting = false
     if not colorHooked[f] then
         colorHooked[f] = true

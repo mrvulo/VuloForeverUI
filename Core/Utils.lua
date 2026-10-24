@@ -68,6 +68,63 @@ function ns:Pixel(frame, n)
     return (n or 1) * (768 / physH) / es
 end
 
+-- ---------------------------------------------------------------- pixel borders --
+--
+-- Borders that stay whole physical pixels. ns:Pixel depends on the frame's
+-- effective scale, which moves with the UI scale, a mover's scale and the
+-- settings window's scale; every registered layout runs again on each of
+-- those (ns.RefreshPixels). Weak keys: a frame that goes away is forgotten.
+local pixelLayouts = setmetatable({}, { __mode = "k" })
+
+function ns.PixelLayout(frame, fn)
+    pixelLayouts[frame] = fn
+    fn(frame)
+end
+
+function ns.RefreshPixels()
+    for f, fn in pairs(pixelLayouts) do fn(f) end
+end
+
+local pixelEvents = CreateFrame("Frame")
+pixelEvents:RegisterEvent("UI_SCALE_CHANGED")
+pixelEvents:RegisterEvent("DISPLAY_SIZE_CHANGED")
+pixelEvents:SetScript("OnEvent", function() ns.RefreshPixels() end)
+
+-- A flat backdrop (WHITE8X8) with an edge of one physical pixel, in place of
+-- `edgeSize = 1`, which is one UI unit and only a pixel at a pixel-perfect UI
+-- scale. opts.fill adds the centre the colour setters tint, opts.inset keeps
+-- that centre inside the edge, opts.outset = a frame the border is drawn one
+-- pixel outside of. A new size re-applies the backdrop, which paints it
+-- white, so the colours are carried over.
+local FLAT = "Interface\\Buttons\\WHITE8X8"
+function ns.PixelBackdrop(frame, opts)
+    if not (frame and frame.SetBackdrop) then return end
+    opts = opts or {}
+    ns.PixelLayout(frame, function(f)
+        local px = ns:Pixel(f, 1)
+        if f._vfPx == px then return end
+        local br, bg, bb, ba, cr, cg, cb, ca
+        if f._vfPx then
+            br, bg, bb, ba = f:GetBackdropBorderColor()
+            if opts.fill then cr, cg, cb, ca = f:GetBackdropColor() end
+        end
+        f._vfPx = px
+        if opts.outset then
+            f:ClearAllPoints()
+            f:SetPoint("TOPLEFT", opts.outset, "TOPLEFT", -px, px)
+            f:SetPoint("BOTTOMRIGHT", opts.outset, "BOTTOMRIGHT", px, -px)
+        end
+        f:SetBackdrop({
+            bgFile   = opts.fill and FLAT or nil,
+            edgeFile = FLAT,
+            edgeSize = px,
+            insets   = opts.inset and { left = px, right = px, top = px, bottom = px } or nil,
+        })
+        if br then f:SetBackdropBorderColor(br, bg, bb, ba) end
+        if cr then f:SetBackdropColor(cr, cg, cb, ca) end
+    end)
+end
+
 function ns:PixelSnap(value, frame)
     local px = ns:Pixel(frame, 1)
     if px <= 0 then return value end

@@ -87,7 +87,7 @@ function UI:FitMainFrame()
     -- Re-applied here too, not only in the setter: a profile switch brings its
     -- own scale along, and this runs on every open.
     local s = UI:MainFrameScale()
-    if f:GetScale() ~= s then f:SetScale(s) end
+    if f:GetScale() ~= s then f:SetScale(s); ns.RefreshPixels() end
     local w, h = fittedSize()
     -- Reports whether it RESIZED. Scaling alone needs no relayout -- everything
     -- inside is measured in the window's own units and comes along -- but a size

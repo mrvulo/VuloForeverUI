@@ -20,7 +20,7 @@ function UI:CreateCloseX(f, onClick, style)
             if border.SetBackdropBorderColor then border:SetBackdropBorderColor(r, g, b, 1) end
         end
         if border.SetBackdrop then
-            border:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+            ns.PixelBackdrop(border)
         end
         edge(0.32, 0.32, 0.36)
         local x = close:CreateTexture(nil, "ARTWORK")
@@ -67,7 +67,7 @@ function UI:CreateSearchBox(parent, opts)
     local border = CreateFrame("Frame", nil, sb, BackdropTemplateMixin and "BackdropTemplate")
     border:SetAllPoints(sb)
     if border.SetBackdrop then
-        border:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+        ns.PixelBackdrop(border)
         border:SetBackdropBorderColor(ns.COLORS.border.r, ns.COLORS.border.g, ns.COLORS.border.b, 1)
     end
     sb:SetScript("OnEditFocusGained", function()

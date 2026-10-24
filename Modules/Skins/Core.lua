@@ -101,7 +101,7 @@ function Skins.Panel(host, color, inset, parent)
     p:SetPoint("TOPLEFT", host, "TOPLEFT", -inset, inset)
     p:SetPoint("BOTTOMRIGHT", host, "BOTTOMRIGHT", inset, -inset)
     p:SetFrameLevel(math.max(0, host:GetFrameLevel()))
-    p:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+    ns.PixelBackdrop(p, { fill = true })
     local c = color or BG
     p:SetBackdropColor(c[1], c[2], c[3], c[4])
     p:SetBackdropBorderColor(EDGE[1], EDGE[2], EDGE[3], EDGE[4])

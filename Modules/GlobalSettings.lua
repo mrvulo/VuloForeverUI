@@ -66,6 +66,7 @@ local function reapplyUIScale()
         return
     end
     pcall(UIParent.SetScale, UIParent, scale)
+    ns.RefreshPixels()
 end
 
 local function applyUIScale(scale)

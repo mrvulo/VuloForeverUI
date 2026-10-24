@@ -180,10 +180,7 @@ function ns:CreateMover(target, opts)
         BackdropTemplateMixin and "BackdropTemplate")
     mover.border:SetAllPoints(mover)
     if mover.border.SetBackdrop then
-        mover.border:SetBackdrop({
-            edgeFile = "Interface\\Buttons\\WHITE8X8",
-            edgeSize = 1,
-        })
+        ns.PixelBackdrop(mover.border)
         mover.border:SetBackdropBorderColor(0.75, 0.35, 1, 0.8)
     end
 

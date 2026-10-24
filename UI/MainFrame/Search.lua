@@ -21,7 +21,7 @@ function MF.BuildSearchResults(f, searchBox, placeholder)
     local ddBorder = CreateFrame("Frame", nil, searchDD, BackdropTemplateMixin and "BackdropTemplate")
     ddBorder:SetAllPoints(searchDD)
     if ddBorder.SetBackdrop then
-        ddBorder:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+        ns.PixelBackdrop(ddBorder)
         ddBorder:SetBackdropBorderColor(ns.COLORS.accent.r, ns.COLORS.accent.g, ns.COLORS.accent.b, 1)
     end
 

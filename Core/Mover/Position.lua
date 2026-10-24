@@ -51,7 +51,10 @@ local function applyPos(mover)
     if opts.applyPos then opts.applyPos(); return end
     local target, db = mover.target, opts.db
 
-    if opts.scalable and db.scale then target:SetScale(db.scale) end
+    if opts.scalable and db.scale and math.abs(target:GetScale() - db.scale) > 0.0005 then
+        target:SetScale(db.scale)
+        ns.RefreshPixels()      -- one pixel is another size at the new scale
+    end
 
     target:ClearAllPoints()
     target:SetPoint("CENTER", UIParent, "CENTER", db.x or 0, db.y or 0)

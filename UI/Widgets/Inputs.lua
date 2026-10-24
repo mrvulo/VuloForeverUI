@@ -61,10 +61,7 @@ function UI:CreateEditBox(parent, config)
         BackdropTemplateMixin and "BackdropTemplate")
     borderFrame:SetAllPoints(eb)
     if borderFrame.SetBackdrop then
-        borderFrame:SetBackdrop({
-            edgeFile = "Interface\\Buttons\\WHITE8X8",
-            edgeSize = 1,
-        })
+        ns.PixelBackdrop(borderFrame)
         borderFrame:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
     end
     eb._borderFrame = borderFrame

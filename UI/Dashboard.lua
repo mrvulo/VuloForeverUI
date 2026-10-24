@@ -146,11 +146,7 @@ local function createStatCard(parent)
     card:SetHeight(STAT_H)
 
     if card.SetBackdrop then
-        card:SetBackdrop({
-            bgFile   = "Interface\\Buttons\\WHITE8X8",
-            edgeFile = "Interface\\Buttons\\WHITE8X8",
-            edgeSize = 1,
-        })
+        ns.PixelBackdrop(card, { fill = true })
         card:SetBackdropColor(ns.TC("card"))
         local b = ns.COLORS.borderDark
         card:SetBackdropBorderColor(b.r, b.g, b.b, 1)
@@ -187,11 +183,7 @@ local function createChip(parent)
     local chip = CreateFrame("Button", nil, parent, BackdropTemplateMixin and "BackdropTemplate")
     chip:SetHeight(24)
     if chip.SetBackdrop then
-        chip:SetBackdrop({
-            bgFile   = "Interface\\Buttons\\WHITE8X8",
-            edgeFile = "Interface\\Buttons\\WHITE8X8",
-            edgeSize = 1,
-        })
+        ns.PixelBackdrop(chip, { fill = true })
         chip:SetBackdropColor(ns.TC("chip"))
         local b = ns.COLORS.border
         chip:SetBackdropBorderColor(b.r, b.g, b.b, 0.5)
@@ -290,11 +282,7 @@ local function createSearchPrompt(parent)
     local box = CreateFrame("Button", nil, parent, BackdropTemplateMixin and "BackdropTemplate")
     box:SetHeight(SEARCH_H)
     if box.SetBackdrop then
-        box:SetBackdrop({
-            bgFile   = "Interface\\Buttons\\WHITE8X8",
-            edgeFile = "Interface\\Buttons\\WHITE8X8",
-            edgeSize = 1,
-        })
+        ns.PixelBackdrop(box, { fill = true })
         box:SetBackdropColor(ns.TC("card"))
         local a = ns.COLORS.accent
         box:SetBackdropBorderColor(a.r, a.g, a.b, 0.35)
