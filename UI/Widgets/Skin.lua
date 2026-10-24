@@ -324,6 +324,12 @@ function UI.EnableScrollWheel(scrollFrame, child, step)
     end)
 end
 
+local function edgeLayout(frame)
+    local px = ns:Pixel(frame, frame._vcEdge or 1)
+    local t, b, l, r = unpack(frame._vcBorders)
+    t:SetHeight(px); b:SetHeight(px); l:SetWidth(px); r:SetWidth(px)
+end
+
 function UI:StyleBackdrop(frame, opts)
     opts = opts or {}
     local bgColor    = opts.bg     or ns.COLORS.bg
@@ -353,9 +359,10 @@ function UI:StyleBackdrop(frame, opts)
         r:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
         r:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
     end
-    -- opts.edge: border width, 1 unless the theme draws a heavier frame
-    local t, b, l, r = unpack(frame._vcBorders)
-    t:SetHeight(edge); b:SetHeight(edge); l:SetWidth(edge); r:SetWidth(edge)
+    -- opts.edge: border width in physical pixels, 1 unless the theme draws a
+    -- heavier frame; laid out again whenever the frame's scale changes
+    frame._vcEdge = edge
+    ns.PixelLayout(frame, edgeLayout, "edges")
     for _, b in ipairs(frame._vcBorders) do
         b:SetColorTexture(borderRGB.r, borderRGB.g, borderRGB.b, borderRGB.a or 1)
     end

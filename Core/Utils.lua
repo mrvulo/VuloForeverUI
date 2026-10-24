@@ -74,15 +74,21 @@ end
 -- effective scale, which moves with the UI scale, a mover's scale and the
 -- settings window's scale; every registered layout runs again on each of
 -- those (ns.RefreshPixels). Weak keys: a frame that goes away is forgotten.
+-- tag: one layout per kind and frame, so a backdrop and our own edges on the
+-- same frame do not replace each other.
 local pixelLayouts = setmetatable({}, { __mode = "k" })
 
-function ns.PixelLayout(frame, fn)
-    pixelLayouts[frame] = fn
+function ns.PixelLayout(frame, fn, tag)
+    local t = pixelLayouts[frame]
+    if not t then t = {}; pixelLayouts[frame] = t end
+    t[tag or "layout"] = fn
     fn(frame)
 end
 
 function ns.RefreshPixels()
-    for f, fn in pairs(pixelLayouts) do fn(f) end
+    for f, t in pairs(pixelLayouts) do
+        for _, fn in pairs(t) do fn(f) end
+    end
 end
 
 local pixelEvents = CreateFrame("Frame")
@@ -122,7 +128,7 @@ function ns.PixelBackdrop(frame, opts)
         })
         if br then f:SetBackdropBorderColor(br, bg, bb, ba) end
         if cr then f:SetBackdropColor(cr, cg, cb, ca) end
-    end)
+    end, "backdrop")
 end
 
 function ns:PixelSnap(value, frame)
