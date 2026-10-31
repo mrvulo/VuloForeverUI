@@ -4,7 +4,7 @@ Source: static analysis of the Forever UI source (Gethe/wow-ui-source, branch `f
 
 ## Facts
 - Beta: 2026-09-17 to 2026-10-21, level cap 30. Release: 2026-11-04.
-- Local install: `C:\Program Files (x86)\World of Warcraft\_classic_beta_`, product `wow_classic_beta`, build 1.60.1.69893 (the doc's source snapshot); the client ran 1.60.1.69913 on 2026-09-18.
+- Local install since 2026-10-31: `C:\Program Files (x86)\World of Warcraft\_forever_` (live client; the beta folder `_classic_beta_` is gone). Research was done on the beta: `_classic_beta_`, product `wow_classic_beta`, build 1.60.1.69893 (the doc's source snapshot); the client ran 1.60.1.69913 on 2026-09-18.
 - TOC: `## Interface: 16001`. **Confirmed:** a plain `.toc` with this line loads; `GetBuildInfo()` reports `1.60.1`, build `69913`, interface `16001`.
 - Internal game type is **camelot**, part of the **Mainline family**. In Blizzard TOCs, `[Family]` resolves to `Mainline/` and `[Game]` to `Camelot/`. Classic FrameXML and the classic deprecation shims do **not** load.
 - **Secret values and addon restrictions are fully active**, the same as retail 12.x:
