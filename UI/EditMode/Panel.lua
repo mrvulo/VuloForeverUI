@@ -393,9 +393,18 @@ local function buildPanel()
     panel.fadeCap:SetText(L["OPACITY"])
     panel.fadeCap:SetTextColor(ns.TC("textMuted"))
 
+    -- Caption above, slider without a label below, the whole row 260 wide like
+    -- the buttons. With the label inline the row was label + 264 track + the
+    -- -/value/+ block: the label got cut and the + and the value hung past the
+    -- panel's right edge.
+    local FADE_TRACK = 260 - UI.SliderEndWidth(0, 100, 5, "")
     local function fadeSlider(state, label)
-        return UI:CreateSlider(panel, {
-            label = label, min = 0, max = 100, step = 5, width = 264,
+        local cap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        UI.Font(cap, 11)
+        cap:SetText(label)
+        cap:SetTextColor(ns.TC("label"))
+        local s = UI:CreateSlider(panel, {
+            label = "", min = 0, max = 100, step = 5, width = FADE_TRACK,
             tooltip = L["Shows once Edit Mode is closed; while it is open every window is at full strength."],
             get = function()
                 local m = ns._selectedMover
@@ -406,6 +415,8 @@ local function buildPanel()
                 if m then ns:SetMoverFade(m, state, v / 100) end
             end,
         })
+        s._cap = cap
+        return s
     end
     panel.fadeOoc    = fadeSlider("ooc", L["Out of combat"])
     panel.fadeCombat = fadeSlider("combat", L["In combat"])
@@ -436,14 +447,17 @@ local function buildPanel()
         end,
     })
 
+    -- Hangs under the reset button and the panel grows to fit it (layoutPanel).
+    -- Pinned to the bottom edge with a fixed panel height, a translation one
+    -- line longer than the English ran up behind the button.
     local hint = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(hint, 11)
-    hint:SetPoint("BOTTOMLEFT",  panel, "BOTTOMLEFT",  16, 14)
-    hint:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -16, 14)
+    hint:SetWidth(268)
     hint:SetJustifyH("LEFT")
     hint:SetSpacing(2)
     hint:SetTextColor(ns.TC("textMuted"))
     hint:SetText(L["Drag a box, or hover it and use the arrow keys (Shift = 5px). Hold Shift while dragging to lock one axis. Shift+right-click hides a box that is in the way."])
+    panel.hint = hint
 
     panel._acc = 0
     panel:SetScript("OnUpdate", function(self, elapsed)
@@ -546,15 +560,18 @@ local function layoutPanel(m)
     y = y - 34
 
     if m and ns:MoverCanFade(m) then
-        panel.fadeCap:Show(); panel.fadeOoc:Show(); panel.fadeCombat:Show()
-        panel.hoverCap:Show(); panel.hoverToggle:Show()
+        panel.fadeCap:Show(); panel.hoverCap:Show(); panel.hoverToggle:Show()
         panel.fadeCap:ClearAllPoints()
         panel.fadeCap:SetPoint("TOPLEFT", panel, "TOPLEFT", 18, y - 4)
-        panel.fadeOoc:ClearAllPoints()
-        panel.fadeOoc:SetPoint("TOPLEFT", panel, "TOPLEFT", 20, y - 22)
-        panel.fadeCombat:ClearAllPoints()
-        panel.fadeCombat:SetPoint("TOPLEFT", panel, "TOPLEFT", 20, y - 66)
-        y = y - 110
+        y = y - 22
+        for _, s in ipairs({ panel.fadeOoc, panel.fadeCombat }) do
+            s._cap:Show(); s:Show()
+            s._cap:ClearAllPoints()
+            s._cap:SetPoint("TOPLEFT", panel, "TOPLEFT", 20, y)
+            s:ClearAllPoints()
+            s:SetPoint("TOPLEFT", panel, "TOPLEFT", 20, y - 16)
+            y = y - 44
+        end
         panel.hoverCap:ClearAllPoints()
         panel.hoverCap:SetPoint("LEFT", panel, "TOPLEFT", 18, y - 13)
         panel.hoverToggle:ClearAllPoints()
@@ -562,12 +579,16 @@ local function layoutPanel(m)
         y = y - 34
     else
         panel.fadeCap:Hide(); panel.fadeOoc:Hide(); panel.fadeCombat:Hide()
+        panel.fadeOoc._cap:Hide(); panel.fadeCombat._cap:Hide()
         panel.hoverCap:Hide(); panel.hoverToggle:Hide()
     end
 
     panel.reset:ClearAllPoints()
     panel.reset:SetPoint("TOPLEFT", panel, "TOPLEFT", 18, y - 8)
-    panel:SetHeight(-(y - 8) + 92)
+    panel.hint:ClearAllPoints()
+    panel.hint:SetPoint("TOPLEFT", panel.reset, "BOTTOMLEFT", -2, -10)
+    panel:SetHeight(-(y - 8) + panel.reset:GetHeight() + 10
+        + math.ceil(panel.hint:GetStringHeight()) + 14)
 end
 
 -- the candidate list depends on the selected mover (no self, no loops), so it
