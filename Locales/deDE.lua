@@ -1670,6 +1670,7 @@ ns:RegisterLocale("deDE", {
     ["Open this element's settings"] = "Einstellungen dieses Elements öffnen",
     ["POSITION"] = "POSITION",
     ["SCALE"] = "SKALIERUNG",
+    ["WIDTH"] = "BREITE",
     ["ANCHOR"] = "ANKER",
     ["Pin this frame to a screen edge/corner so it stays put across resolution changes. Off keeps it centred."] = "Heftet diesen Rahmen an eine Bildschirmkante oder -ecke, damit er bei Auflösungswechseln bleibt, wo er ist. Aus hält ihn mittig.",
     ["Which screen point the frame is pinned to (keeps it put across resolution changes)."] = "An welchen Bildschirmpunkt der Rahmen geheftet ist (hält ihn bei Auflösungswechseln an Ort und Stelle).",

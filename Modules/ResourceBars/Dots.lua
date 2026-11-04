@@ -370,6 +370,10 @@ local function build()
     frame.mover = ns:CreateMover(frame, {
         key = "resourcebar_dots", label = L["DoT bars"], db = d, module = "resourcebars",
         width = d.width, height = d.height * 3, scalable = true, fill = true,
+        -- the same setting as the options page, read live from the profile
+        widthSlider = { min = 80, max = 400, step = 1,
+            get = function() return db().width end,
+            set = function(v) db().width = v; Dots.Apply() end },
     })
     ns:ApplyMover(frame.mover)
     events = CreateFrame("Frame")

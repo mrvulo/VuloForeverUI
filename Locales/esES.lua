@@ -1670,6 +1670,7 @@ local T = {
     ["Open this element's settings"] = "Abrir los ajustes de este elemento",
     ["POSITION"] = "POSICIÓN",
     ["SCALE"] = "ESCALA",
+    ["WIDTH"] = "ANCHURA",
     ["ANCHOR"] = "ANCLAJE",
     ["Pin this frame to a screen edge/corner so it stays put across resolution changes. Off keeps it centred."] = "Fija este marco a un borde o esquina de la pantalla para que se quede en su sitio al cambiar de resolución. Desactivado, se mantiene centrado.",
     ["Which screen point the frame is pinned to (keeps it put across resolution changes)."] = "A qué punto de la pantalla se fija el marco (lo mantiene en su sitio al cambiar de resolución).",

@@ -1647,6 +1647,7 @@ ns:RegisterLocale("ptBR", {
     ["Open this element's settings"] = "Abrir as configurações deste elemento",
     ["POSITION"] = "POSIÇÃO",
     ["SCALE"] = "ESCALA",
+    ["WIDTH"] = "LARGURA",
     ["ANCHOR"] = "ÂNCORA",
     ["Pin this frame to a screen edge/corner so it stays put across resolution changes. Off keeps it centred."] = "Fixa esta moldura em uma borda/canto da tela para que ela permaneça no lugar entre mudanças de resolução. Desativado a mantém centralizada.",
     ["Which screen point the frame is pinned to (keeps it put across resolution changes)."] = "A que ponto da tela a moldura está fixada (a mantém no lugar entre mudanças de resolução).",

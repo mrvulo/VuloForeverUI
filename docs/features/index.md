@@ -296,6 +296,7 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du den DoT wirkst, **dann** füllt sich die Leiste mit der Restzeit, das Symbol wird farbig und rechts steht die Zeit – auch im Kampf.
 - **Dann** hat jeder DoT seine eigene Balkenfarbe (rot, lila, orange, blau, gelb in Zeilenreihenfolge), je Zauber unter „Verfolgte Zauber“ änderbar.
 - **Wenn** du danach einen Buff bekommst, der den DoT stärker macht, **dann** wird der Balken grün und links steht z. B. „+13%“; ohne Gewinn (gleich oder schwächer) steht nichts und der Balken behält seine Farbe.
+- **Wenn** du im Bearbeitungsmodus die DoT-Leisten anklickst und im Fensterpanel den Regler „Breite“ ziehst, **dann** werden die Leisten und ihr Kasten nach kurzem Loslassen so breit; derselbe Wert steht danach unter Ressourcenleisten → Dots → „Breite“.
 - **Wenn** du das Ziel wechselst, **dann** zeigen die Leisten sofort die DoTs des neuen Ziels.
 - **Dann** lassen sich Position (Bearbeitungsmodus), Breite, Höhe, Abstand, Textur, Farben und die verfolgten Zauber einstellen, sichtbar nach kurzer Pause.
 

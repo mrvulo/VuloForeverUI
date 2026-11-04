@@ -215,6 +215,28 @@ local function buildPanel()
         set = function(_, v) local m = ns._selectedMover; if m then ns:MoverSetScale(m, v) end end,
     })
 
+    -- Width, for a window whose module owns its width (opts.widthSlider =
+    -- { min, max, step, get, set }). The module stores it and rebuilds; the
+    -- box follows through RefreshMoverGeometry, so dragging the slider shows
+    -- on the window, not only on the options page.
+    panel.widthCapS = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    UI.Font(panel.widthCapS, 10)
+    panel.widthCapS:SetText(L["WIDTH"])
+    panel.widthCapS:SetTextColor(ns.TC("textMuted"))
+    panel.widthSlider = UI:CreateSlider(panel, {
+        label = "", min = 50, max = 600, step = 1, width = 150,
+        get = function()
+            local m = ns._selectedMover
+            local w = m and m.opts.widthSlider
+            return w and w.get() or 100
+        end,
+        set = function(_, v)
+            local m = ns._selectedMover
+            local w = m and m.opts.widthSlider
+            if w then w.set(v) end
+        end,
+    })
+
     panel.anchorCap = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     UI.Font(panel.anchorCap, 10)
     panel.anchorCap:SetText(L["ANCHOR"])
@@ -496,6 +518,17 @@ local function layoutPanel(m)
         panel.scaleCap:Hide(); panel.scaleSlider:Hide()
     end
 
+    if m and m.opts and m.opts.widthSlider then
+        panel.widthCapS:Show(); panel.widthSlider:Show()
+        panel.widthCapS:ClearAllPoints()
+        panel.widthCapS:SetPoint("TOPLEFT", panel, "TOPLEFT", 18, y)
+        panel.widthSlider:ClearAllPoints()
+        panel.widthSlider:SetPoint("TOPLEFT", panel, "TOPLEFT", 20, y - 20)
+        y = y - 48
+    else
+        panel.widthCapS:Hide(); panel.widthSlider:Hide()
+    end
+
     if anchorable then
         panel.anchorCap:Show(); panel.anchorToggle:Show(); panel.anchorDrop:Show()
         panel.anchorCap:ClearAllPoints()
@@ -641,6 +674,12 @@ end
 local function refreshCaps(m)
     if m and m.opts and m.opts.scalable and panel.scaleSlider._vcSetup then
         panel.scaleSlider._vcSetup(panel.scaleSlider, panel.scaleSlider._vcConfig)
+    end
+    local ws = m and m.opts and m.opts.widthSlider
+    if ws and panel.widthSlider._vcSetup then
+        local cfg = panel.widthSlider._vcConfig
+        cfg.min, cfg.max, cfg.step = ws.min, ws.max, ws.step or 1
+        panel.widthSlider._vcSetup(panel.widthSlider, cfg)
     end
     if m and m.opts and m.opts.anchorable then
         if panel.anchorDrop._button then panel.anchorDrop._button._refresh() end
