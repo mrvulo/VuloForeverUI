@@ -165,11 +165,13 @@ local function new(frame, opts)
         if not opts.isActive() or editorOpen() then return end
         if mover and ns._draggingMover == mover then return end
         local p = savedPos()
+        local moved
         if p then
-            place(p.x, p.y)
+            moved = place(p.x, p.y)
         elseif placedByUs then
-            handBack()
+            moved = handBack()
         end
+        if moved and I.OnPlaced then I.OnPlaced() end
     end
 
     local function syncProxy()
@@ -183,6 +185,18 @@ local function new(frame, opts)
         I.moveDB.x = l + w / 2 - (UIParent:GetWidth() or 0) / 2
         I.moveDB.y = b + h / 2 - (UIParent:GetHeight() or 0) / 2
         return true
+    end
+
+    -- The frame moved without the box: the box follows, and so does every
+    -- window docked to it. The box is hidden outside the editor, where its
+    -- OnUpdate never runs, so without this a docked window measured against
+    -- the place the frame had BEFORE ours was applied -- after a relog the
+    -- DoT bars stood off by exactly that distance. Followers are carried, not
+    -- re-measured (ns:RepositionMoverChildren).
+    function I.OnPlaced()
+        if syncProxy() and mover and ns.RepositionMoverChildren then
+            ns:RepositionMoverChildren(mover)
+        end
     end
 
     local function settle()

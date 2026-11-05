@@ -305,6 +305,7 @@ jemand ohne den Code prüfen kann.
 ### F-47 Fensterplätze auch im Blizzard-Layout
 - Angenommen in Blizzards Bearbeitungsmodus ist ein eigenes Layout aktiv (keine Vorlage), **wenn** du in unserem Bearbeitungsmodus Spieler-, Ziel- oder Fokusrahmen, Minikarte oder Questverfolgung verschiebst und ihn schließt, **dann** steht der Rahmen in Blizzards Bearbeitungsmodus am selben Platz, auch nach `/reload`.
 - **Wenn** du im Kampf eine Stufe aufsteigst, **dann** bleibt der Spielerrahmen, wo er ist.
+- Angenommen ein Fenster ist an Spieler- oder Zielrahmen geheftet („Fenster folgen“, z. B. die DoT-Leisten am Ziel), **wenn** du dich neu einloggst oder `/reload` machst, **dann** steht es am selben Platz am Rahmen wie vorher.
 - **Wenn** du „Diesen Rahmen zurücksetzen“ drückst, **dann** springt er an Blizzards Standardplatz, und nach dem Schließen steht er auch im Blizzard-Layout dort.
 - Angenommen eine Vorlage („Modern“/„Klassisch“) ist aktiv, **dann** kommt beim Schließen einmal der Hinweis, ein eigenes Layout anzulegen; die Rahmen bleiben trotzdem an unserem Platz.
 
