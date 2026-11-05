@@ -278,6 +278,7 @@ jemand ohne den Code prüfen kann.
 - Angenommen Wut oder Energie, **dann** steht nur der Wert (wie bei Blizzard). Tot, als Geist oder im Fahrzeug zeigt der Rahmen wieder Blizzards eigenen Text.
 - **Wenn** du „Statustext auf den Balken“ ausschaltest, **dann** sind unsere Texte weg und Blizzards Anzeige ist zurück.
 - **Dann** sitzen bei Spieler, Ziel und Fokus alle Balkentexte auf den sichtbaren Balken: in der Höhe mittig, links und rechts mit demselben Abstand (3 px) zum Balkenrand, Leben und Mana gleich.
+- **Wenn** du im Kampf ein neues Ziel nimmst, **dann** bleibt dessen HP-Wert rechts im Lebensbalken und springt nicht neben das Porträt.
 
 ### F-44 Angeltaste
 - Angenommen eine Taste ist unter Tastenbelegung → AddOns → „VuloForeverUI: Angeln“ belegt und eine Waffe in der Hand, **wenn** du die Taste drückst, **dann** legt sie die Angel aus den Taschen an; nächster Druck: der beste Köder, den dein Angelskill erlaubt (wenn keiner drauf ist); nächster Druck: Auswerfen.
@@ -311,9 +312,6 @@ jemand ohne den Code prüfen kann.
 
 ## Offen
 
-- 2026-11-05: HP-Zahl am Blizzard-Zielrahmen steht im Kampf manchmal rechts
-  neben dem Porträt statt im Balken (Stil „Standard“, wir fassen den Text dort
-  nicht an). Ursache unbekannt; beim nächsten Mal Punkte des Textes abfragen.
 
 - 2026-10-09: schwarzer Balken links an der Namensplakette des Ziels, nach dem
   Schrifttest (`/vfdiag fonts`) und den Kopierfenster-Umbauten; nach einem

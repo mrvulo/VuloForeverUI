@@ -152,7 +152,6 @@ local function checkClassification(frame)
     end)
 
     Classic.Layout("target.classification.layout." .. frame.unit, function()
-        local hb, hc = p.hb, p.hc
         if minus then
             overlay.Background:SetSize(119, 12)
             overlay.Background:SetPoint("BOTTOMLEFT", 7, 47)
@@ -160,9 +159,19 @@ local function checkClassification(frame)
             overlay.Background:SetSize(119, 25)
             overlay.Background:SetPoint("BOTTOMLEFT", 7, 35)
         end
+    end)
+
+    -- The bar texts at once, in combat too. CheckClassification ends in
+    -- UpdateHealthBarVisuals (Camelot/TargetFrame.lua:82), which sets
+    -- RightText:SetPoint("RIGHT", -3, 0) on its PARENT -- since setup that is
+    -- the whole frame container, so the value stood right of the portrait.
+    -- Waiting for the end of the fight (Classic.Layout) left it there for every
+    -- target picked in combat. Only font strings are anchored here, onto our
+    -- own bars; no protected frame moves.
+    Classic.Guard("target.classification.texts", function()
+        local hb, hc, mb = p.hb, p.hc, p.mb
         Classic.PinBarTexts(overlay.HealthBar, hb.TextString, hc.LeftText, hc.RightText,
             hc.DeadText, hc.UnconsciousText)
-        local mb = p.mb
         Classic.PinBarTexts(overlay.ManaBar, mb.TextString, mb.LeftText, mb.RightText)
     end)
 end
