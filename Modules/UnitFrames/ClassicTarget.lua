@@ -159,16 +159,6 @@ local function checkClassification(frame)
             overlay.Background:SetSize(119, 25)
             overlay.Background:SetPoint("BOTTOMLEFT", 7, 35)
         end
-    end)
-
-    -- The bar texts at once, in combat too. CheckClassification ends in
-    -- UpdateHealthBarVisuals (Camelot/TargetFrame.lua:82), which sets
-    -- RightText:SetPoint("RIGHT", -3, 0) on its PARENT -- since setup that is
-    -- the whole frame container, so the value stood right of the portrait.
-    -- Waiting for the end of the fight (Classic.Layout) left it there for every
-    -- target picked in combat. Only font strings are anchored here, onto our
-    -- own bars; no protected frame moves.
-    Classic.Guard("target.classification.texts", function()
         local hb, hc, mb = p.hb, p.hc, p.mb
         Classic.PinBarTexts(overlay.HealthBar, hb.TextString, hc.LeftText, hc.RightText,
             hc.DeadText, hc.UnconsciousText)
@@ -372,14 +362,21 @@ local function setup(frame, unit)
         main.Name:ClearAllPoints()
         main.Name:SetPoint("TOPLEFT", 36, -30)
 
-        hb.TextString:SetParent(container)
-        hc.RightText:SetParent(container)
-        hc.LeftText:SetParent(container)
-        hc.DeadText:SetParent(container)
-        hc.UnconsciousText:SetParent(container)
-        mb.TextString:SetParent(container)
-        mb.RightText:SetParent(container)
-        mb.LeftText:SetParent(container)
+        -- Onto OUR bars, not the frame container. UpdateHealthBarVisuals
+        -- (Camelot/TargetFrame.lua:82) sets RightText:SetPoint("RIGHT", -3, 0)
+        -- on its parent at every classification check, in combat too; with the
+        -- container as parent that put the value right of the portrait until
+        -- the fight was over -- and re-pinning in combat is refused, the texts
+        -- belonging to protected frames. With our bar as parent the client's
+        -- own point is the place we want anyway (3 px = TEXT_INSET).
+        hb.TextString:SetParent(overlay.HealthBar)
+        hc.RightText:SetParent(overlay.HealthBar)
+        hc.LeftText:SetParent(overlay.HealthBar)
+        hc.DeadText:SetParent(overlay.HealthBar)
+        hc.UnconsciousText:SetParent(overlay.HealthBar)
+        mb.TextString:SetParent(overlay.ManaBar)
+        mb.RightText:SetParent(overlay.ManaBar)
+        mb.LeftText:SetParent(overlay.ManaBar)
 
         main.ReputationColor:SetSize(119, 19)
         main.ReputationColor:ClearAllPoints()

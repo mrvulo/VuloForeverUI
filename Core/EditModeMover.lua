@@ -47,6 +47,14 @@ local _, ns = ...
 local instances = {}
 local syncClientLayout     -- below; also run when the client's editor closes
 
+-- Two Edit Mode anchors at the same place (half a unit of slack).
+local function sameAnchor(a, b)
+    return type(a) == "table" and type(b) == "table" and a.point == b.point
+        and a.relativeTo == b.relativeTo and a.relativePoint == b.relativePoint
+        and math.abs((a.offsetX or 0) - (b.offsetX or 0)) < 0.5
+        and math.abs((a.offsetY or 0) - (b.offsetY or 0)) < 0.5
+end
+
 local function baseMethod(f, base, name)
     local fn = f[base]
     if type(fn) == "function" then return fn end
@@ -144,7 +152,7 @@ local function new(frame, opts)
             local d = defaultAnchor()
             if d then a, a2 = d, nil end
         end
-        if InCombatLockdown() then pending = "handback"; return false end
+        if InCombatLockdown() then pending = toDefault and "default" or "handback"; return false end
         local clear = baseMethod(frame, "ClearAllPointsBase", "ClearAllPoints")
         local setPoint = baseMethod(frame, "SetPointBase", "SetPoint")
         if not (clear and setPoint) then return false end
@@ -193,10 +201,14 @@ local function new(frame, opts)
     -- the place the frame had BEFORE ours was applied -- after a relog the
     -- DoT bars stood off by exactly that distance. Followers are carried, not
     -- re-measured (ns:RepositionMoverChildren).
+    -- Only when the box really moved: a follower's own onPlaced may call back
+    -- into Apply (the minimap's does), and an unconditional carry turned that
+    -- into a loop through settle() that never ended.
     function I.OnPlaced()
-        if syncProxy() and mover and ns.RepositionMoverChildren then
-            ns:RepositionMoverChildren(mover)
-        end
+        local wx, wy = I.moveDB.x, I.moveDB.y
+        if not syncProxy() then return end
+        if wx and wy and math.abs(I.moveDB.x - wx) < 0.5 and math.abs(I.moveDB.y - wy) < 0.5 then return end
+        if mover and ns.RepositionMoverChildren then ns:RepositionMoverChildren(mover) end
     end
 
     local function settle()
@@ -242,8 +254,8 @@ local function new(frame, opts)
         if event == "PLAYER_REGEN_ENABLED" then
             local what = pending
             pending = nil
-            if what == "handback" and not savedPos() then
-                handBack()
+            if (what == "handback" or what == "default") and not savedPos() then
+                handBack(what == "default")
             elseif what then
                 I.Apply()
             end
@@ -251,30 +263,31 @@ local function new(frame, opts)
         end
         C_Timer.After(0, I.Apply)
     end)
-    local em = _G.EditModeManagerFrame
-    if em then
-        em:HookScript("OnShow", function()
-            local a = anchorInfo()
-            clientAnchor = a and { a.point, a.relativeTo, a.relativePoint, a.offsetX, a.offsetY } or nil
-        end)
-        em:HookScript("OnHide", function()
-            C_Timer.After(0, function()
-                if em.IsEditModeActive and em:IsEditModeActive() then return end
-                local before = clientAnchor
-                clientAnchor = nil
-                if not opts.isActive() then return end
-                -- The client's editor saved a new place: that one counts now.
-                local a = anchorInfo()
-                if before and a and savedPos() and not (before[1] == a.point and before[2] == a.relativeTo
-                    and before[3] == a.relativePoint and before[4] == a.offsetX and before[5] == a.offsetY) then
-                    opts.setPos(nil)
-                    return
-                end
-                I.Apply()
-                -- a save there wrote the client's old copy of our place back
-                syncClientLayout()
-            end)
-        end)
+    -- The client's editor opens and closes (one shared hook drives all boxes,
+    -- see hookClientEditor). Its place is noted on the way in; on the way out
+    -- a place that differs from that note AND from what we wrote ourselves is
+    -- a move made there, and it counts from then on. The manager's copy can be
+    -- older than the saved layout (our SaveLayouts does not refresh it), and
+    -- leaving its editor reloads the saved one -- so "different from the note"
+    -- alone took our own sync for a move of the player's.
+    function I.ClientEditorShown()
+        local a = anchorInfo()
+        clientAnchor = a and { point = a.point, relativeTo = a.relativeTo, relativePoint = a.relativePoint,
+                               offsetX = a.offsetX, offsetY = a.offsetY } or nil
+    end
+    function I.ClientEditorHidden()
+        local before = clientAnchor
+        clientAnchor = nil
+        if not opts.isActive() then return end
+        local a = anchorInfo()
+        if before and a and savedPos() and not sameAnchor(before, a) then
+            local ours = I.LayoutAnchor()
+            if not (ours and sameAnchor(a, ours.anchor)) then
+                opts.setPos(nil)
+                return
+            end
+        end
+        I.Apply()
     end
 
     proxy = CreateFrame("Frame", nil, UIParent)
@@ -309,6 +322,8 @@ local function new(frame, opts)
                 handBack(true)
                 syncProxy()
                 settle()
+                -- from the options page the editor is closed: no close to wait for
+                if not ns._editActive then syncClientLayout() end
                 return
             end
             if not opts.isActive() then return end
@@ -324,6 +339,10 @@ local function new(frame, opts)
             end
         end,
         onMove = function()
+            -- "Reset this frame" in the panel comes here (ns:MoverSetCenter),
+            -- not through applyPos: without this it saved the screen centre
+            -- as a place of ours.
+            if ns._inMoverReset then mover.opts.applyPos(); return end
             if opts.isActive() then commitProxy() end
         end,
         editPreview = preview,
@@ -369,6 +388,7 @@ local function new(frame, opts)
     function I.Restore()
         if not I.editSaved then return end
         local p = I.editSaved.pos
+        I.resetLayout = nil     -- a discarded reset writes nothing
         opts.setPos(p and { x = p.x, y = p.y } or nil)
         if opts.isActive() then
             if p then I.Apply() else handBack() end
@@ -393,13 +413,6 @@ end
 
 local L = ns.L
 local presetHintShown
-
-local function sameAnchor(a, b)
-    return type(a) == "table" and a.point == b.point and a.relativeTo == b.relativeTo
-        and a.relativePoint == b.relativePoint
-        and math.abs((a.offsetX or 0) - (b.offsetX or 0)) < 0.5
-        and math.abs((a.offsetY or 0) - (b.offsetY or 0)) < 0.5
-end
 
 function syncClientLayout()
     if InCombatLockdown() then
@@ -445,12 +458,36 @@ function syncClientLayout()
 end
 
 -- Registered with the first box: the editor (UI/EditMode/) loads after Core.
+-- Not while the session's snapshot is kept: a fight closes the editor only for
+-- a while (keepSnapshot), and a Discard afterwards would leave a place in the
+-- layout that the player threw away.
 local hooked
 local function hookEditor()
     if hooked or not ns.RegisterEditModeHook then return end
     hooked = true
     ns:RegisterEditModeHook(function(on)
-        if not on then syncClientLayout() end
+        if not on and not ns._editSnapshot then syncClientLayout() end
+    end)
+end
+
+-- One hook for all boxes, so every box has judged the client's editor before
+-- the single sync writes anything: a sync between two boxes wrote the old
+-- place of the second one over the move the player had just saved there.
+local clientHooked
+local function hookClientEditor()
+    local em = _G.EditModeManagerFrame
+    if clientHooked or not em then return end
+    clientHooked = true
+    em:HookScript("OnShow", function()
+        for _, I in ipairs(instances) do I.ClientEditorShown() end
+    end)
+    em:HookScript("OnHide", function()
+        C_Timer.After(0, function()
+            if em.IsEditModeActive and em:IsEditModeActive() then return end
+            for _, I in ipairs(instances) do I.ClientEditorHidden() end
+            -- a save there may have written the client's old copy of our places
+            syncClientLayout()
+        end)
     end)
 end
 
@@ -458,6 +495,7 @@ end
 function ns:AttachEditModeMover(frame, opts)
     if not frame then return nil end
     hookEditor()
+    hookClientEditor()
     for _, I in ipairs(instances) do
         if I.frame == frame then return I end
     end
