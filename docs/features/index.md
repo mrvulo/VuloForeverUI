@@ -335,6 +335,13 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
   `ContainerFrame_GenerateFrame` (dirty, then `UpdateContainerFrameAnchors`
   rebuilding the cache securely), even under the park. That makes a lasting
   taint through a missing heal unlikely, and the writer is still unknown.
+  Follow-up error the same day: right-click on a bag item gives
+  `ADDON_ACTION_FORBIDDEN UNKNOWN()` from `UseContainerItem`. Same cause,
+  very likely: `ContainerFrameItemButton_OnClick` reads
+  `BankFrame:GetActiveBankType()`, which returns `BankPanel.bankType`. The
+  tainted bank open (its `SetTab`) wrote that field, so every item use that
+  needs a protected action fails for the rest of the session. We do not touch
+  `BankPanel` anywhere. `/reload` clears it.
   Next step: `/console taintLog 1`, get the error at the banker, then read
   `Logs/taint.log` on the PC (it names the variable and the file:line that
   wrote it).
