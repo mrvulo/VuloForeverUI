@@ -321,6 +321,19 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 
 ## Offen
 
+- 2026-11-05 (F-09): `PurchaseBankTab()` forbidden came back. The return
+  channel has logged a `taint` note "bagsShown … after bag toggle" in EVERY
+  session since 2026-10-07, so the fixes did not hold. Mechanism (client
+  source): `ContainerFrameSettingsManager:GetBagsShown()` refills the cache
+  only after a `MarkBagsShownDirty()`, and whoever reads it first writes it.
+  Under the park the client's bags never become visible, so their
+  OnShow/OnHide never dirty the cache securely and one tainted write stays
+  for the whole session. Candidates for the tainted first read:
+  `UpdateContainerFrameAnchors` via `UIParent_ManageFramePositions`,
+  triggered synchronously from our code (CVar or bar or Edit Mode calls). Fix
+  idea: stash instead of park, so every secure open/close heals the cache.
+  The error only comes while the free first bank tab is still unbought; after
+  buying it with the buy button in our bank window it stops.
 
 - 2026-10-09: schwarzer Balken links an der Namensplakette des Ziels, nach dem
   Schrifttest (`/vfdiag fonts`) und den Kopierfenster-Umbauten; nach einem
