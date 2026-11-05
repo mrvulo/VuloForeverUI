@@ -168,6 +168,7 @@ Modules\DamageMeter\Options.lua
 Modules\CooldownManager\Core.lua
 Modules\CooldownManager\Bindings.lua
 Modules\CooldownManager\Glow.lua
+Modules\CooldownManager\AntiClip.lua
 Modules\CooldownManager\Bar.lua
 Modules\CooldownManager\Picker.lua
 Modules\CooldownManager\Preview.lua

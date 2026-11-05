@@ -175,6 +175,13 @@ These apply to every visible change, in every module.
 - Own icon bars, driven by duration objects, never by reading numbers.
 - Queued next-swing abilities light up like the action bar button
   (`C_Spell.IsCurrentSpell`, alpha folded from the boolean).
+- **Dot on the target** (row option, `AntiClip.lua`, 2026-11-05): the dot's
+  remaining time on the target in the middle of the icon, green once a recast
+  no longer clips (cast time + the row's lead). Target auras are closed in
+  combat, so the client draws it: an aura container per icon (same route as
+  the dot bars) with our font string as duration text and a colour curve over
+  the remaining seconds. The player chose this over a glow, which would only
+  have worked out of combat. The row's cooldown number gives way to it.
 
 ## Nameplates (`Modules/Nameplates/`)
 

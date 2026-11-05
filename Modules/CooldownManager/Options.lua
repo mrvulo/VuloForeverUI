@@ -504,6 +504,28 @@ local function spellPage()
               eApply()
           end },
 
+        { type = "spacer", height = 6 },
+        { type = "header", text = L["Dot on the target"] },
+        { type = "desc", text = L["|cffaaaaaaShows how long this spell's damage over time still runs on your target, in the middle of the icon. The number turns green once casting it again no longer cuts off ticks: the cast time plus the lead below. The client draws it, so it works in combat too. The cooldown number of this row gives way to it; the swipe stays.|r"] },
+        { type = "toggle", label = L["Show the time left on the target"],
+          get = function() local e = entry(); return e and e.antiClip end,
+          set = function(_, v)
+              local e = entry()
+              if not e then return end
+              e.antiClip = v or nil
+              eApply()
+          end },
+        { type = "slider", label = L["Lead in seconds"], min = 0, max = 3, step = 0.1,
+          tooltip = L["How much earlier than the cast time the number turns green: the global cooldown and your reaction."],
+          get = function() local e = entry(); return (e and e.antiClipLead) or CM.AntiClip.DEFAULT_LEAD end,
+          set = function(_, v)
+              local e = entry()
+              if not e then return end
+              e.antiClipLead = v
+              eApply()
+          end },
+        eColor(L["Recast color"], "antiClipColor", CM.AntiClip.DEFAULT_COLOR),
+
         { type = "spacer", height = 8 },
         { type = "button", label = L["Hand every setting back to the bar"],
           onClick = function()

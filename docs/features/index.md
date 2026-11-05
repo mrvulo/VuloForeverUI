@@ -67,6 +67,7 @@ jemand ohne den Code prüfen kann.
 | F-46 | DoT-Leisten am Ziel mit Stärke beim Neuwirken | Ressourcenleisten | gebaut | – |
 | F-47 | Fensterplätze aus unserem Bearbeitungsmodus auch im Blizzard-Layout | Bearbeitungsmodus | verworfen | – |
 | F-48 | Berufe-Tab: Symbol über Erzen und Kräutern | Komfort | gebaut | – |
+| F-49 | DoT-Restzeit auf dem Symbol, grün wenn Nachwirken nichts abschneidet | Cooldown Manager | gebaut | – |
 
 ---
 
@@ -318,6 +319,12 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Dann** zeigt der Tab, ob der Charakter einen Sammelberuf kennt.
 
 ---
+
+### F-49 DoT-Restzeit auf dem Symbol
+- Angenommen eine Zeile mit einem DoT (z. B. Verderbnis, Schattenwort: Schmerz) und „Restzeit auf dem Ziel zeigen“ an, **wenn** du den DoT auf ein feindliches Ziel wirkst, **dann** steht mitten auf dem Symbol seine Restzeit, auch im Kampf.
+- **Dann** wird die Zahl grün, sobald nur noch Wirkzeit + Vorlauf übrig sind (Sofortzauber mit Vorlauf 1: bei 1 Sekunde); vorher hat sie die Farbe der Abklingzahl der Leiste.
+- **Wenn** du das Ziel wechselst, **dann** zeigt das Symbol sofort die Zeit auf dem neuen Ziel, oder nichts, wenn der DoT dort nicht läuft.
+- **Wenn** du „Vorlauf in Sekunden“ oder „Farbe zum Nachwirken“ änderst, **dann** zeigt das Symbol es sofort, auch bei einem laufenden DoT.
 
 ## Offen
 

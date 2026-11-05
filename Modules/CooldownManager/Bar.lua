@@ -490,10 +490,15 @@ function CM.StyleFrame(frame, bar, list, owned)
         UI.FontFor("cooldownmanager", icon.count, bar.countSize or 11, "OUTLINE")
         icon.count:SetTextColor(bar.countColor.r, bar.countColor.g, bar.countColor.b)
         icon.count:SetShown(CM.Val(bar, entry, "showCount") ~= false)
+        -- A dot row's time on the target (AntiClip.lua), last: it may take
+        -- the countdown's place.
+        local px = math.floor((icon.button:GetWidth() or size) + 0.5)
+        CM.AntiClip.Style(icon, bar, entry, px > 0 and px or size)
     end
     for i = count + 1, #frame.icons do
         frame.icons[i].button:Hide()
         CM.Glow.Clear(frame.icons[i])
+        CM.AntiClip.Release(frame.icons[i])
     end
 
     CM.PaintFrame(frame, bar, list, frame.ownedCount)
