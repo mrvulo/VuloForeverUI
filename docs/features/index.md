@@ -279,6 +279,7 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du „Statustext auf den Balken“ ausschaltest, **dann** sind unsere Texte weg und Blizzards Anzeige ist zurück.
 - **Dann** sitzen bei Spieler, Ziel und Fokus alle Balkentexte auf den sichtbaren Balken: in der Höhe mittig, links und rechts mit demselben Abstand (3 px) zum Balkenrand, Leben und Mana gleich.
 - **Wenn** du im Kampf ein neues Ziel nimmst, **dann** bleibt dessen HP-Wert rechts im Lebensbalken und springt nicht neben das Porträt.
+- **Wenn** du Schaden bekommst (deutscher Client), **dann** steht die Schadenszahl mittig auf deinem Porträt, nicht nach links versetzt.
 
 ### F-44 Angeltaste
 - Angenommen eine Taste ist unter Tastenbelegung → AddOns → „VuloForeverUI: Angeln“ belegt und eine Waffe in der Hand, **wenn** du die Taste drückst, **dann** legt sie die Angel aus den Taschen an; nächster Druck: der beste Köder, den dein Angelskill erlaubt (wenn keiner drauf ist); nächster Druck: Auswerfen.

@@ -43,6 +43,8 @@ local isSetUp = false
 
 -- Blizzard's tree, nil-safe down to the branches; a missing leaf is caught by
 -- the pcall around the block that wants it.
+local hitHooked = false   -- LocalizeFrames hook for the damage number, once
+
 local function parts()
     local pf = _G.PlayerFrame
     if not pf then return nil end
@@ -680,8 +682,21 @@ local function setup()
 
         local hit = p.main.HitIndicator
         hit:SetParent(p.ctx)
-        hit.HitText:ClearAllPoints()
-        hit.HitText:SetPoint("CENTER", hit, "TOPLEFT", 54, -46)
+        local function centerHitText()
+            hit.HitText:ClearAllPoints()
+            hit.HitText:SetPoint("CENTER", hit, "TOPLEFT", 54, -46)
+        end
+        centerHitText()
+        -- deDE/esES/esMX/ptBR/ptPT/ruRU re-anchor the number by its LEFT
+        -- edge at x 24 (Mainline/Localization.lua :6), from LocalizeFrames
+        -- on VARIABLES_LOADED -- after us, so the damage sat left of the
+        -- portrait's centre. Re-centre once after it; out of combat by then.
+        if not hitHooked and type(LocalizeFrames) == "function" then
+            hitHooked = true
+            hooksecurefunc("LocalizeFrames", function()
+                if not ns:InCombat() then centerHitText() end
+            end)
+        end
     end)
     Classic.Layout("player.setup.group", function() setupGroupIndicator(p.ctx.GroupIndicator) end)
     Classic.Layout("player.setup.altpower", setupAlternatePowerBar)
