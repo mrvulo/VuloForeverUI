@@ -355,6 +355,20 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
   The error only comes while the free first bank tab is still unbought; after
   buying it with the buy button in our bank window it stops.
 
+- 2026-11-05: Blizzard party frames run tainted after a setting change in
+  the client's Edit Mode. Bug grabber, session 7: dragging a party frame
+  slider (MinimalSlider -> EditModeDialogs OnSettingValueChanged ->
+  UpdateSystemSettingFrameHeight -> CompactRaidFrameContainer:ApplyMultipleToFrames
+  -> CompactUnitFrame_UpdateAll) is already tainted by us when
+  `CompactUnitFrame_UpdateHealthColor` compares the secret bar colour (3x).
+  In that tainted run `CompactUnitFrame_CheckNeedsUpdate` sets the OnUpdate
+  script, so every later `CompactUnitFrame_UpdateHealPrediction` runs
+  tainted too (202x, `maxHealth` compare) until `/reload`. The value we
+  wrote that the chain reads is unknown: no code of ours names a compact
+  frame, the Edit Mode dialog or `RAID_CLASS_COLORS` (write removed
+  2026-08-11). Same next step as F-09: change the slider with
+  `/console taintLog 1` and read `Logs/taint.log`.
+
 - 2026-10-09: schwarzer Balken links an der Namensplakette des Ziels, nach dem
   Schrifttest (`/vfdiag fonts`) und den Kopierfenster-Umbauten; nach einem
   Neustart des Clients weg. Ursache unbekannt. Taucht er wieder auf: Maus
