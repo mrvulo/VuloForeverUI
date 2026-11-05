@@ -330,8 +330,14 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
   OnShow/OnHide never dirty the cache securely and one tainted write stays
   for the whole session. Candidates for the tainted first read:
   `UpdateContainerFrameAnchors` via `UIParent_ManageFramePositions`,
-  triggered synchronously from our code (CVar or bar or Edit Mode calls). Fix
-  idea: stash instead of park, so every secure open/close heals the cache.
+  triggered synchronously from our code (CVar or bar or Edit Mode calls).
+  Stash instead of park is on HOLD: every secure client open already runs
+  `ContainerFrame_GenerateFrame` (dirty, then `UpdateContainerFrameAnchors`
+  rebuilding the cache securely), even under the park. That makes a lasting
+  taint through a missing heal unlikely, and the writer is still unknown.
+  Next step: `/console taintLog 1`, get the error at the banker, then read
+  `Logs/taint.log` on the PC (it names the variable and the file:line that
+  wrote it).
   The error only comes while the free first bank tab is still unbought; after
   buying it with the buy button in our bank window it stops.
 
