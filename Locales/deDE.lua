@@ -1671,6 +1671,7 @@ ns:RegisterLocale("deDE", {
     ["POSITION"] = "POSITION",
     ["SCALE"] = "SKALIERUNG",
     ["WIDTH"] = "BREITE",
+    ["Blizzard's active Edit Mode layout is a preset and cannot be changed. Create a layout of your own there and the window positions will be saved into it as well."] = "Blizzards aktives Bearbeitungsmodus-Layout ist eine Vorlage und lässt sich nicht ändern. Leg dort ein eigenes Layout an, dann werden die Fensterplätze auch darin gespeichert.",
     ["ANCHOR"] = "ANKER",
     ["Pin this frame to a screen edge/corner so it stays put across resolution changes. Off keeps it centred."] = "Heftet diesen Rahmen an eine Bildschirmkante oder -ecke, damit er bei Auflösungswechseln bleibt, wo er ist. Aus hält ihn mittig.",
     ["Which screen point the frame is pinned to (keeps it put across resolution changes)."] = "An welchen Bildschirmpunkt der Rahmen geheftet ist (hält ihn bei Auflösungswechseln an Ort und Stelle).",

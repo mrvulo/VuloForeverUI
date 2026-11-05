@@ -65,6 +65,7 @@ jemand ohne den Code prüfen kann.
 | F-44 | Angeltaste: Angel, Köder, Auswerfen, Einholen mit einer Taste; Doppelklick, Schwimmer-Markierung | Komfort | gebaut | – |
 | F-45 | Tägliches Wort: Wortspiel im Flug, /vfword | Komfort | gebaut | – |
 | F-46 | DoT-Leisten am Ziel mit Stärke beim Neuwirken | Ressourcenleisten | gebaut | – |
+| F-47 | Fensterplätze aus unserem Bearbeitungsmodus auch im Blizzard-Layout | Bearbeitungsmodus | gebaut | – |
 
 ---
 
@@ -300,9 +301,19 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du das Ziel wechselst, **dann** zeigen die Leisten sofort die DoTs des neuen Ziels.
 - **Dann** lassen sich Position (Bearbeitungsmodus), Breite, Höhe, Abstand, Textur, Farben und die verfolgten Zauber einstellen, sichtbar nach kurzer Pause.
 
+### F-47 Fensterplätze auch im Blizzard-Layout
+- Angenommen in Blizzards Bearbeitungsmodus ist ein eigenes Layout aktiv (keine Vorlage), **wenn** du in unserem Bearbeitungsmodus Spieler-, Ziel- oder Fokusrahmen, Minikarte oder Questverfolgung verschiebst und ihn schließt, **dann** steht der Rahmen in Blizzards Bearbeitungsmodus am selben Platz, auch nach `/reload`.
+- **Wenn** du im Kampf eine Stufe aufsteigst, **dann** bleibt der Spielerrahmen, wo er ist.
+- **Wenn** du „Diesen Rahmen zurücksetzen“ drückst, **dann** springt er an Blizzards Standardplatz, und nach dem Schließen steht er auch im Blizzard-Layout dort.
+- Angenommen eine Vorlage („Modern“/„Klassisch“) ist aktiv, **dann** kommt beim Schließen einmal der Hinweis, ein eigenes Layout anzulegen; die Rahmen bleiben trotzdem an unserem Platz.
+
 ---
 
 ## Offen
+
+- 2026-11-05: HP-Zahl am Blizzard-Zielrahmen steht im Kampf manchmal rechts
+  neben dem Porträt statt im Balken (Stil „Standard“, wir fassen den Text dort
+  nicht an). Ursache unbekannt; beim nächsten Mal Punkte des Textes abfragen.
 
 - 2026-10-09: schwarzer Balken links an der Namensplakette des Ziels, nach dem
   Schrifttest (`/vfdiag fonts`) und den Kopierfenster-Umbauten; nach einem

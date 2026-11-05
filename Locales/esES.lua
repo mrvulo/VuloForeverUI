@@ -1671,6 +1671,7 @@ local T = {
     ["POSITION"] = "POSICIÓN",
     ["SCALE"] = "ESCALA",
     ["WIDTH"] = "ANCHURA",
+    ["Blizzard's active Edit Mode layout is a preset and cannot be changed. Create a layout of your own there and the window positions will be saved into it as well."] = "El diseño activo del modo de edición de Blizzard es una plantilla y no se puede cambiar. Crea allí un diseño propio y las posiciones de las ventanas también se guardarán en él.",
     ["ANCHOR"] = "ANCLAJE",
     ["Pin this frame to a screen edge/corner so it stays put across resolution changes. Off keeps it centred."] = "Fija este marco a un borde o esquina de la pantalla para que se quede en su sitio al cambiar de resolución. Desactivado, se mantiene centrado.",
     ["Which screen point the frame is pinned to (keeps it put across resolution changes)."] = "A qué punto de la pantalla se fija el marco (lo mantiene en su sitio al cambiar de resolución).",

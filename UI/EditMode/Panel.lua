@@ -233,7 +233,16 @@ local function buildPanel()
         set = function(_, v)
             local m = ns._selectedMover
             local w = m and m.opts.widthSlider
-            if w then w.set(v) end
+            if not w then return end
+            -- A width of its own ends "Width like": the matched width would
+            -- take over again on the next layout pass.
+            local link = m.key and ns:GetMoverSizeLink(m.key)
+            if type(link) == "table" and link.w then
+                ns:SetMoverSizeLink(m, nil, "w")
+                local b = panel.widthDrop and panel.widthDrop._button
+                if b and b._refresh then b._refresh() end
+            end
+            w.set(v)
         end,
     })
 

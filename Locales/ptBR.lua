@@ -1648,6 +1648,7 @@ ns:RegisterLocale("ptBR", {
     ["POSITION"] = "POSIÇÃO",
     ["SCALE"] = "ESCALA",
     ["WIDTH"] = "LARGURA",
+    ["Blizzard's active Edit Mode layout is a preset and cannot be changed. Create a layout of your own there and the window positions will be saved into it as well."] = "O layout ativo do Modo de Edição da Blizzard é uma predefinição e não pode ser alterado. Crie um layout próprio lá e as posições das janelas também serão salvas nele.",
     ["ANCHOR"] = "ÂNCORA",
     ["Pin this frame to a screen edge/corner so it stays put across resolution changes. Off keeps it centred."] = "Fixa esta moldura em uma borda/canto da tela para que ela permaneça no lugar entre mudanças de resolução. Desativado a mantém centralizada.",
     ["Which screen point the frame is pinned to (keeps it put across resolution changes)."] = "A que ponto da tela a moldura está fixada (a mantém no lugar entre mudanças de resolução).",

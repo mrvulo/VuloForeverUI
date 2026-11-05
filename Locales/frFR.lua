@@ -1671,6 +1671,7 @@ ns:RegisterLocale("frFR", {
     ["POSITION"] = "POSITION",
     ["SCALE"] = "ÉCHELLE",
     ["WIDTH"] = "LARGEUR",
+    ["Blizzard's active Edit Mode layout is a preset and cannot be changed. Create a layout of your own there and the window positions will be saved into it as well."] = "La disposition active du mode Édition de Blizzard est un modèle et ne peut pas être modifiée. Crées-y ta propre disposition et les positions des fenêtres y seront aussi enregistrées.",
     ["ANCHOR"] = "ANCRAGE",
     ["Pin this frame to a screen edge/corner so it stays put across resolution changes. Off keeps it centred."] = "Épingle ce cadre à un bord ou un coin de l'écran pour qu'il reste en place malgré les changements de résolution. Désactivé, il reste centré.",
     ["Which screen point the frame is pinned to (keeps it put across resolution changes)."] = "Le point de l'écran auquel le cadre est épinglé (le garde en place malgré les changements de résolution).",

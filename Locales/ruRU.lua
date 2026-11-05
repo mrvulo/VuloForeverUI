@@ -1671,6 +1671,7 @@ ns:RegisterLocale("ruRU", {
     ["POSITION"] = "ПОЛОЖЕНИЕ",
     ["SCALE"] = "МАСШТАБ",
     ["WIDTH"] = "ШИРИНА",
+    ["Blizzard's active Edit Mode layout is a preset and cannot be changed. Create a layout of your own there and the window positions will be saved into it as well."] = "Активный макет режима редактирования Blizzard — это шаблон, его нельзя изменить. Создайте там собственный макет, и позиции окон будут сохраняться и в нём.",
     ["ANCHOR"] = "ЯКОРЬ",
     ["Pin this frame to a screen edge/corner so it stays put across resolution changes. Off keeps it centred."] = "Закрепляет эту рамку у края или угла экрана, чтобы она оставалась на месте при смене разрешения. Если выключено, остается по центру.",
     ["Which screen point the frame is pinned to (keeps it put across resolution changes)."] = "К какой точке экрана закреплена рамка (удерживает ее на месте при смене разрешения).",
