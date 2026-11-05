@@ -169,6 +169,9 @@ local function bagsPage()
             L["Fills the bags from the last slot upwards, with vendor junk at the top instead."]),
         toggle("goldTracking", L["Gold tracking and history"],
             L["The money line lists every character on the account and what this session has gained or lost."]),
+        { type = "button", label = L["Clear the character list"], width = 240,
+          tooltip = L["Removes every character but this one from the gold list, for example characters on realms that no longer exist."],
+          onClick = function() StaticPopup_Show("VFUI_GOLD_FORGET") end },
 
         toggle("showPinned", L["Show pinned items"],
             L["Pinned items get a shelf of their own. The pin button in the window's tool row sets them."]),

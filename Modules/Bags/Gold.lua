@@ -120,3 +120,23 @@ function Gold.Forget(name)
     local t = global()
     if t then t[name] = nil end
 end
+
+-- Clears the list down to the character logged in. The others come back on
+-- their own the next time they log in, so a realm that is gone stays gone.
+function Gold.ForgetOthers()
+    local t, key = global(), me()
+    if not t then return end
+    for name in pairs(t) do
+        if name ~= key then t[name] = nil end
+    end
+end
+
+ns.OnLocaleReady(function()
+StaticPopupDialogs["VFUI_GOLD_FORGET"] = {
+    text = L["Clear the gold list? Only this character stays; the others come back when they next log in."],
+    button1 = L["Reset"],
+    button2 = CANCEL,
+    OnAccept = function() Gold.ForgetOthers() end,
+    timeout = 0, whileDead = 1, hideOnEscape = 1, preferredIndex = 3,
+}
+end)
