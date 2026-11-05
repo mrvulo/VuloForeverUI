@@ -96,6 +96,7 @@ ns:RegisterLocale("ruRU", {
     ["Classic"] = "Классический",
     ["|cffaaaaaaClassic keeps Blizzard's frames underneath: target auras, the target cast bar and the pet frame stay, and Edit Mode moves them.|r"] = "|cffaaaaaaКлассический стиль сохраняет рамки Blizzard: ауры цели, полоса заклинания цели и рамка питомца остаются, перемещаются в режиме редактирования.|r",
     ["Modern"] = "Современный",
+    ["Cards"] = "Карточки",
     ["Standard"] = "Стандартный",
     ["Player and target frames: Blizzard's own with extras, the Classic look, or a flat Modern look."] = "Рамки игрока и цели: родные рамки Blizzard с дополнениями, классический вид или плоский современный.",
 

@@ -96,6 +96,7 @@ ns:RegisterLocale("ptBR", {
     ["Classic"] = "Clássico",
     ["|cffaaaaaaClassic keeps Blizzard's frames underneath: target auras, the target cast bar and the pet frame stay, and Edit Mode moves them.|r"] = "|cffaaaaaaClássico mantém as molduras da Blizzard por baixo: auras do alvo, barra de lançamento do alvo e moldura do mascote permanecem, e o Modo de Edição as move.|r",
     ["Modern"] = "Moderno",
+    ["Cards"] = "Cartões",
     ["Standard"] = "Padrão",
     ["Player and target frames: Blizzard's own with extras, the Classic look, or a flat Modern look."] = "Molduras do jogador e do alvo: as da própria Blizzard com extras, o visual Clássico ou um visual Moderno e plano.",
     -- Locales

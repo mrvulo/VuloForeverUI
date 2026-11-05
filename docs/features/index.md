@@ -48,7 +48,7 @@ jemand ohne den Code prüfen kann.
 | F-27 | Mögliche Buffs anklickbar (wirken / benutzen) | Erinnerungen | gebaut | – |
 | F-28 | Fenster-Skins: Charakter- und Betrachten-Fenster, Standard / Modern | Skins | gebaut | – |
 | F-31 | Goldprüfung: zuverlässige Abfrage, fehlend ≠ null, mehr Zähler, aus dem Betrachten-Fenster | Komfort | gebaut | – |
-| F-30 | Levelführer-Skin (Standard / Modern) | Skins | gebaut | – |
+| F-30 | Levelführer-Skin (Standard / Modern / Karten) | Skins | gebaut | – |
 | F-29 | Schmuckstücke: Auswahl-Raster beim Drüberfahren, Vormerken im Kampf, Warteschlange respektiert Handwahl, Vorrang kehrt zurück, Shift-Klick-Listen, Listen je Talentverteilung | Komfort | gebaut | – |
 | F-32 | Bedrohung in Prozent am Ziel- und Fokusrahmen (Classic / Standard) | Einheitenfenster | gebaut | – |
 | F-33 | Buffs und Debuffs abgerundet, Spirale und Ring in derselben Form | Auren | gebaut | – |
@@ -202,6 +202,7 @@ jemand ohne den Code prüfen kann.
 - **Dann** ist der Wegpfeil gold (Standard) bzw. in der Akzentfarbe (Modern), und das Fenster „Active Targets“ samt Titel-Reiter hat denselben Rahmen; im Kampf neu geöffnet bekommt es ihn nach dem Kampf.
 - **Wenn** du über einen Schritt in der Liste fährst, **dann** hellt er sich leicht auf und wird beim Verlassen wieder dunkel.
 - **Wenn** du den Stil wechselst oder der Guide einen neuen Abschnitt lädt, **dann** sitzt der Skin sofort richtig; ausschalten wirkt nach /reload.
+- Angenommen Stil „Karten“ (nach einem Neustart des Spiels, wegen der neuen Texturen), **dann** ist jeder Schritt der Liste und jeder Kasten mit dem aktuellen Schritt samt Nummer eine eigene abgerundete, dunkle schieferblaue Karte mit hellerem dünnem Rand; das Zonenbild im Kopf bleibt sichtbar, Scrollbalken und Wegpfeil wie bei Modern.
 
 ### F-31 Goldprüfung
 - **Dann** überlappt in den Spalten nichts: lange Bezeichnungen enden in „…“, Beträge bleiben ganz lesbar.

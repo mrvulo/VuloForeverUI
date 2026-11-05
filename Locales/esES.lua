@@ -96,6 +96,7 @@ local T = {
     ["Classic"] = "Clásico",
     ["|cffaaaaaaClassic keeps Blizzard's frames underneath: target auras, the target cast bar and the pet frame stay, and Edit Mode moves them.|r"] = "|cffaaaaaaClásico mantiene debajo los marcos de Blizzard: las auras del objetivo, la barra de lanzamiento del objetivo y el marco de la mascota se conservan, y el modo de edición los mueve.|r",
     ["Modern"] = "Moderno",
+    ["Cards"] = "Tarjetas",
     ["Standard"] = "Estándar",
     ["Player and target frames: Blizzard's own with extras, the Classic look, or a flat Modern look."] = "Marcos de jugador y objetivo: los propios de Blizzard con extras, el aspecto Clásico o un aspecto Moderno plano.",
 

@@ -96,6 +96,7 @@ ns:RegisterLocale("deDE", {
     ["Classic"] = "Classic",
     ["|cffaaaaaaClassic keeps Blizzard's frames underneath: target auras, the target cast bar and the pet frame stay, and Edit Mode moves them.|r"] = "|cffaaaaaaClassic behält Blizzards Rahmen darunter: Ziel-Auren, Ziel-Zauberleiste und Pet-Rahmen bleiben, Edit Mode verschiebt sie.|r",
     ["Modern"] = "Modern",
+    ["Cards"] = "Karten",
     ["Standard"] = "Standard",
     ["Player and target frames: Blizzard's own with extras, the Classic look, or a flat Modern look."] = "Spieler- und Zielrahmen: Blizzards eigene mit Extras, der Classic-Look oder ein flacher Modern-Look.",
 

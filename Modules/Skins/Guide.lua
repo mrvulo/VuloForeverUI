@@ -2,11 +2,13 @@
 --
 -- A skin for the levelling-guide addon the player runs: its guide window
 -- (header, step list, footer, scrollbar), the floating "current step"
--- boxes above it, the waypoint arrow and the "Active Targets" window, in two
+-- boxes above it, the waypoint arrow and the "Active Targets" window, in three
 -- looks:
 --
 --   Standard  the game's own tooltip frame: dark ground, the classic border
 --   Modern    flat dark panels with a one-pixel edge, like our own windows
+--   Cards     every step its own rounded slate-blue card with a soft edge,
+--             the guide's zone banner left in place
 --
 -- The guide's frames are plain frames of that addon, created at its load
 -- (window, header, footer) or pooled later (list steps, current steps). It
@@ -48,10 +50,24 @@ local looks = {
         bg = { 0.055, 0.055, 0.065, 0.95 }, hover = { 0.10, 0.10, 0.12, 0.97 },
         edge = { 0.22, 0.22, 0.26, 1 },
     },
+    -- The backdrop stays (the guide colours it on every redraw) but is kept
+    -- clear; the rounded card is two textures of ours under the guide's own
+    -- art, cut into nine so the corners keep their size (card()).
+    cards = {
+        backdrop = { bgFile = "Interface\\Buttons\\WHITE8X8", insets = { left = 0, right = 0, top = 0, bottom = 0 } },
+        card = true,
+        bg = { 0.10, 0.13, 0.18, 0.94 }, hover = { 0.15, 0.19, 0.26, 0.96 },
+        edge = { 0.36, 0.43, 0.54, 1 },
+    },
 }
+
+local ROUND_FILL = "Interface\\AddOns\\VuloForeverUI\\Media\\textures\\round-fill"
+local ROUND_RING = "Interface\\AddOns\\VuloForeverUI\\Media\\textures\\round-ring"
+local ROUND_CUT  = 8          -- texels kept whole at each corner (radius 6)
 
 local skinned = setmetatable({}, { __mode = "k" })    -- frame -> look name
 local colorHooked = setmetatable({}, { __mode = "k" })
+local cards = setmetatable({}, { __mode = "k" })       -- frame -> { fill, ring }
 local painting = false
 
 local function db() return Skins.mod.db.guide end
@@ -63,6 +79,32 @@ end
 
 local function look() return looks[db().style] or looks.standard end
 
+local function cutTexture(f, path, layer, sub)
+    local t = f:CreateTexture(nil, layer, nil, sub)
+    t:SetTexture(path)
+    t:SetTextureSliceMargins(ROUND_CUT, ROUND_CUT, ROUND_CUT, ROUND_CUT)
+    t:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
+    if t.SetSnapToPixelGrid   then t:SetSnapToPixelGrid(false) end
+    if t.SetTexelSnappingBias then t:SetTexelSnappingBias(0) end
+    t:SetAllPoints(f)
+    return t
+end
+
+-- The rounded card of one frame: made the first time the Cards look reaches
+-- it, shown or hidden as the look says.
+local function card(f, on)
+    local c = cards[f]
+    if not c then
+        if not on then return end
+        c = { fill = cutTexture(f, ROUND_FILL, "BACKGROUND", -7),
+              ring = cutTexture(f, ROUND_RING, "BORDER", 7) }
+        cards[f] = c
+    end
+    c.fill:SetShown(on)
+    c.ring:SetShown(on)
+    return c
+end
+
 -- Our colours, whatever the guide asks for: it sets its theme's colours on
 -- hover and on every redraw. The mouse decides between ground and hover.
 local function recolor(f)
@@ -70,8 +112,18 @@ local function recolor(f)
     local lk = looks[skinned[f]]
     painting = true
     local c = (f.IsMouseOver and f:IsMouseOver()) and lk.hover or lk.bg
-    f:SetBackdropColor(c[1], c[2], c[3], c[4])
-    f:SetBackdropBorderColor(lk.edge[1], lk.edge[2], lk.edge[3], lk.edge[4])
+    if lk.card then
+        f:SetBackdropColor(0, 0, 0, 0)
+        f:SetBackdropBorderColor(0, 0, 0, 0)
+        local t = cards[f]
+        if t then
+            t.fill:SetVertexColor(c[1], c[2], c[3], c[4])
+            t.ring:SetVertexColor(lk.edge[1], lk.edge[2], lk.edge[3], lk.edge[4])
+        end
+    else
+        f:SetBackdropColor(c[1], c[2], c[3], c[4])
+        f:SetBackdropBorderColor(lk.edge[1], lk.edge[2], lk.edge[3], lk.edge[4])
+    end
     painting = false
 end
 
@@ -102,6 +154,7 @@ local function skin(f)
     painting = true
     f:SetBackdrop(backdropFor(f))
     painting = false
+    card(f, look().card or false)
     if not colorHooked[f] then
         colorHooked[f] = true
         hooksecurefunc(f, "SetBackdropColor", recolor)
@@ -125,13 +178,13 @@ local function pools()
 end
 
 -- The waypoint arrow: one picture that only turns. Grey first, then tinted
--- in the look's colour: gold for Standard, the accent for Modern.
+-- in the look's colour: gold for Standard, the accent for Modern and Cards.
 local function arrow()
     local a = _G.RXPG_ARROW
     local t = a and a.texture
     if not (t and t.SetDesaturated) then return end
     t:SetDesaturated(true)
-    if db().style == "modern" then
+    if db().style ~= "standard" then
         local ac = ns.COLORS.accent
         t:SetVertexColor(ac.r, ac.g, ac.b, 1)
     else
@@ -166,7 +219,7 @@ local function banners(on)
     end
 end
 
--- The scrollbar: Modern gets the house's thin bar, Standard the game's own
+-- The scrollbar: Modern and Cards get the house's thin bar, Standard the game's own
 -- arrows and knob in place of the guide's round blue ones.
 local STD = {
     up   = { "Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Up", "Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Down",
@@ -178,7 +231,7 @@ local function scrollbar()
     local sf = _G.RXPFrame.ScrollFrame
     local bar = sf and sf.ScrollBar
     if not bar then return end
-    if db().style == "modern" then
+    if db().style ~= "standard" then
         ns.UI.StyleScrollbar(sf)
         return
     end
@@ -198,7 +251,7 @@ local function skinStatic()
     skin(main.BottomFrame)
     skin(main.GuideName)
     skin(main.Footer)
-    banners(true)
+    banners(not look().card)            -- Cards keeps the zone banner
     scrollbar()
     arrow()
     skinPools()

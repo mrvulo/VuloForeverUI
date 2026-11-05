@@ -14,12 +14,15 @@ mod.tabs = {
 }
 mod.tabsAlways = true
 
-local function looks()
-    return {
+local function looks(withCards)
+    local t = {
         { value = "off",      text = L["Off"] },
         { value = "standard", text = L["Standard"] },
         { value = "modern",   text = L["Modern"] },
     }
+    -- the guide alone has a third look (Guide.lua)
+    if withCards then t[#t + 1] = { value = "cards", text = L["Cards"] } end
+    return t
 end
 
 local rows = ns.OptionRows(function() return Skins.db() end, function() Skins.Apply() end)
@@ -82,6 +85,6 @@ function mod:GetOptions()
         title = L["Levelling guide"],
         desc = installed and L["The guide window, the current-step boxes, the waypoint arrow and the targets window. Off takes effect after /reload."]
             or L["No levelling guide addon is loaded."],
-        values = looks(), get = get, set = set }
+        values = looks(true), get = get, set = set }
     return items
 end

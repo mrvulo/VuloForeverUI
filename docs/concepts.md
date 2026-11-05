@@ -224,6 +224,10 @@ These apply to every visible change, in every module.
   is answered with ours. Its secure item/target buttons are never touched.
   The addon's name appears only as the technically needed globals, never in
   UI text, comments or commits.
+  Third look **Cards** (guide only, 2026-11-05): the backdrop stays but is
+  clear, the rounded card is our own fill + ring texture cut into nine
+  (`SetTextureSliceMargins`, `Media/textures/round-*.tga`), the zone banner
+  stays visible.
 
 ## Reminders (`Modules/Reminder/`)
 
