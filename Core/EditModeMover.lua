@@ -20,14 +20,12 @@
 -- where the caller says). The client re-applies its layout's place whenever a
 -- layout loads; ours goes back on top a frame later -- but only out of combat,
 -- so a reload of the layout during a fight (a level-up does it) left the frame
--- on the layout's place until the fight ended. So when our editor closes, our
--- places are written into the client's active layout as well
--- (syncClientLayout below): both editors then show the same place and a
--- reload of the layout puts the frame where it already is. A reset writes the
--- client's default place there. A preset layout cannot be saved; then the
--- frame keeps our place as before and the player is told once. Moving the
--- frame in the client's own editor and saving makes the client's place the
--- one that counts again.
+-- on the layout's place until the fight ended. Our places are NOT written
+-- into the client's layout: C_EditMode.SaveLayouts from addon code made the
+-- client reload its layout inside our call, and the party and raid frames it
+-- rebuilt there ran tainted (secret-value errors by the thousand, 0.20.0).
+-- Moving the frame in the client's own editor and saving makes the client's
+-- place the one that counts again; a reset hands the frame back to it.
 --
 -- The box sits on a proxy of ours over the frame's rectangle, because the
 -- mover core writes anchors on its target directly -- which on the client
@@ -45,7 +43,6 @@
 local _, ns = ...
 
 local instances = {}
-local syncClientLayout     -- below; also run when the client's editor closes
 
 -- Two Edit Mode anchors at the same place (half a unit of slack).
 local function sameAnchor(a, b)
@@ -134,25 +131,11 @@ local function new(frame, opts)
         return ok
     end
 
-    -- The client's default place for this frame (a copy), or nil.
-    local function defaultAnchor()
-        local presets = _G.EditModePresetLayoutManager
-        if not (presets and frame.system) then return nil end
-        local ok, a = pcall(presets.GetDefaultSystemAnchorInfo, presets, frame.system, frame.systemIndex)
-        return ok and type(a) == "table" and a or nil
-    end
-
     -- Back to the place the layout names, the way ApplySystemAnchor puts it.
-    -- toDefault: the client's default place instead -- a reset, whose sync
-    -- writes that same place into the layout when the editor closes.
-    local function handBack(toDefault)
+    local function handBack()
         local a, a2 = anchorInfo()
         if not a then return handBackOwn() end
-        if toDefault then
-            local d = defaultAnchor()
-            if d then a, a2 = d, nil end
-        end
-        if InCombatLockdown() then pending = toDefault and "default" or "handback"; return false end
+        if InCombatLockdown() then pending = "handback"; return false end
         local clear = baseMethod(frame, "ClearAllPointsBase", "ClearAllPoints")
         local setPoint = baseMethod(frame, "SetPointBase", "SetPoint")
         if not (clear and setPoint) then return false end
@@ -254,8 +237,8 @@ local function new(frame, opts)
         if event == "PLAYER_REGEN_ENABLED" then
             local what = pending
             pending = nil
-            if (what == "handback" or what == "default") and not savedPos() then
-                handBack(what == "default")
+            if what == "handback" and not savedPos() then
+                handBack()
             elseif what then
                 I.Apply()
             end
@@ -281,11 +264,8 @@ local function new(frame, opts)
         if not opts.isActive() then return end
         local a = anchorInfo()
         if before and a and savedPos() and not sameAnchor(before, a) then
-            local ours = I.LayoutAnchor()
-            if not (ours and sameAnchor(a, ours.anchor)) then
-                opts.setPos(nil)
-                return
-            end
+            opts.setPos(nil)    -- moved and saved there: the client's place counts
+            return
         end
         I.Apply()
     end
@@ -317,13 +297,10 @@ local function new(frame, opts)
         width  = 200, height = 40,
         applyPos = function()
             if ns._inMoverReset then
-                I.resetLayout = true    -- the next sync writes the client's default place
                 opts.setPos(nil)
-                handBack(true)
+                handBack()
                 syncProxy()
                 settle()
-                -- from the options page the editor is closed: no close to wait for
-                if not ns._editActive then syncClientLayout() end
                 return
             end
             if not opts.isActive() then return end
@@ -349,28 +326,6 @@ local function new(frame, opts)
     })
     I.mover = mover
 
-    -- What syncClientLayout writes for this frame: our place in the terms of
-    -- ApplySystemAnchor (UIParent units times the frame's own scale), the
-    -- client's default place after a reset, or nothing.
-    function I.LayoutAnchor()
-        if not (opts.isActive() and anchorInfo() and frame.system) then return nil end
-        local w = { system = frame.system, systemIndex = frame.systemIndex }
-        local p = savedPos()
-        if p then
-            local s = ns:GetScaleRatio(frame)
-            if not s or s == 0 then return nil end
-            local fs = frame:GetScale() or 1
-            w.anchor = { point = corner, relativeTo = "UIParent", relativePoint = "BOTTOMLEFT",
-                         offsetX = p.x / s * fs, offsetY = p.y / s * fs }
-            return w
-        end
-        if not I.resetLayout then return nil end
-        local a = defaultAnchor()
-        if not a then return nil end
-        w.anchor, w.default = a, true
-        return w
-    end
-
     -- Off: the frame goes back to the layout's place; ours stays saved.
     function I.Release()
         if proxy then proxy:Hide() end
@@ -388,7 +343,6 @@ local function new(frame, opts)
     function I.Restore()
         if not I.editSaved then return end
         local p = I.editSaved.pos
-        I.resetLayout = nil     -- a discarded reset writes nothing
         opts.setPos(p and { x = p.x, y = p.y } or nil)
         if opts.isActive() then
             if p then I.Apply() else handBack() end
@@ -402,77 +356,8 @@ local function new(frame, opts)
     return I
 end
 
--- ---------------------------------------------------------------------------
--- Our places into the client's active Edit Mode layout. Only the C API is
--- used: a fresh copy from C_EditMode.GetLayouts, changed and handed back with
--- SaveLayouts. The Edit Mode manager's own copy is not touched and not
--- reloaded -- no SetActiveLayout, whose EDIT_MODE_LAYOUTS_UPDATED could run
--- the manager's reload inside our call, i.e. tainted. The frame stands on our
--- place anyway; the client's next reload of the layout (login, a level-up,
--- a spec change) reads the saved one and finds it there. Out of combat only.
-
-local L = ns.L
-local presetHintShown
-
-function syncClientLayout()
-    if InCombatLockdown() then
-        ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", syncClientLayout)
-        return
-    end
-    local want = {}
-    for _, I in ipairs(instances) do
-        local w = I.LayoutAnchor()
-        if w then want[#want + 1] = w end
-        I.resetLayout = nil
-    end
-    if #want == 0 or not (C_EditMode and C_EditMode.GetLayouts and C_EditMode.SaveLayouts) then return end
-    local info = C_EditMode.GetLayouts()
-    local meta = Enum.EditModePresetLayoutsMeta
-    if not (type(info) == "table" and type(info.layouts) == "table"
-        and type(info.activeLayout) == "number" and meta and meta.NumValues) then return end
-    -- GetLayouts lists the saved layouts only; activeLayout counts the presets first
-    local layout = info.layouts[info.activeLayout - meta.NumValues]
-    if type(layout) ~= "table" or type(layout.systems) ~= "table" then
-        if not presetHintShown then
-            presetHintShown = true
-            ns:Print(L["Blizzard's active Edit Mode layout is a preset and cannot be changed. Create a layout of your own there and the window positions will be saved into it as well."])
-        end
-        return
-    end
-    local changed = false
-    for _, w in ipairs(want) do
-        for _, sys in ipairs(layout.systems) do
-            if sys.system == w.system and sys.systemIndex == w.systemIndex then
-                if not sameAnchor(sys.anchorInfo, w.anchor) or sys.anchorInfo2 then
-                    sys.anchorInfo = w.anchor
-                    sys.anchorInfo2 = nil
-                    sys.isInDefaultPosition = w.default or false
-                    changed = true
-                end
-                break
-            end
-        end
-    end
-    if not changed then return end
-    pcall(C_EditMode.SaveLayouts, info)
-end
-
--- Registered with the first box: the editor (UI/EditMode/) loads after Core.
--- Not while the session's snapshot is kept: a fight closes the editor only for
--- a while (keepSnapshot), and a Discard afterwards would leave a place in the
--- layout that the player threw away.
-local hooked
-local function hookEditor()
-    if hooked or not ns.RegisterEditModeHook then return end
-    hooked = true
-    ns:RegisterEditModeHook(function(on)
-        if not on and not ns._editSnapshot then syncClientLayout() end
-    end)
-end
-
--- One hook for all boxes, so every box has judged the client's editor before
--- the single sync writes anything: a sync between two boxes wrote the old
--- place of the second one over the move the player had just saved there.
+-- One hook pair for all boxes on the client's editor: each box notes the
+-- layout's place when it opens and judges it when it has closed.
 local clientHooked
 local function hookClientEditor()
     local em = _G.EditModeManagerFrame
@@ -485,8 +370,6 @@ local function hookClientEditor()
         C_Timer.After(0, function()
             if em.IsEditModeActive and em:IsEditModeActive() then return end
             for _, I in ipairs(instances) do I.ClientEditorHidden() end
-            -- a save there may have written the client's old copy of our places
-            syncClientLayout()
         end)
     end)
 end
@@ -494,7 +377,6 @@ end
 -- One per frame; asking again returns the same one.
 function ns:AttachEditModeMover(frame, opts)
     if not frame then return nil end
-    hookEditor()
     hookClientEditor()
     for _, I in ipairs(instances) do
         if I.frame == frame then return I end
