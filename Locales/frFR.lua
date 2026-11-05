@@ -2423,4 +2423,12 @@ ns:RegisterLocale("frFR", {
     ["%s is junk now and goes at the next merchant."] = "%s est maintenant inutile et partira chez le prochain marchand.",
     ["Marked as junk"] = "Marqué comme inutile",
     ["Bags full: %s destroyed to make room."] = "Sacs pleins : %s détruit pour faire de la place.",
+    ["Ore and herbs"] = "Minerais et herbes",
+    ["|cffaaaaaaWith Mining or Herbalism, the game's interact icon stands over the ore or herb in front of you, from further away. The game cannot make them sparkle like quest objects; this is the closest it allows. Your own settings come back when you turn it off.|r"] = "|cffaaaaaaAvec le Minage ou l'Herboristerie, l'icône d'interaction du jeu s'affiche au-dessus du minerai ou de l'herbe devant vous, de plus loin. Le jeu ne peut pas les faire scintiller comme les objets de quête ; c'est ce qui s'en rapproche le plus. Vos propres réglages reviennent quand vous le désactivez.|r",
+    ["Mining or Herbalism known: active."] = "Minage ou Herboristerie connu : actif.",
+    ["|cffff6666This character knows neither Mining nor Herbalism.|r"] = "|cffff6666Ce personnage ne connaît ni le Minage ni l'Herboristerie.|r",
+    ["Mark ore and herbs"] = "Marquer minerais et herbes",
+    ["Also marks other things you can use, such as mailboxes or chests, when they are the nearest in front of you."] = "Marque aussi d'autres objets utilisables, comme les boîtes aux lettres ou les coffres, quand ils sont les plus proches devant vous.",
+    ["Range (yards)"] = "Portée (mètres)",
+    ["How far ahead the game looks for something to mark."] = "Jusqu'où le jeu cherche devant vous un objet à marquer.",
 })

@@ -2423,4 +2423,12 @@ ns:RegisterLocale("deDE", {
     ["%s is junk now and goes at the next merchant."] = "%s ist jetzt Schrott und wird beim nächsten Händler verkauft.",
     ["Marked as junk"] = "Als Schrott markiert",
     ["Bags full: %s destroyed to make room."] = "Taschen voll: %s zerstört, um Platz zu machen.",
+    ["Ore and herbs"] = "Erze und Kräuter",
+    ["|cffaaaaaaWith Mining or Herbalism, the game's interact icon stands over the ore or herb in front of you, from further away. The game cannot make them sparkle like quest objects; this is the closest it allows. Your own settings come back when you turn it off.|r"] = "|cffaaaaaaMit Bergbau oder Kräuterkunde steht das Interaktionssymbol des Spiels über dem Erz oder Kraut vor dir, und zwar schon aus größerer Entfernung. Glitzern wie Questobjekte kann das Spiel sie nicht lassen; das hier ist das Nächste, was es erlaubt. Deine eigenen Einstellungen kommen beim Ausschalten zurück.|r",
+    ["Mining or Herbalism known: active."] = "Bergbau oder Kräuterkunde erlernt: aktiv.",
+    ["|cffff6666This character knows neither Mining nor Herbalism.|r"] = "|cffff6666Dieser Charakter kann weder Bergbau noch Kräuterkunde.|r",
+    ["Mark ore and herbs"] = "Erze und Kräuter markieren",
+    ["Also marks other things you can use, such as mailboxes or chests, when they are the nearest in front of you."] = "Markiert auch andere benutzbare Dinge wie Briefkästen oder Truhen, wenn sie das Nächste vor dir sind.",
+    ["Range (yards)"] = "Reichweite (Meter)",
+    ["How far ahead the game looks for something to mark."] = "Wie weit voraus das Spiel nach etwas zum Markieren sucht.",
 })

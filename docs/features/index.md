@@ -66,6 +66,7 @@ jemand ohne den Code prüfen kann.
 | F-45 | Tägliches Wort: Wortspiel im Flug, /vfword | Komfort | gebaut | – |
 | F-46 | DoT-Leisten am Ziel mit Stärke beim Neuwirken | Ressourcenleisten | gebaut | – |
 | F-47 | Fensterplätze aus unserem Bearbeitungsmodus auch im Blizzard-Layout | Bearbeitungsmodus | verworfen | – |
+| F-48 | Berufe-Tab: Symbol über Erzen und Kräutern | Komfort | gebaut | – |
 
 ---
 
@@ -308,6 +309,12 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - Angenommen ein Fenster ist an Spieler- oder Zielrahmen geheftet („Fenster folgen“, z. B. die DoT-Leisten am Ziel), **wenn** du dich neu einloggst oder `/reload` machst, **dann** steht es am selben Platz am Rahmen wie vorher.
 - **Wenn** du „Diesen Rahmen zurücksetzen“ drückst, **dann** geht der Rahmen an den Platz aus Blizzards Layout zurück (nicht in die Bildschirmmitte).
 - **Wenn** du in einer Gruppe Blizzards Bearbeitungsmodus öffnest und schließt, auch nachdem du in unserem Rahmen verschoben hast, **dann** zeigt BugGrabber keine Fehler aus `UnitFrame.lua` oder `CompactUnitFrame.lua`.
+
+### F-48 Berufe-Tab: Symbol über Erzen und Kräutern
+- Angenommen der Charakter kann Bergbau oder Kräuterkunde und „Erze und Kräuter markieren“ ist an, **wenn** du auf ein Erzvorkommen oder Kraut zuläufst, **dann** steht schon aus größerer Entfernung (Regler „Reichweite“, Standard 40 Meter) das Spitzhacken- bzw. Kräutersymbol des Spiels darüber; mit der Interaktionstaste baust du es ab.
+- **Wenn** du den Schalter ausschaltest oder ein Charakter ohne Sammelberuf eingeloggt ist, **dann** gelten wieder deine eigenen Einstellungen für weiches Anvisieren (Symbol, Reichweite).
+- **Wenn** du mit der Angeltaste angelst, während der Schalter an ist, **dann** bleibt nach dem Angeln das Symbol über Erzen und Kräutern erhalten.
+- **Dann** zeigt der Tab, ob der Charakter einen Sammelberuf kennt.
 
 ---
 

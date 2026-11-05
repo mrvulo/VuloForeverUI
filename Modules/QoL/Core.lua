@@ -107,6 +107,12 @@ local mod = ns:RegisterModule("qol", {
             enabled = true,         -- the button on the flight bar and /vfword
         },
 
+        -- -------------------------------------------------------- professions
+        professions = {
+            gatherIcon = true,      -- interact icon over ore and herbs (Mining / Herbalism)
+            range      = 40,        -- yards the client looks for them
+        },
+
         -- ------------------------------------------------------------ fishing
         fishing = {
             enabled     = true,     -- the key (bound in the client's key bindings)
@@ -289,6 +295,7 @@ mod.tabs = {
     { id = "gold",    label = "Gold" },
     { id = "quest",   label = "Quest" },
     { id = "fishing", label = "Fishing" },
+    { id = "professions", label = "Professions" },
 }
 
 -- Re-runs every part. Options call this after a write: a part decides for

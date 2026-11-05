@@ -542,7 +542,25 @@ local function fishingPage()
     }
 end
 
+local function professionsPage()
+    local P = QoL.Professions
+    local knows = P and P.KnowsGathering()
+    return {
+        { type = "header", text = L["Ore and herbs"] },
+        { type = "desc", text = L["|cffaaaaaaWith Mining or Herbalism, the game's interact icon stands over the ore or herb in front of you, from further away. The game cannot make them sparkle like quest objects; this is the closest it allows. Your own settings come back when you turn it off.|r"] },
+        { type = "desc", text = knows and L["Mining or Herbalism known: active."]
+            or L["|cffff6666This character knows neither Mining nor Herbalism.|r"] },
+        toggle("professions", "gatherIcon", L["Mark ore and herbs"],
+            L["Also marks other things you can use, such as mailboxes or chests, when they are the nearest in front of you."]),
+        slider("professions", "range", L["Range (yards)"], 10, 45, 1, {
+            tooltip = L["How far ahead the game looks for something to mark."],
+            disabled = function() return not QoL.db().professions.gatherIcon end,
+        }),
+    }
+end
+
 function mod:GetOptions(tabId)
+    if tabId == "professions" then return professionsPage() end
     if tabId == "fishing" then return fishingPage() end
     if tabId == "gold"    then return goldPage() end
     if tabId == "quest"   then return questPage() end

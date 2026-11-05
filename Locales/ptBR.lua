@@ -2386,4 +2386,12 @@ ns:RegisterLocale("ptBR", {
     ["%s is junk now and goes at the next merchant."] = "%s agora é bugiganga e vai no próximo mercador.",
     ["Marked as junk"] = "Marcado como bugiganga",
     ["Bags full: %s destroyed to make room."] = "Bolsas cheias: %s destruído para abrir espaço.",
+    ["Ore and herbs"] = "Minérios e ervas",
+    ["|cffaaaaaaWith Mining or Herbalism, the game's interact icon stands over the ore or herb in front of you, from further away. The game cannot make them sparkle like quest objects; this is the closest it allows. Your own settings come back when you turn it off.|r"] = "|cffaaaaaaCom Mineração ou Herborismo, o ícone de interação do jogo aparece sobre o minério ou a erva à sua frente, de mais longe. O jogo não consegue fazê-los brilhar como objetos de missão; isto é o mais próximo que ele permite. Suas próprias configurações voltam ao desligar.|r",
+    ["Mining or Herbalism known: active."] = "Mineração ou Herborismo aprendido: ativo.",
+    ["|cffff6666This character knows neither Mining nor Herbalism.|r"] = "|cffff6666Este personagem não conhece Mineração nem Herborismo.|r",
+    ["Mark ore and herbs"] = "Marcar minérios e ervas",
+    ["Also marks other things you can use, such as mailboxes or chests, when they are the nearest in front of you."] = "Também marca outras coisas utilizáveis, como caixas de correio ou baús, quando são o mais próximo à sua frente.",
+    ["Range (yards)"] = "Alcance (metros)",
+    ["How far ahead the game looks for something to mark."] = "Até onde o jogo procura à sua frente algo para marcar.",
 })

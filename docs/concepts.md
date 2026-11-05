@@ -284,6 +284,14 @@ These apply to every visible change, in every module.
   right-click: a second secure button with `useOnKeyDown = false` (the
   override is set on the second mouse-down, so only the release reaches it),
   cleared after the click or after 1 s.
+- **Gathering icon** (`Professions.lua`, `professions.gatherIcon`): no
+  addon can make world objects sparkle or read node positions; the part sets
+  the client's soft-interact CVars (SoftTargetInteract 3, icons for game
+  objects, front arc, range from the slider) while the character knows
+  Mining (186) or Herbalism (182), re-checked on SKILL_LINES_CHANGED. The
+  player's values are kept in `professions.savedCVars`. Fishing sets some of
+  the same CVars: whichever part holds a kept value, the other writes through
+  that keep, so neither restores the other's value as the player's own.
 - **Daily word** (`DailyWord.lua`, data `DailyWordData.lua`): one word a
   day by the player's own calendar day (day 1 = 18 Oct 2026), the same for
   everyone of a language; German for a German addon language, English

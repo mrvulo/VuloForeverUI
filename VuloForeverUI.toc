@@ -233,6 +233,7 @@ Modules\QoL\QuestExtras.lua
 Modules\QoL\Journal.lua
 Modules\QoL\Options.lua
 Modules\QoL\Fishing.lua
+Modules\QoL\Professions.lua
 Modules\QoL\DailyWordData.lua
 Modules\QoL\DailyWord.lua
 

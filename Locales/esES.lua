@@ -2423,6 +2423,14 @@ local T = {
     ["%s is junk now and goes at the next merchant."] = "%s es ahora basura y se irá en el próximo vendedor.",
     ["Marked as junk"] = "Marcado como basura",
     ["Bags full: %s destroyed to make room."] = "Bolsas llenas: %s destruido para hacer sitio.",
+    ["Ore and herbs"] = "Minerales y hierbas",
+    ["|cffaaaaaaWith Mining or Herbalism, the game's interact icon stands over the ore or herb in front of you, from further away. The game cannot make them sparkle like quest objects; this is the closest it allows. Your own settings come back when you turn it off.|r"] = "|cffaaaaaaCon Minería o Herboristería, el icono de interacción del juego aparece sobre el mineral o la hierba que tienes delante, desde más lejos. El juego no puede hacerlos brillar como los objetos de misión; esto es lo más parecido que permite. Tus propios ajustes vuelven al desactivarlo.|r",
+    ["Mining or Herbalism known: active."] = "Minería o Herboristería aprendida: activo.",
+    ["|cffff6666This character knows neither Mining nor Herbalism.|r"] = "|cffff6666Este personaje no conoce ni Minería ni Herboristería.|r",
+    ["Mark ore and herbs"] = "Marcar minerales y hierbas",
+    ["Also marks other things you can use, such as mailboxes or chests, when they are the nearest in front of you."] = "También marca otras cosas utilizables, como buzones o cofres, cuando son lo más cercano delante de ti.",
+    ["Range (yards)"] = "Alcance (metros)",
+    ["How far ahead the game looks for something to mark."] = "Hasta dónde busca el juego delante de ti algo que marcar.",
 }
 
 ns:RegisterLocale("esES", T)

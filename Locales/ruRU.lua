@@ -2423,4 +2423,12 @@ ns:RegisterLocale("ruRU", {
     ["%s is junk now and goes at the next merchant."] = "%s теперь хлам и будет продан у следующего торговца.",
     ["Marked as junk"] = "Отмечено как хлам",
     ["Bags full: %s destroyed to make room."] = "Сумки полны: %s уничтожен, чтобы освободить место.",
+    ["Ore and herbs"] = "Руда и травы",
+    ["|cffaaaaaaWith Mining or Herbalism, the game's interact icon stands over the ore or herb in front of you, from further away. The game cannot make them sparkle like quest objects; this is the closest it allows. Your own settings come back when you turn it off.|r"] = "|cffaaaaaaС Горным делом или Травничеством значок взаимодействия игры появляется над рудой или травой перед вами, и уже издалека. Заставить их сверкать, как предметы заданий, игра не может; это самое близкое из того, что она позволяет. Ваши собственные настройки вернутся при выключении.|r",
+    ["Mining or Herbalism known: active."] = "Горное дело или Травничество изучено: включено.",
+    ["|cffff6666This character knows neither Mining nor Herbalism.|r"] = "|cffff6666Этот персонаж не владеет ни Горным делом, ни Травничеством.|r",
+    ["Mark ore and herbs"] = "Отмечать руду и травы",
+    ["Also marks other things you can use, such as mailboxes or chests, when they are the nearest in front of you."] = "Также отмечает другие используемые предметы, например почтовые ящики или сундуки, если они ближе всего перед вами.",
+    ["Range (yards)"] = "Дальность (метры)",
+    ["How far ahead the game looks for something to mark."] = "Как далеко впереди игра ищет, что отметить.",
 })
