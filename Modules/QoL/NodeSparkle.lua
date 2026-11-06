@@ -30,8 +30,10 @@ Prof.Sparkle = Sparkle
 
 local SOFT = "softinteract"
 local TEX = "Interface\\AddOns\\VuloForeverUI\\Media\\textures\\"
-local SIZE, OFFSET_Y = 110, -40
-local STARS, MOTES = 6, 3
+-- Kept small and soft: the first take (110 px, a square halo, square motes)
+-- covered the node instead of marking it.
+local SIZE, OFFSET_Y = 64, -36
+local STARS, MOTES = 4, 3
 local sin, pi, random, sqrt, cos = math.sin, math.pi, math.random, math.sqrt, math.cos
 
 Sparkle.DEFAULT_COLOR = { r = 1, g = 0.76, b = 0.26 }
@@ -123,9 +125,9 @@ local function animate(self, elapsed)
     local c = glow.color
     local r, g, b = c.r or 1, c.g or 1, c.b or 1
 
-    local h = SIZE * (1.25 + 0.1 * breath)
+    local h = SIZE * (1.1 + 0.08 * breath)
     glow.halo:SetSize(h, h)
-    tint(glow.halo, r, g, b, a * 0.45 * (0.85 + 0.15 * breath))
+    tint(glow.halo, r, g, b, a * 0.22 * (0.85 + 0.15 * breath))
 
     -- motes rising slowly through the light, a little paler than the glow
     local lr, lg, lb = r + (1 - r) * 0.55, g + (1 - g) * 0.55, b + (1 - b) * 0.55
@@ -134,9 +136,9 @@ local function animate(self, elapsed)
         m:SetPoint("CENTER", self, "CENTER",
             (i - 2) * SIZE * 0.22 + sin(t * 0.9 + i * 2.3) * SIZE * 0.05,
             (climb - 0.45) * SIZE * 0.7)
-        local ms = SIZE * 0.06
+        local ms = SIZE * 0.08
         m:SetSize(ms, ms)
-        tint(m, lr, lg, lb, a * sin(pi * climb) * 0.7)
+        tint(m, lr, lg, lb, a * sin(pi * climb) * 0.5)
     end
 
     -- stars flash up somewhere in the disc, fade, and come back elsewhere
@@ -152,10 +154,10 @@ local function animate(self, elapsed)
             tint(s.tex, 1, 1, 1, 0)
         else
             local p = sin(pi * (s.age / s.life))
-            local size = SIZE * 0.26 * s.scale * (0.6 + 0.4 * p)
+            local size = SIZE * 0.3 * s.scale * (0.6 + 0.4 * p)
             s.tex:SetSize(size, size)
             s.tex:SetRotation(t * 0.6)
-            tint(s.tex, lr, lg, lb, a * p)
+            tint(s.tex, lr, lg, lb, a * p * 0.8)
         end
     end
 end
@@ -173,9 +175,9 @@ local function build()
         t:SetVertexColor(1, 1, 1, 0)
         return t
     end
-    glow = { frame = f, halo = layer("soft-glow", "BACKGROUND"), motes = {}, stars = {},
+    glow = { frame = f, halo = layer("sparkle-glow", "BACKGROUND"), motes = {}, stars = {},
         appear = 0, clock = 0, color = Sparkle.DEFAULT_COLOR }
-    for i = 1, MOTES do glow.motes[i] = layer("round-fill", "ARTWORK") end
+    for i = 1, MOTES do glow.motes[i] = layer("sparkle-dot", "ARTWORK") end
     for i = 1, STARS do
         glow.stars[i] = { tex = layer("sparkle-star", "OVERLAY"), age = 0, life = 0, scale = 1 }
     end
