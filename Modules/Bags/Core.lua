@@ -335,7 +335,7 @@ function mod:OnEnable()
     self:RegisterEvent("QUEST_ACCEPTED", function() Bags.Repaint() end)
 
     self:RegisterEvent("BANKFRAME_OPENED", function()
-        if Bags.db().bank and Bags.Bank then Bags.Bank.Open() end
+        if Bags.Bank and Bags.Bank.Serves() then Bags.Bank.Open() end
     end)
     self:RegisterEvent("BANKFRAME_CLOSED", function()
         if Bags.Bank then Bags.Bank.Close() end
@@ -395,8 +395,8 @@ function mod:OnDisable()
     ns.NextFrame(Bags.FullHelper.Apply)
     if Bags.Window then Bags.Window.Close() end
     if Bags.Bank then Bags.Bank.Close() end
-    -- What we took from the client is given back -- the bank frame above all,
-    -- which we only ever dimmed and parked.
+    -- What we took from the client is given back; the retired bank frame
+    -- only through a reload, which this asks for (Bank.lua).
     if Bags.Bank then Bags.Bank.RestoreBlizzard() end
     Bags.UnparkBlizzard()
 end

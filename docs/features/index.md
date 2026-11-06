@@ -93,6 +93,9 @@ jemand ohne den Code prüfen kann.
 - Angenommen Stil Standard, **wenn** du im Taschenfenster den Münzknopf drückst, **dann** öffnet sich die Bank-Ansicht im Blizzard-Rahmen mit Bank-Porträt und „vom …“ rechts unter der Titelleiste.
 
 ### F-09 Client-Taschen ohne Taint
+- **Wenn** du an der Bank ein Item aus den Taschen per Rechtsklick benutzt oder einlagerst, **dann** kommt kein `ADDON_ACTION_FORBIDDEN … UNKNOWN()`, auch nicht später in derselben Sitzung.
+- Angenommen das erste Bankfach ist noch nicht gekauft, **dann** kauft es der Kaufknopf im Bankfenster ohne Fehler, und das Spiel kauft es nicht mehr von selbst.
+- **Wenn** du das Bankfenster mit X oder Escape schließt, **dann** ist der Bankbesuch beendet; ein erneuter Klick auf den Bankier öffnet es wieder.
 - Angenommen du öffnest und schließt die Taschen mehrmals und gehst zur Bank, **dann** kommt kein `ADDON_ACTION_FORBIDDEN … PurchaseBankTab()`.
 - **Wenn** du danach den Bearbeitungsmodus öffnest und schließt, **dann** kommt kein Fehler aus `CompactUnitFrame`.
 - **Dann** steht nach einigen Sitzungen kein Eintrag `taint` im Diagnoseprotokoll (Claude prüft den Rückkanal).
@@ -354,6 +357,12 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
   wrote it).
   The error only comes while the free first bank tab is still unbought; after
   buying it with the buy button in our bank window it stops.
+  2026-11-06: cause found in the client source (Camelot BankFrame.lua): the
+  frame's OnShow -> SetTab -> PurchaseFirstSlot buys the free tab and writes
+  `BankPanel.bankType`, which `GetActiveBankType` in the item click reads.
+  The park left that OnShow running. Fix: the frame is retired (scripts nil,
+  hidden parent; concepts.md, Bags). Waiting for the in-game check; the
+  taint log is now only needed for the party frames.
 
 - 2026-11-05: Blizzard party frames run tainted after a setting change in
   the client's Edit Mode. Bug grabber, session 7: dragging a party frame

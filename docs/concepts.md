@@ -123,6 +123,16 @@ These apply to every visible change, in every module.
   hidden by us (see engine rules). A visible one is stashed (alpha 0, off
   screen). On takeover off, a still-open one stays parked until the client
   closes it (`FinishUnpark`).
+- **Client bank frame** is retired, not parked (`Bank.lua`): its OnShow,
+  OnHide and OnEvent are set to nil and it hangs from a hidden frame of ours,
+  done while it is not shown (at the banker it waits for the visit to end).
+  Reason: its OnShow picks a tab, which buys the free first tab and writes
+  `BankPanel.bankType`; run in our taint, that blocked `PurchaseBankTab` and,
+  through `GetActiveBankType` in the item click, every `UseContainerItem` for
+  the session. Closing our bank window ends the visit (`C_Bank.CloseBankFrame`);
+  the free tab is bought with our buy button. Never hand the scripts back from
+  addon code: switching the bank off asks for a /reload, and our window keeps
+  serving the bank until then (`Bank.Serves`).
 - **Performance:** the window is built and laid out once, hidden, 3 s after
   a loading screen (`win.Prepare`) — the first open used to hitch ~250 ms.
   Bag slots are read through the one shared `ns.BagSlotLocation`; never

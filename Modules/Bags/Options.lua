@@ -29,10 +29,12 @@ local function apply()
     if Bags.db().replaceBlizzard then Bags.ParkBlizzard() else Bags.UnparkBlizzard() end
     Bags.Tutorials.Update()
     if Bags.Bank then
-        -- bank takeover switched off: the client's own frame comes back
+        -- bank takeover switched off: the client's own frame comes back after
+        -- a reload (Bank.lua); switched on: it is retired
         if not Bags.db().bank then
-            if Bags.Bank.IsShown() then Bags.Bank.Close() end
             Bags.Bank.RestoreBlizzard()
+        else
+            Bags.Bank.Hook()
         end
         Bags.Bank.Refresh()
     end

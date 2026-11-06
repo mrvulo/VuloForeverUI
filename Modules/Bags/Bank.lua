@@ -2,60 +2,97 @@
 --
 -- The bank, which is the same window with other containers in it.
 --
--- WHY THE CLIENT'S BANK FRAME IS PARKED AND NOT HIDDEN
+-- WHY THE CLIENT'S BANK FRAME IS RETIRED, NOT PARKED
 --
--- The obvious move is BankFrame:Hide(). It is also the one move that ends the
--- visit: the frame's own OnHide closes the bank at the banker, the client
--- fires BANKFRAME_CLOSED, our window closes itself in the same frame it
--- opened, and the containers it was showing are no longer ours to touch.
+-- The first take left the client's BankFrame shown and moved it off the
+-- screen, so its own OnShow went on running at every visit. On Forever that
+-- OnShow picks a tab, and picking a tab buys the free first bank tab
+-- (BankFrameMixin:PurchaseFirstSlot) and writes BankPanel.bankType. Once that
+-- ran in our taint the purchase was blocked (PurchaseBankTab forbidden), and
+-- every item click for the rest of the session read the written bank type
+-- (ContainerFrameItemButton_OnClick -> BankFrame:GetActiveBankType) and lost
+-- its UseContainerItem to the block as well.
 --
--- So the frame stays SHOWN and is parked instead: no alpha, no mouse, and
--- moved off the screen. Nothing of its own code runs differently, the visit
--- stays open, and the player sees ours. Everything we changed is given back
--- when the module is switched off.
+-- So the frame is retired instead: its OnShow, OnHide and OnEvent are taken
+-- away and it hangs from a hidden frame of ours. The client still shows it as
+-- a panel at every visit, but nothing of its code runs and it is never
+-- visible; GetActiveBankType sees a panel that was never set up and answers
+-- nil without reading anything we could have written.
+--
+-- Two things come with that. Its OnHide was what ended the visit, so closing
+-- our bank window now ends it (C_Bank.CloseBankFrame). And the free first tab
+-- is no longer bought behind the player's back: the buy button in our window
+-- does it, through the client's own purchase dialog.
+--
+-- Handing the scripts back from addon code would make them ours, and the
+-- next OnShow would run tainted -- the very fault this fixes. Switching the
+-- bank off therefore asks for a /reload; until then our window keeps serving
+-- the bank, so a banker never shows nothing.
 local _, ns = ...
 local Bags = ns.Bags
+local L = ns.L
 
 local Bank = Bags.WindowFactory.New("bank", function() return Bags.BankBags() end)
 Bags.Bank = Bank
 
 local baseOpen, baseClose = Bank.Open, Bank.Close
-local parked = false
+local retired, pending = false, false
+local visiting = false
+local holder
 
-local function park()
+ns.OnLocaleReady(function()
+    StaticPopupDialogs["VFUI_BANK_RELOAD"] = {
+        text = L["Blizzard's frames come back after a reload. Reload the UI now?"],
+        button1 = L["Reload now"],
+        button2 = L["Later"],
+        OnAccept = function() ReloadUI() end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+    }
+end)
+
+local function retire()
+    if retired then return end
     local frame = _G.BankFrame
-    -- Every time, not once: the frame is a UI panel, and the panel manager
-    -- puts it back into the left slot on each visit.
     if not frame then return end
-    parked = true
-    -- Position first, then the rest: a protected frame refuses a move while a
-    -- fight is on, and standing at a banker means there is none.
-    pcall(function()
-        frame:ClearAllPoints()
-        frame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", -4000, 4000)
-    end)
-    pcall(frame.SetAlpha, frame, 0)
-    pcall(frame.EnableMouse, frame, false)
+    -- At the banker the frame is on screen, and taking it away now would run
+    -- its children's OnHide in our taint. It waits for the visit to end.
+    if frame:IsShown() then pending = true; return end
+    holder = holder or CreateFrame("Frame")
+    holder:Hide()
+    if not pcall(frame.SetParent, frame, holder) then return end
+    frame:SetScript("OnShow", nil)
+    frame:SetScript("OnHide", nil)
+    frame:SetScript("OnEvent", nil)
+    retired, pending = true, false
 end
 
+-- Whether our window is the bank right now: switched on, or switched off
+-- since the last reload with the client's frame still retired.
+function Bank.Serves()
+    return Bags.db().bank or retired
+end
+
+-- Module off or bank takeover off. The client's frame can only come back
+-- clean through a reload.
 function Bank.RestoreBlizzard()
-    local frame = _G.BankFrame
-    if not (frame and parked) then return end
-    parked = false
-    pcall(frame.SetAlpha, frame, 1)
-    pcall(frame.EnableMouse, frame, true)
-    pcall(function()
-        frame:ClearAllPoints()
-        frame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 35, -104)
-    end)
+    pending = false
+    -- once: every later option change runs through here too
+    if retired and not Bank.askedReload then
+        Bank.askedReload = true
+        StaticPopup_Show("VFUI_BANK_RELOAD")
+    end
 end
 
 function Bank.Open()
-    if not Bags.db().bank then return end
+    if not Bank.Serves() then return end
     -- the moment the client's bank reads the bag list (Core.lua, StashBlizzard)
     Bags.CheckTaint("bank open")
-    park()
+    visiting = true
     baseOpen()
+    Bank.Hook()
     -- Our bags belong beside the bank, the way every bank window in the game
     -- has always worked -- and they are remembered as ours to close again.
     if Bags.Window and not Bags.Window.IsShown() then
@@ -65,26 +102,27 @@ function Bank.Open()
 end
 
 function Bank.Close()
+    -- before the hide: the hide below must not end a visit that has ended
+    visiting = false
     baseClose()
     -- The bags go with it, but only if the bank is what brought them up.
     if Bank.openedBags then
         Bank.openedBags = nil
         if Bags.Window then Bags.Window.Close() end
     end
+    if pending and Bags.mod.active and Bags.db().bank then retire() end
 end
 
--- The bank's own frame likes to come back on its own -- a tab change, a
--- purchase. Parking it again is enough; it is never hidden.
+-- From the module's enable, the loading screen and the bank switch: retire
+-- the client's frame, and let a hide of our window end the visit.
 function Bank.Hook()
-    if Bank.hooked then return end
-    local frame = _G.BankFrame
-    if not frame then return end        -- try again on the next pass
+    if Bags.mod.active and Bags.db().bank then retire() end
+    if Bank.hooked or not Bank.frame then return end
     Bank.hooked = true
-    frame:HookScript("OnShow", function()
-        if not (Bags.mod.active and Bags.db().bank) then return end
-        ns.NextFrame(function()
-            park()
-            if not Bank.IsShown() then Bank.Open() end
-        end)
+    Bank.frame:HookScript("OnHide", function()
+        -- still shown = only a parent went (the interface hidden), not a close
+        if not (visiting and retired) or Bank.frame:IsShown() then return end
+        visiting = false
+        if C_Bank and C_Bank.CloseBankFrame then C_Bank.CloseBankFrame() end
     end)
 end
