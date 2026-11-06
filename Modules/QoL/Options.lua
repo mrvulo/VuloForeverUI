@@ -547,7 +547,7 @@ local function professionsPage()
     local knows = P and P.KnowsGathering()
     return {
         { type = "header", text = L["Ore and herbs"] },
-        { type = "desc", text = L["|cffaaaaaaWith Mining or Herbalism, the game's interact icon stands over the ore or herb in front of you, from further away. The game cannot make them sparkle like quest objects; this is the closest it allows. Your own settings come back when you turn it off.|r"] },
+        { type = "desc", text = L["|cffaaaaaaWith Mining or Herbalism, the game's interact icon stands over the ore or herb in front of you, from further away. The sparkle marks the nearest one only: the game picks just one object at a time. Your own settings come back when you turn it off.|r"] },
         { type = "desc", text = knows and L["Mining or Herbalism known: active."]
             or L["|cffff6666This character knows neither Mining nor Herbalism.|r"] },
         toggle("professions", "gatherIcon", L["Mark ore and herbs"],
@@ -555,6 +555,16 @@ local function professionsPage()
         slider("professions", "range", L["Range (yards)"], 10, 45, 1, {
             tooltip = L["How far ahead the game looks for something to mark."],
             disabled = function() return not QoL.db().professions.gatherIcon end,
+        }),
+        toggle("professions", "sparkle", L["Sparkle on ore and herbs"], {
+            tooltip = L["The nearest herb or ore vein in front of you sparkles, for a gathering profession this character has. Off while a controller is connected."],
+            disabled = function() return not QoL.db().professions.gatherIcon end,
+        }),
+        color("professions", "sparkleColor", L["Sparkle color"], {
+            disabled = function()
+                local d = QoL.db().professions
+                return not (d.gatherIcon and d.sparkle)
+            end,
         }),
     }
 end

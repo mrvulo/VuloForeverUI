@@ -313,6 +313,18 @@ These apply to every visible change, in every module.
   player's values are kept in `professions.savedCVars`. Fishing sets some of
   the same CVars: whichever part holds a kept value, the other writes through
   that keep, so neither restores the other's value as the player's own.
+- **Node sparkle** (`NodeSparkle.lua`, `professions.sparkle`, `sparkleColor`):
+  an effect on a world object is still impossible; what is possible is a
+  frame of ours on the NAMEPLATE of the one soft-interact object. Only when
+  that object is a herb or ore (read from the cursor the client would show:
+  GatherHerbs / Mine) and the character has that profession, the sparkle
+  opens `SoftTargetNameplateInteract` and draws on the plate; anything else
+  closes it again, so a mailbox or NPC never gets a plate it did not have.
+  One node at a time by nature. The two nameplate CVars ride on the gathering
+  icon's keep (`professions.savedCVars`); a value no longer wanted goes back
+  on its own. Off with a controller connected (the client's gamepad interact
+  target got blocked as addon code when we wrote these CVars). Our nameplate
+  module never takes a game object's plate (`UnitIsGameObject`).
 - **Daily word** (`DailyWord.lua`, data `DailyWordData.lua`): one word a
   day by the player's own calendar day (day 1 = 18 Oct 2026), the same for
   everyone of a language; German for a German addon language, English

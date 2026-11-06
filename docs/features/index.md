@@ -68,6 +68,7 @@ jemand ohne den Code prüfen kann.
 | F-47 | Fensterplätze aus unserem Bearbeitungsmodus auch im Blizzard-Layout | Bearbeitungsmodus | verworfen | – |
 | F-48 | Berufe-Tab: Symbol über Erzen und Kräutern | Komfort | gebaut | – |
 | F-49 | DoT-Restzeit auf dem Symbol, grün wenn Nachwirken nichts abschneidet | Cooldown Manager | gebaut | – |
+| F-50 | Funkeln auf dem nächsten Erz oder Kraut | Komfort | gebaut | – |
 
 ---
 
@@ -328,6 +329,17 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Dann** wird die Zahl grün, sobald nur noch Wirkzeit + Vorlauf übrig sind (Sofortzauber mit Vorlauf 1: bei 1 Sekunde); vorher hat sie die Farbe der Abklingzahl der Leiste.
 - **Wenn** du das Ziel wechselst, **dann** zeigt das Symbol sofort die Zeit auf dem neuen Ziel, oder nichts, wenn der DoT dort nicht läuft.
 - **Wenn** du „Vorlauf in Sekunden“ oder „Farbe zum Nachwirken“ änderst, **dann** zeigt das Symbol es sofort, auch bei einem laufenden DoT.
+
+---
+
+### F-50 Funkeln auf dem nächsten Erz oder Kraut
+- Angenommen „Erze und Kräuter markieren“ und „Funkeln auf Erz und Kräutern“ sind an und der Charakter kann Kräuterkunde, **wenn** du auf ein Kraut zuläufst, **dann** funkelt es golden (Schein, aufsteigende Funken, aufblitzende Sterne), sobald es das nächste nutzbare Objekt vor dir ist.
+- Angenommen der Charakter kann nur Kräuterkunde, **wenn** du vor einer Erzader stehst, **dann** funkelt sie nicht (und umgekehrt mit Bergbau).
+- **Wenn** das nächste Objekt ein Briefkasten, eine Truhe oder ein NPC ist, **dann** funkelt nichts und es erscheint keine zusätzliche Namensplakette.
+- **Wenn** du weggehst oder ein anderes Objekt näher ist, **dann** verschwindet das Funkeln bzw. springt auf das neue Kraut/Erz.
+- **Wenn** du die Farbe änderst, **dann** funkelt das nächste Vorkommen in der neuen Farbe.
+- **Wenn** du den Schalter ausschaltest, **dann** gelten wieder deine eigenen Einstellungen für Namensplaketten von Objekten.
+- Angenommen ein Controller ist angeschlossen, **dann** bleibt das Funkeln aus und es kommt kein Fehler `SetPreferredGamepadInteractTarget`.
 
 ## Offen
 

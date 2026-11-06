@@ -111,6 +111,8 @@ local mod = ns:RegisterModule("qol", {
         professions = {
             gatherIcon = true,      -- interact icon over ore and herbs (Mining / Herbalism)
             range      = 40,        -- yards the client looks for them
+            sparkle    = true,      -- the nearest herb or ore sparkles (NodeSparkle.lua)
+            sparkleColor = { r = 1, g = 0.76, b = 0.26 },
         },
 
         -- ------------------------------------------------------------ fishing

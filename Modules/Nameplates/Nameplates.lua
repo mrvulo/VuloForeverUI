@@ -286,6 +286,10 @@ local function attach(unit)
     end
     local nameplate = C_NamePlate.GetNamePlateForUnit(unit)
     if not nameplate then return end            -- forbidden plate: not ours to touch
+    -- An object's plate (soft interact: the herb or ore the sparkle sits on,
+    -- QoL/NodeSparkle.lua) is the client's; a health bar on a herb is nonsense.
+    local object = UnitIsGameObject(unit)
+    if ns.CanRead(object) and object == true then return end
     local isSelf = UnitIsUnit(unit, "player")
     if not ns.IsSecret(isSelf) and isSelf then return end
     if not isEnemy(unit) then
