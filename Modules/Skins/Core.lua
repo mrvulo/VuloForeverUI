@@ -13,6 +13,7 @@
 --   Character.lua  the character window
 --   Stats.lua      the stat pane: section look, sections that fold
 --   Inspect.lua    the inspect window (a load-on-demand addon of the client)
+--   Friends.lua    the friends window, Modern only
 --   Options.lua    the options page
 --
 -- TAINT (docs/concepts.md, engine rules): nothing here hides, reparents or
@@ -48,6 +49,8 @@ local mod = ns:RegisterModule("skins", {
             weaponDps    = true,
             statSections = true,
             collapsed    = {},           -- [section title] = true
+            friends      = true,         -- the friends window (Friends.lua)
+            friendsStyle = "modern",     -- it has no Standard of its own: "modern"
         },
         -- the levelling-guide addon's windows (Guide.lua)
         guide = {

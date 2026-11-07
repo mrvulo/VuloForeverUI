@@ -69,6 +69,7 @@ jemand ohne den Code prüfen kann.
 | F-48 | Berufe-Tab: Symbol über Erzen und Kräutern | Komfort | gebaut | – |
 | F-49 | DoT-Restzeit auf dem Symbol, grün wenn Nachwirken nichts abschneidet | Cooldown Manager | gebaut | – |
 | F-50 | Funkeln auf dem nächsten Erz oder Kraut | Komfort | gebaut | – |
+| F-51 | Freundesliste im dunklen Stil (Modern) | Skins | gebaut | – |
 
 ---
 
@@ -340,6 +341,16 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du die Farbe änderst, **dann** funkelt das nächste Vorkommen in der neuen Farbe.
 - **Wenn** du den Schalter ausschaltest, **dann** gelten wieder deine eigenen Einstellungen für Namensplaketten von Objekten.
 - Angenommen ein Controller ist angeschlossen, **dann** bleibt das Funkeln aus und es kommt kein Fehler `SetPreferredGamepadInteractTarget`.
+
+### F-51 Freundesliste im dunklen Stil
+- Angenommen die Karte „Freundesliste“ steht auf **Modern**, **wenn** du die Freundesliste öffnest (O), **dann** ist das Fenster fast schwarz mit dünnem Rand, ohne Porträt und Steinrahmen; oben Status-Auswahl, mittig deine BattleTag mit Kopier-Symbol, rechts ein Menü-Knopf mit drei Strichen.
+- **Wenn** du auf das Kopier-Symbol klickst, **dann** öffnet sich ein Fenster mit deiner BattleTag zum Kopieren (Strg+C).
+- **Dann** sind die Zeilen flach: links das Spielsymbol (Battle.net-Freund), das Klassensymbol (Charakter-Freund) oder ein graues Battle.net-Symbol (offline); der Name blau, Charaktername und Stufe in Klassenfarbe in Klammern, dahinter der Online-Punkt; darunter grau der Ort bzw. „zuletzt online …“; rechts ein kleiner flacher Einladen-Knopf.
+- **Wenn** du einen Freund anklickst, **dann** trägt seine Zeile links einen goldenen Balken und einen leichten Goldschimmer.
+- **Wenn** du über eine Zeile fährst, sie anklickst oder rechtsklickst, **dann** kommen Tooltip, Auswahl und Rechtsklick-Menü wie ohne Skin; Einladen, Beschwören, „Freund hinzufügen“, „Nachricht senden“, Status-Auswahl und Menü-Knopf funktionieren.
+- **Dann** ist die Scrollleiste schmal und dunkel, die Knöpfe unten und die Reiter sind flach.
+- **Wenn** du die Karte auf **Aus** stellst, **dann** sieht das offene Fenster sofort wieder aus wie das des Spiels.
+- Gruppen für Freunde, Suchfeld und Filter gibt es nicht: die Freundesliste dieses Clients kennt sie nicht, und eine eigene Liste würde die Zeilen des Spiels in unserem Taint aufbauen.
 
 ## Offen
 

@@ -14,7 +14,10 @@ mod.tabs = {
 }
 mod.tabsAlways = true
 
-local function looks(withCards)
+local function looks(withCards, modernOnly)
+    if modernOnly then
+        return { { value = "off", text = L["Off"] }, { value = "modern", text = L["Modern"] } }
+    end
     local t = {
         { value = "off",      text = L["Off"] },
         { value = "standard", text = L["Standard"] },
@@ -78,6 +81,12 @@ function mod:GetOptions()
             rows.toggle("inspectAvgItemLevel", L["Show average item level"],
                 L["Beside the player's level, in the colour chosen for your character window."]),
         } }
+
+    get, set = lookOf("friends", "friendsStyle", win)
+    items[#items + 1] = { type = "card", key = "friends", icon = "Interface\\FriendsFrame\\Battlenet-Portrait",
+        title = L["Friends list"],
+        desc = L["The game's friends list, flat and dark: game or class icon, character and level in class colour, a copy button for your BattleTag."],
+        values = looks(false, true), get = get, set = set }
 
     get, set = lookOf("enabled", "style", guide)
     local installed = Skins.Guide and Skins.Guide.Installed()

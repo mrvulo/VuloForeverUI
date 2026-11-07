@@ -2407,4 +2407,8 @@ ns:RegisterLocale("ptBR", {
     ["Sparkle color"] = "Cor do brilho",
     ["Range (yards)"] = "Alcance (metros)",
     ["How far ahead the game looks for something to mark."] = "Até onde o jogo procura à sua frente algo para marcar.",
+    ["Friends list"] = "Lista de amigos",
+    ["The game's friends list, flat and dark: game or class icon, character and level in class colour, a copy button for your BattleTag."] = "A lista de amigos do jogo, plana e escura: ícone de jogo ou de classe, personagem e nível na cor da classe, um botão para copiar sua BattleTag.",
+    ["Copy BattleTag"] = "Copiar BattleTag",
+    ["Lvl %d"] = "Nv. %d",
 })

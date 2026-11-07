@@ -246,6 +246,17 @@ These apply to every visible change, in every module.
   (`SetTextureSliceMargins`, `Media/textures/round-*.tga`), the zone banner
   stays visible.
 
+- **Friends list** (`Friends.lua`, card "Friends list", 2026-11-07): the
+  client's FriendsFrame, **Modern only** (Off / Modern; Standard would be
+  the client itself). Rows are dressed in a post-hook of
+  `FriendsFrame_UpdateFriendButton`, dividers and invite headers through the
+  list's `OnInitializedFrame` callback. Client texts and textures of a row
+  are re-anchored (icon left, status dot behind the name), never a client
+  frame; the name text is rewritten only from readable data and the
+  client's own text is kept to give back on Off. No friend groups, search or
+  filter: the client has none, and our own data provider would fill every
+  row (and its HelpTip) in our taint.
+
 ## Reminders (`Modules/Reminder/`)
 
 - **Scope:** buffs and consumables out of combat (missing or running out
