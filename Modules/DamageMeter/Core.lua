@@ -243,20 +243,34 @@ local ABBREV_BANDS = {
     { breakpoint = 1000,       abbreviation = "K", significandDivisor = 100,      fractionDivisor = 10,  abbreviationIsGlobal = false },
     { breakpoint = 1,          abbreviation = "",  significandDivisor = 1,        fractionDivisor = 1,   abbreviationIsGlobal = false },
 }
+-- Below 1 no band matched and the raw float came through ("9 (0.4642857...)"
+-- for a mob hit once in a long fight). A last band from 0 prints it whole.
+-- Tried first and dropped if the client refuses a 0 breakpoint.
+local ZERO_BAND = { breakpoint = 0, abbreviation = "", significandDivisor = 1, fractionDivisor = 1, abbreviationIsGlobal = false }
 
 local abbrevCfg   -- nil = not built yet, false = this client has no config API
 
 local function abbrevConfig()
     if abbrevCfg ~= nil then return abbrevCfg end
     abbrevCfg = false
-    if _G.CreateAbbreviateConfig and Abbrev then
-        local ok, cfg = pcall(_G.CreateAbbreviateConfig, ABBREV_BANDS)
+    if not (_G.CreateAbbreviateConfig and Abbrev) then return abbrevCfg end
+    local withZero = {}
+    for i, band in ipairs(ABBREV_BANDS) do withZero[i] = band end
+    withZero[#withZero + 1] = ZERO_BAND
+    for _, bands in ipairs({ withZero, ABBREV_BANDS }) do
+        local ok, cfg = pcall(_G.CreateAbbreviateConfig, bands)
         if ok and cfg then
-            -- Proven once on a plain number before any bar depends on it: the
+            -- Proven once on plain numbers before any bar depends on it: the
             -- band fields are not in the client's API documentation, and a
             -- wrong one would otherwise throw on every row of every tick.
-            local fine, out = pcall(Abbrev, 1234, { config = cfg })
-            if fine and type(out) == "string" then abbrevCfg = { config = cfg } end
+            local opts = { config = cfg }
+            local fine, out = pcall(Abbrev, 1234, opts)
+            local low, lowOut = pcall(Abbrev, 0.5, opts)
+            if fine and type(out) == "string" and (bands == ABBREV_BANDS
+               or (low and type(lowOut) == "string" and not lowOut:find("[.,]"))) then
+                abbrevCfg = opts
+                return abbrevCfg
+            end
         end
     end
     return abbrevCfg
