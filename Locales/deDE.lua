@@ -2445,7 +2445,7 @@ ns:RegisterLocale("deDE", {
     ["Range (yards)"] = "Reichweite (Meter)",
     ["How far ahead the game looks for something to mark."] = "Wie weit voraus das Spiel nach etwas zum Markieren sucht.",
     ["Friends list"] = "Freundesliste",
-    ["The game's friends list, flat and dark: game or class icon, character and level in class colour, a copy button for your BattleTag."] = "Die Freundesliste des Spiels flach und dunkel: Spiel- oder Klassensymbol, Charakter und Stufe in Klassenfarbe, ein Kopier-Knopf für deine BattleTag.",
+    ["The game's friends window, flat and dark: header, search field, filter, groups, friend rows, buttons and scroll bar."] = "Das Freundesfenster des Spiels flach und dunkel: Kopfzeile, Suchfeld, Filter, Gruppen, Freundeszeilen, Knöpfe und Scrollleiste.",
     ["Copy BattleTag"] = "BattleTag kopieren",
     ["Lvl %d"] = "St. %d",
 })

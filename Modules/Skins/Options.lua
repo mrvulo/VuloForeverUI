@@ -85,7 +85,7 @@ function mod:GetOptions()
     get, set = lookOf("friends", "friendsStyle", win)
     items[#items + 1] = { type = "card", key = "friends", icon = "Interface\\FriendsFrame\\Battlenet-Portrait",
         title = L["Friends list"],
-        desc = L["The game's friends list, flat and dark: game or class icon, character and level in class colour, a copy button for your BattleTag."],
+        desc = L["The game's friends window, flat and dark: header, search field, filter, groups, friend rows, buttons and scroll bar."],
         values = looks(false, true), get = get, set = set }
 
     get, set = lookOf("enabled", "style", guide)

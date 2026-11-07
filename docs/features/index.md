@@ -343,14 +343,12 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - Angenommen ein Controller ist angeschlossen, **dann** bleibt das Funkeln aus und es kommt kein Fehler `SetPreferredGamepadInteractTarget`.
 
 ### F-51 Freundesliste im dunklen Stil
-- Angenommen die Karte „Freundesliste“ steht auf **Modern**, **wenn** du die Freundesliste öffnest (O), **dann** ist das Fenster fast schwarz mit dünnem Rand, ohne Porträt und Steinrahmen; oben Status-Auswahl, mittig deine BattleTag mit Kopier-Symbol, rechts ein Menü-Knopf mit drei Strichen.
-- **Wenn** du auf das Kopier-Symbol klickst, **dann** öffnet sich ein Fenster mit deiner BattleTag zum Kopieren (Strg+C).
-- **Dann** sind die Zeilen flach: links das Spielsymbol (Battle.net-Freund), das Klassensymbol (Charakter-Freund) oder ein graues Battle.net-Symbol (offline); der Name blau, Charaktername und Stufe in Klassenfarbe in Klammern, dahinter der Online-Punkt; darunter grau der Ort bzw. „zuletzt online …“; rechts ein kleiner flacher Einladen-Knopf.
-- **Wenn** du einen Freund anklickst, **dann** trägt seine Zeile links einen goldenen Balken und einen leichten Goldschimmer.
-- **Wenn** du über eine Zeile fährst, sie anklickst oder rechtsklickst, **dann** kommen Tooltip, Auswahl und Rechtsklick-Menü wie ohne Skin; Einladen, Beschwören, „Freund hinzufügen“, „Nachricht senden“, Status-Auswahl und Menü-Knopf funktionieren.
-- **Dann** ist die Scrollleiste schmal und dunkel, die Knöpfe unten und die Reiter sind flach.
+- Angenommen die Karte „Freundesliste“ steht auf **Modern**, **wenn** du mit O das Freundesfenster öffnest, **dann** ist es fast schwarz mit dünnem Rand, ohne Porträt und Rahmenkunst; Status-Auswahl, Menü-Knopf, Suchfeld und Filter sind flach und dunkel, BattleTag und Kopier-Symbol bleiben.
+- **Dann** ist jeder Freund eine flache dunkle Zeile mit feiner Trennlinie; Gruppenköpfe sind flache Streifen; Einladen- und Beschwören-Knopf sind kleine flache Quadrate; „Freund hinzufügen“ ist flach, die Scrollleiste schmal.
+- **Wenn** du einen Freund anklickst, **dann** trägt seine Zeile links einen goldenen Balken; ein zweiter Klick nimmt ihn wieder weg.
+- **Wenn** du suchst, filterst, eine Gruppe ein- oder ausklappst, über eine Zeile fährst oder sie rechtsklickst, **dann** funktioniert alles wie ohne Skin (Tooltip, Menü, Einladen, Kopieren, Status).
 - **Wenn** du die Karte auf **Aus** stellst, **dann** sieht das offene Fenster sofort wieder aus wie das des Spiels.
-- Gruppen für Freunde, Suchfeld und Filter gibt es nicht: die Freundesliste dieses Clients kennt sie nicht, und eine eigene Liste würde die Zeilen des Spiels in unserem Taint aufbauen.
+- Schaltet das Spiel das neue Freundesfenster ab und zeigt die alte Freundesliste, **dann** ist auch diese dunkel (Klassenfarbe, Kopier-Knopf, flache Zeilen).
 
 ## Offen
 

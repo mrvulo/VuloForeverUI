@@ -2445,7 +2445,7 @@ ns:RegisterLocale("ruRU", {
     ["Range (yards)"] = "Дальность (метры)",
     ["How far ahead the game looks for something to mark."] = "Как далеко впереди игра ищет, что отметить.",
     ["Friends list"] = "Список друзей",
-    ["The game's friends list, flat and dark: game or class icon, character and level in class colour, a copy button for your BattleTag."] = "Список друзей игры в плоском тёмном стиле: значок игры или класса, персонаж и уровень в цвете класса, кнопка для копирования BattleTag.",
+    ["The game's friends window, flat and dark: header, search field, filter, groups, friend rows, buttons and scroll bar."] = "Окно друзей игры в плоском тёмном стиле: заголовок, поле поиска, фильтр, группы, строки друзей, кнопки и полоса прокрутки.",
     ["Copy BattleTag"] = "Копировать BattleTag",
     ["Lvl %d"] = "Ур. %d",
 })

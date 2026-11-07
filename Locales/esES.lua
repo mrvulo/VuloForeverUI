@@ -2445,7 +2445,7 @@ local T = {
     ["Range (yards)"] = "Alcance (metros)",
     ["How far ahead the game looks for something to mark."] = "Hasta dónde busca el juego delante de ti algo que marcar.",
     ["Friends list"] = "Lista de amigos",
-    ["The game's friends list, flat and dark: game or class icon, character and level in class colour, a copy button for your BattleTag."] = "La lista de amigos del juego, plana y oscura: icono de juego o de clase, personaje y nivel en color de clase, un botón para copiar tu BattleTag.",
+    ["The game's friends window, flat and dark: header, search field, filter, groups, friend rows, buttons and scroll bar."] = "La ventana de amigos del juego, plana y oscura: cabecera, campo de búsqueda, filtro, grupos, filas de amigos, botones y barra de desplazamiento.",
     ["Copy BattleTag"] = "Copiar BattleTag",
     ["Lvl %d"] = "Nv. %d",
 }

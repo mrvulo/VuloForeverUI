@@ -246,8 +246,16 @@ These apply to every visible change, in every module.
   (`SetTextureSliceMargins`, `Media/textures/round-*.tga`), the zone banner
   stays visible.
 
-- **Friends list** (`Friends.lua`, card "Friends list", 2026-11-07): the
-  client's FriendsFrame, **Modern only** (Off / Modern; Standard would be
+- **Friends list** (card "Friends list", 2026-11-07). Forever opens the
+  **social window** with O (`SocialUIFrame`, Blizzard_SocialUI; used while
+  `SocialUIControl.IsEnabled()`), not the old FriendsFrame -- the first build
+  skinned only the old one and the player saw no change. `Social.lua` skins
+  the social window: its own search, filter, groups, copy and menu buttons
+  are the client's, we only flatten them; cards and group headers are
+  dressed through the list's `OnInitializedFrame` callback, a card's
+  selection through a post-hook of its `SetSelected`.
+  `Friends.lua` keeps the old FriendsFrame skinned for when the client uses
+  it: **Modern only** (Off / Modern; Standard would be
   the client itself). Rows are dressed in a post-hook of
   `FriendsFrame_UpdateFriendButton`, dividers and invite headers through the
   list's `OnInitializedFrame` callback. Client texts and textures of a row

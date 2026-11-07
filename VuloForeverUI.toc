@@ -133,6 +133,7 @@ Modules\Skins\Character.lua
 Modules\Skins\Stats.lua
 Modules\Skins\Inspect.lua
 Modules\Skins\Friends.lua
+Modules\Skins\Social.lua
 Modules\Skins\Guide.lua
 Modules\Skins\Options.lua
 Modules\Nameplates\Nameplates.lua

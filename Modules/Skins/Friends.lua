@@ -1,5 +1,9 @@
 -- VuloForeverUI / Modules / Skins / Friends
 --
+-- The OLDER friends window. Forever normally opens the newer social window
+-- instead (Social.lua); this one is what the client shows when that system
+-- is switched off (ToggleFriendsFrame: SocialUIControl.IsEnabled()).
+--
 -- The client's friends window (Blizzard_FriendsFrame, Camelot build) in the
 -- flat dark look: our ground under the window, the status dropdown, the
 -- BattleTag bar and the contacts menu button flat, a copy button beside the
@@ -80,6 +84,9 @@ local function flatButton(b, show, keep)
     end
     return f
 end
+
+-- shared with Social.lua (the newer friends window)
+Skins.Mine, Skins.FadeTextures, Skins.FlatButton = mine, fadeTextures, flatButton
 
 -- ---------------------------------------------------------------- names --
 
