@@ -373,6 +373,10 @@ These apply to every visible change, in every module.
 
 ## Chat (`Modules/Chat/`, copy dialog in `UI/StringDialog.lua`)
 
+- **Links in the chat** are clicked on the client's invisible text under our
+  surface. Our message frame and its `FontStringContainer` must have
+  hyperlinks off (`SetHyperlinksEnabled(false)`, protected: out of combat):
+  the template turns them on and the container then catches every link click.
 - **Copy chat** opens in reading mode: a ScrollingMessageFrame with the chat's
   own font object draws the lines exactly like the chat (every alphabet at
   once); the full text waits selected in an invisible EditBox underneath, so

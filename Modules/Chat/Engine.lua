@@ -195,6 +195,16 @@ function Engine.Surface(cf)
     -- text underneath, which is where the hyperlink zones live.
     smf:EnableMouse(false)
     smf:EnableMouseWheel(false)
+    -- Its text container comes from the client's template with hyperlinks on
+    -- and passed up to the message frame: over a link it took the mouse and
+    -- every click on an item, a name or a quest ended on our surface, which
+    -- does nothing with it. Without hyperlinks the click falls through to
+    -- the client's text. Protected on this client, so never in a fight.
+    local container = smf.FontStringContainer
+    ns:RunOutOfCombatOnce("chat.surface.links." .. tostring(cf:GetName() or cf), function()
+        smf:SetHyperlinksEnabled(false)
+        if container then container:SetHyperlinksEnabled(false) end
+    end)
     d.smf = smf
 
     return smf
