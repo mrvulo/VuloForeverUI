@@ -56,7 +56,7 @@ jemand ohne den Code prüfen kann.
 | F-35 | Durchschnittliche Gegenstandsstufe im Charakterfenster, Farbe wählbar | Skins | gebaut | – |
 | F-36 | Taschen-voll-Helfer: Vorschlag zum Löschen und Plündern mit einem Klick | Taschen | gebaut | – |
 | F-37 | Erinnerungen: Hinweis auf den Zweck und Knopf zur Buffs-Leiste des Cooldown Managers | Erinnerungen | gebaut | – |
-| F-38 | Beim Händler mehrere Stapel kaufen, „Max“ = bezahlbar und passt in die Taschen | Komfort | gebaut | – |
+| F-38 | Beim Händler mehrere Stapel kaufen, „Max“ = ein voller Stapel, Shift+„Max“ = bezahlbar und passt in die Taschen | Komfort | gebaut | – |
 | F-39 | Schadensmesser: Umrandung und Schatten für alle Texte | Schadensmesser | gebaut | – |
 | F-40 | Durchschnittliche Gegenstandsstufe im Betrachten-Fenster | Skins | gebaut | – |
 | F-41 | Verzauberungstexte gekürzt und auf den Modellbereich begrenzt | Skins | gebaut | – |
@@ -72,6 +72,7 @@ jemand ohne den Code prüfen kann.
 | F-51 | Freundesliste im dunklen Stil (Modern) | Skins | gebaut | – |
 | F-52 | Neuer Zauberrang erscheint nicht doppelt in der Vorschau | Cooldown Manager | gebaut | – |
 | F-53 | Talentbedingungen pro Symbol | Cooldown Manager | gebaut | – |
+| F-54 | Menge im Teilen-Fenster eintippen | Komfort | gebaut | – |
 
 ---
 
@@ -256,7 +257,8 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du „Buffs-Leiste öffnen“ klickst, **dann** springt das Fenster zum Cooldown Manager, Reiter „Zauber“, mit der Leiste „Buffs“ ausgewählt; gibt es keine Buffs-Leiste, steht die erste Leiste da (mit „Neue Stärkungszauberleiste hinzufügen“).
 
 ### F-38 Beim Händler mehrere Stapel kaufen
-- Angenommen genug Gold und freie Plätze, **wenn** du beim Händler Shift auf Wasser klickst, **dann** geht Blizzards Fenster über 20 hinaus, und „Max“ trägt so viele ein, wie in deine Taschen passen (freie Plätze plus angefangene Stapel), höchstens was dein Gold hergibt und der Händler vorrätig hat.
+- Angenommen genug Gold und freie Plätze, **wenn** du beim Händler Shift auf Wasser klickst, **dann** geht Blizzards Fenster über 20 hinaus, und „Max“ trägt genau einen vollen Stapel ein (Wasser: 20).
+- **Wenn** du mit Shift auf „Max“ klickst, **dann** trägt es so viele ein, wie in deine Taschen passen (freie Plätze plus angefangene Stapel), höchstens was dein Gold hergibt und der Händler vorrätig hat.
 - **Wenn** du „Okay“ klickst, **dann** kauft das Addon Stapel für Stapel (kurz hintereinander), und im Chat steht „N x … gekauft.“; schließt du den Händler mittendrin, hört es auf.
 - Angenommen eine Menge bis zu einem Stapel, **dann** kauft das Spiel wie gewohnt selbst. Waren, die mit Gegenständen bezahlt werden, behalten die Grenze des Spiels.
 
@@ -367,6 +369,14 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - Angenommen „(mit)“ auf einem Talent, das du nicht gewählt hast, **dann** verschwindet das Symbol von der Leiste im Spiel, die Leiste rückt zusammen; in der Vorschau bleibt es halb durchsichtig stehen.
 - **Wenn** du das Talent lernst oder umskillst, **dann** erscheint oder verschwindet das Symbol sofort, ohne /reload.
 - **Dann** steht derselbe Eintrag auch im Linksklick-Menü des Symbols, mit der Zahl der gesetzten Bedingungen; „Talentbedingungen löschen“ nimmt alle zurück.
+
+---
+
+### F-54 Menge eintippen
+- **Wenn** du im Teilen-Fenster (Händler mit Shift-Klick, Tasche mit Shift-Klick) auf die Zahl klickst, **dann** erscheint dort ein Eingabefeld mit der Menge markiert; der Tooltip über der Zahl sagt das.
+- **Wenn** du 45 tippst und Enter drückst, **dann** kauft bzw. teilt es genau 45; tippst du mehr als möglich, springt das Feld auf die Grenze.
+- **Wenn** du Escape drückst, **dann** bleibt die alte Menge; klickst du daneben, bleibt die getippte Menge stehen, ohne zu kaufen.
+- **Wenn** das Fenster offen ist, aber du nicht auf die Zahl geklickt hast, **dann** laufen WASD und andere Tasten wie gewohnt.
 
 ## Offen
 

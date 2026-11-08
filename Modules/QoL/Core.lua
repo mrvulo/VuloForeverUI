@@ -127,7 +127,8 @@ local mod = ns:RegisterModule("qol", {
         stackSplit = {
             maxButton = false,
             skin      = false,
-            merchantBuy = true,     -- shift-click at a merchant: more than one stack, Max = what fits and pays
+            merchantBuy = true,     -- shift-click at a merchant: more than one stack; Max = one stack, Shift+Max = what fits and pays
+            typeAmount  = true,     -- click the number to type the amount
         },
 
         -- --------------------------------------------------------- flight time

@@ -323,7 +323,13 @@ These apply to every visible change, in every module.
   of that item, in bags that may hold it); Max fills it in. Above one
   purchase the item button's SplitStack (wrapped once, original kept) buys
   purchase by purchase, 0.3 s apart, while the merchant is open. Items with
-  an extended cost keep the client's cap.
+  an extended cost keep the client's cap. **Max = one full stack** at a
+  merchant, Shift+Max = the whole raised cap (the player's call, 2026-11-08:
+  Max meant "a stack", not "everything I can afford").
+- **Typing the amount** (`stackSplit.typeAmount`): the client takes digits but
+  drops one that goes past the cap and shows no field. A click on the number
+  opens our edit box (never auto-focused: the open split window must keep the
+  movement keys); typing clamps to the cap, Enter = Okay, Escape discards.
 - **Fishing key** (`Fishing.lua`, `Bindings.xml`): a CLICK binding the
   player sets in the client's key bindings ("VuloForeverUI: Fishing") on a
   secure button; PreClick (out of combat, gated on the part being on) points

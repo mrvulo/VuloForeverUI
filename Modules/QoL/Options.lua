@@ -208,9 +208,11 @@ local function vendorPage()
         { type = "header", text = L["Splitting a stack"] },
         toggle("stackSplit", "maxButton", L["A button for the whole stack"],
             L["Sits in the client's own split window, which is the one every bag opens -- ours, the client's, the bank."]),
+        toggle("stackSplit", "typeAmount", L["Type the amount"],
+            L["Click the number and type how many you want. Enter confirms."]),
         toggle("stackSplit", "skin", L["Give that window our look"]),
         toggle("stackSplit", "merchantBuy", L["Buy more than one stack at a merchant"],
-            L["Shift-click an item at a merchant: the window goes past one stack, and Max fills in as many as you can pay for, the merchant has and your bags can hold. Items paid with other items keep the game's limit."]),
+            L["Shift-click an item at a merchant: the window goes past one stack. Max fills in one full stack, Shift-click on Max as many as you can pay for, the merchant has and your bags can hold. Items paid with other items keep the game's limit."]),
     }
 end
 
