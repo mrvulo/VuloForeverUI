@@ -52,12 +52,13 @@ end
 
 -- spellID -> key text, itemID -> key text. Rebuilt, never patched: a single
 -- pass over 180 slots is cheaper than working out which slot a change touched.
-local spells, items = {}, {}
+local spells, items, byName = {}, {}, {}
 
 function B.Rebuild()
     if ns:InCombat() then return end
     wipe(spells)
     wipe(items)
+    wipe(byName)
     if not (GetActionInfo and GetBindingKey) then return end
     for _, range in ipairs(RANGES) do
         for slot = range.first, range.last do
@@ -76,6 +77,10 @@ function B.Rebuild()
                         local text = B.Abbreviate(binding)
                         if kind == "spell" and spells[id] == nil then
                             spells[id] = text
+                            local name = C_Spell.GetSpellName(id)
+                            if type(name) == "string" and byName[name] == nil then
+                                byName[name] = text
+                            end
                         elseif kind == "item" and items[id] == nil then
                             items[id] = text
                         end
@@ -89,5 +94,15 @@ end
 function B.For(entry)
     if type(entry) ~= "table" or type(entry.id) ~= "number" then return nil end
     if entry.kind == "item" then return items[entry.id] end
-    return spells[entry.id]
+    -- A slot row is whatever item is worn there now.
+    if entry.kind == "slot" then
+        local rid = CM.Resolve(entry)
+        return rid and items[rid] or nil
+    end
+    -- A row saved at an older rank still finds the button that casts the
+    -- new one: same spell, same name.
+    local text = spells[entry.id]
+    if text then return text end
+    local name = C_Spell.GetSpellName(entry.id)
+    return type(name) == "string" and byName[name] or nil
 end

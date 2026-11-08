@@ -2448,4 +2448,13 @@ ns:RegisterLocale("ruRU", {
     ["The game's friends window, flat and dark: header, search field, filter, groups, friend rows, buttons and scroll bar."] = "Окно друзей игры в плоском тёмном стиле: заголовок, поле поиска, фильтр, группы, строки друзей, кнопки и полоса прокрутки.",
     ["Copy BattleTag"] = "Копировать BattleTag",
     ["Lvl %d"] = "Ур. %d",
+    ["Talents"] = "Таланты",
+    ["with"] = "с",
+    ["without"] = "без",
+    ["Talent conditions"] = "Условия талантов",
+    ["The client has no talents to offer yet"] = "Клиент пока не отдаёт таланты",
+    ["Click a talent: only with it, only without it, does not matter."] = "Щёлкните талант: только с ним, только без него, неважно.",
+    ["Clear talent conditions"] = "Сбросить условия талантов",
+    ["Talents can only be read out of combat"] = "Таланты можно прочитать только вне боя",
+    ["Left-click: settings. Right-click: talent conditions. Drag: move."] = "ЛКМ: настройки. ПКМ: условия талантов. Перетаскивание: переместить.",
 })

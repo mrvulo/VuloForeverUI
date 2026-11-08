@@ -606,6 +606,22 @@ local function menuToggle(e, label, key)
         func = function() e[key] = (not e[key]) or nil; menuApply() end }
 end
 
+-- The talent conditions of one row: its own menu, on a right-click in the
+-- preview and from the row menu, because the trees need both menu levels.
+function CM.TalentMenu(barKey, index)
+    local b = CM.Bar(barKey)
+    local list = b and CM.Spells(b)
+    local e = list and list[index]
+    if not e then return nil end
+    local menu = CM.Talents.Menu(e, function()
+        CM.RestyleAll()
+        CM.RefreshPreview()
+        if UI.currentTab == "spell" then rebuild("spell") end
+    end)
+    menu[1].text = ("%s: %s"):format(entryName(e), L["Talent conditions"])
+    return menu
+end
+
 function CM.RowMenu(barKey, index)
     local b = CM.Bar(barKey)
     local list = b and CM.Spells(b)
@@ -669,6 +685,13 @@ function CM.RowMenu(barKey, index)
         menuTri(e, L["Glow when it is ready"], "readyGlow"),
         menuTri(e, L["Glow on a proc"], "procGlow"),
         menuPick(e, L["Glow from this many stacks"], "stackGlow", stacks, 0),
+        { text = CM.Talents.Count(e) > 0
+                and ("%s  |cff777777(%d)|r"):format(L["Talent conditions"], CM.Talents.Count(e))
+                or L["Talent conditions"],
+          func = function()
+            local menu = CM.TalentMenu(barKey, index)
+            if menu then ns:ShowPopupMenu(menu, "cursor") end
+        end },
         { text = L["Active phase"], submenu = {
             menuToggle(e, L["Show the active phase"], "activePhase"),
             menuToggle(e, L["Glow while it is active"], "activeGlow"),
@@ -680,9 +703,10 @@ function CM.RowMenu(barKey, index)
             rebuild("spell")
         end },
         { text = L["Hand every setting back to the bar"], func = function()
-            local id, kind = e.id, e.kind
+            -- Talent conditions are not a bar setting; they stay.
+            local id, kind, talents = e.id, e.kind, e.talents
             wipe(e)
-            e.id, e.kind = id, kind
+            e.id, e.kind, e.talents = id, kind, talents
             menuApply()
         end },
     }

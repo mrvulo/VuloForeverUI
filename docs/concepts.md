@@ -192,6 +192,17 @@ These apply to every visible change, in every module.
   the dot bars) with our font string as duration text and a colour curve over
   the remaining seconds. The player chose this over a glow, which would only
   have worked out of combat. The row's cooldown number gives way to it.
+- **A spell is its name, not its id** (2026-11-08): every rank shares the
+  name and the book keeps only the top rank, so rows, the picker, the preview
+  filler and the keybind lookup match spells by name (`CM.RowIs`).
+- **Talent conditions** (`Talents.lua`, 2026-11-08): a row carries
+  `talents = { [nodeID] = true | false }` (only with / only without). Forever's
+  three trees are one C_Traits tree of the combat config, split into node
+  groups. A row whose build does not fit takes no slot on the real bar
+  (`CM.Shown`); the settings preview keeps every row (`CM.Own(bar, true)`,
+  its icon index is the row index) and fades the resting ones. Read out of
+  combat only, cached, dropped on the talent events. A talent the client
+  does not answer about never hides anything.
 
 ## Nameplates (`Modules/Nameplates/`)
 

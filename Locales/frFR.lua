@@ -2448,4 +2448,13 @@ ns:RegisterLocale("frFR", {
     ["The game's friends window, flat and dark: header, search field, filter, groups, friend rows, buttons and scroll bar."] = "La fenêtre d'amis du jeu, sombre et épurée : en-tête, champ de recherche, filtre, groupes, lignes d'amis, boutons et barre de défilement.",
     ["Copy BattleTag"] = "Copier le BattleTag",
     ["Lvl %d"] = "Niv. %d",
+    ["Talents"] = "Talents",
+    ["with"] = "avec",
+    ["without"] = "sans",
+    ["Talent conditions"] = "Conditions de talents",
+    ["The client has no talents to offer yet"] = "Le client ne propose pas encore de talents",
+    ["Click a talent: only with it, only without it, does not matter."] = "Cliquez sur un talent : seulement avec, seulement sans, peu importe.",
+    ["Clear talent conditions"] = "Effacer les conditions de talents",
+    ["Talents can only be read out of combat"] = "Les talents ne se lisent que hors combat",
+    ["Left-click: settings. Right-click: talent conditions. Drag: move."] = "Clic gauche : réglages. Clic droit : conditions de talents. Glisser : déplacer.",
 })

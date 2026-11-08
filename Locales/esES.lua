@@ -2448,6 +2448,15 @@ local T = {
     ["The game's friends window, flat and dark: header, search field, filter, groups, friend rows, buttons and scroll bar."] = "La ventana de amigos del juego, plana y oscura: cabecera, campo de búsqueda, filtro, grupos, filas de amigos, botones y barra de desplazamiento.",
     ["Copy BattleTag"] = "Copiar BattleTag",
     ["Lvl %d"] = "Nv. %d",
+    ["Talents"] = "Talentos",
+    ["with"] = "con",
+    ["without"] = "sin",
+    ["Talent conditions"] = "Condiciones de talentos",
+    ["The client has no talents to offer yet"] = "El cliente aún no ofrece talentos",
+    ["Click a talent: only with it, only without it, does not matter."] = "Haz clic en un talento: solo con él, solo sin él, da igual.",
+    ["Clear talent conditions"] = "Borrar condiciones de talentos",
+    ["Talents can only be read out of combat"] = "Los talentos solo se pueden leer fuera de combate",
+    ["Left-click: settings. Right-click: talent conditions. Drag: move."] = "Clic izquierdo: ajustes. Clic derecho: condiciones de talentos. Arrastrar: mover.",
 }
 
 ns:RegisterLocale("esES", T)

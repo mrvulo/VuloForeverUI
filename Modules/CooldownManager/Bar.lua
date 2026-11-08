@@ -365,7 +365,7 @@ local function collectOverflow(targetKey, out, seen)
             seen[key] = true
             local cap = tonumber(other.maxIcons) or 0
             if cap > 0 then
-                local list = CM.Spells(other)
+                local list = CM.Shown(other)
                 for i = cap + 1, #list do out[#out + 1] = list[i] end
             end
             collectOverflow(key, out, seen)
@@ -373,10 +373,44 @@ local function collectOverflow(targetKey, out, seen)
     end
 end
 
-function CM.Own(bar)
+-- The rows whose talent conditions the current build meets. A row that steps
+-- aside takes no slot: the bar closes up, and the cap counts what is shown.
+function CM.Shown(bar)
     local list = CM.Spells(bar)
+    local pass = CM.Talents and CM.Talents.Pass
+    if not pass then return list end
+    local out
+    for i = 1, #list do
+        if not pass(list[i]) then
+            if not out then
+                out = {}
+                for j = 1, i - 1 do out[j] = list[j] end
+            end
+        elseif out then
+            out[#out + 1] = list[i]
+        end
+    end
+    return out or list
+end
+
+-- `all`: every saved row, conditions or not. The settings preview wants that,
+-- because its icon INDEX is the row's index -- a drag, a click and a menu all
+-- go by it, and a row hidden by its talents must stay reachable there.
+function CM.Own(bar, all)
+    local list = all and CM.Spells(bar) or CM.Shown(bar)
     local cap = tonumber(bar.maxIcons) or 0
     if cap <= 0 or #list <= cap then return list end
+    -- The preview's cap counts what the real bar shows: a resting row rides
+    -- along without taking one of the slots.
+    if all and CM.Talents then
+        local out, shown = {}, 0
+        for i = 1, #list do
+            if shown >= cap then break end
+            out[i] = list[i]
+            if CM.Talents.Pass(list[i]) then shown = shown + 1 end
+        end
+        return out
+    end
     local out = {}
     for i = 1, cap do out[i] = list[i] end
     return out
@@ -869,7 +903,11 @@ function CM.PaintFrame(frame, bar, list, owned)
             -- A borrowed icon is a stand-in, not a setting: half strength, and
             -- it answers no mouse.
             local borrowed = i > owned
-            icon.button:SetAlpha(borrowed and 0.45 or 1)
+            -- The preview keeps a row its talents hide, faded, so it can be
+            -- found and its conditions changed.
+            local resting = not borrowed and frame.showAll and CM.Talents
+                and not CM.Talents.Pass(list[i])
+            icon.button:SetAlpha((borrowed or resting) and 0.45 or 1)
             icon.button:EnableMouse(not borrowed)
         end
     end

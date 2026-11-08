@@ -166,6 +166,25 @@ function CM.Normalize(list)
     return list
 end
 
+-- One spell, any rank. Every rank of a spell carries the same name, and the
+-- spellbook keeps only the top one: a row saved at rank 1 and the book's new
+-- rank 2 are the same row, and an id comparison alone drew it twice.
+function CM.SameSpell(a, b)
+    if a == b then return true end
+    if type(a) ~= "number" or type(b) ~= "number" then return false end
+    local na, nb = C_Spell.GetSpellName(a), C_Spell.GetSpellName(b)
+    return type(na) == "string" and na ~= "" and na == nb
+end
+
+-- Does this row stand for that id? The kind is part of the match (trinket
+-- slot 13 is not spell 13); spells also match across their ranks.
+function CM.RowIs(e, id, kind)
+    if type(e) ~= "table" then return false end
+    if kind ~= nil and e.kind ~= kind then return false end
+    if e.id == id then return true end
+    return e.kind == "spell" and CM.SameSpell(e.id, id)
+end
+
 -- The one setting reader. An entry wins over the bar; nil falls through.
 function CM.Val(bar, entry, key)
     if entry then
@@ -360,17 +379,27 @@ end
 function CM.CollectCandidates()
     local out, seen = {}, {}
 
+    -- Keyed by name: two ranks of one spell are one candidate. A later rank
+    -- from the book replaces an earlier one, the book lists them in order.
     local function add(spellID, source)
-        if type(spellID) ~= "number" or seen[spellID] then return end
+        if type(spellID) ~= "number" then return end
         local name = C_Spell.GetSpellName(spellID)
         if type(name) ~= "string" or name == "" then return end
-        seen[spellID] = true
+        local had = seen[name]
+        if had then
+            if source == "book" and had.source == "book" then
+                had.spellID = spellID
+                had.icon = C_Spell.GetSpellTexture(spellID)
+            end
+            return
+        end
         out[#out + 1] = {
             spellID = spellID,
             name = name,
             icon = C_Spell.GetSpellTexture(spellID),
             source = source,
         }
+        seen[name] = out[#out]
     end
 
     -- 1. The client's own catalogue, when it carries anything.
@@ -436,7 +465,9 @@ function CM.PreviewFill(list, want)
     for _, cand in ipairs(CM.Candidates()) do
         if #out >= want then break end
         local dup = false
-        for _, e in ipairs(out) do if e.id == cand.spellID then dup = true end end
+        for _, e in ipairs(out) do
+            if CM.RowIs(e, cand.spellID, "spell") then dup = true; break end
+        end
         if not dup then out[#out + 1] = { id = cand.spellID, kind = "spell" } end
     end
     return out
@@ -449,7 +480,7 @@ function CM.SpellBarName(spellID)
         local bar = db.bars[key]
         if bar then
             for _, e in ipairs(CM.Spells(bar)) do
-                if e.id == spellID then return bar.name end
+                if CM.RowIs(e, spellID, "spell") then return bar.name end
             end
         end
     end
@@ -521,7 +552,8 @@ function CM.AddSpell(barKey, spellID, kind)
 end
 
 -- The KIND is part of the match. Without it, adding trinket slot 13 swept
--- away any other row that happened to carry the number 13.
+-- away any other row that happened to carry the number 13. A spell matches
+-- across its ranks, so adding the new rank moves the old row.
 function CM.RemoveSpellEverywhere(spellID, kind)
     local db = CM.db()
     for _, key in ipairs(db.barOrder or {}) do
@@ -529,7 +561,7 @@ function CM.RemoveSpellEverywhere(spellID, kind)
         if bar then
             local list = CM.Spells(bar)
             for i = #list, 1, -1 do
-                if list[i].id == spellID and (kind == nil or list[i].kind == kind) then
+                if CM.RowIs(list[i], spellID, kind) then
                     table.remove(list, i)
                 end
             end
@@ -610,8 +642,19 @@ function mod:OnEnable()
     self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", function()
         -- A different spec means a different list and a different icon count.
         CM.candidates = nil
+        CM.Talents.Invalidate()
         CM.RestyleAll()
     end)
+    -- A talent picked or dropped: rows with talent conditions come and go.
+    local function talentsChanged()
+        CM.Talents.Invalidate()
+        CM.RestyleAll()
+        CM.RefreshPreview()
+    end
+    self:RegisterEvent("TRAIT_CONFIG_UPDATED", talentsChanged)
+    self:RegisterEvent("PLAYER_TALENT_UPDATE", talentsChanged)
+    self:RegisterEvent("ACTIVE_COMBAT_CONFIG_CHANGED", talentsChanged)
+    self:RegisterEvent("TRAIT_CONFIG_LIST_UPDATED", talentsChanged)
     self:RegisterEvent("PLAYER_REGEN_DISABLED", function() CM.UpdateVisibilityAll() end)
     self:RegisterEvent("PLAYER_REGEN_ENABLED", function() CM.UpdateVisibilityAll() end)
     -- The cooldown of a spell we show has started or ended. The duration

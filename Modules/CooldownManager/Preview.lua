@@ -66,7 +66,7 @@ local function tick(self, elapsed)
     self.wait = 0
     local bar = CM.Bar(CM.previewKey or "") or firstBar()
     if not (bar and previewBar) then return end
-    local own = CM.Own(bar)
+    local own = CM.Own(bar, true)
     CM.PaintFrame(previewBar, bar, CM.PreviewFill(own, PREVIEW_ROWS), #own)
 end
 
@@ -176,14 +176,27 @@ local function wireDrag(index, icon)
         g:Show()
     end)
 
-    -- A left-click (a drag never becomes one) opens the row's own settings.
-    -- Borrowed icons belong to no row and have none.
+    -- A left-click (a drag never becomes one) opens the row's own settings,
+    -- a right-click its talent conditions. Borrowed icons belong to no row
+    -- and have neither.
     b:SetScript("OnClick", function(self, button)
-        if button ~= "LeftButton" or dragFrom then return end
+        if dragFrom then return end
         if (self.vfIndex or 0) > (previewBar.ownedCount or 0) then return end
         local key = currentKey()
-        local menu = key and CM.RowMenu and CM.RowMenu(key, self.vfIndex)
-        if menu then ns:ShowPopupMenu(menu, self, self, true) end
+        if not key then return end
+        -- Two owners for two menus: the menu toggles by owner, and with one
+        -- owner a right-click on an icon whose row menu is open only closed it.
+        -- The texture covers the button, so the outside-click test still
+        -- spares a click on the icon.
+        local menu, owner
+        if button == "RightButton" then
+            menu = CM.TalentMenu and CM.TalentMenu(key, self.vfIndex)
+            owner = icon.texture
+        elseif button == "LeftButton" then
+            menu = CM.RowMenu and CM.RowMenu(key, self.vfIndex)
+            owner = self
+        end
+        if menu then ns:ShowPopupMenu(menu, self, owner, true) end
     end)
 
     b:SetScript("OnDragStop", function()
@@ -205,7 +218,16 @@ local function wireDrag(index, icon)
     -- Hooked, not set: the bar gave these buttons their tooltip scripts, and a
     -- drag hint is an addition to that tooltip, not a replacement for it.
     b:HookScript("OnEnter", function(self)
-        if not dragFrom then return end
+        if not dragFrom then
+            -- What the mouse does here, under the spell's own tooltip.
+            if (self.vfIndex or 0) <= (previewBar.ownedCount or 0) and GameTooltip:IsOwned(self) then
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddLine(L["Left-click: settings. Right-click: talent conditions. Drag: move."],
+                    0.6, 0.6, 0.6, true)
+                GameTooltip:Show()
+            end
+            return
+        end
         local owned = previewBar.ownedCount or 0
         if (self.vfIndex or 0) > owned then return end
         local over, after = dropTarget(owned)
@@ -304,6 +326,7 @@ function CM.BuildPreviewHeader(host, control)
         previewBar:SetPoint("CENTER", panel, "CENTER", 0, 0)
         previewBar.icons = {}
         previewBar.barKey = "__preview"
+        previewBar.showAll = true
         panel.bar = previewBar
         local ticker = CreateFrame("Frame", nil, panel)
         ticker:SetScript("OnUpdate", tick)
@@ -332,7 +355,7 @@ function CM.RefreshPreview(force)
     -- The rows the bar owns, topped up with borrowed ones so an empty or
     -- nearly empty bar still shows its layout. The borrowed ones are drawn at
     -- half strength by the paint pass, exactly as they are on screen.
-    local own = CM.Own(bar)
+    local own = CM.Own(bar, true)
     local list = CM.PreviewFill(own, PREVIEW_ROWS)
 
     previewBar:SetScale(1)

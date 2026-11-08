@@ -70,6 +70,8 @@ jemand ohne den Code prüfen kann.
 | F-49 | DoT-Restzeit auf dem Symbol, grün wenn Nachwirken nichts abschneidet | Cooldown Manager | gebaut | – |
 | F-50 | Funkeln auf dem nächsten Erz oder Kraut | Komfort | gebaut | – |
 | F-51 | Freundesliste im dunklen Stil (Modern) | Skins | gebaut | – |
+| F-52 | Neuer Zauberrang erscheint nicht doppelt in der Vorschau | Cooldown Manager | gebaut | – |
+| F-53 | Talentbedingungen pro Symbol | Cooldown Manager | gebaut | – |
 
 ---
 
@@ -349,6 +351,22 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du suchst, filterst, eine Gruppe ein- oder ausklappst, über eine Zeile fährst oder sie rechtsklickst, **dann** funktioniert alles wie ohne Skin (Tooltip, Menü, Einladen, Kopieren, Status).
 - **Wenn** du die Karte auf **Aus** stellst, **dann** sieht das offene Fenster sofort wieder aus wie das des Spiels.
 - Schaltet das Spiel das neue Freundesfenster ab und zeigt die alte Freundesliste, **dann** ist auch diese dunkel (Klassenfarbe, Kopier-Knopf, flache Zeilen).
+
+---
+
+### F-52 Neuer Zauberrang nicht doppelt
+- Angenommen ein Zauber steht mit Rang 1 auf einer Leiste, **wenn** du Rang 2 lernst, **dann** steht er in der Vorschau nur einmal (kein zweites, halb durchsichtiges Symbol mit Rang 2).
+- **Dann** zeigt das „+“-Menü den Zauber mit dem Namen der Leiste dahinter; ihn dort zu wählen ersetzt die alte Zeile, statt eine zweite anzulegen.
+- **Dann** zeigt das Symbol die Tastenbelegung des Aktionsleisten-Knopfs, auf dem jetzt Rang 2 liegt.
+
+---
+
+### F-53 Talentbedingungen pro Symbol
+- **Wenn** du in der Vorschau mit der rechten Maustaste auf ein Symbol klickst, **dann** öffnet sich „Talentbedingungen“ mit deinen drei Bäumen; jeder Baum klappt seine Talente mit Symbol auf.
+- **Wenn** du ein Talent anklickst, **dann** wechselt es zwischen „(mit)“ grün, „(ohne)“ rot und keiner Bedingung; das Menü bleibt offen.
+- Angenommen „(mit)“ auf einem Talent, das du nicht gewählt hast, **dann** verschwindet das Symbol von der Leiste im Spiel, die Leiste rückt zusammen; in der Vorschau bleibt es halb durchsichtig stehen.
+- **Wenn** du das Talent lernst oder umskillst, **dann** erscheint oder verschwindet das Symbol sofort, ohne /reload.
+- **Dann** steht derselbe Eintrag auch im Linksklick-Menü des Symbols, mit der Zahl der gesetzten Bedingungen; „Talentbedingungen löschen“ nimmt alle zurück.
 
 ## Offen
 
