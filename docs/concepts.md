@@ -204,6 +204,17 @@ These apply to every visible change, in every module.
   combat only, cached, dropped on the talent events. A talent the client
   does not answer about never hides anything.
 
+## Unit Frames (`Modules/UnitFrames/`)
+
+- Dispellable buffs on the target (`DispelGlow.lua`): Blizzard's buff icons
+  on the target frame live in the client's locked aura container, and
+  whether a buff is dispellable is secret in combat. So no glow on Blizzard's
+  icons; a row of our own above the frame instead: an engine container on
+  "target" with `HELPFUL|DISPELLABLE` narrowed to Magic
+  (`includeDispelTypes`), only on a hostile target and only when the
+  spellbook knows a magic dispel (`NP.AuraStyle`). Blizzard's row is left
+  alone, so the dispellable buffs show there as well.
+
 ## Nameplates (`Modules/Nameplates/`)
 
 - Auras are the client's aura containers: we hand over filter strings and

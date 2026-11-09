@@ -73,6 +73,7 @@ jemand ohne den Code prüfen kann.
 | F-52 | Neuer Zauberrang erscheint nicht doppelt in der Vorschau | Cooldown Manager | gebaut | – |
 | F-53 | Talentbedingungen pro Symbol | Cooldown Manager | gebaut | – |
 | F-54 | Menge im Teilen-Fenster eintippen | Komfort | gebaut | – |
+| F-55 | Bannbare Buffs am feindlichen Ziel leuchten | Unit Frames | gebaut | – |
 
 ---
 
@@ -377,6 +378,13 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du 45 tippst und Enter drückst, **dann** kauft bzw. teilt es genau 45; tippst du mehr als möglich, springt das Feld auf die Grenze.
 - **Wenn** du Escape drückst, **dann** bleibt die alte Menge; klickst du daneben, bleibt die getippte Menge stehen, ohne zu kaufen.
 - **Wenn** das Fenster offen ist, aber du nicht auf die Zahl geklickt hast, **dann** laufen WASD und andere Tasten wie gewohnt.
+
+### F-55 Bannbare Buffs leuchten
+- **Angenommen** du spielst einen Charakter, der Buffs vom Feind nehmen kann (Priester mit Magiebannung, Schamane mit Reinigen, Hexenmeister mit Teufelsjäger), und „Bannbare Buffs leuchten“ ist an.
+- **Wenn** du einen Feind mit einem bannbaren Buff anvisierst, **dann** steht dieser Magie-Buff leuchtend (blau, pulsierend) in einer eigenen Reihe direkt über dem Zielrahmen, mit Laufzeit-Spirale und Stapelzahl.
+- **Wenn** das Ziel nur Buffs trägt, die du nicht bannen kannst, oder freundlich ist, **dann** bleibt die Reihe leer; Blizzards normale Buff-Reihe bleibt in jedem Fall wie gehabt.
+- **Wenn** du im Kampf das Ziel wechselst oder der Buff ausläuft, **dann** folgt die Reihe sofort.
+- **Wenn** du die Einstellung ausschaltest oder einen Charakter ohne Bannzauber spielst, **dann** erscheint keine Reihe.
 
 ## Offen
 

@@ -86,6 +86,7 @@ local mod = ns:RegisterModule("unitframes", {
         classicClassColor = false,     -- Classic: Blizzard's green unless asked
         classicStatusText = true,      -- Classic: Blizzard's bar text, always on, percent + value
         classicClassIcon  = true,      -- Classic: ringed class badge on the target portrait
+        dispelGlow        = true,      -- enemy buffs you can dispel glow above the target frame
         player       = { enabled = true, x = -260, y = -180, scale = 1, modern = unitDefaults("player") },
         target       = { enabled = true, x =  260, y = -180, scale = 1, modern = unitDefaults("target") },
         focus        = { enabled = false, x = -480, y =  -60, scale = 1, modern = unitDefaults("focus") },
@@ -146,6 +147,7 @@ local function applyStyle(oldStyle)
         if UF.Extras  then UF.Extras.Enable(mod) end
     end
     if UF.ApplyBlizzMovers then UF.ApplyBlizzMovers(mod) end
+    if UF.DispelGlow then UF.DispelGlow.Enable(mod) end
     if oldStyle and oldStyle ~= style and needsReloadFrom(oldStyle) then
         StaticPopup_Show("VFUI_UNITFRAMES_RELOAD")
     end
@@ -175,6 +177,7 @@ function mod:OnDisable()
     if UF.Extras then UF.Extras.Disable() end
     if UF.Classic then UF.Classic.Disable() end
     if UF.ApplyBlizzMovers then UF.ApplyBlizzMovers(mod) end
+    if UF.DispelGlow then UF.DispelGlow.Refresh() end
     if needsReloadFrom(oldStyle) then
         StaticPopup_Show("VFUI_UNITFRAMES_RELOAD")
     end
@@ -424,6 +427,15 @@ function mod:GetOptions()
             set = function(_, v) mod.db.classicStatusText = v; applyStyle() end }
         items[#items + 1] = { type = "desc", text = L["|cffaaaaaaClassic keeps Blizzard's frames underneath: target auras, the target cast bar and the pet frame stay, and Edit Mode moves them.|r"] }
     end
+
+    items[#items + 1] = { type = "header", text = L["Target buffs"] }
+    items[#items + 1] = { type = "toggle", label = L["Buffs you can dispel glow"],
+        tooltip = L["On an enemy target, the buffs you can take off (Purge, Dispel Magic, Devour Magic) glow in a row of their own above the target frame. The other buffs stay where they are, without glow. Only for characters who can dispel magic."],
+        get = function() return mod.db.dispelGlow ~= false end,
+        set = function(_, v)
+            mod.db.dispelGlow = v
+            if UF.DispelGlow then UF.DispelGlow.Refresh() end
+        end }
 
     if mod.db.style == "modern" then
         items[#items + 1] = { type = "header", text = L["Modern"] }
