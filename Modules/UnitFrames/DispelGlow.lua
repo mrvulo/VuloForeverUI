@@ -5,16 +5,18 @@
 -- asked for a target frame that shows what is worth a purge and nothing else.
 --
 -- Blizzard's buff icons cannot be lit from here: they live in the client's
--- locked aura container (TargetFrameAuraContainer.xml sits in a forbidden
--- object table), and whether a buff is dispellable is secret in combat. So
--- the buff ROW is replaced, in place:
---   * Blizzard's container keeps its debuffs; its buff group is handed a
---     filter that matches nothing (SetBuffFilterString is the container's
---     public setter, called out of combat only, and it persists).
---   * Our engine container, pinned under Blizzard's, shows HELPFUL|DISPELLABLE
---     narrowed to Magic (candidate filter includeDispelTypes), which is what
---     Purge, Dispel Magic and Devour Magic take off. The client filters in C;
---     we never look. Each button carries a glow texture.
+-- locked aura container, and whether a buff is dispellable is secret in
+-- combat. So the buff ROW is replaced, in place:
+--   * Blizzard's container keeps its debuffs; its buff group is capped at
+--     0 (SetMaxBuffs, the container's public setter). Its filter string is no
+--     help: the target container's ShouldIncludeAuraInGroup ignores the
+--     filter match and takes every helpful aura (TargetFrameAuraContainer.lua
+--     :257 / :358). TargetFrame:ConfigureAuraContainer puts the cap back on
+--     every target, faction and target-of-target change (TargetFrame.lua
+--     :511), so a post-hook lowers it again.
+--   * Our engine container, pinned under Blizzard's, shows
+--     HELPFUL|RAID_PLAYER_DISPELLABLE: the engine itself answers "can THIS
+--     player take it off". We never look. Each button carries a glow.
 --   * Only on an enemy target: no friendly buff is ours to purge.
 --
 -- Only for a character whose spellbook knows a magic dispel
@@ -36,8 +38,8 @@ local GLOW    = "Interface\\Buttons\\UI-ActionButton-Border"
 
 local holder
 local glowC               -- our engine container
-local refused              -- the client refused a container or Blizzard's filter
-local blizzOff             -- Blizzard's buff group is emptied
+local refused              -- the client refused our container
+local blizzOff             -- Blizzard's buff group is capped at 0
 local mod
 local unitOf = {}          -- container -> token it was last given
 
@@ -49,12 +51,6 @@ end
 local function filter(...)
     if AuraUtil and AuraUtil.CreateFilterString then return AuraUtil.CreateFilterString(...) end
     return table.concat({ ... }, "|")
-end
-
--- Matches nothing on this client: MAW returns Torghast auras only.
-local function emptyFilter() return filter(F("Helpful", "HELPFUL"), F("Maw", "MAW")) end
-local function blizzFilter()
-    return D.BuffFilterString or F("Helpful", "HELPFUL")
 end
 
 local function blizzContainer()
@@ -123,12 +119,11 @@ local function newContainer()
     if not (ok and c) then return nil end
     local opts = {
         maxFrameCount    = MAX,
-        candidateFilters = { includeDispelTypes = { Magic = true } },
         initializeFrame  = initButton,
         layout = { elementWidth = SIZE, elementHeight = SIZE,
                    elementSpacing = GAP, lineSpacing = GAP },
     }
-    local want = filter(F("Helpful", "HELPFUL"), F("Dispellable", "DISPELLABLE"))
+    local want = filter(F("Helpful", "HELPFUL"), F("RaidPlayerDispellable", "RAID_PLAYER_DISPELLABLE"))
     if not pcall(c.AddAuraGroup, c, "main", want, opts) then return nil end
     local dir = AnchorUtil and AnchorUtil.FlowDirection
     if c.SetFlowLayoutPadding then pcall(c.SetFlowLayoutPadding, c, 0, 0, 0, 0) end
@@ -181,22 +176,21 @@ local function hostileTarget()
     return ok and ns.CanRead(v) and v == true
 end
 
--- Blizzard's buff group off or back on. Its filter persists, so this runs
--- out of combat only, and our row waits for it.
+-- Blizzard's buff group off (cap 0) or back to what the frame asks for.
+local function blizzCap()
+    local tf = _G.TargetFrame
+    local n = tf and tf.maxBuffs or D.MaxBuffs
+    return type(n) == "number" and n or 32
+end
+
 local function setBlizzard(off)
     local bc = blizzContainer()
-    if not (bc and bc.SetBuffFilterString) then refused = true; return end
-    ns:RunOutOfCombatOnce("vfui_dispelglow_blizz", function()
-        if pcall(bc.SetBuffFilterString, bc, off and emptyFilter() or blizzFilter()) then
-            blizzOff = off
-        else
-            -- refused either way: never ours on top of Blizzard's, and no
-            -- second try that would only be refused again
-            refused = true
-            if not off then blizzOff = false end
-        end
-        DG.Refresh()
-    end)
+    if not (bc and bc.SetMaxBuffs) then return false end
+    if pcall(bc.SetMaxBuffs, bc, off and 0 or blizzCap()) then
+        blizzOff = off
+        return true
+    end
+    return false
 end
 
 local function wanted()
@@ -212,9 +206,10 @@ function DG.Refresh()
         return
     end
     if not build() then return end
-    if not blizzOff then
-        -- ours only once Blizzard's buffs are gone: never two rows
-        setBlizzard(true)
+    -- ours only once Blizzard's buffs are gone: never two rows
+    if not setBlizzard(true) then
+        setUnit(glowC, "none")
+        holder:Hide()
         return
     end
     place()
@@ -233,6 +228,13 @@ function DG.Enable(m)
                 -- target hostile without a target change
                 if (ev == "UNIT_FACTION" or ev == "UNIT_FLAGS") and unit ~= "target" then return end
                 if mod then DG.Refresh() end
+            end)
+        end
+        -- Blizzard puts its buff cap back on every reconfigure.
+        local tf = _G.TargetFrame
+        if tf and tf.ConfigureAuraContainer then
+            hooksecurefunc(tf, "ConfigureAuraContainer", function()
+                if blizzOff and mod then setBlizzard(true) end
             end)
         end
         -- Edit Mode may move or rescale the target frame.
