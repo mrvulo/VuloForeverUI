@@ -85,7 +85,7 @@ ns:RegisterLocale("frFR", {
     ["Class icon on the target portrait"] = "Icône de classe sur le portrait de la cible",
     ["Target buffs"] = "Améliorations de la cible",
     ["Buffs you can dispel glow"] = "Les améliorations dissipables brillent",
-    ["On an enemy target, the buffs under the target frame that you can take off (Purge, Dispel Magic, Devour Magic) glow; the others stay plain. Only for characters who can dispel magic, not in the Modern style."] = "Sur une cible ennemie, les améliorations sous le cadre de la cible que vous pouvez retirer (Purge, Dissipation de la magie, Dévorer la magie) brillent ; les autres restent normales. Uniquement pour les personnages capables de dissiper la magie, pas avec le style Moderne.",
+    ["Under the target frame, only the buffs you can take off an enemy (Purge, Dispel Magic, Devour Magic) are shown, and they glow. All other buffs are hidden there, on friendly targets too. Only for characters who can dispel magic, not in the Modern style."] = "Sous le cadre de la cible, seules les améliorations que vous pouvez retirer à un ennemi (Purge, Dissipation de la magie, Dévorer la magie) sont affichées, et elles brillent. Les autres améliorations y sont masquées, y compris sur les cibles amicales. Uniquement pour les personnages capables de dissiper la magie, pas avec le style Moderne.",
     ["Elite dragon on the player frame"] = "Dragon d'élite sur le cadre du joueur",
     ["Status text on the bars"] = "Texte d'état sur les barres",
     ["Sets Blizzard's status text to percent and value, always shown. Change it back under Blizzard's options."] = "Règle le texte d'état de Blizzard sur pourcentage et valeur, toujours affiché. Pour revenir en arrière, utilisez les options de Blizzard.",

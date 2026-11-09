@@ -206,17 +206,16 @@ These apply to every visible change, in every module.
 
 ## Unit Frames (`Modules/UnitFrames/`)
 
-- Dispellable buffs on the target (`DispelGlow.lua`): the player wants the
-  buffs UNDER the target frame to glow, not a separate row. Blizzard's icons
-  live in the client's locked aura container and dispellability is secret in
-  combat, so the buff row is replaced in place: Blizzard's buff group gets a
-  filter that matches nothing (`SetBuffFilterString`, out of combat, it
-  persists), and our engine container pinned under Blizzard's (which keeps
-  the debuffs) shows every buff. A dispel-type texture on each button is
-  shown by the client for Magic only (CustomAsset style). Enemy target: the
-  glowing container; friendly: a plain twin. Only when the spellbook knows a
-  magic dispel; not in Modern (no target auras there). If the client refuses
-  either step, Blizzard's row is restored and ours never shows.
+- Dispellable buffs on the target (`DispelGlow.lua`): the player wants UNDER
+  the target frame only the buffs they can purge, glowing, and no other buff
+  at all (friendly targets included). Blizzard's icons live in the client's
+  locked aura container and dispellability is secret in combat, so the buff
+  row is replaced in place: Blizzard's buff group gets a filter that matches
+  nothing (`SetBuffFilterString`, out of combat, it persists), and our engine
+  container pinned under Blizzard's (which keeps the debuffs) shows
+  `HELPFUL|DISPELLABLE` narrowed to Magic, on a hostile target only. Only
+  when the spellbook knows a magic dispel; not in Modern (no target auras
+  there). If the client refuses either step, Blizzard's row is restored.
 
 ## Nameplates (`Modules/Nameplates/`)
 

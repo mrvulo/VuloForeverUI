@@ -1,7 +1,8 @@
 -- VuloForeverUI / Modules / UnitFrames / DispelGlow
 --
--- The target's buffs under the target frame, with the ones the player can
--- take off glowing and the rest plain.
+-- Under the target frame only the buffs the player can take off, glowing.
+-- Every other buff is gone from there, on friend and foe alike: the player
+-- asked for a target frame that shows what is worth a purge and nothing else.
 --
 -- Blizzard's buff icons cannot be lit from here: they live in the client's
 -- locked aura container (TargetFrameAuraContainer.xml sits in a forbidden
@@ -10,12 +11,11 @@
 --   * Blizzard's container keeps its debuffs; its buff group is handed a
 --     filter that matches nothing (SetBuffFilterString is the container's
 --     public setter, called out of combat only, and it persists).
---   * Our engine container, pinned under Blizzard's, shows every buff
---     (HELPFUL -- Blizzard's own buff filter). Each button carries a
---     dispel-type texture that the CLIENT shows for Magic buffs only
---     (CustomAsset style, asset map with a Magic entry); we never look.
---   * On an enemy target the glowing variant holds the unit, on a friendly
---     one a plain twin: no friendly buff is anyone's to purge.
+--   * Our engine container, pinned under Blizzard's, shows HELPFUL|DISPELLABLE
+--     narrowed to Magic (candidate filter includeDispelTypes), which is what
+--     Purge, Dispel Magic and Devour Magic take off. The client filters in C;
+--     we never look. Each button carries a glow texture.
+--   * Only on an enemy target: no friendly buff is ours to purge.
 --
 -- Only for a character whose spellbook knows a magic dispel
 -- (NP.AuraStyle.CanDispelMagic); everyone else keeps Blizzard's row untouched.
@@ -35,7 +35,7 @@ local MAX     = 16
 local GLOW    = "Interface\\Buttons\\UI-ActionButton-Border"
 
 local holder
-local glowC, plainC        -- engine containers: enemy (glowing) / friend (plain)
+local glowC               -- our engine container
 local refused              -- the client refused a container or Blizzard's filter
 local blizzOff             -- Blizzard's buff group is emptied
 local mod
@@ -71,74 +71,65 @@ local function canDispel()
 end
 
 -- The engine hands each button over once, here; afterwards it is theirs.
-local function initializer(glowing)
-    return function(button)
-        button:SetSize(SIZE, SIZE)
+local function initButton(button)
+    button:SetSize(SIZE, SIZE)
 
-        local icon = button:CreateTexture(nil, "ARTWORK")
-        icon:SetAllPoints(button)
+    local icon = button:CreateTexture(nil, "ARTWORK")
+    icon:SetAllPoints(button)
 
-        local cd = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
-        cd:SetAllPoints(button)
-        cd:SetReverse(true)
-        cd:SetHideCountdownNumbers(true)
+    local cd = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
+    cd:SetAllPoints(button)
+    cd:SetReverse(true)
+    cd:SetHideCountdownNumbers(true)
 
-        local top = CreateFrame("Frame", nil, button)
-        top:SetAllPoints(button)
-        top:SetFrameLevel(cd:GetFrameLevel() + 1)
+    local top = CreateFrame("Frame", nil, button)
+    top:SetAllPoints(button)
+    top:SetFrameLevel(cd:GetFrameLevel() + 1)
 
-        local stacks = top:CreateFontString(nil, "OVERLAY")
-        stacks:SetFont(ns.ModuleFontPath and ns.ModuleFontPath("unitframes") or STANDARD_TEXT_FONT, 10, "OUTLINE")
-        stacks:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 2, -1)
+    local stacks = top:CreateFontString(nil, "OVERLAY")
+    stacks:SetFont(ns.ModuleFontPath and ns.ModuleFontPath("unitframes") or STANDARD_TEXT_FONT, 10, "OUTLINE")
+    stacks:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 2, -1)
 
-        pcall(button.SetIcon, button, icon)
-        pcall(button.SetDurationCooldown, button, cd)
-        pcall(button.SetApplicationCount, button, stacks, {})
+    pcall(button.SetIcon, button, icon)
+    pcall(button.SetDurationCooldown, button, cd)
+    pcall(button.SetApplicationCount, button, stacks, {})
 
-        if glowing then
-            -- The light: shown by the client for Magic buffs only. Its alpha
-            -- is the client's (a secret aspect), so the pulse runs on the
-            -- frame that holds it, which is ours.
-            local layer = CreateFrame("Frame", nil, button)
-            layer:SetAllPoints(button)
-            layer:SetFrameLevel(top:GetFrameLevel() + 1)
-            local glow = layer:CreateTexture(nil, "OVERLAY")
-            glow:SetBlendMode("ADD")
-            glow:SetPoint("CENTER", button, "CENTER", 0, 0)
-            glow:SetSize(SIZE * 1.9, SIZE * 1.9)
-            local style = Enum.CustomAuraButtonDispelTypeTextureStyle
-            pcall(button.AddDispelTypeTexture, button, glow, {
-                showWhenHelpful = true,
-                showWhenHarmful = false,
-                style = style and style.CustomAsset,
-                customDispelAssetMap = { Magic = { asset = GLOW } },
-                customDispelColorMap = { Magic = CreateColor(0.45, 0.8, 1) },
-            })
-            local ag = layer:CreateAnimationGroup()
-            ag:SetLooping("BOUNCE")
-            local a = ag:CreateAnimation("Alpha")
-            a:SetFromAlpha(1)
-            a:SetToAlpha(0.35)
-            a:SetDuration(0.7)
-            a:SetSmoothing("IN_OUT")
-            ag:Play()
-        end
-        -- Mouse motion stays for the client's own aura tooltip; a click would
-        -- only swallow the one meant for the frame.
-        pcall(button.SetMouseClickEnabled, button, false)
-    end
+    -- The light. Every aura in this container is one to purge, so it is
+    -- a plain texture of ours, pulsing on a frame of ours.
+    local layer = CreateFrame("Frame", nil, button)
+    layer:SetAllPoints(button)
+    layer:SetFrameLevel(top:GetFrameLevel() + 1)
+    local glow = layer:CreateTexture(nil, "OVERLAY")
+    glow:SetTexture(GLOW)
+    glow:SetBlendMode("ADD")
+    glow:SetVertexColor(0.45, 0.8, 1)
+    glow:SetPoint("CENTER", button, "CENTER", 0, 0)
+    glow:SetSize(SIZE * 1.9, SIZE * 1.9)
+    local ag = layer:CreateAnimationGroup()
+    ag:SetLooping("BOUNCE")
+    local a = ag:CreateAnimation("Alpha")
+    a:SetFromAlpha(1)
+    a:SetToAlpha(0.35)
+    a:SetDuration(0.7)
+    a:SetSmoothing("IN_OUT")
+    ag:Play()
+    -- Mouse motion stays for the client's own aura tooltip; a click would
+    -- only swallow the one meant for the frame.
+    pcall(button.SetMouseClickEnabled, button, false)
 end
 
-local function newContainer(glowing)
+local function newContainer()
     local ok, c = pcall(CreateFrame, "AuraContainer", nil, holder, "CustomAuraContainerTemplate")
     if not (ok and c) then return nil end
     local opts = {
-        maxFrameCount   = MAX,
-        initializeFrame = initializer(glowing),
+        maxFrameCount    = MAX,
+        candidateFilters = { includeDispelTypes = { Magic = true } },
+        initializeFrame  = initButton,
         layout = { elementWidth = SIZE, elementHeight = SIZE,
                    elementSpacing = GAP, lineSpacing = GAP },
     }
-    if not pcall(c.AddAuraGroup, c, "main", blizzFilter(), opts) then return nil end
+    local want = filter(F("Helpful", "HELPFUL"), F("Dispellable", "DISPELLABLE"))
+    if not pcall(c.AddAuraGroup, c, "main", want, opts) then return nil end
     local dir = AnchorUtil and AnchorUtil.FlowDirection
     if c.SetFlowLayoutPadding then pcall(c.SetFlowLayoutPadding, c, 0, 0, 0, 0) end
     if dir and c.SetFlowLayoutGrowthDirection then
@@ -155,9 +146,8 @@ local function build()
     if glowC or refused then return glowC end
     holder = CreateFrame("Frame", nil, UIParent)
     holder:SetSize(1, 1)
-    glowC = newContainer(true)
-    plainC = glowC and newContainer(false)
-    if not (glowC and plainC) then refused = true; glowC, plainC = nil, nil end
+    glowC = newContainer()
+    if not glowC then refused = true end
     return glowC
 end
 
@@ -217,7 +207,6 @@ end
 function DG.Refresh()
     if refused or not wanted() then
         setUnit(glowC, "none")
-        setUnit(plainC, "none")
         if holder then holder:Hide() end
         if blizzOff then setBlizzard(false) end
         return
@@ -229,9 +218,7 @@ function DG.Refresh()
         return
     end
     place()
-    local enemy = hostileTarget()
-    setUnit(enemy and plainC or glowC, "none")
-    setUnit(enemy and glowC or plainC, UnitExists("target") and "target" or "none")
+    setUnit(glowC, hostileTarget() and "target" or "none")
 end
 
 local hooked
