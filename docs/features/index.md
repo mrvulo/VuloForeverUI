@@ -380,11 +380,11 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** das Fenster offen ist, aber du nicht auf die Zahl geklickt hast, **dann** laufen WASD und andere Tasten wie gewohnt.
 
 ### F-55 Bannbare Buffs leuchten
-- **Angenommen** du spielst einen Charakter, der Buffs vom Feind nehmen kann (Priester mit Magiebannung, Schamane mit Reinigen, Hexenmeister mit Teufelsjäger), und „Bannbare Buffs leuchten“ ist an.
-- **Wenn** du einen Feind mit einem bannbaren Buff anvisierst, **dann** steht dieser Magie-Buff leuchtend (blau, pulsierend) in einer eigenen Reihe direkt über dem Zielrahmen, mit Laufzeit-Spirale und Stapelzahl.
-- **Wenn** das Ziel nur Buffs trägt, die du nicht bannen kannst, oder freundlich ist, **dann** bleibt die Reihe leer; Blizzards normale Buff-Reihe bleibt in jedem Fall wie gehabt.
-- **Wenn** du im Kampf das Ziel wechselst oder der Buff ausläuft, **dann** folgt die Reihe sofort.
-- **Wenn** du die Einstellung ausschaltest oder einen Charakter ohne Bannzauber spielst, **dann** erscheint keine Reihe.
+- **Angenommen** du spielst einen Charakter, der Magie vom Feind bannen kann (Priester mit Magiebannung, Schamane mit Reinigen, Hexenmeister mit Teufelsjäger), Stil Standard oder Classic, und „Bannbare Buffs leuchten“ ist an.
+- **Wenn** du einen Feind (auch einen Spieler im PvP) mit Buffs anvisierst, **dann** stehen seine Buffs wie gewohnt unter dem Zielrahmen (unter den Debuffs), und die Magie-Buffs darunter leuchten blau und pulsieren; die übrigen sind normal.
+- **Wenn** das Ziel freundlich ist, **dann** stehen seine Buffs an derselben Stelle, ohne Leuchten.
+- **Wenn** du im Kampf das Ziel wechselst oder ein Buff ausläuft, **dann** folgt die Reihe sofort; es gibt nie zwei Buff-Reihen.
+- **Wenn** du die Einstellung ausschaltest oder einen Charakter ohne Bannzauber spielst, **dann** zeigt Blizzards eigene Buff-Reihe wieder alles.
 
 ## Offen
 

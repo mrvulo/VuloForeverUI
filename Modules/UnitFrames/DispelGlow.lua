@@ -1,22 +1,25 @@
 -- VuloForeverUI / Modules / UnitFrames / DispelGlow
 --
--- On an enemy target, the buffs the player can take off glow in a row of
--- their own just above the target frame.
+-- The target's buffs under the target frame, with the ones the player can
+-- take off glowing and the rest plain.
 --
--- Why a row of our own and not a glow on Blizzard's buff icons: those icons
--- live in the client's secure aura container (TargetFrameAuraContainer.xml
--- sits in a forbidden object table) and whether a buff is dispellable is
--- secret in combat, so no addon may look at an icon and decide to light it.
--- What the client DOES let us do is hand it a filter string: an engine aura
--- container on "target" with HELPFUL|DISPELLABLE, which the client evaluates
--- in C, creates the buttons for and lays out. We only style the buttons, once,
--- in the initialiser (the same route as the nameplate auras).
+-- Blizzard's buff icons cannot be lit from here: they live in the client's
+-- locked aura container (TargetFrameAuraContainer.xml sits in a forbidden
+-- object table), and whether a buff is dispellable is secret in combat. So
+-- the buff ROW is replaced, in place:
+--   * Blizzard's container keeps its debuffs; its buff group is handed a
+--     filter that matches nothing (SetBuffFilterString is the container's
+--     public setter, called out of combat only, and it persists).
+--   * Our engine container, pinned under Blizzard's, shows every buff
+--     (HELPFUL -- Blizzard's own buff filter). Each button carries a
+--     dispel-type texture that the CLIENT shows for Magic buffs only
+--     (CustomAsset style, asset map with a Magic entry); we never look.
+--   * On an enemy target the glowing variant holds the unit, on a friendly
+--     one a plain twin: no friendly buff is anyone's to purge.
 --
--- Whether the player can dispel at all comes from the spellbook
--- (NP.AuraStyle.CanDispelMagic), never from an aura. Magic only: DISPELLABLE
--- alone means "anyone could", so the row also narrows to the dispel type the
--- offensive dispels of this client take off (Purge, Dispel Magic, Devour
--- Magic) -- the engine compares it in C.
+-- Only for a character whose spellbook knows a magic dispel
+-- (NP.AuraStyle.CanDispelMagic); everyone else keeps Blizzard's row untouched.
+-- Not in the Modern style: its own target frame shows no auras at all.
 local _, ns = ...
 ns.UF = ns.UF or {}
 local UF = ns.UF
@@ -24,22 +27,40 @@ local UF = ns.UF
 local DG = {}
 UF.DispelGlow = DG
 
-local SIZE, GAP = 26, 3
-local MAX = 8
-local GLOW = "Interface\\Buttons\\UI-ActionButton-Border"
+local D = _G.TargetFrameAuraContainerDefaults or {}
+local SIZE    = D.SmallAuraSize or 17
+local GAP     = D.FlowLayoutElementSpacing or 3
+local LINE    = D.FlowLayoutLineSize or 122
+local MAX     = 16
+local GLOW    = "Interface\\Buttons\\UI-ActionButton-Border"
 
-local holder, container
-local refused        -- the client cannot build engine containers: stop asking
+local holder
+local glowC, plainC        -- engine containers: enemy (glowing) / friend (plain)
+local refused              -- the client refused a container or Blizzard's filter
+local blizzOff             -- Blizzard's buff group is emptied
 local mod
-local unitSet        -- the token the container was last given
+local unitOf = {}          -- container -> token it was last given
 
-local function filter()
-    local F = AuraUtil and AuraUtil.AuraFilters or {}
-    local parts = { F.Helpful or "HELPFUL", F.Dispellable or "DISPELLABLE" }
-    if AuraUtil and AuraUtil.CreateFilterString then
-        return AuraUtil.CreateFilterString(unpack(parts))
-    end
-    return table.concat(parts, "|")
+local function F(key, fallback)
+    local t = AuraUtil and AuraUtil.AuraFilters
+    return t and t[key] or fallback
+end
+
+local function filter(...)
+    if AuraUtil and AuraUtil.CreateFilterString then return AuraUtil.CreateFilterString(...) end
+    return table.concat({ ... }, "|")
+end
+
+-- Matches nothing on this client: MAW returns Torghast auras only.
+local function emptyFilter() return filter(F("Helpful", "HELPFUL"), F("Maw", "MAW")) end
+local function blizzFilter()
+    return D.BuffFilterString or F("Helpful", "HELPFUL")
+end
+
+local function blizzContainer()
+    local tf = _G.TargetFrame
+    local c = tf and tf.TargetFrameContent and tf.TargetFrameContent.TargetFrameContentContextual
+    return c and c.Auras
 end
 
 local function canDispel()
@@ -50,111 +71,118 @@ local function canDispel()
 end
 
 -- The engine hands each button over once, here; afterwards it is theirs.
-local function initButton(button)
-    button:SetSize(SIZE, SIZE)
+local function initializer(glowing)
+    return function(button)
+        button:SetSize(SIZE, SIZE)
 
-    local icon = button:CreateTexture(nil, "ARTWORK")
-    icon:SetAllPoints(button)
-    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        local icon = button:CreateTexture(nil, "ARTWORK")
+        icon:SetAllPoints(button)
 
-    local cd = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
-    cd:SetAllPoints(button)
-    cd:SetReverse(true)
-    cd:SetHideCountdownNumbers(true)
+        local cd = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
+        cd:SetAllPoints(button)
+        cd:SetReverse(true)
+        cd:SetHideCountdownNumbers(true)
 
-    -- Above the cooldown, so the swipe does not dim the light.
-    local top = CreateFrame("Frame", nil, button)
-    top:SetAllPoints(button)
-    top:SetFrameLevel(cd:GetFrameLevel() + 1)
+        local top = CreateFrame("Frame", nil, button)
+        top:SetAllPoints(button)
+        top:SetFrameLevel(cd:GetFrameLevel() + 1)
 
-    local edges = ns.MakeEdges(top, "OVERLAY")
-    ns.LayoutEdgesAt(edges, button, 1, 0.45, 0.8, 1, 1, -1)
+        local stacks = top:CreateFontString(nil, "OVERLAY")
+        stacks:SetFont(ns.ModuleFontPath and ns.ModuleFontPath("unitframes") or STANDARD_TEXT_FONT, 10, "OUTLINE")
+        stacks:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 2, -1)
 
-    -- The light: the classic action-button glow, additive, softly pulsing.
-    local glow = top:CreateTexture(nil, "OVERLAY")
-    glow:SetTexture(GLOW)
-    glow:SetBlendMode("ADD")
-    glow:SetVertexColor(0.45, 0.8, 1)
-    glow:SetPoint("CENTER", button, "CENTER", 0, 0)
-    glow:SetSize(SIZE * 1.9, SIZE * 1.9)
-    local ag = glow:CreateAnimationGroup()
-    ag:SetLooping("BOUNCE")
-    local a = ag:CreateAnimation("Alpha")
-    a:SetFromAlpha(1)
-    a:SetToAlpha(0.35)
-    a:SetDuration(0.7)
-    a:SetSmoothing("IN_OUT")
-    ag:Play()
+        pcall(button.SetIcon, button, icon)
+        pcall(button.SetDurationCooldown, button, cd)
+        pcall(button.SetApplicationCount, button, stacks, {})
 
-    local stacks = top:CreateFontString(nil, "OVERLAY")
-    stacks:SetFont(ns.ModuleFontPath and ns.ModuleFontPath("unitframes") or STANDARD_TEXT_FONT, 11, "OUTLINE")
-    stacks:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, 1)
-
-    pcall(button.SetIcon, button, icon)
-    pcall(button.SetDurationCooldown, button, cd)
-    pcall(button.SetApplicationCount, button, stacks, {})
-    -- Tooltips on engine buttons are the client's (AuraButtonTooltip); a
-    -- click would only swallow the one meant for the frame below.
-    pcall(button.SetMouseClickEnabled, button, false)
+        if glowing then
+            -- The light: shown by the client for Magic buffs only. Its alpha
+            -- is the client's (a secret aspect), so the pulse runs on the
+            -- frame that holds it, which is ours.
+            local layer = CreateFrame("Frame", nil, button)
+            layer:SetAllPoints(button)
+            layer:SetFrameLevel(top:GetFrameLevel() + 1)
+            local glow = layer:CreateTexture(nil, "OVERLAY")
+            glow:SetBlendMode("ADD")
+            glow:SetPoint("CENTER", button, "CENTER", 0, 0)
+            glow:SetSize(SIZE * 1.9, SIZE * 1.9)
+            local style = Enum.CustomAuraButtonDispelTypeTextureStyle
+            pcall(button.AddDispelTypeTexture, button, glow, {
+                showWhenHelpful = true,
+                showWhenHarmful = false,
+                style = style and style.CustomAsset,
+                customDispelAssetMap = { Magic = { asset = GLOW } },
+                customDispelColorMap = { Magic = CreateColor(0.45, 0.8, 1) },
+            })
+            local ag = layer:CreateAnimationGroup()
+            ag:SetLooping("BOUNCE")
+            local a = ag:CreateAnimation("Alpha")
+            a:SetFromAlpha(1)
+            a:SetToAlpha(0.35)
+            a:SetDuration(0.7)
+            a:SetSmoothing("IN_OUT")
+            ag:Play()
+        end
+        -- Mouse motion stays for the client's own aura tooltip; a click would
+        -- only swallow the one meant for the frame.
+        pcall(button.SetMouseClickEnabled, button, false)
+    end
 end
 
-local function build()
-    if container or refused then return container end
-    holder = CreateFrame("Frame", nil, UIParent)
-    holder:SetSize(1, 1)
+local function newContainer(glowing)
     local ok, c = pcall(CreateFrame, "AuraContainer", nil, holder, "CustomAuraContainerTemplate")
-    if not (ok and c) then refused = true; return nil end
-    -- Pinned once, before the group; the container sizes itself from there.
-    c:SetPoint("BOTTOMLEFT", holder, "BOTTOMLEFT", 0, 0)
+    if not (ok and c) then return nil end
     local opts = {
         maxFrameCount   = MAX,
-        candidateFilters = { includeDispelTypes = { Magic = true } },
-        initializeFrame = initButton,
+        initializeFrame = initializer(glowing),
         layout = { elementWidth = SIZE, elementHeight = SIZE,
                    elementSpacing = GAP, lineSpacing = GAP },
     }
-    if not pcall(c.AddAuraGroup, c, "main", filter(), opts) then refused = true; return nil end
-
+    if not pcall(c.AddAuraGroup, c, "main", blizzFilter(), opts) then return nil end
     local dir = AnchorUtil and AnchorUtil.FlowDirection
     if c.SetFlowLayoutPadding then pcall(c.SetFlowLayoutPadding, c, 0, 0, 0, 0) end
     if dir and c.SetFlowLayoutGrowthDirection then
-        pcall(c.SetFlowLayoutGrowthDirection, c, dir.Right, dir.Up)
+        pcall(c.SetFlowLayoutGrowthDirection, c, dir.Right, dir.Down)
     end
-    if c.SetFlowLayoutAnchorPoint then pcall(c.SetFlowLayoutAnchorPoint, c, "BOTTOMLEFT") end
-    if c.SetFlowLayoutMaximumLineSize then
-        pcall(c.SetFlowLayoutMaximumLineSize, c, MAX * (SIZE + GAP))
-    end
-    container = c
+    if c.SetFlowLayoutAnchorPoint then pcall(c.SetFlowLayoutAnchorPoint, c, "TOPLEFT") end
+    if c.SetFlowLayoutMaximumLineSize then pcall(c.SetFlowLayoutMaximumLineSize, c, LINE) end
+    c:SetPoint("TOPLEFT", holder, "TOPLEFT", 0, 0)
+    unitOf[c] = "none"
     return c
 end
 
--- The frame the player sees for the target: ours in the Modern style,
--- Blizzard's otherwise. Its left edge where the bars start.
-local function anchorFrame()
-    if mod.db.style == "modern" then
-        local f = UF.Frames and UF.Frames.target
-        if f then return f, 0, 4 end
-    end
-    if _G.TargetFrame then return _G.TargetFrame, 26, 2 end
-    return nil
+local function build()
+    if glowC or refused then return glowC end
+    holder = CreateFrame("Frame", nil, UIParent)
+    holder:SetSize(1, 1)
+    glowC = newContainer(true)
+    plainC = glowC and newContainer(false)
+    if not (glowC and plainC) then refused = true; glowC, plainC = nil, nil end
+    return glowC
 end
 
--- Our holder sits under UIParent, so it follows the target frame's scale by
--- hand: a frame of ours parented into Blizzard's secure frame would run its
--- hide scripts in Blizzard's path.
+-- Under Blizzard's container: it holds the debuffs and grows down from the
+-- frame, so our row follows it as Blizzard's own buff row did. Our holder
+-- sits under UIParent and copies the frame's scale by hand.
 local function place()
-    if not holder then return end
-    local f, x, y = anchorFrame()
+    local bc, tf = blizzContainer(), _G.TargetFrame
+    if not (holder and bc and tf) then return end
+    holder:SetScale(tf:GetEffectiveScale() / UIParent:GetEffectiveScale())
     holder:ClearAllPoints()
-    if not f then holder:Hide(); return end
-    local s = f:GetEffectiveScale() / UIParent:GetEffectiveScale()
-    holder:SetScale(s)
-    holder:SetPoint("BOTTOMLEFT", f, "TOPLEFT", x, y)
+    if not pcall(holder.SetPoint, holder, "TOPLEFT", bc, "BOTTOMLEFT", 0, -GAP) then
+        holder:SetPoint("TOPLEFT", tf, "BOTTOMLEFT", 25, 0)
+    end
     holder:Show()
 end
 
-local function wanted()
-    return mod and mod.active and mod.db.dispelGlow ~= false and canDispel()
+local function setUnit(c, token)
+    if not c then return end
+    if unitOf[c] ~= token then
+        if pcall(c.SetUnit, c, token) then unitOf[c] = token end
+    elseif token ~= "none" then
+        -- same token, new unit behind it: SetUnit would be a no-op
+        pcall(c.UpdateAllAuras, c)
+    end
 end
 
 local function hostileTarget()
@@ -163,25 +191,47 @@ local function hostileTarget()
     return ok and ns.CanRead(v) and v == true
 end
 
-local function setUnit(token)
-    if not container then return end
-    if unitSet ~= token then
-        if pcall(container.SetUnit, container, token) then unitSet = token end
-    elseif token ~= "none" then
-        -- same token, new unit behind it: SetUnit would be a no-op
-        pcall(container.UpdateAllAuras, container)
-    end
+-- Blizzard's buff group off or back on. Its filter persists, so this runs
+-- out of combat only, and our row waits for it.
+local function setBlizzard(off)
+    local bc = blizzContainer()
+    if not (bc and bc.SetBuffFilterString) then refused = true; return end
+    ns:RunOutOfCombatOnce("vfui_dispelglow_blizz", function()
+        if pcall(bc.SetBuffFilterString, bc, off and emptyFilter() or blizzFilter()) then
+            blizzOff = off
+        else
+            -- refused either way: never ours on top of Blizzard's, and no
+            -- second try that would only be refused again
+            refused = true
+            if not off then blizzOff = false end
+        end
+        DG.Refresh()
+    end)
+end
+
+local function wanted()
+    return mod and mod.active and mod.db.dispelGlow ~= false
+        and mod.db.style ~= "modern" and canDispel()
 end
 
 function DG.Refresh()
-    if not wanted() then
-        setUnit("none")
+    if refused or not wanted() then
+        setUnit(glowC, "none")
+        setUnit(plainC, "none")
         if holder then holder:Hide() end
+        if blizzOff then setBlizzard(false) end
         return
     end
     if not build() then return end
+    if not blizzOff then
+        -- ours only once Blizzard's buffs are gone: never two rows
+        setBlizzard(true)
+        return
+    end
     place()
-    setUnit(hostileTarget() and "target" or "none")
+    local enemy = hostileTarget()
+    setUnit(enemy and plainC or glowC, "none")
+    setUnit(enemy and glowC or plainC, UnitExists("target") and "target" or "none")
 end
 
 local hooked
@@ -198,8 +248,7 @@ function DG.Enable(m)
                 if mod then DG.Refresh() end
             end)
         end
-        -- Edit Mode may move or rescale the target frame; out of a fight
-        -- the row follows on the next refresh.
+        -- Edit Mode may move or rescale the target frame.
         ns:RegisterEvent("EDIT_MODE_LAYOUTS_UPDATED", function()
             if mod then ns.NextFrame(DG.Refresh) end
         end)

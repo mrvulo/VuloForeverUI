@@ -85,7 +85,7 @@ ns:RegisterLocale("ptBR", {
     ["Class icon on the target portrait"] = "Ícone de classe no retrato do alvo",
     ["Target buffs"] = "Bônus do alvo",
     ["Buffs you can dispel glow"] = "Bônus que você pode dissipar brilham",
-    ["On an enemy target, the buffs you can take off (Purge, Dispel Magic, Devour Magic) glow in a row of their own above the target frame. The other buffs stay where they are, without glow. Only for characters who can dispel magic."] = "Em um alvo inimigo, os bônus que você pode remover (Expurgar, Dissipar Magia, Devorar Magia) brilham em uma fileira própria acima do quadro do alvo. Os outros bônus ficam onde estão, sem brilho. Só para personagens que podem dissipar magia.",
+    ["On an enemy target, the buffs under the target frame that you can take off (Purge, Dispel Magic, Devour Magic) glow; the others stay plain. Only for characters who can dispel magic, not in the Modern style."] = "Em um alvo inimigo, os bônus abaixo do quadro do alvo que você pode remover (Expurgar, Dissipar Magia, Devorar Magia) brilham; os outros ficam normais. Só para personagens que podem dissipar magia, não no estilo Moderno.",
     ["Elite dragon on the player frame"] = "Dragão de elite na moldura do jogador",
     ["Status text on the bars"] = "Texto de status nas barras",
     ["Sets Blizzard's status text to percent and value, always shown. Change it back under Blizzard's options."] = "Define o texto de status da Blizzard como porcentagem e valor, sempre visível. Para reverter, use as opções da Blizzard.",
