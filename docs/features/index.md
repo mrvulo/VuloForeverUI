@@ -75,6 +75,7 @@ jemand ohne den Code prüfen kann.
 | F-54 | Menge im Teilen-Fenster eintippen | Komfort | gebaut | – |
 | F-55 | Bannbare Buffs am feindlichen Ziel leuchten | Unit Frames | gebaut | – |
 | F-56 | Schlüsselbund als einklappbarer Abschnitt im Taschenfenster | Taschen | gebaut | – |
+| F-57 | Chat-Eingabezeile: Kanalname und Text in einer Schrift, Textcursor am Textende | Chat | gebaut | – |
 
 ---
 
@@ -395,6 +396,12 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Angenommen** der Schlüsselbund ist leer oder die Einstellung ist aus, **dann** gibt es weder Knopf noch Abschnitt.
 - **Dann** zählen die Schlüsselbund-Plätze nicht bei den freien Taschenplätzen mit, und Sortieren, Müllverkauf und der Taschen-voll-Helfer fassen den Schlüsselbund nicht an.
 
+### F-57 Chat-Eingabezeile in einer Schrift
+- **Wenn** du Enter drückst und eine lange Zeile tippst (z. B. im Gildenchat), **dann** steht der blinkende Textcursor direkt hinter dem letzten Buchstaben, nicht ein Stück rechts davon.
+- **Dann** haben der Kanalname davor („Gilde:“, „Sagen:“, „Flüstern an …:“) und der getippte Text dieselbe Schrift und dieselbe Größe; „Textgröße der Eingabezeile“ ändert beide sofort.
+- **Dann** behält die Zeile die Farbe des Kanals, auch direkt nach `/reload` und nach einer Änderung in den Chat-Optionen.
+- **Wenn** du das Chat-Modul ausschaltest, **dann** sieht die Eingabezeile wieder aus wie bei Blizzard.
+
 ## Offen
 
 - 2026-11-05 (F-09): `PurchaseBankTab()` forbidden came back. The return
@@ -448,3 +455,8 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
   Schrifttest (`/vfdiag fonts`) und den Kopierfenster-Umbauten; nach einem
   Neustart des Clients weg. Ursache unbekannt. Taucht er wieder auf: Maus
   drauf, `/vfdiag mouse`, `/reload`, dann Rückkanal lesen.
+- 2026-11-10: Textcursor der Chat-Eingabezeile stand bei einer langen Zeile
+  rund ein Fünftel zu weit rechts, der Kanalname war größer als der Text
+  (F-57). Vermutete Ursache, im Spiel nicht gemessen: SetFont auf dem Feld
+  über dem Schriftobjekt des Clients. Bleibt der Cursor falsch, liegt es
+  woanders -- dann `/vfdiag fonts` und die Zeile im Rückkanal ansehen.

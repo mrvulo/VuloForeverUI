@@ -213,6 +213,56 @@ local function watchInput()
     EventRegistry:RegisterCallback("ChatFrame.OnEditBoxFocusLost", relayout, "VuloForeverUI_ChatInputBlur")
 end
 
+-- One font object for every input line, and for the strings in front of the
+-- text ("Guild:", the language tag, the prompt).
+--
+-- A plain SetFont on the box was not enough, twice over. The box and those
+-- strings are born with the client's chat font object, and a SetFont on the
+-- box alone left the two apart: the channel name stood in the client's size
+-- in front of text in ours. And the box kept that object underneath our face,
+-- with the caret standing well behind the end of a long line -- a font object
+-- of our own leaves the box one face and one size to draw and to measure with
+-- (the same lesson as the text shadow, UI/Widgets/Base.lua). Plain, not a
+-- family: an EditBox draws a family in one member face anyway.
+local HEADS = { "header", "headerSuffix", "languageHeader", "prompt", "NewcomerHint" }
+local inputFont
+
+local function inputFontObject(file, size, flags)
+    if inputFont == nil then
+        local ok, made = pcall(CreateFont, "VuloForeverUIChatInputFont")
+        inputFont = ok and made or false
+    end
+    if not inputFont then return nil end
+    local ok, set = pcall(inputFont.SetFont, inputFont, file, size, flags or "")
+    if not ok or set == false then return nil end
+    -- A font object brings its own alignment and edge along; these are the
+    -- client's chat font's.
+    inputFont:SetJustifyH("LEFT")
+    inputFont:SetShadowColor(0, 0, 0, 1)
+    inputFont:SetShadowOffset(1, -1)
+    return inputFont
+end
+
+-- A font object on the box or on one of its strings, once. The colour is the
+-- chat type's and the client sets it only when the header changes, so it is
+-- carried over the swap instead of going white until the next one.
+local function wear(region, obj)
+    if not (region and obj and region.SetFontObject) then return end
+    local okf, has = pcall(region.GetFontObject, region)
+    if okf and has == obj then return end
+    local okc, r, g, b, a = pcall(region.GetTextColor, region)
+    if not pcall(region.SetFontObject, region, obj) then return end
+    if okc and ns.CanRead(r) and type(r) == "number" then
+        pcall(region.SetTextColor, region, r, g, b, a)
+    end
+    if region.SetJustifyH then pcall(region.SetJustifyH, region, "LEFT") end
+end
+
+local function wearAll(eb, obj)
+    wear(eb, obj)
+    for _, key in ipairs(HEADS) do wear(eb[key], obj) end
+end
+
 -- Height and font of the input line.
 --
 -- Split from the placement above because it applies to a box we have NOT
@@ -234,11 +284,22 @@ local function styleEditBox(cf, db)
     end
 
     pcall(eb.SetHeight, eb, db.inputHeight or 23)
+    local file, size, flags
     if db.inputUseChatFont then
-        local path = ns.ModuleFontPath and ns.ModuleFontPath("chat") or ns.UI.FONT_PATH
-        pcall(eb.SetFont, eb, path, db.inputFontSize or 12, Chat.Engine.FontFlags(db))
+        file = ns.ModuleFontPath and ns.ModuleFontPath("chat") or ns.UI.FONT_PATH
+        size, flags = db.inputFontSize or 12, Chat.Engine.FontFlags(db)
     elseif d.editOldFont then
-        pcall(eb.SetFont, eb, d.editOldFont[1], db.inputFontSize or d.editOldFont[2], d.editOldFont[3])
+        file, size, flags = d.editOldFont[1], db.inputFontSize or d.editOldFont[2], d.editOldFont[3]
+    end
+    if not file then return end
+    local obj = inputFontObject(file, size, flags)
+    if obj then
+        d.editFontWorn = true
+        wearAll(eb, obj)
+    else
+        -- No font object to be had, or a file that does not resolve: the old
+        -- way, which at least puts the face on the text.
+        pcall(eb.SetFont, eb, file, size, flags or "")
     end
 end
 
@@ -470,7 +531,13 @@ function Panel.Release()
             local eb = cf.editBox or _G[cf:GetName() .. "EditBox"]
             if eb then
                 if d.editOldHeight then pcall(eb.SetHeight, eb, d.editOldHeight) end
-                if d.editOldFont then
+                -- The client's own font object back, on the box and on the
+                -- strings in front of the text. The remembered face is only
+                -- for a box that never got our object.
+                if d.editFontWorn and _G.ChatFontNormal then
+                    wearAll(eb, _G.ChatFontNormal)
+                    d.editFontWorn = nil
+                elseif d.editOldFont then
                     pcall(eb.SetFont, eb, d.editOldFont[1], d.editOldFont[2], d.editOldFont[3])
                 end
             end

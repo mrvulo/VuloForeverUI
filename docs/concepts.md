@@ -451,6 +451,12 @@ These apply to every visible change, in every module.
   Ctrl+C copies everything. "Select text" switches to the EditBox for a part.
   Measured with `/vfdiag fonts`: no single font file of this client has
   umlauts, Chinese and Korean together.
+- **The input line** wears ONE plain font object of ours
+  (`VuloForeverUIChatInputFont`), on the box and on the strings in front of
+  the text (channel name, language tag, prompt), so both always have the same
+  face and size. Not a bare `SetFont` on the box: that left the client's font
+  object underneath and the channel name in the client's size. The chat-type
+  colour is carried over the swap. No client method is called on the box.
 - Both views use `COPY_SIZE` (11). The reading view keeps the chat's font
   object and only changes its size with `SetFont(file, size, flags)` — the
   call the chat itself makes. Each line carries its chat colour as a `|c`
