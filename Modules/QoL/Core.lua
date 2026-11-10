@@ -161,26 +161,6 @@ local mod = ns:RegisterModule("qol", {
             inspectAuto = false,   -- scan whenever the inspect window opens
         },
 
-        -- -------------------------------------------------------------- quest
-        quest = {
-            available = true,
-            turnIn    = true,
-            trivial   = false,
-            repeatable = true,
-            difficulty = true,
-            objectives = true,
-            journal    = true,
-            tooltip   = true,
-            pinSize   = 14,
-
-            levelsDialog   = true,
-            soundProgress  = 0,
-            soundObjective = 3175,
-            soundComplete  = 878,
-            announce       = false,
-            announceWhat   = "objectives",
-        },
-
         -- --------------------------------------------------------------- mail
         -- The remembered names are NOT here: like the flight times they are
         -- account-wide (ns.db.global.qolMailNames).
@@ -296,7 +276,6 @@ mod.tabs = {
     { id = "display", label = "Display" },
     { id = "trinkets", label = "Trinkets" },
     { id = "gold",    label = "Gold" },
-    { id = "quest",   label = "Quest" },
     { id = "fishing", label = "Fishing" },
     { id = "professions", label = "Professions" },
 }

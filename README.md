@@ -54,8 +54,7 @@ errors and blocked actions into a log you can paste along.
   movable frame, and a scrollback that survives a reload.
 - **Quality of Life** — sell junk and repair at the merchant, mark junk yourself, faster
   looting, Train all, mail recipients one click away, flight time bar, zone levels on the
-  world map, quest colours and quest-line steps, a quest journal per character, a gold
-  tracker, trinket slots, auto-answers to the prompts you always click the same way.
+  world map, a gold tracker, trinket slots, auto-answers to the prompts you always click the same way.
 - **Reminders** — an icon when one of your own buffs or a weapon enchant is missing; click
   it to cast. Hidden in combat.
 - **Tooltip IDs** — spell, item, NPC, quest and many other IDs in tooltips.
@@ -79,7 +78,6 @@ errors and blocked actions into a log you can paste along.
 | `/vfui`, `/vulo` | open the settings; add `help`, `modules`, `client`, `setup`, `debug` or `reset` |
 | `/vedit` | Edit Mode: unlock the windows and place them |
 | `/vfbags`, `/vfchat`, `/vfbars`, `/vfbars2`, `/vfcd`, `/vfmeter` | jump to that module's page (`/vfmeter reset` clears the data) |
-| `/vfjournal` | the quest journal |
 | `/vfdiag` | diagnostics log for bug reports |
 | `/vfsecrets` | which combat values the client lets addons read right now |
 | `/vfuiprof` | which modules cost the most time |

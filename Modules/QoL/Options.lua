@@ -458,74 +458,6 @@ local function goldPage()
     }
 end
 
--- ----------------------------------------------------------------- quest --
-
--- A sound choice that plays the sound it was just set to.
-local function questSound(key, label)
-    local values = {}
-    for _, s in ipairs(QoL.QuestExtras.SOUNDS) do
-        values[#values + 1] = { value = s.value, text = L[s.text] }
-    end
-    return { type = "dropdown", label = label, width = 200, values = values,
-        get = function() return tbl("quest")[key] end,
-        set = function(_, v)
-            tbl("quest")[key] = v
-            apply()
-            QoL.QuestExtras.Play(v)
-        end }
-end
-
-local function questPage()
-    return {
-        { type = "header", text = L["Minimap"] },
-        toggle("quest", "available", L["Show available quests"],
-            L["A yellow ! for every quest the client offers you in this zone -- the same list the world map uses."]),
-        toggle("quest", "trivial", L["Include low level quests"],
-            L["Quests far below your level, greyed out."]),
-        toggle("quest", "repeatable", L["Include daily and repeatable quests"],
-            L["A blue ! for a quest you can do again."]),
-        toggle("quest", "difficulty", L["Colour by quest level"],
-            L["The ! takes the colour the quest log gives the quest's level: green easy, yellow even, orange and red hard."]),
-        toggle("quest", "turnIn", L["Show where to hand in"],
-            L["A yellow ? where a finished quest is handed in, as long as it is in this zone."]),
-        toggle("quest", "objectives", L["Show where your quests lead"],
-            L["A marker where the game points for each quest you have not finished in this zone. Hover it for the open objectives and the distance; click it and the game's own waypoint leads you there."]),
-        slider("quest", "pinSize", L["Icon size"], 8, 32, 1),
-
-        { type = "header", text = L["Tooltip"] },
-        toggle("quest", "tooltip", L["Quest progress on items"],
-            L["On an item an open quest asks for: the quest and how many you have. Creatures already show their quest lines from the client."]),
-
-        { type = "header", text = L["Quest levels"] },
-        { type = "toggle", label = L["Quest levels in the tracker"],
-            tooltip = L["The client's own switch: the level in front of every quest in the objective tracker and on the map, e.g. [12]. The quest log always shows it."],
-            get = function() return QoL.QuestExtras.TrackerLevels() end,
-            set = function(_, v) QoL.QuestExtras.SetTrackerLevels(v) end },
-        toggle("quest", "levelsDialog", L["Quest levels at quest givers"],
-            L["The level in front of every quest a quest giver offers or takes back, an elite quest with a +."]),
-
-        { type = "header", text = L["Sounds"] },
-        questSound("soundProgress", L["Objective progress"]),
-        questSound("soundObjective", L["Objective done"]),
-        questSound("soundComplete", L["Quest ready to hand in"]),
-
-        { type = "header", text = L["Quest journal"] },
-        toggle("quest", "journal", L["Keep a quest journal"],
-            L["Every quest accepted, handed in and abandoned and every level gained, with date, level and zone, per character. /vfjournal opens it."]),
-        { type = "button", label = L["Open the quest journal"], width = 200,
-          onClick = function() QoL.Journal.Open() end },
-
-        { type = "header", text = L["Group"] },
-        toggle("quest", "announce", L["Tell the party"],
-            L["Quest progress goes to party chat. Never in a raid, and not while the client holds chat back."]),
-        dropdown("quest", "announceWhat", L["What to tell"], {
-            { value = "complete",   text = L["Finished quests"] },
-            { value = "objectives", text = L["Finished objectives and quests"] },
-            { value = "progress",   text = L["Every step"] },
-        }),
-    }
-end
-
 -- ---------------------------------------------------------------- fishing --
 
 local function fishingPage()
@@ -575,7 +507,6 @@ function mod:GetOptions(tabId)
     if tabId == "professions" then return professionsPage() end
     if tabId == "fishing" then return fishingPage() end
     if tabId == "gold"    then return goldPage() end
-    if tabId == "quest"   then return questPage() end
     if tabId == "vendor"  then return vendorPage() end
     if tabId == "loot"    then return lootPage() end
     if tabId == "display" then return displayPage() end
