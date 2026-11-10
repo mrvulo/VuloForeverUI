@@ -115,12 +115,6 @@ function Gold.Lines()
     return lines
 end
 
--- A character nobody plays any more should not sit in the list for ever.
-function Gold.Forget(name)
-    local t = global()
-    if t then t[name] = nil end
-end
-
 -- Clears the list down to the character logged in. The others come back on
 -- their own the next time they log in, so a realm that is gone stays gone.
 function Gold.ForgetOthers()

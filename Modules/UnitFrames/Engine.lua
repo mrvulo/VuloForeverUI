@@ -628,7 +628,6 @@ local hiddenParent = CreateFrame("Frame")
 hiddenParent:Hide()
 
 local silenced = {}
-local pending  = {}
 
 -- pcall around every UnregisterAllEvents: frames that Blizzard loads into the
 -- secure environment (the target frame's aura container, TargetFrame.xml:338)
@@ -699,26 +698,6 @@ local SILENCER = {
 function UF.SilenceBlizzard(unit)
     local fn = SILENCER[unit]
     if fn then fn() end
-end
-
-local function flushPending()
-    for unit in pairs(pending) do
-        pending[unit] = nil
-        UF.SilenceBlizzard(unit)
-    end
-end
-
-function UF.SilenceBlizzardDeferred(unit)
-    if ns:InCombat() then
-        pending[unit] = true
-        ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", flushPending)
-    else
-        UF.SilenceBlizzard(unit)
-    end
-end
-
-function UF.IsBlizzardSilenced(unit)
-    return silenced[unit] == true
 end
 
 -- -------------------------------------------------------- activation --

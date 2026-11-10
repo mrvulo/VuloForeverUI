@@ -336,22 +336,6 @@ local function eTri(label, key, tooltip)
         end }
 end
 
-local function eSlider(label, key, min, max, step, fallbackKey)
-    return { type = "slider", label = label, min = min, max = max, step = step,
-        get = function()
-            local e = entry()
-            local v = e and e[key]
-            if v ~= nil then return v end
-            return bar()[fallbackKey or key] or min
-        end,
-        set = function(_, v)
-            local e = entry()
-            if not e then return end
-            e[key] = v
-            eApply()
-        end }
-end
-
 -- The per-spell opacity, in per cent like the bar's own row; saved 0..1.
 local function eOpacity(label, key)
     return { type = "slider", label = label, min = 0, max = 100, step = 1, suffix = "%",

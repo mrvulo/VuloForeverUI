@@ -172,8 +172,6 @@ function watch(self, elapsed)
     if stale then Classic.Apply() end
 end
 
-function Classic.IsApplied() return P.applied end
-
 -- ---------------------------------------------------------------- report --
 --
 -- What the client actually answers, printed on demand.

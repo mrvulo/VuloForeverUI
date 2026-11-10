@@ -19,7 +19,6 @@
 -- does carry is Blizzard frames, so every write is guarded and reversible, and
 -- the layout work waits for the end of a fight.
 local _, ns = ...
-local L = ns.L
 
 -- Shared between the files in this folder; Elements.lua hangs off it.
 ns.MM = ns.MM or {}

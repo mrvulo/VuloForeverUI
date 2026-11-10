@@ -225,7 +225,6 @@ function UI:CreateSlider(parent, config)
     fillGloss:SetColorTexture(1, 1, 1, 0.12)
 
     s._trackBg, s._trackFill = trackBg, trackFill
-    s._updateFill = function(v) sliderUpdateFill(s, v) end
 
     -- Accent halo behind the knob, so it reads as a control rather than a blob.
     -- ~1.3x the knob; at 2x it stops looking deliberate and starts looking broken.

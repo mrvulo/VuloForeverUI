@@ -178,7 +178,7 @@ local function playerArt()
         overlay.ManaBar:SetPoint("TOPLEFT", 106, -52)
         overlay.Background:SetSize(119, 41)
 
-        local hb, hc, mb = p.hb, p.hc, p.mb
+        local hb, mb = p.hb, p.mb
         alignBlizzardHealth(p, 87, -45, 119)       -- overlay -19,-4 + bar 106,-41
         Classic.PinBarTexts(overlay.HealthBar, hb.TextString, hb.LeftText, hb.RightText)
 
@@ -269,7 +269,7 @@ local function vehicleArt()
         overlay.ManaBar:SetPoint("TOPLEFT", 119, -52)
         overlay.Background:SetSize(114, 41)
 
-        local hb, hc, mb = p.hb, p.hc, p.mb
+        local hb, mb = p.hb, p.mb
         alignBlizzardHealth(p, 100, -45, 100)      -- overlay -19,-4 + bar 119,-41
         Classic.PinBarTexts(overlay.HealthBar, hb.TextString, hb.LeftText, hb.RightText)
         placeLossBar(p)

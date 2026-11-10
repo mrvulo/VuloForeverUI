@@ -48,10 +48,6 @@ function Marks.TogglePin(itemID)
     Bags.Refresh()
 end
 
-function Marks.AnyPinned()
-    return next(store()) ~= nil
-end
-
 -- ---------------------------------------------------------------- recent --
 
 -- How long something counts as new, in minutes, from the options. Hovering
@@ -173,13 +169,4 @@ end
 -- a moment after one, a scan only learns what is there.
 function Marks.Quiet(seconds)
     quietUntil = GetTime() + (seconds or 5)
-end
-
-function Marks.ClearRecent()
-    wipe(fresh)
-    Bags.Refresh()
-end
-
-function Marks.AnyRecent()
-    return next(fresh) ~= nil
 end

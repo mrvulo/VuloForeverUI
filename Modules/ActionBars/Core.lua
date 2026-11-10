@@ -128,14 +128,6 @@ function AB.Buttons(includeExtra)
     return out
 end
 
--- Action bar 1: the twelve buttons on the client's main bar.
-local MAIN_BAR = {}
-for i = 1, 12 do MAIN_BAR["ActionButton" .. i] = true end
-
-function AB.IsMainBarButton(button)
-    return MAIN_BAR[button:GetName() or ""] == true
-end
-
 -- ---------------------------------------------------------------- per bar --
 
 -- Which bar a button belongs to, from its name. Our preview buttons stand
@@ -220,15 +212,6 @@ function AB.OwnCfg(key)
     db.perBar = db.perBar or {}
     db.perBar[key] = db.perBar[key] or {}
     return db.perBar[key]
-end
-
-function AB.BarFrames()
-    local out = {}
-    for _, bar in ipairs(BARS) do
-        local f = _G[bar.frame]
-        if f then out[#out + 1] = f end
-    end
-    return out
 end
 
 -- ---------------------------------------------------------------- apply --

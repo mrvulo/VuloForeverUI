@@ -33,9 +33,6 @@ Window.IsStandard = isStandard
 -- Where the header rows start, and how far in from the left they begin.
 local function headTop() return isStandard() and 30 or PAD end
 local function headLeft() return isStandard() and 62 or PAD end
--- How much further down everything below the header starts than in Modern
--- (the side bar reads this too).
-function Window.TopExtra() return headTop() - PAD end
 Window.PAD = PAD
 
 -- Where the first row of slots starts, below the header and the tool row.
@@ -611,7 +608,7 @@ function Window.Layout(win)
     end
 
     -- Sort into shelves. Without grouping everything lands on one.
-    local buckets, order = {}, {}
+    local buckets = {}
     local keys = {}
     for _, entry in ipairs(items) do
         local key = Bags.Categories.For(entry, rules) or "misc"
@@ -629,7 +626,7 @@ function Window.Layout(win)
             end
         end
     end
-    order = Bags.Categories.Sort(keys)
+    local order = Bags.Categories.Sort(keys)
     win.shelves = order
     -- The first item of each shelf, as the face of a shelf that has no fixed
     -- icon of its own (the player's own categories, sets) in the side bar.

@@ -21,7 +21,6 @@
 -- The addon's globals are named below only where they must be: to find its
 -- frames and to know when it has loaded.
 local _, ns = ...
-local L = ns.L
 local Skins = ns.Skins
 
 local Guide = {}

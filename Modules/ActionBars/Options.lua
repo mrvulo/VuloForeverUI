@@ -14,7 +14,7 @@ local function apply()
 end
 
 local rows = ns.OptionRows(function() return AB.db() end, apply, { dropdownWidth = 200 })
-local toggle, slider, dropdown, color = rows.toggle, rows.slider, rows.dropdown, rows.color
+local toggle, slider = rows.toggle, rows.slider
 
 local function pressTypes()
     return {

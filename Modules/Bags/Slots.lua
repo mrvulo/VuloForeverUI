@@ -339,8 +339,6 @@ function Slots.HideRest(owner)
     end
 end
 
-function Slots.PoolSize(owner) return #poolFor(owner).slots end
-
 -- ---------------------------------------------------------------- paint --
 
 local POOR = (Enum.ItemQuality and Enum.ItemQuality.Poor) or 0

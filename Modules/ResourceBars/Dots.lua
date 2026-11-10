@@ -163,7 +163,6 @@ local function initializer(width, height, color, r)
 end
 
 local function newRow(i)
-    local d = db()
     local r = CreateFrame("Frame", nil, frame)
     r.bg = r:CreateTexture(nil, "BACKGROUND")
     r.icon = r:CreateTexture(nil, "BORDER")
