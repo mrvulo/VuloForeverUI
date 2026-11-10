@@ -240,6 +240,10 @@ These apply to every visible change, in every module.
   filter shares; which buffs count is the engine's answer, never ours. Not
   in Modern (no target auras there). If the client refuses
   the cap, our row stays hidden and Blizzard's stays as it is.
+  The light (the player's call, 2026-11-10, from a picture): not a tinted
+  pulse but the client's own spell-alert art -- warm white frame, golden
+  halo running around the icon (`UI-HUD-ActionBar-Proc-Loop-Flipbook`, the
+  client's flipbook numbers, 1.4 times the icon as on the action bar).
 
 ## Nameplates (`Modules/Nameplates/`)
 

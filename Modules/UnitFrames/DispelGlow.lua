@@ -38,7 +38,14 @@ local GAP     = D.FlowLayoutElementSpacing or 3
 local LINE    = D.FlowLayoutLineSize or 122
 local MAX_GLOW = 16
 local MAX_REST = 32
-local GLOW    = "Interface\\Buttons\\UI-ActionButton-Border"
+-- The light is the client's own "this spell just lit up" art from the action
+-- bar: a warm white frame with a golden halo that runs around the icon. The
+-- numbers are the client's (ActionButtonSpellAlerts.xml / .lua): thirty
+-- frames in six rows of five, one second a lap, 1.4 times the button.
+local GLOW_ATLAS = "UI-HUD-ActionBar-Proc-Loop-Flipbook"
+local GLOW_SCALE = 1.4
+-- Should a build not carry the atlas: the older ring of the same art.
+local GLOW_FILE  = "Interface\\SpellActivationOverlay\\IconAlert"
 
 local holder
 local glowC               -- our engine container
@@ -101,23 +108,35 @@ local function initButton(button, lit)
     if not lit then return end
 
     -- The light. Every aura in the lit group is one to purge, so it is a
-    -- plain texture of ours, pulsing on a frame of ours.
+    -- plain texture of ours, animated on a frame of ours; nothing is asked.
     local layer = CreateFrame("Frame", nil, button)
     layer:SetAllPoints(button)
     layer:SetFrameLevel(top:GetFrameLevel() + 1)
     local glow = layer:CreateTexture(nil, "OVERLAY")
-    glow:SetTexture(GLOW)
-    glow:SetBlendMode("ADD")
-    glow:SetVertexColor(0.45, 0.8, 1)
     glow:SetPoint("CENTER", button, "CENTER", 0, 0)
-    glow:SetSize(SIZE * 1.9, SIZE * 1.9)
-    local ag = layer:CreateAnimationGroup()
-    ag:SetLooping("BOUNCE")
-    local a = ag:CreateAnimation("Alpha")
-    a:SetFromAlpha(1)
-    a:SetToAlpha(0.35)
-    a:SetDuration(0.7)
-    a:SetSmoothing("IN_OUT")
+    glow:SetSize(SIZE * GLOW_SCALE, SIZE * GLOW_SCALE)
+    local ag = glow:CreateAnimationGroup()
+    if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(GLOW_ATLAS) then
+        glow:SetAtlas(GLOW_ATLAS)
+        ag:SetLooping("REPEAT")
+        local flip = ag:CreateAnimation("FlipBook")
+        flip:SetFlipBookRows(6)
+        flip:SetFlipBookColumns(5)
+        flip:SetFlipBookFrames(30)
+        flip:SetFlipBookFrameWidth(0)
+        flip:SetFlipBookFrameHeight(0)
+        flip:SetDuration(1)
+    else
+        glow:SetTexture(GLOW_FILE)
+        glow:SetTexCoord(0.00781250, 0.50781250, 0.27734375, 0.52734375)
+        glow:SetBlendMode("ADD")
+        ag:SetLooping("BOUNCE")
+        local a = ag:CreateAnimation("Alpha")
+        a:SetFromAlpha(1)
+        a:SetToAlpha(0.45)
+        a:SetDuration(0.6)
+        a:SetSmoothing("IN_OUT")
+    end
     ag:Play()
 end
 

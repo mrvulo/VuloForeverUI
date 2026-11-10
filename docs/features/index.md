@@ -384,7 +384,7 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 
 ### F-55 Bannbare Buffs am feindlichen Ziel leuchten
 - **Angenommen** du spielst einen Charakter, der einem Feind Buffs nehmen kann — Magie (Priester mit Magiebannung, Schamane mit Reinigen, Hexenmeister mit Teufelsjäger) oder Wutanfälle (Jäger mit Einlullendem Schuss, Druide mit Tier besänftigen), Stil Standard oder Classic, und „Bannbare Buffs leuchten“ ist an.
-- **Wenn** du einen Feind anvisierst (Monster, Tier oder gegnerischer Spieler im PvP), **dann** stehen unter dem Zielrahmen (unter den Debuffs) weiter alle seine Buffs in gewohnter Größe; die Buffs, die du mit diesem Charakter bannen kannst, stehen vorn und leuchten blau pulsierend, alle anderen leuchten nicht.
+- **Wenn** du einen Feind anvisierst (Monster, Tier oder gegnerischer Spieler im PvP), **dann** stehen unter dem Zielrahmen (unter den Debuffs) weiter alle seine Buffs in gewohnter Größe; die Buffs, die du mit diesem Charakter bannen kannst, stehen vorn und tragen einen warm-weißen Rahmen mit goldenem, umlaufendem Schein (dasselbe Leuchten wie ein ausgelöster Zauber auf der Aktionsleiste), alle anderen leuchten nicht.
 - **Wenn** das Ziel freundlich ist, **dann** ist die Buff-Anzeige genau wie ohne das Addon (Blizzards eigene Reihe, nichts leuchtet).
 - **Angenommen** du spielst einen Jäger mit Einlullendem Schuss (oder einen Druiden mit Tier besänftigen), **wenn** du einen Feind mit einem Wutanfall anvisierst, **dann** steht der Wutanfall vorn und leuchtet; bei Namensplaketten zeigt „Nur entfernbare“ ihn ebenfalls.
 - **Wenn** du im Kampf das Ziel wechselst oder ein Buff ausläuft, **dann** folgt die Reihe sofort; nie stehen zwei Buff-Reihen untereinander.
