@@ -99,6 +99,8 @@ local mod = ns:RegisterModule("bags", {
         showPinned     = true,
         showRecent     = true,
         showBagBar     = false,
+        showKeyring    = true,      -- the keyring as a section of the bag window (Keyring.lua)
+        keyringOpen    = true,
         bankShowBagBar = false,
         recentColor    = { r = 0.3, g = 0.8, b = 1 },
         recentMinutes  = 5,
@@ -486,10 +488,14 @@ function Bags.HookBlizzard()
     end
     hookAll({ "ToggleAllBags", "ToggleBackpack" }, "toggle")
     -- ToggleBag is what the bag buttons on the action bar call. The keyring
-    -- goes through it as well and is not one of our bags.
+    -- goes through it as well; it is not one of our bags but a section of
+    -- the bag window with a switch of its own (Keyring.lua).
     if type(_G.ToggleBag) == "function" then
         hooksecurefunc("ToggleBag", function(id)
-            if id ~= nil and id == _G.KEYRING_CONTAINER then return end
+            if id ~= nil and id == Bags.Keyring.Container() then
+                ns.NextFrame(Bags.Keyring.FromClient)
+                return
+            end
             request("toggle")
         end)
         installed = installed + 1

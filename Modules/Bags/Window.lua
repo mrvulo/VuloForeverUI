@@ -193,6 +193,10 @@ local function build(win)
         end
         win.Refresh()
     end)
+    -- The keyring section, folded and unfolded (Keyring.lua). The icon is the
+    -- one the client's own keyring frame wears.
+    f.keyring = toolButton(f, "Interface\\Icons\\ui-hud-actionbar-keyring", "icon",
+        L["Show the keyring"], function() Bags.Keyring.Toggle() end)
     -- The bank as it was at the last visit, from anywhere (BankView.lua).
     f.bankView = toolButton(f, "Interface\\Icons\\INV_Misc_Coin_02", "icon", L["Show the bank"], function() Bags.BankView.Toggle() end)
     -- The bag settings, one click away from the bags themselves. Always shown:
@@ -677,6 +681,19 @@ function Window.Layout(win)
         order[#order + 1] = "free"
     end
 
+    -- The keyring: a block of its own under everything else, in every view,
+    -- while its button has it unfolded (Keyring.lua). Not a shelf: `order`
+    -- may still be the very table the side bar lists (win.shelves), so the
+    -- keyring goes onto a copy and never becomes a row there.
+    local keyEntries, keyCount = Bags.Keyring.Entries(win)
+    if keyEntries then
+        local withKeys = {}
+        for i, key in ipairs(order) do withKeys[i] = key end
+        withKeys[#withKeys + 1] = "keyring"
+        order = withKeys
+        buckets.keyring = keyEntries
+    end
+
     -- The side bar is laid out from the shelves this draw produced, BEFORE the
     -- slots: it decides how much room the left edge has to give up, and a
     -- window whose bar is longer than its slots takes its height from the bar.
@@ -712,6 +729,8 @@ function Window.Layout(win)
         head:SetPoint("TOPLEFT", f, "TOPLEFT", left, -y)
         if key == "free" then
             head:SetFormattedText("%s (%d)", L["Free"], #list)
+        elseif key == "keyring" then
+            head:SetFormattedText("%s (%d)", L["Keyring"], keyCount)
         elseif key == "allbags" then
             -- The free slots are in the header already; one block of all bags
             -- would only say the same thing again, the other way round.
@@ -869,6 +888,7 @@ local function toolSpecs(win, db)
         { button = f.pin,   on = db.showPinned,    mode = "pin" },
         { button = f.split, on = db.stackSplitter, mode = "split" },
         { button = f.bagBar, on = win.key == "bags" or win.key == "bank", lit = win.showBagBar },
+        { button = f.keyring, on = Bags.Keyring.Has(win), lit = Bags.Keyring.IsOpen() },
         { button = f.bankView, on = win.key == "bags" },
         { button = f.options, on = true },
     }

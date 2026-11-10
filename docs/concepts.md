@@ -148,6 +148,17 @@ These apply to every visible change, in every module.
   items, pinned items, gear above grey or anything rare and up. Destroy only
   from the player's click, after re-checking the stack; loot on the first
   BAG_UPDATE_DELAYED that shows a free general slot, never before.
+- **Keyring** (`Keyring.lua`, `showKeyring`, `keyringOpen`): Forever has a
+  real keyring container (`KEYRING_CONTAINER`). With the takeover on, the
+  client's keyring window is parked like every other bag frame, so ours is
+  the only way to reach the keys. It is its own foldable section at the very
+  bottom of the bag window ("Keyring (n)"), in every view, switched by a key
+  button in the tool row and by the client's keyring button
+  (`ToggleBag(KEYRING_CONTAINER)`). Shown are the keys plus the free places
+  of the started row of four (the client's own `GetKeyRingSize`). Empty
+  keyring: no button, no section. The keyring is NOT part of
+  `ns.CarriedBags()`: free-slot counts, sorting, junk selling and the full
+  helper never see it.
 - **Client tutorials** that wait for the client's bag frame (reagent bag step
   1 and 2) are faded out while the takeover is on (`Tutorials.lua`).
 

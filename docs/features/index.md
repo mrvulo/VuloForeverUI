@@ -74,6 +74,7 @@ jemand ohne den Code prüfen kann.
 | F-53 | Talentbedingungen pro Symbol | Cooldown Manager | gebaut | – |
 | F-54 | Menge im Teilen-Fenster eintippen | Komfort | gebaut | – |
 | F-55 | Am Ziel nur bannbare Buffs, leuchtend | Unit Frames | gebaut | – |
+| F-56 | Schlüsselbund als einklappbarer Abschnitt im Taschenfenster | Taschen | gebaut | – |
 
 ---
 
@@ -385,6 +386,14 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** das Ziel freundlich ist, **dann** steht unter dem Rahmen kein Buff.
 - **Wenn** du im Kampf das Ziel wechselst oder ein Buff ausläuft, **dann** folgt die Reihe sofort.
 - **Wenn** du die Einstellung ausschaltest oder einen Charakter ohne Bannzauber spielst, **dann** zeigt Blizzards eigene Buff-Reihe wieder alles.
+
+### F-56 Schlüsselbund im Taschenfenster
+- **Angenommen** du hast mindestens einen Schlüssel am Schlüsselbund und „Schlüsselbund anzeigen“ ist an, **dann** steht in der Werkzeugzeile des Taschenfensters ein Schlüssel-Knopf und ganz unten im Fenster der Abschnitt „Schlüsselbund (Anzahl)“ mit deinen Schlüsseln und den freien Plätzen der angefangenen Viererreihe — in jeder Ansicht (Kategorien, alle Taschen, pro Tasche).
+- **Wenn** du den Schlüssel-Knopf drückst, **dann** klappt der Abschnitt sofort ein bzw. aus; der Knopf ist golden, solange er offen ist, und der Zustand bleibt nach `/reload` erhalten.
+- **Wenn** du einen Schlüssel im Abschnitt rechtsklickst, aufnimmst oder auf einen freien Platz dort legst, **dann** verhält er sich wie jeder andere Taschenplatz (auch im Kampf, ohne „Aktion blockiert“).
+- **Wenn** du Blizzards Schlüsselbund-Knopf an der Taschenleiste drückst, **dann** öffnet sich unser Taschenfenster mit ausgeklapptem Schlüsselbund; ein zweiter Klick klappt ihn wieder ein.
+- **Angenommen** der Schlüsselbund ist leer oder die Einstellung ist aus, **dann** gibt es weder Knopf noch Abschnitt.
+- **Dann** zählen die Schlüsselbund-Plätze nicht bei den freien Taschenplätzen mit, und Sortieren, Müllverkauf und der Taschen-voll-Helfer fassen den Schlüsselbund nicht an.
 
 ## Offen
 
