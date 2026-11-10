@@ -64,8 +64,10 @@ function Style.RefreshDispel()
     canEnrage = knows(ENRAGE_SPELLS)
 end
 
-function Style.CanDispelMagic() return canMagic end
-function Style.CanDispelEnrage() return canEnrage end
+-- One answer for both kinds: we never learn WHICH kind an aura is, the engine
+-- matches each buff against what this character can take off. So all that is
+-- decided here is whether there is anything to match at all.
+function Style.CanDispel() return canMagic or canEnrage end
 
 -- ---------------------------------------------------------------------------
 -- The initialiser

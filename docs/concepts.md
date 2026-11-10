@@ -233,7 +233,11 @@ These apply to every visible change, in every module.
   shows two groups flowing as one row: `HELPFUL|RAID_PLAYER_DISPELLABLE`
   lit (the engine answers "can this player take it off") and
   `HELPFUL|!RAID_PLAYER_DISPELLABLE` plain. Only when the spellbook knows a
-  magic dispel; not in Modern (no target auras there). If the client refuses
+  spell that takes a buff off an enemy -- magic (Purge, Dispel Magic, Devour
+  Magic) or enrage (Tranquilizing Shot, Soothe Animal), one gate for both
+  (`NP.AuraStyle.CanDispel`), which the nameplates' "only dispellable" buff
+  filter shares; which buffs count is the engine's answer, never ours. Not
+  in Modern (no target auras there). If the client refuses
   the cap, our row stays hidden and Blizzard's stays as it is.
 
 ## Nameplates (`Modules/Nameplates/`)

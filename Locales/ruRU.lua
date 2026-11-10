@@ -85,7 +85,7 @@ ns:RegisterLocale("ruRU", {
     ["Class icon on the target portrait"] = "Значок класса на портрете цели",
     ["Target buffs"] = "Баффы цели",
     ["Buffs you can dispel glow"] = "Подсветка баффов, которые можно рассеять",
-    ["On an enemy target, the buffs you can take off (Purge, Dispel Magic, Devour Magic) glow. All other buffs stay as they are, and friendly targets are not changed. Only for characters who can dispel magic, not in the Modern style."] = "На враждебной цели светятся баффы, которые вы можете снять (Очищение, Рассеивание магии, Пожирание магии). Остальные баффы остаются как есть, дружественные цели не меняются. Только для персонажей, умеющих рассеивать магию, не в стиле «Модерн».",
+    ["On an enemy target, the buffs you can take off (Purge, Dispel Magic, Devour Magic, Tranquilizing Shot, Soothe Animal) glow. All other buffs stay as they are, and friendly targets are not changed. Only for characters who know one of these spells, not in the Modern style."] = "На враждебной цели светятся баффы, которые вы можете снять (Очищение, Рассеивание магии, Пожирание магии, Усмиряющий выстрел, Умиротворение животного). Остальные баффы остаются как есть, дружественные цели не меняются. Только для персонажей, знающих одно из этих заклинаний, не в стиле «Модерн».",
     ["Elite dragon on the player frame"] = "Элитный дракон на рамке игрока",
     ["Status text on the bars"] = "Текст состояния на полосах",
     ["Sets Blizzard's status text to percent and value, always shown. Change it back under Blizzard's options."] = "Устанавливает текст состояния Blizzard: проценты и значение, всегда отображаются. Вернуть можно в настройках Blizzard.",

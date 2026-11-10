@@ -85,7 +85,7 @@ ns:RegisterLocale("deDE", {
     ["Class icon on the target portrait"] = "Klassensymbol auf dem Zielportrait",
     ["Target buffs"] = "Buffs am Ziel",
     ["Buffs you can dispel glow"] = "Bannbare Buffs leuchten",
-    ["On an enemy target, the buffs you can take off (Purge, Dispel Magic, Devour Magic) glow. All other buffs stay as they are, and friendly targets are not changed. Only for characters who can dispel magic, not in the Modern style."] = "Bei einem feindlichen Ziel leuchten die Buffs, die du entfernen kannst (Reinigen, Magiebannung, Magie verschlingen). Alle anderen Buffs bleiben, wie sie sind, und freundliche Ziele ändern sich nicht. Nur für Charaktere, die Magie bannen können, nicht im Modern-Stil.",
+    ["On an enemy target, the buffs you can take off (Purge, Dispel Magic, Devour Magic, Tranquilizing Shot, Soothe Animal) glow. All other buffs stay as they are, and friendly targets are not changed. Only for characters who know one of these spells, not in the Modern style."] = "Bei einem feindlichen Ziel leuchten die Buffs, die du entfernen kannst (Reinigen, Magiebannung, Magie verschlingen, Einlullender Schuss, Tier besänftigen). Alle anderen Buffs bleiben, wie sie sind, und freundliche Ziele ändern sich nicht. Nur für Charaktere, die einen dieser Zauber kennen, nicht im Modern-Stil.",
     ["Elite dragon on the player frame"] = "Elite-Drache am Spielerrahmen",
     ["Status text on the bars"] = "Statustext auf den Balken",
     ["Sets Blizzard's status text to percent and value, always shown. Change it back under Blizzard's options."] = "Stellt Blizzards Statustext auf Prozent und Wert, immer sichtbar. Zurückstellen geht in Blizzards Optionen.",

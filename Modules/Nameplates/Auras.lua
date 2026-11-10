@@ -43,7 +43,7 @@ local function filterFor(kind, db)
     if kind == "buffs" then
         -- "only dispellable" is pointless for a character who cannot dispel;
         -- the capability comes from the spellbook, never from an aura.
-        if db.enemyBuffFilter == "dispellable" and NP.AuraStyle.CanDispelMagic() then
+        if db.enemyBuffFilter == "dispellable" and NP.AuraStyle.CanDispel() then
             return filter(helpful, plate, F.Dispellable or "DISPELLABLE")
         end
         return filter(helpful, plate, F.Important or "IMPORTANT")

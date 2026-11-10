@@ -430,7 +430,7 @@ function mod:GetOptions()
 
     items[#items + 1] = { type = "header", text = L["Target buffs"] }
     items[#items + 1] = { type = "toggle", label = L["Buffs you can dispel glow"],
-        tooltip = L["On an enemy target, the buffs you can take off (Purge, Dispel Magic, Devour Magic) glow. All other buffs stay as they are, and friendly targets are not changed. Only for characters who can dispel magic, not in the Modern style."],
+        tooltip = L["On an enemy target, the buffs you can take off (Purge, Dispel Magic, Devour Magic, Tranquilizing Shot, Soothe Animal) glow. All other buffs stay as they are, and friendly targets are not changed. Only for characters who know one of these spells, not in the Modern style."],
         get = function() return mod.db.dispelGlow ~= false end,
         set = function(_, v)
             mod.db.dispelGlow = v

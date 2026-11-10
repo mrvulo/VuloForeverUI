@@ -21,8 +21,9 @@
 --     the engine itself answers "can THIS player take it off" -- and
 --     HELPFUL|!RAID_PLAYER_DISPELLABLE without. We never look at an aura.
 --
--- Only for a character whose spellbook knows a magic dispel
--- (NP.AuraStyle.CanDispelMagic); everyone else keeps Blizzard's row untouched.
+-- Only for a character whose spellbook knows a spell that takes a buff off an
+-- enemy, magic or enrage (NP.AuraStyle.CanDispel); everyone else keeps
+-- Blizzard's row untouched.
 -- Not in the Modern style: its own target frame shows no auras at all.
 local _, ns = ...
 ns.UF = ns.UF or {}
@@ -66,7 +67,7 @@ local function canDispel()
     local S = ns.NP and ns.NP.AuraStyle
     if not S then return false end
     S.RefreshDispel()
-    return S.CanDispelMagic()
+    return S.CanDispel()
 end
 
 -- The engine hands each button over once, here; afterwards it is theirs.
