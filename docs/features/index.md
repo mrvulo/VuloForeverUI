@@ -405,6 +405,24 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 
 ## Offen
 
+- 2026-11-10 (Chat, no feature ID yet): links, player names and channel
+  names in the chat are hard to click, and clicking a name or channel to
+  whisper or write to the party often does nothing. Cause found in the code,
+  not yet confirmed in game: with our own timestamps on (the default), our
+  visible line is `stamp + text` (`Engine.lua`, `displayText`) while the
+  client's invisible copy underneath -- the one that owns the hyperlink hit
+  zones -- is `text` alone, because `ApplyClientStamps` turns the client's
+  stamps off. Every hit zone sits one stamp width left of what the player
+  sees, and a line that wraps on our surface but not on the client's puts
+  every line above it one row off. Lines restored after a reload exist only
+  on our surface and have no hit zones at all. The client stamps player chat
+  and pings only (`ChatFrameOverrides.lua` :435 / :672), not system or loot
+  lines, so "let the client stamp" loses stamps there. Decision pending:
+  which way the stamps go. Quick check: timestamps off -> clicks exact.
+- 2026-11-10 (Nameplates): 19 errors in the return channel, 2026-11-08/09,
+  `Target.lua:245: attempt to index field 'borderColor' (a nil value)` in
+  `NAME_PLATE_UNIT_REMOVED`. The defaults carry `borderColor`; how the
+  profile lost it is not found yet.
 - 2026-11-05 (F-09): `PurchaseBankTab()` forbidden came back. The return
   channel has logged a `taint` note "bagsShown … after bag toggle" in EVERY
   session since 2026-10-07, so the fixes did not hold. Mechanism (client
