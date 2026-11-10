@@ -414,10 +414,6 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 
 ## Offen
 
-- 2026-11-10 (Nameplates): 19 errors in the return channel, 2026-11-08/09,
-  `Target.lua:245: attempt to index field 'borderColor' (a nil value)` in
-  `NAME_PLATE_UNIT_REMOVED`. The defaults carry `borderColor`; how the
-  profile lost it is not found yet.
 - 2026-11-05 (F-09): `PurchaseBankTab()` forbidden came back. The return
   channel has logged a `taint` note "bagsShown … after bag toggle" in EVERY
   session since 2026-10-07, so the fixes did not hold. Mechanism (client

@@ -94,10 +94,16 @@ function ns:ScrubSavedVariables()
     return n
 end
 
--- at logout the session is over — stripping the live tables is safe
+-- At logout the live tables are stripped of every default, so from here on a
+-- module that reads its settings finds holes where the defaults were. The
+-- session is NOT over for the client, though: it still takes the nameplates
+-- down and says so (NAME_PLATE_UNIT_REMOVED), and a handler that then read
+-- db.borderColor threw on every logout and reload. So the dispatcher goes
+-- quiet first -- nothing of ours has anything left to do after this point.
 local logoutFrame = CreateFrame("Frame")
 logoutFrame:RegisterEvent("PLAYER_LOGOUT")
 logoutFrame:SetScript("OnEvent", function()
+    if ns.eventFrame then ns.eventFrame:UnregisterAllEvents() end
     ns:ScrubSavedVariables()
     ns:StripProfileDefaults()
     if ns.UnbindTrinketStore then ns:UnbindTrinketStore() end
