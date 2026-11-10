@@ -94,7 +94,7 @@ end
 -- anything -- a fresh install has no old shape to convert.
 -- Schema 1 is this addon's first release; the saved variables of
 -- VuloClassicUI are a different product's, under a different name.
-local SCHEMA = 2
+local SCHEMA = 3
 local MIGRATIONS = {}
 
 -- [2] The Modern unit frames now take their first place from Blizzard's
@@ -112,6 +112,30 @@ MIGRATIONS[2] = function()
                 if type(uf[unit]) ~= "table" then uf[unit] = {} end
                 uf[unit].seeded = true
             end
+        end
+    end
+end
+
+-- [3] The beta realms are closed. Characters stored from them leave the
+-- account-wide lists: the gold list of the bags and the own characters the
+-- mail window offers. A realm is a beta realm when its name says "Beta"; the
+-- realm logged in right now is never touched. Re-runnable: it only removes.
+MIGRATIONS[3] = function()
+    local g = VuloForeverUIDB.global
+    local here = GetRealmName()
+    local function beta(realm)
+        return type(realm) == "string" and realm ~= here
+            and realm:find("Beta", 1, true) ~= nil
+    end
+    if type(g.bagsGold) == "table" then
+        for key in pairs(g.bagsGold) do
+            local realm = type(key) == "string" and key:match(" %- (.+)$")
+            if beta(realm) then g.bagsGold[key] = nil end
+        end
+    end
+    if type(g.qolMailChars) == "table" then
+        for realm in pairs(g.qolMailChars) do
+            if beta(realm) then g.qolMailChars[realm] = nil end
         end
     end
 end
