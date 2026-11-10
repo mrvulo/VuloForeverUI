@@ -217,20 +217,24 @@ These apply to every visible change, in every module.
 
 ## Unit Frames (`Modules/UnitFrames/`)
 
-- Dispellable buffs on the target (`DispelGlow.lua`): the player wants UNDER
-  the target frame only the buffs they can purge, glowing, and no other buff
-  at all (friendly targets included). Blizzard's icons live in the client's
-  locked aura container and dispellability is secret in combat, so the buff
-  row is replaced in place: Blizzard's buff group is capped at 0
-  (`SetMaxBuffs`; a post-hook on `TargetFrame:ConfigureAuraContainer` lowers
-  it again after every reconfigure). Its filter string is useless: the
-  target container's `ShouldIncludeAuraInGroup` ignores the filter match and
-  shows every helpful aura (found the hard way, build 3 showed all buffs).
-  Our engine container pinned under Blizzard's (which keeps the debuffs)
-  shows `HELPFUL|RAID_PLAYER_DISPELLABLE` (the engine answers "can this
-  player take it off"), on a hostile target only. Only when the spellbook
-  knows a magic dispel; not in Modern (no target auras there). If the client
-  refuses the cap, our row stays hidden and Blizzard's stays as it is.
+- Dispellable buffs on the target (`DispelGlow.lua`): the player's call
+  (2026-11-10, after three wrong builds): on an ENEMY target -- mob or
+  player -- the buff row stays as it is, every buff, and only the buffs
+  this character can take off glow. Friendly targets and everything else are
+  not touched. Blizzard's icons live in the client's locked aura container
+  and dispellability is secret in combat, so on an enemy the buff row is
+  replaced in place: Blizzard's buff group is capped at 0 (`SetMaxBuffs`; a
+  post-hook on `TargetFrame:ConfigureAuraContainer` lowers it again after
+  every reconfigure; on a friendly target the cap is handed back). Its
+  filter string is useless: the target container's
+  `ShouldIncludeAuraInGroup` ignores the filter match and shows every
+  helpful aura. Our engine container pinned under Blizzard's (which keeps
+  the debuffs; the client draws an enemy's buffs after the debuffs too)
+  shows two groups flowing as one row: `HELPFUL|RAID_PLAYER_DISPELLABLE`
+  lit (the engine answers "can this player take it off") and
+  `HELPFUL|!RAID_PLAYER_DISPELLABLE` plain. Only when the spellbook knows a
+  magic dispel; not in Modern (no target auras there). If the client refuses
+  the cap, our row stays hidden and Blizzard's stays as it is.
 
 ## Nameplates (`Modules/Nameplates/`)
 

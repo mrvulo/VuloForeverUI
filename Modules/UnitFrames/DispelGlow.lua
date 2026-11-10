@@ -1,23 +1,25 @@
 -- VuloForeverUI / Modules / UnitFrames / DispelGlow
 --
--- Under the target frame only the buffs the player can take off, glowing.
--- Every other buff is gone from there, on friend and foe alike: the player
--- asked for a target frame that shows what is worth a purge and nothing else.
+-- On an enemy target the buff row stays what it is -- every buff, where the
+-- client draws them, under the debuffs -- and the buffs THIS character can
+-- take off glow. Friendly targets and everything else are left alone.
 --
 -- Blizzard's buff icons cannot be lit from here: they live in the client's
 -- locked aura container, and whether a buff is dispellable is secret in
--- combat. So the buff ROW is replaced, in place:
+-- combat. So on an enemy target the buff ROW is replaced, in place:
 --   * Blizzard's container keeps its debuffs; its buff group is capped at
 --     0 (SetMaxBuffs, the container's public setter). Its filter string is no
 --     help: the target container's ShouldIncludeAuraInGroup ignores the
 --     filter match and takes every helpful aura (TargetFrameAuraContainer.lua
 --     :257 / :358). TargetFrame:ConfigureAuraContainer puts the cap back on
 --     every target, faction and target-of-target change (TargetFrame.lua
---     :511), so a post-hook lowers it again.
---   * Our engine container, pinned under Blizzard's, shows
---     HELPFUL|RAID_PLAYER_DISPELLABLE: the engine itself answers "can THIS
---     player take it off". We never look. Each button carries a glow.
---   * Only on an enemy target: no friendly buff is ours to purge.
+--     :511), so a post-hook lowers it again. On a friendly target the cap is
+--     handed back and Blizzard draws its own row.
+--   * Our engine container, pinned under Blizzard's (where the client puts an
+--     enemy's buffs: after the debuffs), shows the same buffs in two groups
+--     that flow as one row: HELPFUL|RAID_PLAYER_DISPELLABLE with a glow --
+--     the engine itself answers "can THIS player take it off" -- and
+--     HELPFUL|!RAID_PLAYER_DISPELLABLE without. We never look at an aura.
 --
 -- Only for a character whose spellbook knows a magic dispel
 -- (NP.AuraStyle.CanDispelMagic); everyone else keeps Blizzard's row untouched.
@@ -33,7 +35,8 @@ local D = _G.TargetFrameAuraContainerDefaults or {}
 local SIZE    = D.SmallAuraSize or 17
 local GAP     = D.FlowLayoutElementSpacing or 3
 local LINE    = D.FlowLayoutLineSize or 122
-local MAX     = 16
+local MAX_GLOW = 16
+local MAX_REST = 32
 local GLOW    = "Interface\\Buttons\\UI-ActionButton-Border"
 
 local holder
@@ -67,7 +70,8 @@ local function canDispel()
 end
 
 -- The engine hands each button over once, here; afterwards it is theirs.
-local function initButton(button)
+-- `lit`: the button belongs to the group of buffs the player can take off.
+local function initButton(button, lit)
     button:SetSize(SIZE, SIZE)
 
     local icon = button:CreateTexture(nil, "ARTWORK")
@@ -90,8 +94,13 @@ local function initButton(button)
     pcall(button.SetDurationCooldown, button, cd)
     pcall(button.SetApplicationCount, button, stacks, {})
 
-    -- The light. Every aura in this container is one to purge, so it is
-    -- a plain texture of ours, pulsing on a frame of ours.
+    -- Mouse motion stays for the client's own aura tooltip; a click would
+    -- only swallow the one meant for the frame.
+    pcall(button.SetMouseClickEnabled, button, false)
+    if not lit then return end
+
+    -- The light. Every aura in the lit group is one to purge, so it is a
+    -- plain texture of ours, pulsing on a frame of ours.
     local layer = CreateFrame("Frame", nil, button)
     layer:SetAllPoints(button)
     layer:SetFrameLevel(top:GetFrameLevel() + 1)
@@ -109,22 +118,25 @@ local function initButton(button)
     a:SetDuration(0.7)
     a:SetSmoothing("IN_OUT")
     ag:Play()
-    -- Mouse motion stays for the client's own aura tooltip; a click would
-    -- only swallow the one meant for the frame.
-    pcall(button.SetMouseClickEnabled, button, false)
 end
 
 local function newContainer()
     local ok, c = pcall(CreateFrame, "AuraContainer", nil, holder, "CustomAuraContainerTemplate")
     if not (ok and c) then return nil end
-    local opts = {
-        maxFrameCount    = MAX,
-        initializeFrame  = initButton,
-        layout = { elementWidth = SIZE, elementHeight = SIZE,
-                   elementSpacing = GAP, lineSpacing = GAP },
-    }
-    local want = filter(F("Helpful", "HELPFUL"), F("RaidPlayerDispellable", "RAID_PLAYER_DISPELLABLE"))
-    if not pcall(c.AddAuraGroup, c, "main", want, opts) then return nil end
+    -- Two groups, one row: the buffs to purge first, lit, then the rest.
+    local function group(key, index, max, lit, ...)
+        return pcall(c.AddAuraGroup, c, key, filter(F("Helpful", "HELPFUL"), ...), {
+            maxFrameCount   = max,
+            initializeFrame = function(button) initButton(button, lit) end,
+            layout = { layoutIndex = index, elementWidth = SIZE, elementHeight = SIZE,
+                       elementSpacing = GAP, lineSpacing = GAP,
+                       groupSpacing = GAP, groupLineSpacing = GAP },
+        })
+    end
+    local mine = F("RaidPlayerDispellable", "RAID_PLAYER_DISPELLABLE")
+    local neg = (AuraUtil and AuraUtil.AuraFilterNegationPrefix) or "!"
+    if not group("purge", 1, MAX_GLOW, true, mine) then return nil end
+    if not group("rest", 2, MAX_REST, false, neg .. mine) then return nil end
     local dir = AnchorUtil and AnchorUtil.FlowDirection
     if c.SetFlowLayoutPadding then pcall(c.SetFlowLayoutPadding, c, 0, 0, 0, 0) end
     if dir and c.SetFlowLayoutGrowthDirection then
@@ -206,14 +218,16 @@ function DG.Refresh()
         return
     end
     if not build() then return end
-    -- ours only once Blizzard's buffs are gone: never two rows
-    if not setBlizzard(true) then
+    -- Ours only on an enemy, and only once Blizzard's buffs are gone there:
+    -- never two rows. Everything else is Blizzard's row, untouched.
+    if not (hostileTarget() and setBlizzard(true)) then
         setUnit(glowC, "none")
         holder:Hide()
+        if blizzOff then setBlizzard(false) end
         return
     end
     place()
-    setUnit(glowC, hostileTarget() and "target" or "none")
+    setUnit(glowC, "target")
 end
 
 local hooked

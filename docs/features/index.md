@@ -73,7 +73,7 @@ jemand ohne den Code prüfen kann.
 | F-52 | Neuer Zauberrang erscheint nicht doppelt in der Vorschau | Cooldown Manager | gebaut | – |
 | F-53 | Talentbedingungen pro Symbol | Cooldown Manager | gebaut | – |
 | F-54 | Menge im Teilen-Fenster eintippen | Komfort | gebaut | – |
-| F-55 | Am Ziel nur bannbare Buffs, leuchtend | Unit Frames | gebaut | – |
+| F-55 | Bannbare Buffs am feindlichen Ziel leuchten | Unit Frames | gebaut | – |
 | F-56 | Schlüsselbund als einklappbarer Abschnitt im Taschenfenster | Taschen | gebaut | – |
 
 ---
@@ -380,12 +380,12 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du Escape drückst, **dann** bleibt die alte Menge; klickst du daneben, bleibt die getippte Menge stehen, ohne zu kaufen.
 - **Wenn** das Fenster offen ist, aber du nicht auf die Zahl geklickt hast, **dann** laufen WASD und andere Tasten wie gewohnt.
 
-### F-55 Nur bannbare Buffs, leuchtend
+### F-55 Bannbare Buffs am feindlichen Ziel leuchten
 - **Angenommen** du spielst einen Charakter, der Magie vom Feind bannen kann (Priester mit Magiebannung, Schamane mit Reinigen, Hexenmeister mit Teufelsjäger), Stil Standard oder Classic, und „Bannbare Buffs leuchten“ ist an.
-- **Wenn** du einen Feind (auch einen Spieler im PvP) anvisierst, **dann** stehen unter dem Zielrahmen (unter den Debuffs) nur seine Magie-Buffs, und die leuchten blau und pulsieren; Essen, Trinken und andere Buffs fehlen dort.
-- **Wenn** das Ziel freundlich ist, **dann** steht unter dem Rahmen kein Buff.
-- **Wenn** du im Kampf das Ziel wechselst oder ein Buff ausläuft, **dann** folgt die Reihe sofort.
-- **Wenn** du die Einstellung ausschaltest oder einen Charakter ohne Bannzauber spielst, **dann** zeigt Blizzards eigene Buff-Reihe wieder alles.
+- **Wenn** du einen Feind anvisierst (Monster, Tier oder gegnerischer Spieler im PvP), **dann** stehen unter dem Zielrahmen (unter den Debuffs) weiter alle seine Buffs in gewohnter Größe; die Buffs, die du mit diesem Charakter bannen kannst, stehen vorn und leuchten blau pulsierend, alle anderen leuchten nicht.
+- **Wenn** das Ziel freundlich ist, **dann** ist die Buff-Anzeige genau wie ohne das Addon (Blizzards eigene Reihe, nichts leuchtet).
+- **Wenn** du im Kampf das Ziel wechselst oder ein Buff ausläuft, **dann** folgt die Reihe sofort; nie stehen zwei Buff-Reihen untereinander.
+- **Wenn** du die Einstellung ausschaltest oder einen Charakter ohne Bannzauber spielst, **dann** zeigt bei jedem Ziel Blizzards eigene Buff-Reihe alles wie gewohnt.
 
 ### F-56 Schlüsselbund im Taschenfenster
 - **Angenommen** du hast mindestens einen Schlüssel am Schlüsselbund und „Schlüsselbund anzeigen“ ist an, **dann** steht in der Werkzeugzeile des Taschenfensters ein Schlüssel-Knopf und ganz unten im Fenster der Abschnitt „Schlüsselbund (Anzahl)“ mit deinen Schlüsseln und den freien Plätzen der angefangenen Viererreihe — in jeder Ansicht (Kategorien, alle Taschen, pro Tasche).

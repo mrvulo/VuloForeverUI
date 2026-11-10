@@ -86,7 +86,7 @@ local mod = ns:RegisterModule("unitframes", {
         classicClassColor = false,     -- Classic: Blizzard's green unless asked
         classicStatusText = true,      -- Classic: Blizzard's bar text, always on, percent + value
         classicClassIcon  = true,      -- Classic: ringed class badge on the target portrait
-        dispelGlow        = true,      -- enemy buffs you can dispel glow above the target frame
+        dispelGlow        = true,      -- on an enemy target the buffs you can dispel glow (DispelGlow.lua)
         player       = { enabled = true, x = -260, y = -180, scale = 1, modern = unitDefaults("player") },
         target       = { enabled = true, x =  260, y = -180, scale = 1, modern = unitDefaults("target") },
         focus        = { enabled = false, x = -480, y =  -60, scale = 1, modern = unitDefaults("focus") },
@@ -430,7 +430,7 @@ function mod:GetOptions()
 
     items[#items + 1] = { type = "header", text = L["Target buffs"] }
     items[#items + 1] = { type = "toggle", label = L["Buffs you can dispel glow"],
-        tooltip = L["Under the target frame, only the buffs you can take off an enemy (Purge, Dispel Magic, Devour Magic) are shown, and they glow. All other buffs are hidden there, on friendly targets too. Only for characters who can dispel magic, not in the Modern style."],
+        tooltip = L["On an enemy target, the buffs you can take off (Purge, Dispel Magic, Devour Magic) glow. All other buffs stay as they are, and friendly targets are not changed. Only for characters who can dispel magic, not in the Modern style."],
         get = function() return mod.db.dispelGlow ~= false end,
         set = function(_, v)
             mod.db.dispelGlow = v
