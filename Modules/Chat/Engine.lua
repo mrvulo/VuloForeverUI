@@ -14,6 +14,9 @@
 -- on theirs, reading happens on ours.
 --
 -- That alignment is the whole difficulty of this file:
+--   * the same TEXT on both surfaces, to the letter: nothing is put in front
+--     of a line or behind it here. Our own timestamp used to be, and every
+--     hit zone then sat one stamp to the left of the word it belonged to
 --   * the same font on both surfaces, or the zones drift sideways
 --   * the same indented word wrap, or every wrapped line's link is off
 --   * the same scroll offset after every single add, because a message frame
@@ -377,24 +380,43 @@ end
 
 -- ---------------------------------------------------------------- stamps --
 
--- The client stamps player chat itself when its own timestamp option is on,
--- and ours stamps every line -- together that was two times on one line. While
--- ours is on, the client's goes off; what the player had is kept in the
--- profile (the CVar survives a reload, so memory alone would forget it) and
--- given back the moment ours is switched off or the module is.
+-- The timestamp is the CLIENT's, written by its own formatter in front of the
+-- line (ChatFrameMixin:MessageEventHandler), so it is part of the text on both
+-- surfaces and the hit zones stay under the words. We only say whether and in
+-- which words: the format goes into the client's own setting, with our colour
+-- wrapped around it -- the client hands the string to date() unchanged, which
+-- leaves colour codes alone.
+--
+-- What that costs: the client stamps chat from players and creatures (and
+-- pings), not loot or system lines. A stamp of ours on those was the bug.
+--
+-- What the player had is kept in the profile (the CVar survives a reload, so
+-- memory alone would forget it) and given back when the module is switched
+-- off. While the module is on, our switch is the only one: off means none.
+local function stampFormat(db)
+    local c = db.timestampColor or {}
+    local function byte(v) return math.floor(math.max(0, math.min(1, v or 1)) * 255 + 0.5) end
+    return ("|cff%02x%02x%02x%s|r "):format(byte(c.r), byte(c.g), byte(c.b),
+        db.timestampFormat or "%H:%M")
+end
+
 function Engine.ApplyClientStamps()
     if not (C_CVar and C_CVar.GetCVar) then return end
     local db = Chat.db()
     local cur = C_CVar.GetCVar("showTimestamps")
     if type(cur) ~= "string" then return end
-    if Chat.mod.active and db.timestamps then
-        if cur ~= "none" then
-            db.clientStamps = cur
-            C_CVar.SetCVar("showTimestamps", "none")
-        end
-    elseif db.clientStamps then
-        if cur == "none" then C_CVar.SetCVar("showTimestamps", db.clientStamps) end
+    -- A value that starts with a colour code is one of ours, left behind by
+    -- another profile: never the player's own, so never remembered as such.
+    local ours = cur:sub(1, 2) == "|c"
+    if Chat.mod.active then
+        local want = db.timestamps and stampFormat(db) or "none"
+        if db.clientStamps == nil then db.clientStamps = ours and "none" or cur end
+        if cur ~= want then C_CVar.SetCVar("showTimestamps", want) end
+    else
+        local was = db.clientStamps
         db.clientStamps = nil
+        if was == nil and ours then was = "none" end
+        if was and cur ~= was then C_CVar.SetCVar("showTimestamps", was) end
     end
 end
 
@@ -450,24 +472,9 @@ end
 
 -- ---------------------------------------------------------------- lines --
 
--- What we put on screen for one message. The timestamp is ours and is put in
--- front of the text -- but ONLY when the text is plain: a secret string may
--- not be concatenated with anything, so a secret line is shown exactly as it
--- came and simply carries no timestamp.
-local function displayText(msg)
-    local db = Chat.db()
-    if ns.IsSecret(msg) or type(msg) ~= "string" then return msg end
-    if not db.timestamps then return msg end
-
-    local stamp = date(db.timestampFormat or "%H:%M")
-    local c = db.timestampColor
-    return ("|cff%02x%02x%02x%s|r %s"):format(
-        (c.r or 1) * 255, (c.g or 1) * 255, (c.b or 1) * 255, stamp, msg)
-end
-Engine.DisplayText = displayText
-
 -- The tail of the client's own AddMessage. Everything it receives may be
--- secret and none of it is inspected beyond "is this secret at all".
+-- secret, none of it is inspected, and the line goes onto our surface exactly
+-- as the client wrote it onto its own.
 local function tail(cf, msg, r, g, b, ...)
     if not Chat.mod.active then return end
     local d = Chat.Data(cf)
@@ -477,8 +484,7 @@ local function tail(cf, msg, r, g, b, ...)
     -- pcall around the add itself: the colours arrive from the client and may
     -- be secret like the text, and one refused line must not take down the
     -- tail that the client is still inside of.
-    local okText, text = pcall(displayText, msg)
-    pcall(smf.AddMessage, smf, okText and text or msg, r, g, b)
+    pcall(smf.AddMessage, smf, msg, r, g, b)
 
     -- A message frame pins a scrolled view by itself when a line arrives, so
     -- after every single add the offset is taken from the client's frame
@@ -520,7 +526,7 @@ function Engine.Rebuild(cf)
     for i = 1, count do
         local okLine, text, cr, cg, cb = pcall(cf.GetMessageInfo, cf, i)
         if okLine and type(text) ~= "nil" then
-            d.smf:AddMessage(displayText(text), cr, cg, cb)
+            d.smf:AddMessage(text, cr, cg, cb)
         end
     end
     mirrorScroll(cf)

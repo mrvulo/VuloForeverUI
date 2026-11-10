@@ -1016,7 +1016,7 @@ ns:RegisterLocale("frFR", {
     ["Show a timestamp"] = "Afficher un horodatage",
     ["Timestamp format"] = "Format de l'horodatage",
     ["Timestamp color"] = "Couleur de l'horodatage",
-    ["|cffaaaaaaA line the client hands over as a secret -- which happens in instances and on Battle.net whispers -- is shown exactly as it came, without a timestamp: a secret may not be joined to anything.|r"] = "|cffaaaaaaUne ligne que le client transmet comme secrète (ce qui arrive en instance et pour les chuchotements Battle.net) est affichée telle quelle, sans horodatage : un secret ne peut être joint à rien.|r",
+    ["|cffaaaaaaThe timestamp is written by the game itself, so that links stay clickable exactly where you see them. It stands in front of chat from players and creatures, not in front of loot and system lines. A change shows on new lines.|r"] = "|cffaaaaaaL'horodatage est écrit par le jeu lui-même, afin que les liens restent cliquables exactement là où vous les voyez. Il précède les messages des joueurs et des créatures, pas les lignes de butin ni les lignes système. Un changement s'applique aux nouvelles lignes.|r",
     ["The side bar"] = "La barre latérale",
     ["Sidebar visibility"] = "Visibilité de la barre latérale",
     ["Sidebar width"] = "Largeur de la barre latérale",

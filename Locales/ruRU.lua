@@ -1016,7 +1016,7 @@ ns:RegisterLocale("ruRU", {
     ["Show a timestamp"] = "Показывать метку времени",
     ["Timestamp format"] = "Формат метки времени",
     ["Timestamp color"] = "Цвет метки времени",
-    ["|cffaaaaaaA line the client hands over as a secret -- which happens in instances and on Battle.net whispers -- is shown exactly as it came, without a timestamp: a secret may not be joined to anything.|r"] = "|cffaaaaaaСтрока, которую клиент отдает как скрытую — это бывает в подземельях и при шепоте через Battle.net, — показывается как есть, без метки времени: скрытое значение нельзя ни с чем соединять.|r",
+    ["|cffaaaaaaThe timestamp is written by the game itself, so that links stay clickable exactly where you see them. It stands in front of chat from players and creatures, not in front of loot and system lines. A change shows on new lines.|r"] = "|cffaaaaaaМетку времени пишет сама игра, чтобы ссылки нажимались точно там, где вы их видите. Она стоит перед сообщениями игроков и существ, но не перед строками добычи и системными строками. Изменение видно на новых строках.|r",
     ["The side bar"] = "Боковая панель",
     ["Sidebar visibility"] = "Видимость боковой панели",
     ["Sidebar width"] = "Ширина боковой панели",

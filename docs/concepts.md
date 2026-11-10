@@ -445,6 +445,16 @@ These apply to every visible change, in every module.
 
 ## Chat (`Modules/Chat/`, copy dialog in `UI/StringDialog.lua`)
 
+- **Both chat surfaces carry the same text, to the letter** (the player's
+  call, 2026-11-10). Nothing is put in front of a line or behind it by us.
+  The timestamp is the client's own (`showTimestamps`), set by us to our
+  format with our colour wrapped around it (`Engine.ApplyClientStamps`);
+  the client stamps chat from players and creatures and pings, not loot or
+  system lines, and that is accepted. A stamp of ours in front of our copy
+  put every hyperlink hit zone one stamp to the left of its word and wrapped
+  long lines differently. While the module is on, our switch is the only
+  one (off = `none`); the player's own value is kept in `clientStamps` and
+  given back when the module goes off.
 - **Links in the chat** are clicked on the client's invisible text under our
   surface. Our message frame and its `FontStringContainer` must have
   hyperlinks off (`SetHyperlinksEnabled(false)`, protected: out of combat):

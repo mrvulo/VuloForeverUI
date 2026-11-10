@@ -1016,7 +1016,7 @@ ns:RegisterLocale("deDE", {
     ["Show a timestamp"] = "Zeitstempel zeigen",
     ["Timestamp format"] = "Format des Zeitstempels",
     ["Timestamp color"] = "Farbe des Zeitstempels",
-    ["|cffaaaaaaA line the client hands over as a secret -- which happens in instances and on Battle.net whispers -- is shown exactly as it came, without a timestamp: a secret may not be joined to anything.|r"] = "|cffaaaaaaEine Zeile, die der Client als geheim übergibt -- in Instanzen und bei Battle.net-Flüstern -- wird genau so gezeigt, wie sie kam, ohne Zeitstempel: Geheimes darf mit nichts verbunden werden.|r",
+    ["|cffaaaaaaThe timestamp is written by the game itself, so that links stay clickable exactly where you see them. It stands in front of chat from players and creatures, not in front of loot and system lines. A change shows on new lines.|r"] = "|cffaaaaaaDen Zeitstempel schreibt das Spiel selbst, damit Links genau dort anklickbar bleiben, wo du sie siehst. Er steht vor Chat von Spielern und Kreaturen, nicht vor Beute- und Systemzeilen. Eine Änderung zeigt sich an neuen Zeilen.|r",
     ["The side bar"] = "Seitenleiste",
     ["Sidebar visibility"] = "Sichtbarkeit der Seitenleiste",
     ["Sidebar width"] = "Breite der Seitenleiste",

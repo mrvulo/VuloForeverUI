@@ -110,20 +110,11 @@ function History.Replay()
     History.replayed = true
 
     d.smf:AddMessage(("|cff777777%s|r"):format(L["--- previous session ---"]), 0.5, 0.5, 0.5)
-    local db = Chat.db()
     for _, entry in ipairs(log) do
         if type(entry) == "table" and type(entry.text) == "string" then
-            -- The stamp is the time the line was SAID, taken from the entry --
-            -- re-stamping it with the time of the reload would date the whole
-            -- conversation to one minute.
-            local line = entry.text
-            if db.timestamps and type(entry.at) == "number" then
-                local c = db.timestampColor
-                line = ("|cff%02x%02x%02x%s|r %s"):format(
-                    (c.r or 1) * 255, (c.g or 1) * 255, (c.b or 1) * 255,
-                    date(db.timestampFormat or "%H:%M", entry.at), line)
-            end
-            d.smf:AddMessage(line, 0.75, 0.75, 0.75)
+            -- As it was captured: a line the client stamped carries that
+            -- stamp in its text, with the time it was said.
+            d.smf:AddMessage(entry.text, 0.75, 0.75, 0.75)
         end
     end
     d.smf:AddMessage(("|cff777777%s|r"):format(L["--- this session ---"]), 0.5, 0.5, 0.5)

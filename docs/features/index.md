@@ -76,6 +76,7 @@ jemand ohne den Code prüfen kann.
 | F-55 | Bannbare Buffs am feindlichen Ziel leuchten | Unit Frames | gebaut | – |
 | F-56 | Schlüsselbund als einklappbarer Abschnitt im Taschenfenster | Taschen | gebaut | – |
 | F-57 | Chat-Eingabezeile: Kanalname und Text in einer Schrift, Textcursor am Textende | Chat | gebaut | – |
+| F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 
 ---
 
@@ -403,22 +404,16 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Dann** behält die Zeile die Farbe des Kanals, auch direkt nach `/reload` und nach einer Änderung in den Chat-Optionen.
 - **Wenn** du das Chat-Modul ausschaltest, **dann** sieht die Eingabezeile wieder aus wie bei Blizzard.
 
+### F-58 Chat-Links treffen genau
+- **Angenommen** das Chat-Modul ist an und „Zeitstempel zeigen“ ist an, **wenn** jemand im Chat schreibt, **dann** steht vor der Zeile die Uhrzeit im gewählten Format und in der gewählten Farbe.
+- **Wenn** du einen Spielernamen, einen Kanalnamen („[Gruppe]“, „[2. Handel]“) oder einen Gegenstand im Chat anklickst — an jeder Stelle des Links, auch ganz rechts, auch in einer umgebrochenen Zeile —, **dann** reagiert genau dieser Link (Flüstern öffnet sich, der Kanal wird gewählt, der Gegenstand zeigt seinen Tooltip).
+- **Wenn** du Beute aufhebst oder eine Systemmeldung kommt, **dann** steht dort kein Zeitstempel; der Gegenstand in der Beutezeile ist trotzdem genau anklickbar.
+- **Wenn** du Format oder Farbe änderst oder den Zeitstempel ausschaltest, **dann** gilt das für neue Zeilen; alte behalten, was sie haben.
+- **Wenn** du das Chat-Modul ausschaltest, **dann** gilt wieder die Zeitstempel-Einstellung, die das Spiel vorher hatte.
+- Bekannte Grenze: Zeilen aus der letzten Sitzung (nach `/reload`, grau) haben keine anklickbaren Links.
+
 ## Offen
 
-- 2026-11-10 (Chat, no feature ID yet): links, player names and channel
-  names in the chat are hard to click, and clicking a name or channel to
-  whisper or write to the party often does nothing. Cause found in the code,
-  not yet confirmed in game: with our own timestamps on (the default), our
-  visible line is `stamp + text` (`Engine.lua`, `displayText`) while the
-  client's invisible copy underneath -- the one that owns the hyperlink hit
-  zones -- is `text` alone, because `ApplyClientStamps` turns the client's
-  stamps off. Every hit zone sits one stamp width left of what the player
-  sees, and a line that wraps on our surface but not on the client's puts
-  every line above it one row off. Lines restored after a reload exist only
-  on our surface and have no hit zones at all. The client stamps player chat
-  and pings only (`ChatFrameOverrides.lua` :435 / :672), not system or loot
-  lines, so "let the client stamp" loses stamps there. Decision pending:
-  which way the stamps go. Quick check: timestamps off -> clicks exact.
 - 2026-11-10 (Nameplates): 19 errors in the return channel, 2026-11-08/09,
   `Target.lua:245: attempt to index field 'borderColor' (a nil value)` in
   `NAME_PLATE_UNIT_REMOVED`. The defaults carry `borderColor`; how the

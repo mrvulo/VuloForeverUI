@@ -1011,7 +1011,7 @@ ns:RegisterLocale("ptBR", {
     ["Show a timestamp"] = "Mostrar carimbo de hora",
     ["Timestamp format"] = "Formato do carimbo de hora",
     ["Timestamp color"] = "Cor do carimbo de hora",
-    ["|cffaaaaaaA line the client hands over as a secret -- which happens in instances and on Battle.net whispers -- is shown exactly as it came, without a timestamp: a secret may not be joined to anything.|r"] = "|cffaaaaaaUma linha que o cliente entrega como segredo -- o que acontece em instâncias e em sussurros da Battle.net -- é mostrada exatamente como veio, sem carimbo de hora: um segredo não pode ser unido a nada.|r",
+    ["|cffaaaaaaThe timestamp is written by the game itself, so that links stay clickable exactly where you see them. It stands in front of chat from players and creatures, not in front of loot and system lines. A change shows on new lines.|r"] = "|cffaaaaaaO carimbo de hora é escrito pelo próprio jogo, para que os links continuem clicáveis exatamente onde você os vê. Ele fica antes do bate-papo de jogadores e criaturas, não antes das linhas de saque e de sistema. Uma mudança aparece nas linhas novas.|r",
     ["The side bar"] = "A barra lateral",
     ["Sidebar visibility"] = "Visibilidade da barra lateral",
     ["Sidebar width"] = "Largura da barra lateral",
