@@ -414,6 +414,19 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 
 ## Offen
 
+- 2026-11-11 (Namensplaketten): the player's screenshots show two faults
+  that come "sometimes", with no Lua error in the return channel. (1) A
+  solid white rectangle around the target's bar, the bar centred in it with
+  the same margin on all four sides (about 46 screen pixels), and the debuff
+  icon beside the bar drawn white under its border and cooldown edge. (2)
+  Debuff icons of the left slot standing about 14 pixels apart although the
+  spacing setting is 1. None of our textures has that rectangle's size; the
+  client's white plate border (`NamePlateFullBorderTemplate`, four white
+  edges around its own health bar, `ignoreParentScale`) is a candidate, not
+  proven. Not fixed. `/vfnpsnap` (FlashProbe.lua) was added to settle it:
+  typed while the fault is on screen, it writes every drawn frame and
+  texture of every plate into the diagnostics log. Next step: read that
+  output.
 - 2026-11-05 (F-09): `PurchaseBankTab()` forbidden came back. The return
   channel has logged a `taint` note "bagsShown … after bag toggle" in EVERY
   session since 2026-10-07, so the fixes did not hold. Mechanism (client

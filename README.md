@@ -80,6 +80,7 @@ errors and blocked actions into a log you can paste along.
 | `/vfbags`, `/vfchat`, `/vfbars`, `/vfbars2`, `/vfcd`, `/vfmeter` | jump to that module's page (`/vfmeter reset` clears the data) |
 | `/vfdiag` | diagnostics log for bug reports |
 | `/vfsecrets` | which combat values the client lets addons read right now |
+| `/vfnpsnap` | writes everything drawn on the nameplates into the diagnostics log |
 | `/vfuiprof` | which modules cost the most time |
 | `/rl`, `/reloadui` | reload, refused in combat |
 

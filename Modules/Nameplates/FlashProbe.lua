@@ -87,3 +87,136 @@ ns.Slash.NPFLASH = function()
     probe:Show()
     ns:Print(L["Flash probe on: target a mob and wait for the flash. /vfnpflash again to stop."])
 end
+
+-- ---------------------------------------------------------------------------
+-- /vfnpsnap -- everything that is DRAWN on the nameplates, right now.
+--
+-- For a fault that stays on screen (a white rectangle around the bar, icons
+-- spread apart) instead of flashing by: one pass over every base plate, the
+-- target's first, and one line per visible frame and texture with what it
+-- shows -- its place on screen, size, scale, alpha, texture, tint and blend
+-- mode. The lines go into the diagnostics log, not into the chat.
+--
+-- Reads only, every getter guarded: a value that is secret is written as "?".
+-- ---------------------------------------------------------------------------
+local SNAP_LINES = 560
+
+local function get(obj, method, ...)
+    local f = obj[method]
+    if not f then return nil end
+    local ok, a, b, c, d = pcall(f, obj, ...)
+    if not ok then return nil end
+    return a, b, c, d
+end
+
+local function num(v)
+    if ns.CanRead(v) and type(v) == "number" then return v end
+    return nil
+end
+
+local function str(v)
+    if ns.CanRead(v) and (type(v) == "string" or type(v) == "number") then return tostring(v) end
+    return nil
+end
+
+local function f2(v)
+    local n = num(v)
+    return n and ("%.2f"):format(n) or "?"
+end
+
+-- Our own frames have no names; the keys they hang under on the plate do.
+local function labelsOf(plate)
+    local t = {}
+    local function take(tbl, prefix)
+        for k, v in pairs(tbl) do
+            if type(k) == "string" and type(v) == "table" and v.GetObjectType and not t[v] then
+                t[v] = prefix .. k
+            end
+        end
+    end
+    take(plate, "")
+    for _, key in ipairs({ "auras", "executeHalo", "glowEdges", "icons", "texts", "border" }) do
+        local sub = plate[key]
+        if type(sub) == "table" and not sub.GetObjectType then take(sub, key .. ".") end
+    end
+    return t
+end
+
+local function describeRegion(region, depth, kind, labels)
+    local visible = get(region, "IsVisible")
+    if not (ns.CanRead(visible) and visible == true) then return nil end
+    local ea = num(get(region, "GetEffectiveAlpha"))
+    if ea and ea < 0.02 then return false end       -- drawn by nobody; children may differ
+    local name = labels[region] or str(get(region, "GetDebugName")) or "?"
+    if #name > 70 then name = ".." .. name:sub(-68) end
+    local l, b, w, h = get(region, "GetScaledRect")
+    local parts = { ("%s%s %s"):format(("  "):rep(depth), kind, name) }
+    if num(l) and num(b) and num(w) and num(h) then
+        parts[#parts + 1] = ("@%d,%d %dx%d"):format(l, b, w, h)
+    else
+        parts[#parts + 1] = "@?"
+    end
+    parts[#parts + 1] = "a" .. f2(get(region, "GetAlpha")) .. "/" .. f2(ea)
+    if kind == "F" then
+        parts[#parts + 1] = "s" .. f2(get(region, "GetScale")) .. "/" .. f2(get(region, "GetEffectiveScale"))
+        parts[#parts + 1] = str(get(region, "GetObjectType")) or "?"
+    else
+        local art = str(get(region, "GetAtlas"))
+        if art and art ~= "" then art = "atlas " .. art
+        else art = str(get(region, "GetTexture")); art = art and ("tex " .. art) or "no texture" end
+        parts[#parts + 1] = art
+        local r, g, bl, a = get(region, "GetVertexColor")
+        parts[#parts + 1] = ("vc %s,%s,%s,%s"):format(f2(r), f2(g), f2(bl), f2(a))
+        parts[#parts + 1] = str(get(region, "GetBlendMode")) or "?"
+        parts[#parts + 1] = str(get(region, "GetDrawLayer")) or "?"
+    end
+    return table.concat(parts, " ")
+end
+
+local function snapWalk(frame, depth, labels, out)
+    if depth > 12 or #out >= SNAP_LINES then return end
+    if frame:IsForbidden() then return end
+    local line = describeRegion(frame, depth, "F", labels)
+    if line == nil then return end                  -- hidden: so is everything under it
+    if line then out[#out + 1] = line end
+    for _, r in ipairs({ frame:GetRegions() }) do
+        if #out >= SNAP_LINES then return end
+        if not r:IsForbidden() and r.IsObjectType and r:IsObjectType("Texture") then
+            local tl = describeRegion(r, depth + 1, "T", labels)
+            if tl then out[#out + 1] = tl end
+        end
+    end
+    for _, child in ipairs({ frame:GetChildren() }) do snapWalk(child, depth + 1, labels, out) end
+end
+
+ns:RegisterSlash({ key = "NPSNAP", commands = { "/vfnpsnap" },
+    desc = "Write everything drawn on the nameplates into the diagnostics log.",
+})
+
+ns.Slash.NPSNAP = function()
+    local bases = C_NamePlate.GetNamePlates() or {}
+    local target = C_NamePlate.GetNamePlateForUnit("target")
+    table.sort(bases, function(a, b) return a == target and b ~= target end)
+    local out = {}
+    local _, physH = GetPhysicalScreenSize()
+    out[#out + 1] = ("screen height %s, UI scale %s, plate pixel %s"):format(
+        str(physH) or "?", f2(UIParent:GetEffectiveScale()), f2(NP.AuraStyle.PlatePixel()))
+    local count = 0
+    for _, base in ipairs(bases) do
+        if #out >= SNAP_LINES then break end
+        if not base:IsForbidden() then
+            count = count + 1
+            local unit = NP.UnitOf(base)
+            local plate = unit and NP.plates and NP.plates[unit]
+            out[#out + 1] = ("== %s%s%s"):format(str(unit) or "?",
+                base == target and " (target)" or "", plate and "" or " (no plate of ours)")
+            snapWalk(base, 0, plate and labelsOf(plate) or {}, out)
+        end
+    end
+    if count == 0 then
+        ns:Print(L["Nameplate snapshot: no nameplate is on screen."])
+        return
+    end
+    for _, text in ipairs(out) do ns.Diag.Record(text) end
+    ns:Print(L["Nameplate snapshot: %d lines written to the diagnostics log. Type /reload now so that they are saved."], #out)
+end
