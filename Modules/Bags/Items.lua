@@ -122,6 +122,7 @@ end
 -- one-hand weapon: the bag item is an upgrade when it beats the WEAKER of the
 -- two, because that is the one it would replace.
 local MAIN, OFF = 16, 17
+local POOR = Enum.ItemQuality and Enum.ItemQuality.Poor or 0
 local WORN = {
     INVTYPE_HEAD = { 1 }, INVTYPE_NECK = { 2 }, INVTYPE_SHOULDER = { 3 },
     INVTYPE_CHEST = { 5 }, INVTYPE_ROBE = { 5 }, INVTYPE_WAIST = { 6 },
@@ -178,8 +179,39 @@ local function wornLevel(invSlot)
     return value
 end
 
--- An item's stats as the client lists them (armour, attributes, weapon DPS),
--- by link, so the same piece is asked once until the equipment changes.
+-- An item's values: the stats the client lists (armour, attributes, weapon
+-- DPS) and its "Equip:" effects, by link, so the same piece is asked once until
+-- the equipment changes.
+--
+-- The effects are not in the client's stat list -- spell damage, healing and
+-- "restores N health per 5 sec" on this client's gear are spells the item
+-- casts on its wearer -- so they are read from the item's tooltip lines: a
+-- line that starts with the client's "Equip:" word is one value, named by its
+-- text with the numbers taken out and worth the numbers in it. Without them a
+-- blue mace with three such effects looked like a bare 14 DPS weapon, and a
+-- grey dagger with 15 DPS beat it (2026-11-12).
+local EQUIP = type(ITEM_SPELL_TRIGGER_ONEQUIP) == "string" and ITEM_SPELL_TRIGGER_ONEQUIP ~= ""
+    and ITEM_SPELL_TRIGGER_ONEQUIP or nil
+local ARMOR = "RESISTANCE0_NAME"
+
+-- Adds the "Equip:" lines of a tooltip to t. False when the tooltip is not
+-- there yet (ask again later), true otherwise.
+local function addEffects(t, link)
+    if not (EQUIP and C_TooltipInfo and C_TooltipInfo.GetHyperlink) then return true end
+    local ok, data = pcall(C_TooltipInfo.GetHyperlink, link)
+    if not (ok and type(data) == "table" and type(data.lines) == "table") then return false end
+    for _, line in ipairs(data.lines) do
+        local text = type(line) == "table" and line.leftText
+        if type(text) == "string" and text:sub(1, #EQUIP) == EQUIP then
+            local sum = 0
+            for num in text:gmatch("%d+") do sum = sum + (tonumber(num) or 0) end
+            -- an effect without a number still is one: it counts as 1
+            t["E:" .. text:gsub("%d+", "#")] = sum > 0 and sum or 1
+        end
+    end
+    return true
+end
+
 local statsOf = {}
 
 local function stats(link)
@@ -189,28 +221,42 @@ local function stats(link)
     local ok, t = pcall(C_Item.GetItemStats, link)
     -- an item the client has not loaded yet answers nothing: ask again later
     if not (ok and type(t) == "table") then return nil end
+    if not addEffects(t, link) then return t end
     statsOf[link] = t
     return t
 end
 
--- Does every listed stat go the same way? 1 = only gains, -1 = only losses,
--- 0 = mixed or nothing to compare -- the item level decides those.
+-- Does every listed value go the same way? 1 = only gains, -1 = only losses,
+-- 0 = mixed or nothing to compare -- the item level decides those, unless the
+-- second answer is true: mixed, and what is lost outweighs what is gained
+-- (the points of every value summed, armour aside: its numbers are of another
+-- size and it only speaks when nothing else differs).
 local function statVerdict(new, old)
-    if not (new and old) then return 0 end
+    if not (new and old) then return 0, false end
     local gain, loss = false, false
+    local won, lost = 0, 0
     for key, v in pairs(new) do
         local o = old[key]
         o = type(o) == "number" and o or 0
         if type(v) == "number" then
-            if v > o then gain = true elseif v < o then loss = true end
+            if v > o then
+                gain = true
+                if key ~= ARMOR then won = won + (v - o) end
+            elseif v < o then
+                loss = true
+                if key ~= ARMOR then lost = lost + (o - v) end
+            end
         end
     end
     for key, o in pairs(old) do
-        if new[key] == nil and type(o) == "number" and o > 0 then loss = true end
+        if new[key] == nil and type(o) == "number" and o > 0 then
+            loss = true
+            if key ~= ARMOR then lost = lost + o end
+        end
     end
-    if gain and not loss then return 1 end
-    if loss and not gain then return -1 end
-    return 0
+    if gain and not loss then return 1, false end
+    if loss and not gain then return -1, false end
+    return 0, lost > won
 end
 
 function Items.ForgetWorn()
@@ -220,9 +266,12 @@ end
 
 -- Would the player be better off wearing this? Only for gear this character
 -- can wear today: the client's own "can use" covers class and armour type,
--- the level requirement is checked here. The stats decide when they all point
--- the same way -- a higher item level with less armour and nothing else is no
--- upgrade -- and the item level decides the rest.
+-- the level requirement is checked here. The values (stats and "Equip:"
+-- effects) decide when they all point the same way -- a higher item level with
+-- less armour and nothing else is no upgrade. Where they are mixed the item
+-- level decides, but only while the piece does not lose more than it gains.
+-- A poor (grey) item is never an upgrade over something worn: it has neither
+-- attributes nor effects (the player, 2026-11-12).
 function Items.IsUpgrade(bagID, slotID, info)
     if not (info and type(info.itemID) == "number") then return false end
     local loc = Items.EquipLoc(info)
@@ -240,11 +289,14 @@ function Items.IsUpgrade(bagID, slotID, info)
     -- one. A two-hander replaces the off hand as well, but comparing it against
     -- the main hand alone is the honest guess the data allows.
     local mine = stats(info.hyperlink or C_Container.GetContainerItemLink(bagID, slotID))
+    local poor = info.quality == POOR
     for _, invSlot in ipairs(targets) do
         local w = wornLevel(invSlot)
         if w == false then return true end
-        local verdict = statVerdict(mine, stats(GetInventoryItemLink("player", invSlot)))
-        if verdict > 0 or (verdict == 0 and level > w) then return true end
+        if not poor then
+            local verdict, worse = statVerdict(mine, stats(GetInventoryItemLink("player", invSlot)))
+            if verdict > 0 or (verdict == 0 and not worse and level > w) then return true end
+        end
     end
     return false
 end
