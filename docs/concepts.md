@@ -141,6 +141,18 @@ These apply to every visible change, in every module.
   `/vfuiprof` before and after any change for speed. A lock repaints only
   its slot (`Bags.RepaintSlot`), a cooldown only the swirls
   (`Bags.RepaintCooldowns`); the whole repaint is the fallback.
+- **Upgrade arrow** (`Items.IsUpgrade`): compares what the piece gives, not
+  only its item level. Values are the client's stat list (`C_Item.GetItemStats`)
+  plus every "Equip:" line of the tooltip (spell damage, healing, health per
+  5 sec are spells on this client's gear and are NOT in the stat list; the
+  line's text without its numbers names the value, the numbers are its
+  worth). Only gains → arrow; only losses → none; mixed → the item level
+  decides, but never when the piece loses more points than it gains (armour
+  aside). A poor (grey) item never gets the arrow over something worn — the
+  player's rule, 2026-11-12, after a grey dagger was marked better than a
+  blue caster mace with three effects. An empty slot always gets it. No
+  class or spec weights: weapon damage counts for a caster too, the sum rule
+  keeps it from outweighing real stats.
 - **Bags full helper** (`FullHelper.lua`, `fullHelper`): only on the
   client's "Inventory is full" while looting, looked at again 0.25 s later
   (a stack may have taken it, the QoL junk discard may have made room). Only
