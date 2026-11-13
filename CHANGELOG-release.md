@@ -1,24 +1,31 @@
-## 0.21.1
+## 0.22.0
+
+**New**
+
+- **Classes** — a new module under Unit Frames with one tab per class; a
+  class's displays only run on a character of that class. First in:
+  the priest.
+- **Classes** — priest: two arcs stand like brackets around your character.
+  On the right your shield, in segments that drain with the absorption that
+  is left, in combat too, with the amount and the time remaining below it;
+  the lowest quarter turns red-orange when little is left, and a hit the
+  shield swallows whole makes the arc flash white. On the left Inner Fire,
+  one segment per charge.
+- **Classes** — both arcs move and scale together in Edit Mode; shape,
+  colours and texts can be set, and a preview switch on the page shows them
+  out of combat.
 
 **Changed**
 
-- **Unit Frames** — the buffs you can take off an enemy target now carry
-  the game's own spell-alert glow, a warm white frame with a golden light
-  running around the icon, instead of the blue pulse.
-- **Unit Frames** — hunters with Tranquilizing Shot and druids with Soothe
-  Animal get the glow too, for the buffs they can remove; the nameplates'
-  "only dispellable" buff filter follows the same rule.
-- **Chat** — the timestamp is now written by the game itself. It stands in
-  front of chat from players and creatures, not in front of loot and system
-  lines; format and colour are set where they were.
-- **Quality of Life** — the Quest tab and its quest helpers are gone,
-  together with the quest journal and `/vfjournal`.
-- **Bags** — characters from beta realms are removed once from the gold
-  list and from your own characters in the mail window.
+- **Bags** — the upgrade arrow now counts "Equip:" effects such as spell
+  damage, healing and health per 5 seconds, not only the stats the game
+  lists. With a mixed result the item level only decides when the item does
+  not lose more than it gains.
 
 **Fixed**
 
-- **Chat** — with timestamps on, a click on an item link, player name or
-  quest in the chat landed next to it; links are now clickable exactly where
-  you see them.
-- **Nameplates** — no more error on logout or `/reload`.
+- **Bags** — a grey item is never marked as better than what you wear.
+- **Nameplates** — now and then the white border of your target turned into
+  a thick white block around the bar, the debuff icons stood far apart or
+  had thick black frames. Sizes on a nameplate no longer depend on the
+  moment the nameplate appeared.
