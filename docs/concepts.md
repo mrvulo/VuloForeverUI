@@ -257,6 +257,37 @@ These apply to every visible change, in every module.
   halo running around the icon (`UI-HUD-ActionBar-Proc-Loop-Flipbook`, the
   client's flipbook numbers, 1.4 times the icon as on the action bar).
 
+## Classes (`Modules/Classes/`)
+
+One module, one tab per class (`CL.Register` in `Core.lua`; the tab order is
+the load order of the class files). Every tab shows on every character, the
+display runs only on a character of that class; a tab of another class says
+so at the top. A class's settings live in `db[<tab id>]`.
+
+Priest (`Priest.lua`): two arcs like brackets around the character, moved and
+scaled together as one mover (`classes_priest`).
+
+- **Shield arc, right.** The absorb left (`UnitGetTotalAbsorbs`) is secret, in
+  and out of combat. Each segment is a StatusBar of its own with the range
+  `threshold + 0.99 .. threshold + 1`, handed the secret; absorbs are whole
+  numbers, so a segment is either full or empty. The number is
+  `C_StringUtil.TruncateWhenZero` of the same secret (empty at 0). Never a
+  comparison on it.
+- **The shield's size** (what the thresholds are cut from) is plain: out of
+  combat the largest `points[1]` seen per aura instance; a shield cast in a
+  fight takes the last size of that rank, else the rank's base values. Auras
+  are read only outside a fight (`aurasLocked`: lockdown, `UnitAffectingCombat`,
+  `ShouldAurasBeSecret` -- the lockdown flag alone comes too late at the
+  first hit).
+- **Low warning** without a comparison: a low segment is two ADD-blended bars,
+  the warning colour plus the rest up to the normal colour; the second bar is
+  gated on "above the low quarter", so below it only the warning colour is left.
+- **Inner Fire, left.** Plain textures: charges come from the buff out of a
+  fight, from the cast (20), and in a fight every physical `UNIT_COMBAT` WOUND
+  takes one off unless its flag is ABSORB, BLOCK or RESIST. The `amount` of
+  UNIT_COMBAT is secret in every payload (client docs), so it never decides.
+  The fill width of a gate bar is secret too once it holds a secret value.
+
 ## Nameplates (`Modules/Nameplates/`)
 
 - Auras are the client's aura containers: we hand over filter strings and

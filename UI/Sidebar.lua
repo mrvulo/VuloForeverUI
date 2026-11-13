@@ -18,7 +18,7 @@ local MODULE_ICONS = {}
 for _, key in ipairs({
     "globalsettings", "profiles", "vulslot", "minimap", "minimapstyle",
     "unitframes", "nameplates", "cooldownmanager", "actionbars", "auras",
-    "tooltipids", "reminders", "chat", "bags", "locales",
+    "tooltipids", "reminders", "chat", "bags", "locales", "classes",
 }) do
     MODULE_ICONS[key] = ICON_DIR .. key .. ".tga"
 end

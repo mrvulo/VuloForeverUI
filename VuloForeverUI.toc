@@ -137,6 +137,8 @@ Modules\Skins\Friends.lua
 Modules\Skins\Social.lua
 Modules\Skins\Guide.lua
 Modules\Skins\Options.lua
+Modules\Classes\Core.lua
+Modules\Classes\Priest.lua
 Modules\Nameplates\Nameplates.lua
 Modules\Nameplates\Suppress.lua
 Modules\Nameplates\Health.lua

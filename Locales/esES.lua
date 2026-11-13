@@ -2410,6 +2410,28 @@ local T = {
     ["Click the number and type how many you want. Enter confirms."] = "Haz clic en el número y escribe cuántos quieres. Intro confirma.",
     ["Talents can only be read out of combat"] = "Los talentos solo se pueden leer fuera de combate",
     ["Left-click: settings. Right-click: talent conditions. Drag: move."] = "Clic izquierdo: ajustes. Clic derecho: condiciones de talentos. Arrastrar: mover.",
+    -- Classes (Modules/Classes)
+    ["|cffaaaaaaThese settings take effect on a character of this class.|r"] = "|cffaaaaaaEstos ajustes se aplican a un personaje de esta clase.|r",
+    ["Priest arcs"] = "Arcos del sacerdote",
+    ["Show the shield arc"] = "Mostrar el arco del escudo",
+    ["Right of the character. Fills from the bottom with the absorb left; works in a fight too."] = "A la derecha del personaje. Se llena desde abajo con la absorción restante; también funciona en combate.",
+    ["Warn when the shield runs low"] = "Avisar cuando el escudo se agote",
+    ["The lowest quarter of the arc turns to the warning colour once the shield is down to it."] = "El cuarto inferior del arco toma el color de aviso en cuanto el escudo baja hasta él.",
+    ["Flash when a hit is absorbed"] = "Destellar al absorber un golpe",
+    ["Shield color"] = "Color del escudo",
+    ["Warning color"] = "Color de aviso",
+    ["Show the Inner Fire arc"] = "Mostrar el arco de Fuego interno",
+    ["Left of the character, one segment per charge. In a fight every physical hit that comes through takes one off."] = "A la izquierda del personaje, un segmento por carga. En combate, cada golpe físico que pasa quita uno.",
+    ["Flash when a charge is lost"] = "Destellar al perder una carga",
+    ["Inner Fire color"] = "Color de Fuego interno",
+    ["Segments"] = "Segmentos",
+    ["Segment size"] = "Tamaño de los segmentos",
+    ["Distance from the middle"] = "Distancia al centro",
+    ["Curve"] = "Curvatura",
+    ["Show a preview"] = "Mostrar una vista previa",
+    ["Both arcs full until you turn this off. Move them in the Edit Mode."] = "Ambos arcos llenos hasta que lo desactives. Muévelos en el modo de edición.",
+    ["Classes"] = "Clases",
+    ["Displays for one class each: what the client shows nowhere else, drawn where you look in a fight."] = "Indicadores para cada clase: lo que el juego no muestra en ningún otro sitio, dibujado donde miras en combate.",
 }
 
 ns:RegisterLocale("esES", T)

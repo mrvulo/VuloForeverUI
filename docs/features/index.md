@@ -77,6 +77,7 @@ jemand ohne den Code prüfen kann.
 | F-56 | Schlüsselbund als einklappbarer Abschnitt im Taschenfenster | Taschen | gebaut | – |
 | F-57 | Chat-Eingabezeile: Kanalname und Text in einer Schrift, Textcursor am Textende | Chat | gebaut | – |
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
+| F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 
 ---
 
@@ -411,6 +412,15 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du Format oder Farbe änderst oder den Zeitstempel ausschaltest, **dann** gilt das für neue Zeilen; alte behalten, was sie haben.
 - **Wenn** du das Chat-Modul ausschaltest, **dann** gilt wieder die Zeitstempel-Einstellung, die das Spiel vorher hatte.
 - Bekannte Grenze: Zeilen aus der letzten Sitzung (nach `/reload`, grau) haben keine anklickbaren Links.
+
+### F-59 Klassen: Priester-Bögen
+- **Angenommen** du spielst einen Priester und das Modul Klassen ist an, **wenn** du dir Machtwort: Schild gibst, **dann** füllt sich rechts vom Charakter ein Bogen aus Segmenten von unten bis oben; darunter stehen die Absorption als Zahl und die Restzeit (30 s).
+- **Wenn** du Schaden nimmst (auch im Kampf), **dann** gehen die Segmente von oben nach unten aus, die Zahl zählt mit, und bei leerem Schild sind Bogen und Zahl weg.
+- **Wenn** der Schild unter ein Viertel fällt, **dann** wird das unterste Viertel des Bogens rot-orange; ein ganz geschluckter Treffer lässt den Bogen kurz weiß aufblitzen.
+- **Wenn** du Inneres Feuer wirkst, **dann** steht links vom Charakter ein gespiegelter, orangefarbener Bogen mit allen Segmenten; jeder körperliche Treffer, der durchkommt, nimmt eine Aufladung weg (kurzes weißes Aufblitzen), außerhalb des Kampfes stimmt er mit dem Buff überein.
+- **Wenn** du im Edit Mode bist oder „Vorschau zeigen“ einschaltest, **dann** sind beide Bögen voll zu sehen und lassen sich zusammen verschieben und skalieren; jede Einstellung (Segmente, Größe, Abstand, Höhe, Krümmung, Farben) zeigt sich sofort.
+- **Angenommen** du spielst keine Priester-Klasse, **dann** zeigt der Tab „Priester“ den Hinweis, dass die Einstellungen nur für diese Klasse gelten, und auf dem Bildschirm erscheint nichts.
+- Bekannte Grenze: Wirkst du im Kampf einen Schild auf einen anderen Spieler, nimmt der eigene Bogen dessen Größe an und die Restzeit läuft neu, bis der Kampf endet.
 
 ## Offen
 
