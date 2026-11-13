@@ -66,6 +66,7 @@ These apply to every visible change, in every module.
 | A client text we re-dress goes onto OUR frame as parent, never onto a bigger client frame. Re-pinning it in combat is refused (its frames are protected). | Blizzard re-anchors such texts relative to their PARENT in combat (`RightText:SetPoint("RIGHT", -3, 0)` in Camelot `UpdateHealthBarVisuals`); with the frame container as parent the target's value sat right of the portrait (2026-11-05). | — |
 | Template frames carry absolute frame levels (`PortraitFrameFlatTemplate`: `Bg` 10000, `NineSlice` 498; item buttons 10). Set them explicitly after creating. | Grey veil over the whole bag window. | — |
 | Re-anchoring a frame under the mouse (even to the same spot) fires OnLeave/OnEnter. Move a slot only when its place changed. | Bag tooltip blinked on every layout. | — |
+| The client scales a base nameplate itself, and a plate that has just come up is tiny for a moment. Never size anything on a plate from a live `GetEffectiveScale` in that tree: `NP.Pixel(plate, n)` (interface scale times our own scale goal), `NP.LayoutEdges` for borders. | A white block around the target bar (our border, 46 px thick), aura icons spread apart, aura borders 4 px thick -- sometimes, without an error. | — |
 | Client alpha animations (`ShowAnim`/`HideAnim` from 1 → 0) override `SetAlpha`. To hide a client panel during a run, change its **scale**, not its alpha. | Loot window still flashed during quick loot. | — |
 | An EditBox does not switch font faces per character. A font family on it (ours or the client's `ChatFontNormal`) draws everything in ONE member face: ours drew nothing, the client's lost the German umlauts. Mixed alphabets need one font file that covers them all (`/vfdiag fonts` shows which). | Chat copy box, 2026-10-09. | — |
 | Every combat value may be secret: display it, never decide on it. | CLAUDE.md rule 2. | `secretlint` |
@@ -292,6 +293,9 @@ scaled together as one mover (`classes_priest`).
 
 - Auras are the client's aura containers: we hand over filter strings and
   candidate filters, the client reads, filters and draws. Nothing is read.
+- Pixel sizes (borders, the cast bar gap, aura icon size and border, the
+  execute glow's reach) come from `NP.Pixel`, never from a measured scale --
+  see the engine rules. The settings preview is a plain frame and is measured.
 - Own debuffs: the candidate filter `nameplateShowPersonal = true` hides
   every spell the game does not flag for plates — many classic dots. Setting
   `allOwnDebuffs` (default on) drops that filter, like the client's CVar

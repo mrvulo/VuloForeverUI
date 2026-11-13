@@ -206,15 +206,34 @@ function NP.Bump()
     end
 end
 
--- One physical pixel in the plate's coordinate space. GetEffectiveScale on a
--- frame inside the nameplate tree may come back secret; then a UIParent pixel
--- is close enough for a border.
-function NP.Pixel(frame, n)
-    local es = ns.Num(frame and frame:GetEffectiveScale(), nil) or UIParent:GetEffectiveScale()
+-- One physical pixel in a plate's own units.
+--
+-- NEVER from a live GetEffectiveScale of anything inside the nameplate tree.
+-- The client scales a base plate itself, and a plate that has just come up
+-- starts tiny and grows: a size measured in that moment came out thirty to
+-- seventy times too large and stayed -- a target border as thick as the bar
+-- is high (a white block around the bar), aura icons spread apart, aura
+-- borders four pixels thick (the player's screenshots, 2026-11-11 and -13).
+-- A plate at rest has the interface scale (measured with /vfnpsnap) times the
+-- scale we give it ourselves, and both of those are ours to know.
+-- The settings preview is a plain frame in our window; it is measured.
+function NP.Pixel(plate, n)
+    if plate and plate.isPreview then return ns:Pixel(plate, n) end
+    local es = UIParent:GetEffectiveScale()
+    if not es or es <= 0 then es = 1 end
+    local own = plate and plate.scaleGoal
+    if type(own) ~= "number" or own <= 0 then own = 1 end
     local _, physH = GetPhysicalScreenSize()
     if not physH or physH <= 0 then physH = 1080 end
-    if es <= 0 then es = 1 end
-    return (n or 1) * (768 / physH) / es
+    return (n or 1) * (768 / physH) / (es * own)
+end
+
+-- ns.LayoutEdges for a region on a plate: the same four edges, n physical
+-- pixels thick, by the plate's pixel above instead of a measured one.
+function NP.LayoutEdges(plate, edges, anchor, n, r, g, b, a)
+    if not edges then return end
+    if n <= 0 then for _, t in pairs(edges) do t:Hide() end; return end
+    ns.LayoutEdgesAt(edges, anchor, NP.Pixel(plate, n), r, g, b, a, 0)
 end
 
 -- ---------------------------------------------------------------------------

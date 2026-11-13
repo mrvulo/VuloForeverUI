@@ -99,24 +99,12 @@ local function placeText(fs, cfg, button)
 end
 
 -- One physical pixel in the units a button will have ON A PLATE. The engine
--- builds the buttons while their container still hangs under UIParent, so
--- measuring the button itself would use the interface scale -- at 0.64 that
--- made a "1 pixel" border about one and a half, blurred and uneven. A plate
--- that is not the target (the target may be scaled up) is the reference; with
--- no plate out yet, the world frame the plates hang from.
+-- builds the buttons while their container still hangs under UIParent, and
+-- a plate's own scale is not to be measured either (NP.Pixel says why), so
+-- this is the plate pixel at rest: the same number for every button, every
+-- time.
 local function platePixel()
-    local es
-    for _, plate in pairs(NP.plates or {}) do
-        if not plate.isTarget then
-            es = ns.Num(plate:GetEffectiveScale(), nil)
-            if es and es > 0 then break end
-        end
-    end
-    if not (es and es > 0) then es = ns.Num(WorldFrame:GetEffectiveScale(), nil) end
-    if not (es and es > 0) then es = UIParent:GetEffectiveScale() end
-    local _, physH = GetPhysicalScreenSize()
-    if not physH or physH <= 0 then physH = 1080 end
-    return (768 / physH) / es
+    return NP.Pixel(nil, 1)
 end
 Style.PlatePixel = platePixel
 

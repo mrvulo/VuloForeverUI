@@ -267,7 +267,7 @@ function Target.PaintBorder(plate)
     host:ClearAllPoints()
     host:SetPoint("TOPLEFT", plate.health, "TOPLEFT", 0, 0)
     host:SetPoint("BOTTOMRIGHT", wrap and plate.cast or plate.health, "BOTTOMRIGHT", 0, 0)
-    ns.LayoutEdges(plate.border, host, bs, r, g, b, a)
+    NP.LayoutEdges(plate, plate.border, host, bs, r, g, b, a)
 end
 
 function Target.Apply(plate)
@@ -288,6 +288,9 @@ function Target.Apply(plate)
     elseif H and db.hoverGlow then setGlow(plate, true, db.hoverGlowColor, db.hoverGlowAlpha)
     else setGlow(plate, false) end
 
+    -- the scale first: the border below is sized for the scale the plate is
+    -- going to have (NP.Pixel), not the one it is leaving
+    updateScale(plate)
     Target.PaintBorder(plate)
 
     -- highlight wash
@@ -330,7 +333,6 @@ function Target.Apply(plate)
     -- the focus cast bar has its own height
     if F ~= wasFocus and db.focusCastHeight ~= 100 then NP.Cast.ApplyAppearance(plate) end
 
-    updateScale(plate)
     Target.ApplyAlpha(plate)
     NP.Extras.UpdateCombo(plate)
 end

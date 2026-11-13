@@ -409,7 +409,7 @@ end
 function Extras.ApplyAppearance(plate)
     local db = NP.db()
     local hp = plate.health
-    local extend = ns:Pixel(hp, db.executeGlowSize)
+    local extend = NP.Pixel(plate, db.executeGlowSize)
     -- Corners twice the reach, but never more than half the glow's height:
     -- on a thin bar the top and bottom corners would otherwise overlap.
     local barH = ns.Num(hp:GetHeight(), db.healthBarHeight) or db.healthBarHeight

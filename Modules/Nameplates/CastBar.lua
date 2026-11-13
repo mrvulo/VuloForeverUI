@@ -183,7 +183,7 @@ function Cast.ApplyAppearance(plate)
     local bg = db.castBgColor
     plate.castBG:SetColorTexture(bg.r, bg.g, bg.b, db.castBgAlpha)
     local bc = db.castBorderColor
-    ns.LayoutEdges(plate.castBorder, cast, db.castBorderSize, bc.r, bc.g, bc.b, bc.a or 1)
+    NP.LayoutEdges(plate, plate.castBorder, cast, db.castBorderSize, bc.r, bc.g, bc.b, bc.a or 1)
 
     local iconFrame = plate.castIconFrame
     iconFrame:ClearAllPoints()
@@ -200,7 +200,7 @@ function Cast.ApplyAppearance(plate)
     end
     plate.castIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     local ibc = db.castIconTargetBorder and db.targetBorderColor or db.borderColor
-    ns.LayoutEdges(plate.castIconBorder, iconFrame, db.hideCastIconBorder and 0 or 1, ibc.r, ibc.g, ibc.b, ibc.a or 1)
+    NP.LayoutEdges(plate, plate.castIconBorder, iconFrame, db.hideCastIconBorder and 0 or 1, ibc.r, ibc.g, ibc.b, ibc.a or 1)
 
     -- spark, shield, glow
     local spark = plate.castSpark
@@ -212,7 +212,7 @@ function Cast.ApplyAppearance(plate)
     plate.castShield:SetSize(castH * 0.83, castH)
     plate.castShield:SetPoint("CENTER", cast, "LEFT", 0, 0)
     local gc = db.importantCastGlowColor
-    ns.LayoutEdges(plate.castGlow, plate.castGlowHost, 2, gc.r, gc.g, gc.b, 1)
+    NP.LayoutEdges(plate, plate.castGlow, plate.castGlowHost, 2, gc.r, gc.g, gc.b, 1)
 
     -- kick geometry
     local marker = plate.kickMarker

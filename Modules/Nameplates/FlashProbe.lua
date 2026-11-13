@@ -179,9 +179,14 @@ local function snapWalk(frame, depth, labels, out)
     local line = describeRegion(frame, depth, "F", labels)
     if line == nil then return end                  -- hidden: so is everything under it
     if line then out[#out + 1] = line end
+    -- a texture has no effective alpha of its own to ask for: under a frame
+    -- nobody sees it is not drawn either, unless it ignores the parent's alpha
+    local unseen = line == false
     for _, r in ipairs({ frame:GetRegions() }) do
         if #out >= SNAP_LINES then return end
-        if not r:IsForbidden() and r.IsObjectType and r:IsObjectType("Texture") then
+        local ignores = unseen and get(r, "IsIgnoringParentAlpha")
+        local drawn = not unseen or (ns.CanRead(ignores) and ignores == true)
+        if drawn and not r:IsForbidden() and r.IsObjectType and r:IsObjectType("Texture") then
             local tl = describeRegion(r, depth + 1, "T", labels)
             if tl then out[#out + 1] = tl end
         end
