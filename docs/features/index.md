@@ -200,15 +200,15 @@ jemand ohne den Code prüfen kann.
 - **Dann** zeigt die Optionsseite unter „Fenster-Skins“ je eine Karte für Charakterfenster, Betrachten-Fenster und Levelführer: Symbol, Titel, Beschreibung, rechts Aus/Standard/Modern, ein Pfeil klappt die Einstellungen der Karte auf.
 
 ### F-29 Schmuckstück-Raster
-- **Wenn** du mit der Maus auf einen Schmuck-Platz fährst, **dann** klappt ein Raster mit allen Schmuckstücken aus den Taschen auf, jedes mit seiner Abklingzeit; es schließt, sobald die Maus Platz und Raster verlässt.
-- **Wenn** du im Raster links klickst, **dann** kommt das Schmuckstück in den oberen Platz, rechts in den unteren.
+- **Wenn** du mit der Maus auf einen Schmuck-Platz fährst, **dann** klappt an genau diesem Platz (mittig darüber bzw. darunter, bei gestapelten Plätzen daneben) ein Raster mit allen Schmuckstücken aus den Taschen auf, jedes mit seiner Abklingzeit; fährst du auf den anderen Platz, wandert das Raster mit; es schließt, sobald die Maus Platz und Raster verlässt.
+- **Wenn** du im Raster links klickst, **dann** kommt das Schmuckstück in den Platz, an dem das Raster hängt; ein Rechtsklick legt es in den anderen Platz.
 - Angenommen du bist im Kampf, **wenn** du klickst, **dann** wird es vorgemerkt (kleines Symbol unten rechts im Platz) und nach dem Kampf angelegt; ein zweiter Klick auf dasselbe hebt die Vormerkung auf.
 - **Wenn** du Alt-Klick auf ein Schmuckstück im Raster machst, **dann** verschwindet es aus dem Raster; mit gedrückter Alt-Taste erscheinen ausgeblendete grau und lassen sich per Alt-Klick zurückholen.
 - **Wenn** „Stil“ auf Standard steht, **dann** tragen beide Plätze den Aktionsknopf-Rahmen des Spiels (Bronzering, leer die offene Fassung) und sind so groß wie deine Aktionsknöpfe.
 - Angenommen Stil Modern und „Abgerundete Plätze“ an (Standard), **dann** sind beide Plätze und jedes Feld im Raster abgerundet wie die Taschen, mit Ring in der Qualitätsfarbe; die Abklingzeit-Spirale folgt der runden Form; eine Vormerkung im Raster hat einen goldenen Ring.
 - Angenommen die Warteschlange eines Platzes ist an, **wenn** du von Hand ein passives oder nicht gelistetes Schmuckstück anlegst (z. B. Reitgerte), **dann** bleibt es liegen; der Pfeil wird grau, bis du es wieder ablegst.
 - Angenommen die Warteschlange eines Platzes ist an und im Platz steckt ein bereites Schmuckstück von Rang 2, **wenn** das Schmuckstück von Rang 1 in der Tasche wieder bereit ist (höchstens 30 s Abklingzeit), **dann** kommt es außerhalb des Kampfes zurück in den Platz; ein Schmuckstück, das du in den letzten 20 s benutzt hast, bleibt bis dahin stecken, eines, das du selbst angelegt hast, bis es verbraucht ist.
-- **Wenn** du im Raster Shift-Linksklick auf ein Schmuckstück machst, **dann** kommt es in die Liste des oberen Platzes (über die Stoppmarke) bzw. fliegt wieder heraus; Shift-Rechtsklick tut dasselbe für den unteren Platz. Die Optionsseite zeigt die Änderung sofort.
+- **Wenn** du im Raster Shift-Linksklick auf ein Schmuckstück machst, **dann** kommt es in die Liste des Platzes, an dem das Raster hängt (über die Stoppmarke), bzw. fliegt wieder heraus; Shift-Rechtsklick tut dasselbe für den anderen Platz. Die Optionsseite zeigt die Änderung sofort.
 - **Dann** trägt jedes Feld im Raster, das in einer Liste steht, links oben seinen Rang in der oberen Liste (gold) und links unten den in der unteren (blau); unter der Stoppmarke grau.
 - Angenommen du hast die Doppelspezialisierung, **wenn** du die Talentverteilung wechselst, **dann** gelten die Listen (und ihr An/Aus) dieser Verteilung; die Optionsseite nennt, welche gerade bearbeitet wird. Beim ersten Start mit dieser Version bekommen beide Verteilungen eine Kopie der bisherigen Listen.
 

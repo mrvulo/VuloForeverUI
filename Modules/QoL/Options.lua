@@ -407,7 +407,7 @@ end
 local function trinketsPage()
     local items = {
         { type = "header", text = L["Trinkets"] },
-        { type = "desc", text = L["|cffaaaaaaTwo trinket slots on screen with their cooldowns. Left click uses the trinket; hovering a slot opens a grid of the trinkets in your bags (left click: upper slot, right click: lower slot); alt-click on a slot switches its auto-queue. In combat a pick is noted and goes on after the fight.|r"] },
+        { type = "desc", text = L["|cffaaaaaaTwo trinket slots on screen with their cooldowns. Left click uses the trinket; hovering a slot opens a grid of the trinkets in your bags at that slot (left click: into that slot, right click: into the other one); alt-click on a slot switches its auto-queue. In combat a pick is noted and goes on after the fight.|r"] },
         toggle("trinkets", "enabled", L["Show the trinket window"]),
         { type = "toggle", label = L["Unlock to move"],
           tooltip = L["Drag the window where you want it, then switch this off to lock it again. Not in combat."],

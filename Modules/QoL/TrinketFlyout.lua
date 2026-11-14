@@ -1,19 +1,22 @@
 -- VuloForeverUI / Modules / QoL / TrinketFlyout
 --
--- The pick grid: hovering a trinket slot opens a grid of every trinket in
--- the bags, each with its own cooldown. Left click puts it into the upper
--- slot, right click into the lower one; alt-click hides it from the grid
--- (with Alt held the hidden ones show grey and come back the same way).
--- Shift-click puts it into the auto-queue list of the upper (left) or lower
--- (right) slot, or takes it out; each cell shows its rank in both lists.
+-- The pick grid: hovering a trinket slot opens, at THAT slot, a grid of
+-- every trinket in the bags, each with its own cooldown. Left click puts it
+-- into the slot the grid hangs on, right click into the other one (the
+-- player's call, 2026-11-14: each slot picks for itself). Alt-click hides it
+-- from the grid (with Alt held the hidden ones show grey and come back the
+-- same way). Shift-click puts it into the auto-queue list of this slot
+-- (left) or the other one (right), or takes it out; each cell shows its rank
+-- in both lists.
 --
 -- A plain frame, never secure: equipping is refused in a fight anyway, so a
 -- click there only notes the pick (Trinkets.Pick) and it goes on when the
 -- fight ends. Showing and hiding a plain frame is free in combat too.
 --
--- It opens away from the screen's middle (down from a window in the top
--- half, up from one in the bottom half) and closes once the mouse has left
--- both the slots and the grid.
+-- Slots side by side: it opens over or under the hovered slot, away from
+-- the screen's middle (down from a window in the top half, up from one in
+-- the bottom half). Slots stacked: beside the hovered slot, towards the
+-- middle. It closes once the mouse has left both the slots and the grid.
 local _, ns = ...
 local L = ns.L
 
@@ -23,6 +26,13 @@ local Trinkets = QoL.Trinkets
 local CELL, GAP, PAD = 32, 3, 4
 
 local grid, cells = nil, {}
+local forInv = 13           -- the slot the grid hangs on: 13 upper, 14 lower
+
+-- Left button: the grid's own slot; right button: the other one.
+local function slotFor(button)
+    if button == "RightButton" then return forInv == 13 and 14 or 13 end
+    return forInv
+end
 
 local function hiddenSet()
     local c = _G.VuloForeverUICharDB
@@ -36,8 +46,8 @@ local function showTip(cell)
     if not id then return end
     GameTooltip:SetOwner(cell, "ANCHOR_RIGHT")
     GameTooltip:SetItemByID(id)
-    GameTooltip:AddLine(L["Left click: upper slot. Right click: lower slot. Alt-click: hide from this grid."], 0.6, 0.6, 0.65, true)
-    GameTooltip:AddLine(L["Shift-click: into the auto-queue of the upper (left) or lower (right) slot, or out again."], 0.6, 0.6, 0.65, true)
+    GameTooltip:AddLine(L["Left click: into this slot. Right click: into the other slot. Alt-click: hide from this grid."], 0.6, 0.6, 0.65, true)
+    GameTooltip:AddLine(L["Shift-click: into the auto-queue of this slot (left) or the other one (right), or out again."], 0.6, 0.6, 0.65, true)
     if InCombatLockdown() then
         GameTooltip:AddLine(L["In combat: the pick goes on after the fight."], 1, 0.82, 0, true)
     end
@@ -82,11 +92,11 @@ local function makeCell(i)
             return
         end
         if IsShiftKeyDown() then
-            Trinkets.ToggleListed(button == "RightButton" and "bottom" or "top", id)
+            Trinkets.ToggleListed(slotFor(button) == 14 and "bottom" or "top", id)
             render()
             return
         end
-        Trinkets.Pick(id, button == "RightButton" and 14 or 13)
+        Trinkets.Pick(id, slotFor(button))
         GameTooltip:Hide()
         if not InCombatLockdown() then Trinkets.HideGrid() else render() end
     end)
@@ -191,14 +201,21 @@ function Trinkets.ShowGrid(slotButton)
     local holder = Trinkets.Holder()
     if not holder then return end
     build()
-    -- away from the middle of the screen, lined up with the slots
+    -- at the hovered slot; moving on to the other slot moves the grid along
+    local at = (slotButton and slotButton.inv) and slotButton or holder
+    forInv = (slotButton and slotButton.inv == 14) and 14 or 13
     grid:ClearAllPoints()
-    local _, cy = holder:GetCenter()
-    local up = cy and cy < (UIParent:GetHeight() / 2)
-    if up then
-        grid:SetPoint("BOTTOMLEFT", holder, "TOPLEFT", 0, 4)
+    local cx, cy = holder:GetCenter()
+    if d.vertical then
+        if cx and cx > (UIParent:GetWidth() / 2) then
+            grid:SetPoint("RIGHT", at, "LEFT", -4, 0)
+        else
+            grid:SetPoint("LEFT", at, "RIGHT", 4, 0)
+        end
+    elseif cy and cy < (UIParent:GetHeight() / 2) then
+        grid:SetPoint("BOTTOM", at, "TOP", 0, 4)
     else
-        grid:SetPoint("TOPLEFT", holder, "BOTTOMLEFT", 0, -4)
+        grid:SetPoint("TOP", at, "BOTTOM", 0, -4)
     end
     grid:SetScale(holder:GetEffectiveScale() / UIParent:GetEffectiveScale())
     elapsed = 0

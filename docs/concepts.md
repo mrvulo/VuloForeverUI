@@ -494,8 +494,10 @@ scaled together as one mover (`classes_priest`).
   back while ready). Lists are per character AND per talent set
   (`C_SpecializationInfo.GetActiveSpecGroup()`, 1 or 2; `trinketQueues[set]`
   in the char DB); the old single `trinketQueue` is copied into both sets
-  once. Shift-click in the grid adds/removes in the slot's list (left upper,
-  right lower), the same insert-above-the-stop-marker the options use.
+  once. The grid hangs on the hovered slot and picks for it (the player's
+  call, 2026-11-14): left click = that slot, right click = the other one;
+  Shift-click adds/removes in that slot's list (right: the other's), the
+  same insert-above-the-stop-marker the options use.
   Look: Standard = this client's action button (atlases
   UI-HUD-ActionBar-IconFrame / -Background / -Slot / -Mask, drawn for 45 px)
   at the on-screen size of a shown action button, measured against the
