@@ -1,31 +1,27 @@
-## 0.22.0
+## 0.23.0
 
 **New**
 
-- **Classes** — a new module under Unit Frames with one tab per class; a
-  class's displays only run on a character of that class. First in:
-  the priest.
-- **Classes** — priest: two arcs stand like brackets around your character.
-  On the right your shield, in segments that drain with the absorption that
-  is left, in combat too, with the amount and the time remaining below it;
-  the lowest quarter turns red-orange when little is left, and a hit the
-  shield swallows whole makes the arc flash white. On the left Inner Fire,
-  one segment per charge.
-- **Classes** — both arcs move and scale together in Edit Mode; shape,
-  colours and texts can be set, and a preview switch on the page shows them
-  out of combat.
+- **Quality of Life** — riding trinket: pick one trinket and a slot, and it
+  goes on when you mount; when you dismount, the trinket that was in the
+  slot comes back. In combat the game allows no swap, so it then happens
+  after the fight. Off until you pick a trinket.
+- **Quality of Life** — the gold check can set two characters side by side:
+  "Compare" puts the character on show next to one picked from your
+  scanned players, counter by counter, with the higher value brighter.
+- **Reminders** — a right click on the food reminder lets you choose any
+  food from your bags; the reminder then shows that food and a left click
+  eats it. "Automatic" brings the food for your role back.
+- **Reminders** — food and the campfire buff can each get their own "show
+  below (minutes)", off by default.
+- **Skins** — merchant window: recipes you already know and mounts, pets
+  and toys you already own can be tinted red; off by default.
 
 **Changed**
 
-- **Bags** — the upgrade arrow now counts "Equip:" effects such as spell
-  damage, healing and health per 5 seconds, not only the stats the game
-  lists. With a mixed result the item level only decides when the item does
-  not lose more than it gains.
-
-**Fixed**
-
-- **Bags** — a grey item is never marked as better than what you wear.
-- **Nameplates** — now and then the white border of your target turned into
-  a thick white block around the bar, the debuff icons stood far apart or
-  had thick black frames. Sizes on a nameplate no longer depend on the
-  moment the nameplate appeared.
+- **Quality of Life** — the trinket pick grid now opens at the slot you
+  hover and picks for that slot: left click puts the trinket into it, right
+  click into the other one. Shift-click works the same way for the
+  auto-queue lists.
+- **Reminders** — every icon that is shown because its buff is running out
+  now carries a countdown.
