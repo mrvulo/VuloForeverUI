@@ -50,6 +50,8 @@ local mod = ns:RegisterModule("reminders", {
         camp        = false,    -- the campfire buff; opt-in, it is missing most of the time
         customIDs   = {},       -- spell IDs the user tracks, in the order added
         warnMinutes = 0,        -- 0 = only when missing
+        foodMinutes = 0,        -- food's own warn time; 0 = warnMinutes
+        campMinutes = 0,        -- the campfire buff's; 0 = only when missing
         hideResting = true,
         showLabels  = true,
         showActive  = false,    -- keep what is on you in the row: grey, with a check
@@ -375,19 +377,24 @@ function R.Collect(all)
         local tracked = {}
         if db.camp then tracked[1] = R.CAMP end
         for _, id in ipairs(db.customIDs) do tracked[#tracked + 1] = id end
-        for _, id in ipairs(tracked) do
+        local campWarn = (db.campMinutes or 0) * 60
+        for i, id in ipairs(tracked) do
             local name = spellName(id)
             if name then
                 local left = aurasOk and auraLeft({ id }) or nil
+                -- only the campfire buff has a warn time; a tracked spell
+                -- shows when it is missing
+                local own = (i == 1 and db.camp) and campWarn or 0
                 add(items, {
                     key   = "id:" .. id,
                     icon  = C_Spell.GetSpellTexture(id),
                     short = name,
-                    line  = L["Missing"],
+                    line  = left and L["Runs out soon"] or L["Missing"],
                     tip   = id,       -- the spell's tooltip, but nothing to cast
+                    soon  = left ~= nil,
                     left  = left,
                     active = left ~= nil,
-                    due   = aurasOk and not left,
+                    due   = aurasOk and (not left or (own > 0 and left < own)),
                 }, all)
             end
         end

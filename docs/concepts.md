@@ -391,7 +391,11 @@ scaled together as one mover (`classes_priest`).
   with a green check (atlas `common-icon-checkmark`) and its secure action
   cleared, so a click cannot use a second flask. Item reminders carry
   `it.count` (the bag count of what a click uses), drawn bottom right, red at
-  or below `lowStock`.
+  or below `lowStock`. Food and the campfire buff carry a warn time of
+  their own (`foodMinutes`, `campMinutes`; 0 = the general rule: food
+  follows `warnMinutes`, the campfire buff only shows when missing). Every
+  icon that is due because it runs out carries the time left as m:ss
+  (`f.clock`, drawn by `R.PaintIcon`, so the preview has it too).
 - Recommendations come from `Supplies.lua`: chains of ranks, best first, with
   required levels — every item and spell ID checked against the client's
   item/spell tables, never typed from memory. The role is picked per

@@ -87,6 +87,16 @@ function R.StyleIcon(f, size, r, g, b)
     end
 end
 
+-- m:ss, four times a second so a second is never skipped.
+local function tickClock(self, elapsed)
+    self.wait = (self.wait or 0) - elapsed
+    if self.wait > 0 then return end
+    self.wait = 0.25
+    local s = math.ceil(self.expires - GetTime())
+    if s < 0 then s = 0 end
+    self.text:SetFormattedText("%d:%02d", math.floor(s / 60), s % 60)
+end
+
 -- The parts both the row and the preview draw on top of an icon: the bag
 -- count bottom right (red at or below "low stock") and the green check of
 -- something that is on you. f carries .icon and .border.
@@ -96,6 +106,14 @@ function R.MakeMarks(f)
     f.check = f.border:CreateTexture(nil, "OVERLAY", nil, 3)
     f.check:SetAtlas("common-icon-checkmark")
     f.check:SetPoint("CENTER", f, "CENTER")
+    -- the time left on one that is running out; its own frame keeps the
+    -- clock going, and stops with the icon
+    f.clock = CreateFrame("Frame", nil, f.border)
+    f.clock:SetAllPoints(f)
+    f.clock:Hide()
+    f.clock.text = f.clock:CreateFontString(nil, "OVERLAY")
+    f.clock.text:SetPoint("CENTER", f, "CENTER")
+    f.clock:SetScript("OnUpdate", tickClock)
 end
 
 -- state: "due" (missing / running out), "on" (active, kept by "show active
@@ -114,6 +132,16 @@ function R.PaintIcon(f, it, size, state)
     end
     f.check:SetSize(size * 0.55, size * 0.55)
     f.check:SetShown(state ~= "due" and it.active == true)
+    local left = it.left
+    if state == "due" and left and left ~= math.huge and left > 0 then
+        local font = ns.ModuleFontPath and ns.ModuleFontPath("reminders") or STANDARD_TEXT_FONT
+        f.clock.text:SetFont(font, math.max(9, math.floor(size * 0.34)), "OUTLINE")
+        f.clock.expires = GetTime() + left
+        f.clock.wait = 0
+        f.clock:Show()
+    else
+        f.clock:Hide()
+    end
     local n = it.count
     if n then
         local low = R.mod.db.lowStock or 0

@@ -283,8 +283,11 @@ end
 function R.ConsumableReminders(all, aurasOk, warn)
     local out = {}
     local role, ctx = R.Role(), R.SupplyContext()
+    -- food can have a warn time of its own ("show below"); 0 = the general one
+    local foodWarn = (R.mod.db.foodMinutes or 0) * 60
     for _, c in ipairs(R.SUPPLIES) do
         if CONSUMABLE[c.cat] and R.SupplyFits(c, role, ctx) then
+            local limit = (c.cat == "food" and foodWarn > 0) and foodWarn or warn
             local pick
             for _, it in ipairs(c.items) do
                 if it[2] <= ctx.level and (C_Item.GetItemCount(it[1]) or 0) > 0 then pick = it[1]; break end
@@ -306,7 +309,7 @@ function R.ConsumableReminders(all, aurasOk, warn)
                     soon   = left ~= nil,
                     left   = left,
                     active = left ~= nil,
-                    due    = aurasOk and pick ~= nil and (not left or left < warn),
+                    due    = aurasOk and pick ~= nil and (not left or left < limit),
                 }
             end
         end

@@ -78,6 +78,7 @@ jemand ohne den Code prüfen kann.
 | F-57 | Chat-Eingabezeile: Kanalname und Text in einer Schrift, Textcursor am Textende | Chat | gebaut | – |
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
+| F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
 
 ---
 
@@ -421,6 +422,14 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du im Edit Mode bist oder „Vorschau zeigen“ einschaltest, **dann** sind beide Bögen voll zu sehen und lassen sich zusammen verschieben und skalieren; jede Einstellung (Segmente, Größe, Abstand, Höhe, Krümmung, Farben) zeigt sich sofort.
 - **Angenommen** du spielst keine Priester-Klasse, **dann** zeigt der Tab „Priester“ den Hinweis, dass die Einstellungen nur für diese Klasse gelten, und auf dem Bildschirm erscheint nichts.
 - Bekannte Grenze: Wirkst du im Kampf einen Schild auf einen anderen Spieler, nimmt der eigene Bogen dessen Größe an und die Restzeit läuft neu, bis der Kampf endet.
+
+### F-60 Erinnerungen: „Anzeigen unter (Minuten)“ und Countdown
+- **Angenommen** unter Erinnerungen → Verbrauchsgüter steht „Satt: anzeigen unter (Minuten)“ auf 10, du hast passendes Essen in den Taschen und der Essens-Buff hat noch 9 Minuten, **dann** steht das Essen golden in der Leiste und auf dem Symbol läuft die Restzeit als „8:59“ herunter; ein Klick isst neu.
+- **Wenn** der Regler auf 0 steht (Standard), **dann** gilt für das Essen wie bisher „Vor dem Ablaufen warnen“.
+- **Angenommen** der Lagerfeuer-Buff ist unter „Verfolgte Zauber“ an und sein Regler „anzeigen unter (Minuten)“ steht auf 5, **wenn** der Buff unter 5 Minuten fällt, **dann** erscheint sein Symbol golden mit Countdown; auf 0 (Standard) erscheint es wie bisher nur, wenn der Buff fehlt.
+- **Wenn** irgendeine Erinnerung wegen „läuft bald ab“ in der Leiste steht (Buff, Waffenverzauberung, Fläschchen), **dann** zeigt auch sie den Countdown; fehlende Buffs zeigen keinen.
+- **Wenn** du einen der Regler bewegst, **dann** zeigt die Vorschau über der Seite den Zustand sofort, Countdown eingeschlossen.
+- Bekannte Grenze: Die Leiste schaut alle 5 Sekunden nach, ein Symbol kann also bis zu 5 Sekunden nach der Schwelle erscheinen. Essen wird in der Grundeinstellung nur in Dungeons und Schlachtzügen erinnert.
 
 ## Offen
 

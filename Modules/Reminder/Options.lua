@@ -114,10 +114,16 @@ function mod:GetOptions()
     o[#o + 1] = flag("consumables", L["Remind about flasks, elixirs and food"],
         L["Shows an icon when a flask, elixir or Well Fed food that suits your role is in your bags but not on you. A click uses it. The role is the one picked in Possible buffs."])
     o[#o + 1] = flag("consumablesInstances", L["Only in dungeons and raids"])
+    o[#o + 1] = slider("foodMinutes",
+        L["%s: show below (minutes)"]:format(R.SpellName(R.FOOD_BUFFS[1]) or L["Food"]), 0, 30,
+        L["The food reminder also comes up once the food buff has less than this many minutes left, with a countdown on the icon. 0 = the general warning time above."])
 
     o[#o + 1] = { type = "header", text = L["Tracked spells"] }
     o[#o + 1] = flag("camp", R.SpellName(R.CAMP) or L["Campfire buff"],
         L["Shows whenever the campfire buff is missing."])
+    o[#o + 1] = slider("campMinutes",
+        L["%s: show below (minutes)"]:format(R.SpellName(R.CAMP) or L["Campfire buff"]), 0, 30,
+        L["The reminder also comes up once the buff has less than this many minutes left, with a countdown on the icon. 0 = only when it is missing."])
     for i, id in ipairs(db.customIDs) do
         o[#o + 1] = { type = "button", label = L["Remove %s"]:format(R.SpellName(id) or tostring(id)), width = 240,
             onClick = function() table.remove(db.customIDs, i); R.Queue(); rebuild() end }
