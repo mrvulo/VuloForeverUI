@@ -393,6 +393,10 @@ scaled together as one mover (`classes_priest`).
   redraw that moves the row. Weapon items: left = main hand, right = off hand.
 - **Consumable reminders** (row): per flask/elixir/food chain of the role,
   only when a usable rank is in the bags and none is on you; food = Well Fed.
+  A right click on the food icon names any food or drink from the bags
+  instead (`reminderFood` in the char DB; the player's call, 2026-11-14):
+  while carried it is the icon and the click, out of stock the role's
+  chain is back.
   Default: dungeons and raids only.
 - **Row states:** due = missing or below `warnMinutes` (consumables too,
   from the aura's expiration) -> coloured, pulsing, clickable. With

@@ -6,8 +6,8 @@
 -- makes sure of that, and the state driver hides the whole row in a fight.
 --
 -- Every action attribute carries the "*...1" form: the "1" so only a LEFT
--- click resolves one (the middle click is ours, PostClick below), the "*" so
--- a left click with Shift, Ctrl or Alt held still finds it.
+-- click resolves one (the middle and the right click are ours, PostClick
+-- below), the "*" so a left click with Shift, Ctrl or Alt held still finds it.
 local _, ns = ...
 local L = ns.L
 local R = ns.Reminder
@@ -169,6 +169,24 @@ end
 
 function R.Relayout() laidOut = nil end
 
+-- Right click on the food reminder: any food from the bags instead of the
+-- role's own (Supplies.lua keeps the choice, per character).
+local function foodMenu()
+    local saved = R.FoodSaved()
+    local entries = {
+        { text = L["Food"], title = true },
+        { text = L["Automatic: the best for your role"],
+          checked = function() return saved == nil end, func = function() R.SetFood(nil) end },
+    }
+    local foods = R.BagFood()
+    for _, food in ipairs(foods) do
+        entries[#entries + 1] = { text = ("%s (%d)"):format(food.name, food.count), icon = food.icon,
+            checked = function() return saved == food.id end, func = function() R.SetFood(food.id) end }
+    end
+    if #foods == 0 then entries[#entries + 1] = { text = L["No food in your bags."], title = true } end
+    return entries
+end
+
 local function showTooltip(b)
     local it = b.item
     if not it then return end
@@ -186,13 +204,14 @@ local function showTooltip(b)
     elseif it.left and R.FmtLeft then
         GameTooltip:AddLine(R.FmtLeft(it.left), 0.3, 1, 0.3)
     end
+    if it.food then GameTooltip:AddLine(L["Right click: choose a food from your bags"], 0.6, 0.6, 0.6) end
     GameTooltip:AddLine(L["Middle click: hide until the next loading screen"], 0.6, 0.6, 0.6)
     GameTooltip:Show()
 end
 
 local function newButton(i)
     local b = CreateFrame("Button", "VuloForeverUIReminder" .. i, holder, "SecureActionButtonTemplate")
-    b:RegisterForClicks("LeftButtonDown", "LeftButtonUp", "MiddleButtonUp")
+    b:RegisterForClicks("LeftButtonDown", "LeftButtonUp", "MiddleButtonUp", "RightButtonUp")
     b.icon = b:CreateTexture(nil, "ARTWORK")
     b.icon:SetAllPoints()
     b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -220,6 +239,9 @@ local function newButton(i)
         if button == "MiddleButton" and self.item then
             R.dismissed[self.item.key] = true
             R.Queue()
+        elseif button == "RightButton" and self.item and self.item.food then
+            GameTooltip:Hide()
+            ns:ShowPopupMenu(foodMenu(), self, self)
         end
     end)
     buttons[i] = b

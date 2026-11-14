@@ -278,6 +278,57 @@ local function chainLeft(c)
     return best
 end
 
+-- THE PLAYER'S OWN FOOD
+--
+-- The food reminder offers the best rank of the role's chain. A right click
+-- on it lets the player name any food in the bags instead (per character):
+-- while that one is carried it is what the icon shows and what a click
+-- eats. Out of stock, the role's chain is back; restocked, the choice is.
+
+local FOODDRINK = Enum.ItemConsumableSubclass and Enum.ItemConsumableSubclass.Fooddrink
+
+-- The saved choice, carried or not; nil = automatic.
+function R.FoodSaved()
+    local c = _G.VuloForeverUICharDB
+    local id = type(c) == "table" and c.reminderFood or nil
+    if type(id) == "number" then return id end
+end
+
+-- The saved choice while it is in the bags.
+function R.FoodChoice()
+    local id = R.FoodSaved()
+    if id and (C_Item.GetItemCount(id) or 0) > 0 then return id end
+end
+
+function R.SetFood(id)
+    local c = _G.VuloForeverUICharDB
+    if type(c) ~= "table" then return end
+    c.reminderFood = id
+    R.Queue()
+end
+
+-- Every usable food and drink in the bags, by name: { id, name, icon, count }.
+-- The client files both under one subclass, so drinks are in the list too.
+function R.BagFood()
+    local seen, list = {}, {}
+    if not FOODDRINK then return list end
+    for bag = 0, 4 do
+        for slot = 1, C_Container.GetContainerNumSlots(bag) or 0 do
+            local id = C_Container.GetContainerItemID(bag, slot)
+            if id and not seen[id] then
+                seen[id] = true
+                local _, _, _, _, icon, classID, subID = C_Item.GetItemInfoInstant(id)
+                if classID == Enum.ItemClass.Consumable and subID == FOODDRINK and C_Item.GetItemSpell(id) then
+                    list[#list + 1] = { id = id, icon = icon, count = C_Item.GetItemCount(id) or 0,
+                        name = C_Item.GetItemNameByID(id) or ("item:" .. id) }
+                end
+            end
+        end
+    end
+    table.sort(list, function(a, b) return a.name < b.name end)
+    return list
+end
+
 -- all = the preview's question (every chain, due or not); aurasOk = the
 -- auras may be read right now.
 function R.ConsumableReminders(all, aurasOk, warn)
@@ -285,12 +336,18 @@ function R.ConsumableReminders(all, aurasOk, warn)
     local role, ctx = R.Role(), R.SupplyContext()
     -- food can have a warn time of its own ("show below"); 0 = the general one
     local foodWarn = (R.mod.db.foodMinutes or 0) * 60
+    local ownFood
     for _, c in ipairs(R.SUPPLIES) do
         if CONSUMABLE[c.cat] and R.SupplyFits(c, role, ctx) then
             local limit = (c.cat == "food" and foodWarn > 0) and foodWarn or warn
             local pick
             for _, it in ipairs(c.items) do
                 if it[2] <= ctx.level and (C_Item.GetItemCount(it[1]) or 0) > 0 then pick = it[1]; break end
+            end
+            -- the food the player named, while it is carried (one icon only)
+            if c.cat == "food" and not ownFood then
+                ownFood = true
+                pick = R.FoodChoice() or pick
             end
             local left = aurasOk and chainLeft(c) or nil
             -- on you but none left in the bags: still shown (with a 0) to
@@ -310,6 +367,7 @@ function R.ConsumableReminders(all, aurasOk, warn)
                     left   = left,
                     active = left ~= nil,
                     due    = aurasOk and pick ~= nil and (not left or left < limit),
+                    food   = c.cat == "food" or nil,     -- a right click picks another one
                 }
             end
         end

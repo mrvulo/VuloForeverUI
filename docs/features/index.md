@@ -79,6 +79,7 @@ jemand ohne den Code prüfen kann.
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
+| F-64 | Erinnerungen: Essen per Rechtsklick aus den Taschen wählen | Erinnerungen | gebaut | – |
 | F-63 | Goldprüfung: zwei Charaktere nebeneinander vergleichen | Komfort | gebaut | – |
 | F-62 | Reit-Schmuckstück: beim Aufsitzen anlegen, beim Absitzen das vorherige zurück | Komfort | gebaut | – |
 | F-61 | Händlerfenster: Gegenstände, die man schon hat (bekannte Rezepte, Reittiere, Haustiere, Spielzeuge), rot getönt | Skins | gebaut | – |
@@ -461,6 +462,14 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du „Anderer Charakter“ klickst, **dann** kommt die Auswahlliste wieder; ein zweiter Klick auf „Vergleichen“ schließt die Ansicht, ein späterer öffnet sie mit demselben Partner.
 - **Wenn** während des Vergleichs ein neuer Scan fertig wird, **dann** zeigt die linke Seite den neuen Charakter.
 - Bekannte Grenze: Die rechte Seite ist immer der letzte gespeicherte Scan dieses Charakters, kein frischer.
+
+### F-64 Erinnerungen: eigenes Essen wählen
+- **Angenommen** die Essens-Erinnerung steht in der Leiste, **wenn** du sie rechts anklickst, **dann** öffnet sich ein Menü mit „Automatisch: das Beste für deine Rolle“ und allen Speisen und Getränken aus deinen Taschen, je mit Symbol und Anzahl; die aktuelle Wahl hat einen Haken.
+- **Wenn** du ein Essen wählst, **dann** zeigt die Erinnerung sofort dessen Symbol und Anzahl, und ein Linksklick isst genau dieses.
+- **Angenommen** das gewählte Essen ist aufgebraucht, **dann** zeigt die Erinnerung wieder das Essen der Rolle; kaufst du nach, gilt deine Wahl wieder.
+- **Wenn** du „Automatisch“ wählst, **dann** gilt wieder die Empfehlung der Rolle. Die Wahl gilt pro Charakter.
+- **Dann** nennt der Tooltip der Essens-Erinnerung den Rechtsklick; ein Rechtsklick auf andere Erinnerungen tut nichts.
+- Bekannte Grenze: Das Spiel führt Speisen und Getränke in einer Gruppe, im Menü stehen deshalb auch Getränke. Als satt gilt weiterhin nur ein Essens-Buff, den die Erinnerung kennt (Satt und die vier benannten); nach anderem Essen bleibt das Symbol stehen.
 
 ## Offen
 
