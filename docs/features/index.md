@@ -439,7 +439,7 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du den Schalter bei offenem Händlerfenster ausschaltest, **dann** haben die Zellen sofort wieder die Farben des Spiels. Standard: aus.
 - **Wenn** du danach kaufst, verkaufst oder reparierst, **dann** geht alles wie vorher und es kommt keine „Aktion blockiert“-Meldung.
 - Bekannte Grenze: Was als vorhanden zählt, sagt der Tooltip des Spiels („Bereits bekannt“, bei Haustieren „Gesammelt (1/…)“). Ein Reittier, das nur als Gegenstand in der Tasche liegt, zählt nicht.
-- Nicht gebaut: das Ausblenden dieser Gegenstände. Die Händlerliste gehört dem Spiel und blättert nach festen Nummern; Ausblenden ohne Lücken braucht eine eigene Händlerliste (Entscheidung des Spielers offen, 2026-11-14).
+- Nicht gebaut: das Ausblenden dieser Gegenstände. Die Händlerliste gehört dem Spiel und blättert nach festen Nummern; Ausblenden ohne Lücken bräuchte eine eigene Händlerliste. Entscheidung des Spielers (2026-11-14): die Tönung reicht, kein Ausblenden.
 
 ## Offen
 
