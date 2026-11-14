@@ -755,6 +755,7 @@ local function updateWindow()
     if TC.RenderEmpty then TC.RenderEmpty(p == nil) end
     f.copy:SetShown(p ~= nil)
     if f.histBtn then f.histBtn:SetShown(p ~= nil) end
+    if f.cmpBtn then f.cmpBtn:SetShown(p ~= nil) end
     if not p then
         f.name:SetText("")
         f.info:SetText("")
@@ -841,6 +842,8 @@ local function updateWindow()
         { L["First scanned"], entry and date("%d.%m.%Y", entry.first) or "--" },
     })
     fillObs(f.obs, p.done and not p.failed and a.obs or nil)
+    -- the left side of an open comparison is this character
+    if TC.RenderCompare then TC.RenderCompare() end
 end
 
 -- ---------------------------------------------------------------- mail --
@@ -1019,14 +1022,18 @@ end
 
 -- ---------------------------------------------------------------- views --
 --
--- Two more views in the gold check window, each laid over its middle:
+-- Three more views in the gold check window, each laid over its middle:
 --   Players  every character you ever scanned, searchable and sortable;
 --            a click opens their last scan
 --   History  the saved scans of the character on show, with the rise of
 --            their recorded income between two scans
+--   Compare  the character on show beside one picked from the Players
+--            list (the list in "pick" mode), counter by counter
 
 local VIEW_TOP, VIEW_BOTTOM = 82, 46
 local ROWS, ROW_H = 15, 22
+local CMP_ROWS, CMP_H = 24, 15
+local compareKey            -- the character on the right of the Compare view
 
 local function nameOf(key)
     return (type(key) == "string" and key:match("^(.-)%-[^%-]*$")) or key
@@ -1137,6 +1144,8 @@ function TC.BuildViews(f)
         r.dot:SetPoint("LEFT", r, "LEFT", cols[4][3] - 10, 0)
         r:SetScript("OnClick", function(self)
             if not self.key then return end
+            -- picking the partner for the Compare view
+            if list.pick then TC.Compare(self.key); return end
             local p = kept(self.key, nameOf(self.key))
             if p then list:Hide(); TC.ShowWindow(p) end
         end)
@@ -1180,6 +1189,47 @@ function TC.BuildViews(f)
     hist.note = text(hist, 10, ns.TC("textDim"))
     hist.note:SetPoint("BOTTOMLEFT", 15, 8)
     hist.note:SetText(L["The rise is shown only between two scans whose totals both are known and did not fall."])
+
+    -- ---- compare
+    local cmp = overlay()
+    f.cmpView = cmp
+    local CX, CW = { 15, 245, 470 }, { 220, 210, 210 }    -- label, left, right
+    cmp.other = ns.UI:CreateButton(cmp, { label = L["Other character"], width = 150, height = 22,
+        onClick = function() TC.PickCompare() end })
+    cmp.other:SetPoint("TOPLEFT", 15, -10)
+    cmp.heads = {}
+    for n = 1, 2 do
+        local name = text(cmp, 14)
+        name:SetPoint("TOPLEFT", cmp, "TOPLEFT", CX[n + 1], -6)
+        name:SetWidth(CW[n + 1]); name:SetJustifyH("RIGHT"); name:SetWordWrap(false)
+        local info = text(cmp, 11, ns.TC("textSoft"))
+        info:SetPoint("TOPLEFT", cmp, "TOPLEFT", CX[n + 1], -25)
+        info:SetWidth(CW[n + 1]); info:SetJustifyH("RIGHT"); info:SetWordWrap(false)
+        cmp.heads[n] = { name = name, info = info }
+    end
+    cmp.rows = {}
+    for i = 1, CMP_ROWS do
+        local y = -46 - (i - 1) * CMP_H
+        if i % 2 == 1 then
+            local st = cmp:CreateTexture(nil, "BACKGROUND", nil, 1)
+            st:SetPoint("TOPLEFT", cmp, "TOPLEFT", 10, y + 2)
+            st:SetPoint("RIGHT", cmp, "RIGHT", -10, 0)
+            st:SetHeight(CMP_H)
+            st:SetColorTexture(1, 1, 1, 0.03)
+        end
+        local cells = {}
+        for n = 1, 3 do
+            local fs = text(cmp, 11)
+            fs:SetPoint("TOPLEFT", cmp, "TOPLEFT", CX[n], y)
+            fs:SetWidth(CW[n]); fs:SetJustifyH(n == 1 and "LEFT" or "RIGHT"); fs:SetWordWrap(false)
+            cells[n] = fs
+        end
+        cells[1]:SetTextColor(ns.TC("textSoft"))
+        cmp.rows[i] = cells
+    end
+    cmp.note = text(cmp, 10, ns.TC("textDim"))
+    cmp.note:SetPoint("BOTTOMLEFT", 15, 8)
+    cmp.note:SetText(L["The higher of two values is the brighter one. -- means the game did not report it."])
 
     -- ---- start view: shown while nothing has been scanned this session
     local empty = CreateFrame("Frame", nil, f)
@@ -1259,20 +1309,135 @@ function TC.BuildViews(f)
     empty.note:SetWidth(W - 80); empty.note:SetJustifyH("CENTER")
     empty.note:SetText(L["A hint, not proof: a guild bank or a generous friend looks the same as bought gold."])
 
-    -- ---- switches
-    local function toggle(view, other)
-        other:Hide()
-        view:SetShown(not view:IsShown())
-        if view:IsShown() then
-            if view == list then TC.RenderList() else TC.RenderHistory() end
+    -- ---- switches: one view at a time; its own button closes it again
+    local function closeAll()
+        list:Hide(); hist:Hide(); cmp:Hide()
+        list.pick = false
+    end
+    f.listBtn = ns.UI:CreateButton(f, { label = L["Players"], width = 84, height = 22,
+        onClick = function()
+            local was = list:IsShown() and not list.pick
+            closeAll()
+            if not was then list:Show(); TC.RenderList() end
+        end })
+    f.listBtn:SetPoint("BOTTOMLEFT", 16, 12)
+    f.histBtn = ns.UI:CreateButton(f, { label = L["History"], width = 84, height = 22,
+        onClick = function()
+            local was = hist:IsShown()
+            closeAll()
+            if not was then hist:Show(); TC.RenderHistory() end
+        end })
+    f.histBtn:SetPoint("LEFT", f.listBtn, "RIGHT", 8, 0)
+    f.cmpBtn = ns.UI:CreateButton(f, { label = L["Compare"], width = 100, height = 22,
+        onClick = function()
+            local was = cmp:IsShown() or (list:IsShown() and list.pick)
+            closeAll()
+            if was or not result then return end
+            -- the partner of last time, while there is one; else pick one
+            if compareKey and compareKey ~= result.key and kept(compareKey, nameOf(compareKey)) then
+                cmp:Show(); TC.RenderCompare()
+            else
+                TC.PickCompare()
+            end
+        end })
+    f.cmpBtn:SetPoint("LEFT", f.histBtn, "RIGHT", 8, 0)
+end
+
+-- The Players list as a picker: a click names the partner.
+function TC.PickCompare()
+    local f = window
+    if not (f and f.listView and result) then return end
+    f.histView:Hide(); f.cmpView:Hide()
+    f.listView.pick = true
+    f.listView.offset = 0
+    f.listView:Show()
+    TC.RenderList()
+end
+
+function TC.Compare(key)
+    local f = window
+    if not (f and f.cmpView) then return end
+    compareKey = key
+    f.listView.pick = false
+    f.listView:Hide(); f.histView:Hide()
+    f.cmpView:Show()
+    TC.RenderCompare()
+end
+
+-- The character on show (left) beside the picked one's last saved scan.
+function TC.RenderCompare()
+    local cmp = window and window.cmpView
+    if not (cmp and cmp:IsShown()) then return end
+    local pa = result
+    local pb = compareKey and kept(compareKey, nameOf(compareKey))
+    if not (pa and pa.stats and pb) or pa.key == compareKey then cmp:Hide(); return end
+    local sides = { pa, pb }
+    local an = { analyse(pa, nil), analyse(pb, nil) }
+    for n, p in ipairs(sides) do
+        local h = cmp.heads[n]
+        local cc = p.class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[p.class]
+        h.name:SetText(p.name or p.key)
+        if cc then h.name:SetTextColor(cc.r, cc.g, cc.b) else h.name:SetTextColor(1, 1, 1) end
+        h.info:SetText(L["Level %s %s - %s"]:format(p.level or "?", p.className or "",
+            p.guild and ("<" .. p.guild .. ">") or L["No guild"]))
+    end
+    local sa, sb = pa.stats, pb.stats
+    -- { label, left, right, how to write it }
+    local rows = {
+        { L["Verdict"], an[1].state, an[2].state, "state" },
+        { L["Level"], pa.level, pb.level },
+        { L["Most gold ever owned"], an[1].peak, an[2].peak, "money" },
+        { L["Explained by recorded income"], an[1].explained, an[2].explained, "money" },
+        { L["Unexplained"], an[1].unexplained, an[2].unexplained, "money" },
+        { L["Gold looted"], sa.looted, sb.looted, "money" },
+        { L["Quest rewards"], sa.quest, sb.quest, "money" },
+        { L["Vendor sales"], sa.vendor, sb.vendor, "money" },
+        { L["Auction earnings"], sa.auction, sb.auction, "money" },
+        { L["Total gold acquired"], an[1].acq, an[2].acq, "money" },
+        { L["Average earned per day"], sa.daily, sb.daily, "money" },
+        { L["Travel"], sa.travel, sb.travel, "money" },
+        { L["Postage"], sa.postage, sb.postage, "money" },
+        { L["Auctions posted"], sa.posted, sb.posted },
+        { L["Auction purchases"], sa.bought, sb.bought },
+        { L["Largest sale"], sa.bestSale, sb.bestSale, "money" },
+        { L["Largest bid"], sa.bestBid, sb.bestBid, "money" },
+        { L["Quests completed"], sa.quests, sb.quests },
+        { L["Creatures killed"], sa.kills, sb.kills },
+        { L["Dungeons entered"], sa.dungeons, sb.dungeons },
+        { L["Deaths"], sa.deaths, sb.deaths },
+        { L["Flight paths taken"], sa.flights, sb.flights },
+        { L["Honorable kills"], sa.honor, sb.honor },
+        { L["Last scan"], pa.at, pb.at, "date" },
+    }
+    for i, cells in ipairs(cmp.rows) do
+        local d = rows[i]
+        for _, c in ipairs(cells) do c:SetShown(d ~= nil) end
+        if d then
+            cells[1]:SetText(d[1])
+            local how = d[4]
+            for n = 1, 2 do
+                local v, other, fs = d[n + 1], d[4 - n], cells[n + 1]
+                if how == "state" then
+                    local c = STATE_COLOR[v or "none"] or STATE_COLOR.none
+                    fs:SetText(shortVerdict(v))
+                    fs:SetTextColor(c[1], c[2], c[3])
+                elseif how == "date" then
+                    fs:SetText(type(v) == "number" and date("%d.%m.%y %H:%M", v) or "--")
+                    fs:SetTextColor(ns.TC("textSoft"))
+                else
+                    local known = type(v) == "number"
+                    fs:SetText(how == "money" and money(known and v or nil) or count(known and v or nil))
+                    if not known then
+                        fs:SetTextColor(ns.TC("textDim"))
+                    elseif type(other) == "number" and other > v then
+                        fs:SetTextColor(ns.TC("textSoft"))
+                    else
+                        fs:SetTextColor(1, 1, 1)
+                    end
+                end
+            end
         end
     end
-    f.listBtn = ns.UI:CreateButton(f, { label = L["Players"], width = 100, height = 22,
-        onClick = function() toggle(list, hist) end })
-    f.listBtn:SetPoint("BOTTOMLEFT", 16, 12)
-    f.histBtn = ns.UI:CreateButton(f, { label = L["History"], width = 100, height = 22,
-        onClick = function() toggle(hist, list) end })
-    f.histBtn:SetPoint("LEFT", f.listBtn, "RIGHT", 8, 0)
 end
 
 function TC.RenderEmpty(on)
@@ -1307,9 +1472,20 @@ function TC.RenderList()
     local list = window and window.listView
     if not (list and list:IsShown()) then return end
     local rows, total = listRows()
+    -- picking a partner: everyone but the character on show
+    local picking = list.pick and result
+    if picking then
+        for i = #rows, 1, -1 do
+            if rows[i].key == result.key then table.remove(rows, i) end
+        end
+    end
     local maxOff = math.max(0, #rows - ROWS)
     list.offset = math.min(list.offset or 0, maxOff)
-    list.caption:SetText(L["%d of %d characters"]:format(#rows, total))
+    if picking then
+        list.caption:SetText(L["Pick who to compare %s with"]:format(result.name or result.key))
+    else
+        list.caption:SetText(L["%d of %d characters"]:format(#rows, total))
+    end
     for i, r in ipairs(list.rows) do
         local d = rows[list.offset + i]
         r.key = d and d.key
@@ -1328,7 +1504,9 @@ function TC.RenderList()
         end
     end
     list.empty:SetShown(#rows == 0)
-    list.empty:SetText(total == 0 and L["No characters scanned yet."] or L["No character matches the search."])
+    -- picking with nobody else saved is "none yet", not a failed search
+    local none = total == 0 or (picking and listState.query == "")
+    list.empty:SetText(none and L["No characters scanned yet."] or L["No character matches the search."])
 end
 
 function TC.RenderHistory()
@@ -1361,7 +1539,7 @@ function TC.ShowWindow(p)
     if p and p.stats then result = p end
     buildWindow()
     -- a character opened from the list goes back to the main view
-    if window.listView then window.listView:Hide() end
+    if window.listView then window.listView:Hide(); window.listView.pick = false end
     if window.histView and window.histView:IsShown() then TC.RenderHistory() end
     window:Show()
     window:Raise()

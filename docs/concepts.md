@@ -480,8 +480,11 @@ scaled together as one mover (`classes_priest`).
   Verdicts beyond green/yellow/red, so red never claims more than the
   counters carry: young (level < 10 or peak < 10 g), bank (≥ 500 auctions,
   little play), partial (an income source not reported; never red then).
-  Window views: Players (every scan, search + sort) and History (scans of
-  the character on show).
+  Window views: Players (every scan, search + sort), History (scans of
+  the character on show) and Compare (the player's call, 2026-11-14): the
+  character on show beside the LAST SAVED scan of one picked from the
+  Players list in pick mode (`list.pick`), counter by counter; the higher
+  of two known numbers is the brighter one, a missing one stays "--".
 - **Trinkets** (`Trinkets.lua`, `TrinketFlyout.lua`): the click is a secure
   button running `/use 13|14`; everything else is plain frames. The pick grid
   on hover is NOT secure (equipping is refused in combat anyway): a click in

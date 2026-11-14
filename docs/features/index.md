@@ -79,6 +79,7 @@ jemand ohne den Code prüfen kann.
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
+| F-63 | Goldprüfung: zwei Charaktere nebeneinander vergleichen | Komfort | gebaut | – |
 | F-62 | Reit-Schmuckstück: beim Aufsitzen anlegen, beim Absitzen das vorherige zurück | Komfort | gebaut | – |
 | F-61 | Händlerfenster: Gegenstände, die man schon hat (bekannte Rezepte, Reittiere, Haustiere, Spielzeuge), rot getönt | Skins | gebaut | – |
 
@@ -451,6 +452,15 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du auf dem Reittier `/reload` machst oder ausloggst und danach absitzt, **dann** kommt das vorherige Schmuckstück trotzdem zurück.
 - **Wenn** „Kein Reit-Schmuckstück“ gewählt ist (Standard), **dann** wechselt nichts beim Auf- und Absitzen.
 - Bekannte Grenze: Ein benutzbares Schmuckstück, das zurückkommt, hat die 30 Sekunden Abklingzeit des Spiels nach dem Anlegen.
+
+### F-63 Goldprüfung: Vergleich
+- **Angenommen** in der Goldprüfung wird ein Charakter angezeigt und es gibt mindestens einen weiteren gespeicherten, **wenn** du unten „Vergleichen“ klickst, **dann** öffnet sich die Spielerliste mit der Zeile „Wähle, mit wem … verglichen wird“ (ohne den angezeigten Charakter, mit Suche und Sortierung).
+- **Wenn** du dort einen Charakter anklickst, **dann** stehen beide nebeneinander: links der angezeigte, rechts der gewählte, je mit Name in Klassenfarbe, Stufe, Klasse und Gilde; darunter Zeile für Zeile Urteil, Stufe, Höchststand, erklärt/unerklärt, alle Einkommensquellen, Reisen, Porto, Auktionen, Quests, Kills, Dungeons, Tode, Flugrouten, ehrenhafte Siege und letzter Scan.
+- **Dann** ist bei zwei bekannten Zahlen die höhere weiß und die niedrigere gedämpft; was das Spiel nicht geliefert hat, steht als „--“ und zählt nie als 0.
+- **Wenn** du dich mit jemandem vergleichen willst, **dann** klickst du erst „Mich prüfen“ und dann „Vergleichen“; für zwei andere öffnest du den ersten über „Spieler“ und wählst den zweiten über „Vergleichen“.
+- **Wenn** du „Anderer Charakter“ klickst, **dann** kommt die Auswahlliste wieder; ein zweiter Klick auf „Vergleichen“ schließt die Ansicht, ein späterer öffnet sie mit demselben Partner.
+- **Wenn** während des Vergleichs ein neuer Scan fertig wird, **dann** zeigt die linke Seite den neuen Charakter.
+- Bekannte Grenze: Die rechte Seite ist immer der letzte gespeicherte Scan dieses Charakters, kein frischer.
 
 ## Offen
 
