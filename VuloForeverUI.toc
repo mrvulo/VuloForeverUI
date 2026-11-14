@@ -135,6 +135,7 @@ Modules\Skins\Stats.lua
 Modules\Skins\Inspect.lua
 Modules\Skins\Friends.lua
 Modules\Skins\Social.lua
+Modules\Skins\Merchant.lua
 Modules\Skins\Guide.lua
 Modules\Skins\Options.lua
 Modules\Classes\Core.lua

@@ -15,6 +15,7 @@
 --   Inspect.lua    the inspect window (a load-on-demand addon of the client)
 --   Friends.lua    the older friends window, Modern only
 --   Social.lua     the social window Forever opens with O, Modern only
+--   Merchant.lua   the merchant window: red over what you already have
 --   Options.lua    the options page
 --
 -- TAINT (docs/concepts.md, engine rules): nothing here hides, reparents or
@@ -52,6 +53,7 @@ local mod = ns:RegisterModule("skins", {
             collapsed    = {},           -- [section title] = true
             friends      = true,         -- the friends window (Friends.lua)
             friendsStyle = "modern",     -- it has no Standard of its own: "modern"
+            merchantOwned = false,       -- merchant window: red over what you already have (Merchant.lua)
         },
         -- the levelling-guide addon's windows (Guide.lua)
         guide = {

@@ -79,6 +79,7 @@ jemand ohne den Code prüfen kann.
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
+| F-61 | Händlerfenster: Gegenstände, die man schon hat (bekannte Rezepte, Reittiere, Haustiere, Spielzeuge), rot getönt | Skins | gebaut | – |
 
 ---
 
@@ -430,6 +431,15 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** irgendeine Erinnerung wegen „läuft bald ab“ in der Leiste steht (Buff, Waffenverzauberung, Fläschchen), **dann** zeigt auch sie den Countdown; fehlende Buffs zeigen keinen.
 - **Wenn** du einen der Regler bewegst, **dann** zeigt die Vorschau über der Seite den Zustand sofort, Countdown eingeschlossen.
 - Bekannte Grenze: Die Leiste schaut alle 5 Sekunden nach, ein Symbol kann also bis zu 5 Sekunden nach der Schwelle erscheinen. Essen wird in der Grundeinstellung nur in Dungeons und Schlachtzügen erinnert.
+
+### F-61 Händlerfenster: schon Vorhandenes rot
+- **Angenommen** unter Skins → Fenster-Skins → Händlerfenster ist „Gegenstände, die du schon hast, rot tönen“ an, **wenn** du bei einem Rezepthändler stehst, **dann** sind die Rezepte, die du schon kannst (Tooltip: „Bereits bekannt“), rot wie etwas, das du nicht benutzen kannst; alle anderen sehen aus wie immer.
+- **Wenn** du ein Rezept kaufst und lernst, **dann** wird seine Zelle ohne Schließen des Fensters rot.
+- **Wenn** du blätterst oder den Händlerfilter umstellst, **dann** stimmt die Tönung auf jeder Seite; auf dem Reiter „Rückkauf“ wird nichts getönt.
+- **Wenn** du den Schalter bei offenem Händlerfenster ausschaltest, **dann** haben die Zellen sofort wieder die Farben des Spiels. Standard: aus.
+- **Wenn** du danach kaufst, verkaufst oder reparierst, **dann** geht alles wie vorher und es kommt keine „Aktion blockiert“-Meldung.
+- Bekannte Grenze: Was als vorhanden zählt, sagt der Tooltip des Spiels („Bereits bekannt“, bei Haustieren „Gesammelt (1/…)“). Ein Reittier, das nur als Gegenstand in der Tasche liegt, zählt nicht.
+- Nicht gebaut: das Ausblenden dieser Gegenstände. Die Händlerliste gehört dem Spiel und blättert nach festen Nummern; Ausblenden ohne Lücken braucht eine eigene Händlerliste (Entscheidung des Spielers offen, 2026-11-14).
 
 ## Offen
 

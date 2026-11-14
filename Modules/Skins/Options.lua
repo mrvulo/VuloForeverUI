@@ -88,6 +88,15 @@ function mod:GetOptions()
         desc = L["The game's friends window, flat and dark: header, search field, filter, groups, friend rows, buttons and scroll bar."],
         values = looks(false, true), get = get, set = set }
 
+    -- no look of its own: the card only folds out its switch
+    items[#items + 1] = { type = "card", key = "merchant", icon = "Interface\\Icons\\INV_Misc_Coin_02",
+        title = L["Merchant window"],
+        desc = L["What a merchant sells and you already have: known recipes, mounts, pets and toys."],
+        items = {
+            rows.toggle("merchantOwned", L["Tint items you already have red"],
+                L["A recipe you know, or a mount, pet or toy you already own, is drawn red in the merchant's list, like something you cannot use. The game's own tooltip decides what counts as known."]),
+        } }
+
     get, set = lookOf("enabled", "style", guide)
     local installed = Skins.Guide and Skins.Guide.Installed()
     items[#items + 1] = { type = "card", key = "guide", icon = "Interface\\Icons\\INV_Misc_Book_09",

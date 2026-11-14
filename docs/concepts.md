@@ -325,6 +325,14 @@ scaled together as one mover (`classes_priest`).
 - Slot text sides: left column → right, right column → left, main hand →
   left, off hand → above, ranged → right past the ammo slot. The inspect
   window is too narrow for weapon texts (ring and level only).
+- **Merchant window** (`Merchant.lua`, `windows.merchantOwned`, off by
+  default): what the client's merchant tooltip calls known (`ITEM_SPELL_KNOWN`,
+  or `ITEM_PET_KNOWN` with a count above zero) is drawn in the client's own
+  "cannot use" red. Vertex colours only, set in a post-hook of
+  `MerchantFrame_UpdateMerchantInfo`; that function is never called from
+  our code (it writes price and link on the buttons, a purchase reads
+  them). Hiding owned items is NOT built: the client pages by merchant
+  index, so hiding without gaps means a list of our own.
 - **Settings page = a list of cards** (the player's call, 2026-10-11): one
   card per skin target (character window, inspect window, levelling guide)
   with icon, title, one line of description, its look on the right (Off /
