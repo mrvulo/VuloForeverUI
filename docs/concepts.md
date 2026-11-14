@@ -498,6 +498,14 @@ scaled together as one mover (`classes_priest`).
   call, 2026-11-14): left click = that slot, right click = the other one;
   Shift-click adds/removes in that slot's list (right: the other's), the
   same insert-above-the-stop-marker the options use.
+  **Riding trinket** (the player's call, 2026-11-14; `trinketRide` in the
+  char DB: `item`, `slot`, `back`, `backManual`): on mounting it goes into
+  its slot and the worn one is remembered (`back`, saved, so a /reload on
+  the mount keeps it); on dismounting `back` returns, as the player's own
+  pick if it was one. `rideSync` runs on PLAYER_MOUNT_DISPLAY_CHANGED,
+  PLAYER_ENTERING_WORLD and after a fight. The riding trinket is never a
+  hand pick the queue has to respect; on the mount (or while `back` is
+  waiting) the queue leaves that slot alone.
   Look: Standard = this client's action button (atlases
   UI-HUD-ActionBar-IconFrame / -Background / -Slot / -Mask, drawn for 45 px)
   at the on-screen size of a shown action button, measured against the

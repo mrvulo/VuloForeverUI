@@ -316,12 +316,92 @@ local function busy()
     return (ns.CanRead(cast) and cast ~= nil) or (ns.CanRead(chan) and chan ~= nil)
 end
 
+-- ---------------------------------------------------------------- riding --
+--
+-- One trinket that only matters on a mount, per character: it goes into its
+-- slot when the player mounts, and what was in the slot comes back when
+-- they dismount. Nothing can be equipped in a fight, so a swap that falls
+-- into one waits for PLAYER_REGEN_ENABLED. What has to come back is kept in
+-- the character's saved data: a /reload on the mount loses nothing.
+
+function Trinkets.Ride()
+    local c = _G.VuloForeverUICharDB
+    if type(c) ~= "table" then return { slot = "bottom" } end
+    if type(c.trinketRide) ~= "table" then c.trinketRide = {} end
+    local r = c.trinketRide
+    if r.slot ~= "top" then r.slot = "bottom" end
+    return r
+end
+
+-- The riding trinket, its slot and its saved data; nil while none is set.
+local function rideItem()
+    if not (QoL.mod.active and db().enabled) then return nil end
+    local r = Trinkets.Ride()
+    local id = r.item
+    if type(id) == "number" and id > 0 then return id, (r.slot == "top") and 13 or 14, r end
+end
+
+local rideSkip          -- the player changed the slot by hand on the mount: hands off until they dismount
+local rideRetry
+local rideSync
+
+-- Casting, something on the cursor, dead: look again in a second. A fight
+-- needs no timer, it ends with PLAYER_REGEN_ENABLED.
+local function rideLater()
+    if rideRetry or InCombatLockdown() then return end
+    rideRetry = true
+    C_Timer.After(1, function() rideRetry = false; rideSync() end)
+end
+
+rideSync = function()
+    local id, inv, r = rideItem()
+    if not id then return end
+    local current = GetInventoryItemID("player", inv)
+    if IsMounted() then
+        -- worn in the other slot counts as worn: inBags says no
+        if rideSkip or current == id or not inBags(id) then return end
+        if busy() or IsInventoryItemLocked(inv) then rideLater(); return end
+        r.back = current
+        r.backManual = (current ~= nil and manual[inv] == current) or nil
+        equip(id, inv)
+    else
+        rideSkip = nil
+        if current ~= id then r.back, r.backManual = nil, nil; return end
+        local back = r.back
+        if not back then return end          -- nothing to return to: the queue's turn, if it is on
+        if not inBags(back) then r.back, r.backManual = nil, nil; return end
+        if busy() or IsInventoryItemLocked(inv) then rideLater(); return end
+        if r.backManual then
+            C_Item.EquipItemByName(back, inv)    -- comes back as the player's own pick
+        else
+            equip(back, inv)
+        end
+    end
+end
+
+-- The options changed the riding trinket or its slot.
+function Trinkets.RideChanged()
+    local r = Trinkets.Ride()
+    r.back, r.backManual = nil, nil
+    rideSkip = nil
+    rideSync()
+end
+
+local function onMount()
+    rideSync()
+    -- the mount's own cast can still count as running in this frame
+    C_Timer.After(0.5, rideSync)
+end
+
 local function runQueue(key, inv)
     local q = Trinkets.Queue(key)
     if not q.enabled then return end
     if IsInventoryItemLocked(inv) then return end
     local current = GetInventoryItemID("player", inv)
     if not current then return end
+    -- the riding trinket on a mount, or on its way out: rideSync's business
+    local rideId, rideInv, ride = rideItem()
+    if rideId and current == rideId and inv == rideInv and (IsMounted() or ride.back) then return end
     -- the player's own pick of something the queue would take off again
     if held[inv] == current then return end
 
@@ -632,6 +712,7 @@ local function queueKeeps(key, id)
 end
 
 local function onEquip(_, slot)
+    local rideId, rideInv, ride = rideItem()
     for _, s in ipairs(SLOTS) do
         if slot == nil or slot == s.inv then
             local id = GetInventoryItemID("player", s.inv)
@@ -639,9 +720,19 @@ local function onEquip(_, slot)
             if manual[s.inv] and manual[s.inv] ~= id then manual[s.inv] = nil end
             if id and lastQueued[s.inv] == id then
                 lastQueued[s.inv] = nil
-            elseif id and slot == s.inv then
+            elseif id and slot == s.inv and id ~= rideId then
+                -- (the riding trinket put on by hand is no pick the queue
+                -- has to respect: off the mount it is the wrong trinket)
                 manual[s.inv] = id
                 if not queueKeeps(s.key, id) then held[s.inv] = id end
+                -- another trinket into the riding slot while mounted: the
+                -- player wants that one, until the next time they mount
+                if s.inv == rideInv and IsMounted() then rideSkip = true end
+            end
+            -- the riding trinket has left its slot (and is not on its way
+            -- in): nothing is waiting to come back any more
+            if ride and s.inv == rideInv and id ~= rideId and lastQueued[s.inv] ~= rideId then
+                ride.back, ride.backManual = nil, nil
             end
         end
     end
@@ -653,6 +744,7 @@ local function onRegen()
     if pending then Trinkets.Apply() end
     if QoL.mod.active and db().enabled then
         applyPending()
+        rideSync()
         tickQueue()
         Trinkets.Refresh()
     end
@@ -667,6 +759,8 @@ function Trinkets.Apply()
     QoL.SyncEvent(on, "PLAYER_UNGHOST", onRegen)
     QoL.SyncEvent(on, "PLAYER_ALIVE", onRegen)
     QoL.SyncEvent(on, "ACTIVE_TALENT_GROUP_CHANGED", onSpecSet)
+    QoL.SyncEvent(on, "PLAYER_MOUNT_DISPLAY_CHANGED", onMount)
+    QoL.SyncEvent(on, "PLAYER_ENTERING_WORLD", onMount)
 
     -- Showing, hiding and building touch a frame with secure children: out
     -- of combat only, and a change asked for in a fight lands when it ends.
@@ -690,6 +784,8 @@ function Trinkets.Disable()
     QoL.SyncEvent(false, "PLAYER_UNGHOST", onRegen)
     QoL.SyncEvent(false, "PLAYER_ALIVE", onRegen)
     QoL.SyncEvent(false, "ACTIVE_TALENT_GROUP_CHANGED", onSpecSet)
+    QoL.SyncEvent(false, "PLAYER_MOUNT_DISPLAY_CHANGED", onMount)
+    QoL.SyncEvent(false, "PLAYER_ENTERING_WORLD", onMount)
     if Trinkets.HideGrid then Trinkets.HideGrid() end
     if ticker then ns:CancelTicker(ticker); ticker = nil end
     if holder then

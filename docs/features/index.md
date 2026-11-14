@@ -79,6 +79,7 @@ jemand ohne den Code prüfen kann.
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
+| F-62 | Reit-Schmuckstück: beim Aufsitzen anlegen, beim Absitzen das vorherige zurück | Komfort | gebaut | – |
 | F-61 | Händlerfenster: Gegenstände, die man schon hat (bekannte Rezepte, Reittiere, Haustiere, Spielzeuge), rot getönt | Skins | gebaut | – |
 
 ---
@@ -440,6 +441,16 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du danach kaufst, verkaufst oder reparierst, **dann** geht alles wie vorher und es kommt keine „Aktion blockiert“-Meldung.
 - Bekannte Grenze: Was als vorhanden zählt, sagt der Tooltip des Spiels („Bereits bekannt“, bei Haustieren „Gesammelt (1/…)“). Ein Reittier, das nur als Gegenstand in der Tasche liegt, zählt nicht.
 - Nicht gebaut: das Ausblenden dieser Gegenstände. Die Händlerliste gehört dem Spiel und blättert nach festen Nummern; Ausblenden ohne Lücken bräuchte eine eigene Händlerliste. Entscheidung des Spielers (2026-11-14): die Tönung reicht, kein Ausblenden.
+
+### F-62 Reit-Schmuckstück
+- **Angenommen** das Schmuckstück-Fenster ist an und unter „Reit-Schmuckstück“ ist die Karotte für den unteren Platz gewählt, **wenn** du außerhalb des Kampfes aufsitzt, **dann** liegt nach etwa einer Sekunde die Karotte im unteren Platz.
+- **Wenn** du absitzt, **dann** kommt das Schmuckstück zurück, das vorher im Platz lag; war es von Hand angelegt, gilt es wieder als deine Wahl (die Warteschlange lässt es liegen).
+- **Angenommen** du wirst im Kampf vom Reittier geholt, **dann** bleibt die Karotte bis zum Kampfende und wird dann getauscht.
+- **Angenommen** die Karotte liegt im Platz, du sitzt nicht auf und nichts ist zum Zurücklegen gemerkt (z. B. von Hand angelegt), **dann** holt die Warteschlange des Platzes, wenn sie an ist, ihr erstes bereites Schmuckstück; ist sie aus, bleibt die Karotte.
+- **Wenn** du auf dem Reittier von Hand ein anderes Schmuckstück in den Reit-Platz legst, **dann** bleibt es bis zum nächsten Aufsitzen.
+- **Wenn** du auf dem Reittier `/reload` machst oder ausloggst und danach absitzt, **dann** kommt das vorherige Schmuckstück trotzdem zurück.
+- **Wenn** „Kein Reit-Schmuckstück“ gewählt ist (Standard), **dann** wechselt nichts beim Auf- und Absitzen.
+- Bekannte Grenze: Ein benutzbares Schmuckstück, das zurückkommt, hat die 30 Sekunden Abklingzeit des Spiels nach dem Anlegen.
 
 ## Offen
 

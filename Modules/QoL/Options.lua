@@ -425,6 +425,27 @@ local function trinketsPage()
         slider("trinkets", "gridColumns", L["Columns of the pick grid"], 1, 8, 1),
         slider("trinkets", "scale", L["Size"], 0.5, 2, 0.05),
     }
+    -- the riding trinket: per character, like the lists
+    local T = QoL.Trinkets
+    local rides = { { value = 0, text = L["No riding trinket"] } }
+    local saved, listed = T.Ride().item, false
+    for _, id in ipairs(T.Owned()) do
+        rides[#rides + 1] = { value = id, text = T.ItemName(id) }
+        if id == saved then listed = true end
+    end
+    -- one that is in the bank right now stays the choice
+    if saved and not listed then rides[#rides + 1] = { value = saved, text = T.ItemName(saved) } end
+    items[#items + 1] = { type = "header", text = L["Riding trinket"] }
+    items[#items + 1] = { type = "desc", text = L["|cffaaaaaaOne trinket that goes on when you mount; when you dismount, the trinket that was in the slot comes back. In combat the game allows no swap: it then happens after the fight.|r"] }
+    items[#items + 1] = { type = "dropdown", label = L["Put on when mounted"], width = 240, values = rides,
+        get = function() return T.Ride().item or 0 end,
+        set = function(_, v) T.Ride().item = (v and v ~= 0) and v or nil; T.RideChanged() end }
+    items[#items + 1] = { type = "dropdown", label = L["Into this slot"], width = 240, values = {
+            { value = "top",    text = L["Upper slot"] },
+            { value = "bottom", text = L["Lower slot"] },
+        },
+        get = function() return T.Ride().slot end,
+        set = function(_, v) T.Ride().slot = v; T.RideChanged() end }
     -- with dual spec the lists on show are the active talent set's
     if (GetNumSpecGroups() or 1) > 1 then
         items[#items + 1] = { type = "desc", text = L["|cffaaaaaaThese lists belong to talent set %d; the other set keeps its own. Switching talents switches the lists.|r"]:format(QoL.Trinkets.SpecSet()) }
