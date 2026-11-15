@@ -2,9 +2,16 @@
 --
 -- The macro factory: macros in the character's own macro list that this
 -- addon writes and keeps up to date -- food, drink, healthstone, healing
--- potion, mana potion, and for the warlock a soulstone, for the mage a mana
--- gem. Each one uses the best thing of its kind that is in the bags and that
--- the level allows, so the button on the bar never has to be swapped.
+-- potion, mana potion, for the warlock a soulstone, a spellstone and a
+-- firestone, for the mage a mana gem. Each one uses the best thing of its
+-- kind that is in the bags and that the level allows, so the button on the
+-- bar never has to be swapped.
+--
+-- Every ID and name below is read from THIS client's tables (item, item
+-- effect, spell name, spell effect; build 1.60.1.70938, 2026-11-15) -- it
+-- differs from the 1.x game: a spellstone and a firestone are not held in
+-- the off hand here, they are used on the weapon like a poison, and food
+-- that gives a buff is "Nutritious Food", not "Food".
 --
 -- WHAT COUNTS AS "ITS KIND"
 --
@@ -12,17 +19,21 @@
 --                 client's name for eating or drinking: the name of spell
 --                 433 / 430 and, as a second witness, of the use effect of
 --                 item 117 / 159. No item list -- whatever a vendor or a
---                 mage hands you counts.
+--                 mage hands you counts. The buffing kind ("Nutritious
+--                 Food" / "Nutritious Drink", spells 1248377 / 1249906)
+--                 counts too, but last.
 --   potions       the healing and the mana chain of the Reminder data
 --                 (Supplies.lua, `kind`), plus every consumable whose use
 --                 effect is named like one of theirs.
---   stones, gems  fixed lists, best first. Names checked against the
---                 classic item and spell tables (2026-11-15), not against
---                 this client -- a stone the list does not know is not used.
+--   stones, gems  fixed lists, best first -- a stone the list does not
+--                 know is not used.
 --
 -- The best one is the highest required level the character meets. Food
--- that gives a buff of its own (the Reminder's food chains) comes last, so
--- the macro does not eat the raid food for health.
+-- and drink that give a buff of their own come last, so the macro does not
+-- eat the raid food for health.
+--
+-- A spellstone or firestone goes on the weapon: "/use item" and then the
+-- main hand slot, the way the Reminder puts on a poison.
 --
 -- A warlock without a stone, a mage without a gem: the same macro casts
 -- the best creating spell the character knows, and turns back into "use"
@@ -53,21 +64,27 @@ local HEALTHSTONES = { 19013, 19012, 9421, 19011, 19010, 5510, 19009, 19008, 550
     19007, 19006, 5511, 19005, 19004, 5512 }
 local SOULSTONES   = { 16896, 16895, 16893, 16892, 5232 }
 local MANA_GEMS    = { 8008, 8007, 5513, 5514 }
+local SPELLSTONES  = { 13603, 13602, 5522 }
+local FIRESTONES   = { 13701, 13700, 13699, 1254 }
 
 -- the spells that make them, best first
 local CREATE_HEALTHSTONE = { 11730, 11729, 5699, 6202, 6201 }
 local CREATE_SOULSTONE   = { 20757, 20756, 20755, 20752, 693 }
 local CONJURE_GEM        = { 10054, 10053, 3552, 759 }
+local CREATE_SPELLSTONE  = { 17728, 17727, 2362 }
+local CREATE_FIRESTONE   = { 17953, 17952, 17951, 6366 }
 
 -- name: the macro's name in the client's list (fixed, it is how we find it
 -- again). label, tip: locale keys. mana: only for a class with mana.
+-- lateSpells: use effects that count, but only when nothing else is there.
+-- weapon: the item is used on the main hand.
 Macros.DEFS = {
     { key = "food",  name = "VF Food",  label = "Food",
       tip = "Eats the best food in your bags that your level allows. Food that gives a buff of its own comes last.",
-      useSpells = { 433 }, useItems = { 117 } },
+      useSpells = { 433 }, useItems = { 117 }, lateSpells = { 1248377 } },
     { key = "drink", name = "VF Drink", label = "Drink", mana = true,
-      tip = "Drinks the best drink in your bags that your level allows.",
-      useSpells = { 430 }, useItems = { 159 } },
+      tip = "Drinks the best drink in your bags that your level allows. A drink that gives a buff of its own comes last.",
+      useSpells = { 430 }, useItems = { 159 }, lateSpells = { 1249906 } },
     { key = "stone", name = "VF Stone", label = "Healthstone",
       tip = "Uses the best healthstone in your bags. A warlock without one creates one with the same button.",
       list = HEALTHSTONES, spells = CREATE_HEALTHSTONE },
@@ -80,6 +97,12 @@ Macros.DEFS = {
     { key = "soul",  name = "VF Soul",  label = "Soulstone", class = "WARLOCK",
       tip = "Uses your soulstone. Without one in your bags the same button creates one.",
       list = SOULSTONES, spells = CREATE_SOULSTONE },
+    { key = "spell", name = "VF Spell", label = "Spellstone", class = "WARLOCK",
+      tip = "Puts your best spellstone on your weapon. Without one in your bags the same button creates one.",
+      list = SPELLSTONES, spells = CREATE_SPELLSTONE, weapon = true },
+    { key = "fire",  name = "VF Fire",  label = "Firestone", class = "WARLOCK",
+      tip = "Puts your best firestone on your weapon. Without one in your bags the same button creates one.",
+      list = FIRESTONES, spells = CREATE_FIRESTONE, weapon = true },
     { key = "gem",   name = "VF Gem",   label = "Mana gem", class = "MAGE",
       tip = "Uses the best mana gem in your bags. Without one the same button conjures one.",
       list = MANA_GEMS, spells = CONJURE_GEM },
@@ -158,23 +181,28 @@ local function better(a, b)
 end
 
 -- The best carried item: one of `ids`, or a consumable whose use effect is
--- named in `names`. `late` is a set of items to take only when nothing else is.
-local function best(names, ids, level, bags, late)
+-- named in `names` or `lateNames`. Late ones -- by that name, or an item in
+-- the set `late` -- are taken only when nothing else is there.
+local function best(names, ids, level, bags, late, lateNames)
     local pick
     for id in pairs(bags) do
         local hit = ids and ids[id]
+        local isLate = late and late[id]
         if not hit then
             local _, _, _, _, _, classID = C_Item.GetItemInfoInstant(id)
             if classID == Enum.ItemClass.Consumable then
                 local n = C_Item.GetItemSpell(id)
-                hit = type(n) == "string" and names[n]
+                if type(n) == "string" then
+                    if lateNames[n] then hit, isLate = true, true end
+                    if names[n] then hit = true end
+                end
             end
         end
         if hit then
             local lvl = minLevel(id)
             if lvl and lvl <= level then
                 local c = { id = id, lvl = lvl, count = C_Item.GetItemCount(id) or 0,
-                    late = (late and late[id]) and true or false }
+                    late = isLate and true or false }
                 if not pick or better(c, pick) then pick = c end
             end
         end
@@ -224,16 +252,25 @@ local function pick(def, level, bags)
             if n then names[n] = true end
         end
     end
-    return best(names, ids, level, bags, def.key == "food" and s.food or nil)
+    local lateNames = {}
+    for _, spell in ipairs(def.lateSpells or {}) do
+        local n = C_Spell.GetSpellName(spell)
+        if type(n) == "string" and not names[n] then lateNames[n] = true end
+    end
+    return best(names, ids, level, bags, def.key == "food" and s.food or nil, lateNames)
 end
 
 -- The macro's text, nil when there is nothing to put in it.
 local function body(def, level, bags)
     local id, cast = pick(def, level, bags)
-    if id then return HEAD .. "/use item:" .. id end
+    if id then
+        return HEAD .. "/use item:" .. id .. (def.weapon and "\n/use 16" or "")
+    end
     if cast then
-        -- "Create Healthstone (Minor)": the macro reads trailing brackets
-        -- as a rank, so a name that ends in one gets an empty pair behind it
+        -- The creating spells carry no brackets in this client ("Create
+        -- Healthstone", the rank is a subtext, the plain name casts the
+        -- best one). Should a name ever end in one: the macro reads
+        -- trailing brackets as a rank, an empty pair behind it stops that.
         if cast:sub(-1) == ")" then cast = cast .. "()" end
         return HEAD .. "/cast " .. cast
     end

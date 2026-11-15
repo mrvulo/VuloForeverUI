@@ -519,11 +519,16 @@ scaled together as one mover (`classes_priest`).
   window's own scale; Modern = our frame, rounded or square.
 - **Macro factory** (`Macros.lua`, tab "Macros"; F-65): real macros in the
   character's macro list (`VF Food`, `VF Drink`, `VF Stone`, `VF Heal`,
-  `VF Mana`, `VF Soul`, `VF Gem` -- the fixed name is how the macro is found
+  `VF Mana`, `VF Soul`, `VF Spell`, `VF Fire`, `VF Gem` -- the fixed name is how the macro is found
   again), body `#showtooltip` + `/use item:<id>`, question-mark icon.
   Food/drink/potions are recognised by the NAME of the item's use effect,
   not by an item list; stones and gems by fixed lists. Best = highest
-  required level the character meets; buff food last. Written out of combat
+  required level the character meets; buff food last. IDs and names are
+  read from Forever's own tables, which differ from 1.x (2026-11-15, the
+  player's hint): spellstone and firestone are NOT off-hand items here but
+  used on the weapon like a poison (`/use item` + `/use 16`); buff food is
+  "Nutritious Food", not "Food"; "Create Healthstone" / "Create Soulstone"
+  carry the rank as subtext, not in the name. Written out of combat
   only and only when the text differs; nothing found = text stays. Only the
   options switch deletes a macro -- never Disable or a profile change,
   because a deleted macro is gone from the bars too. The macro window is

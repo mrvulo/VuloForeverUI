@@ -189,6 +189,12 @@ abweichen, gewinnen diese. Stand 2026-09-24.
   schneller (siehe die Recherche).
 - [wago.tools](https://wago.tools/) -- Datei-IDs, Listfiles, DB2-Tabellen: ob eine
   Textur oder ein Atlas im Client liegt, bevor Code darauf baut.
+  Auch die Spieldaten von Forever selbst: Produkt `wowf`, Builds unter
+  `https://wago.tools/api/builds`, eine Tabelle als CSV unter
+  `https://wago.tools/db2/<Tabelle>/csv?build=<Build>` (Item, ItemSparse,
+  ItemEffect, ItemXItemEffect, SpellName, Spell, SpellEffect,
+  SkillLineAbility). Gegenstands- und Zauber-IDs dort pruefen, nicht in
+  Classic-Datenbanken: Forever weicht ab (Zauberstein, Buff-Essen, Raenge).
 - [UI Add-On Development Policy](https://us.forums.blizzard.com/en/wow/t/ui-add-on-development-policy/24534)
   -- was Addons duerfen. Vor Automatik-Funktionen (Verkaufen, Annehmen, Posten)
   lesen.

@@ -2469,12 +2469,16 @@ local T = {
     ["Soulstone"] = "Piedra de alma",
     ["Mana gem"] = "Gema de maná",
     ["Eats the best food in your bags that your level allows. Food that gives a buff of its own comes last."] = "Come la mejor comida de tus bolsas que tu nivel permite. La comida que da un beneficio propio va la última.",
-    ["Drinks the best drink in your bags that your level allows."] = "Bebe la mejor bebida de tus bolsas que tu nivel permite.",
+    ["Drinks the best drink in your bags that your level allows. A drink that gives a buff of its own comes last."] = "Bebe la mejor bebida de tus bolsas que tu nivel permite. La bebida que da un beneficio propio va la última.",
     ["Uses the best healthstone in your bags. A warlock without one creates one with the same button."] = "Usa la mejor piedra de salud de tus bolsas. Un brujo sin piedra crea una con el mismo botón.",
     ["Drinks the best healing potion in your bags that your level allows."] = "Bebe la mejor poción de sanación de tus bolsas que tu nivel permite.",
     ["Drinks the best mana potion in your bags that your level allows."] = "Bebe la mejor poción de maná de tus bolsas que tu nivel permite.",
     ["Uses your soulstone. Without one in your bags the same button creates one."] = "Usa tu piedra de alma. Si no llevas ninguna en las bolsas, el mismo botón crea una.",
     ["Uses the best mana gem in your bags. Without one the same button conjures one."] = "Usa la mejor gema de maná de tus bolsas. Si no llevas ninguna, el mismo botón conjura una.",
+    ["Spellstone"] = "Piedra de hechizo",
+    ["Firestone"] = "Piedra de fuego",
+    ["Puts your best spellstone on your weapon. Without one in your bags the same button creates one."] = "Aplica tu mejor piedra de hechizo a tu arma. Si no llevas ninguna en las bolsas, el mismo botón crea una.",
+    ["Puts your best firestone on your weapon. Without one in your bags the same button creates one."] = "Aplica tu mejor piedra de fuego a tu arma. Si no llevas ninguna en las bolsas, el mismo botón crea una.",
 }
 
 ns:RegisterLocale("esES", T)

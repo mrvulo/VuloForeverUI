@@ -247,7 +247,7 @@ local mod = ns:RegisterModule("qol", {
         -- (Macros.lua). All off: a macro takes one of the character's slots.
         macros = {
             food = false, drink = false, stone = false, heal = false, mana = false,
-            soul = false, gem = false,
+            soul = false, spell = false, fire = false, gem = false,
         },
     },
 })
