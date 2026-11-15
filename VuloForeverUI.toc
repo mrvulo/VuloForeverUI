@@ -235,6 +235,7 @@ Modules\QoL\Loot.lua
 Modules\QoL\Display.lua
 Modules\QoL\Trinkets.lua
 Modules\QoL\TrinketFlyout.lua
+Modules\QoL\Macros.lua
 Modules\QoL\Gold.lua
 Modules\QoL\TradeCheck.lua
 Modules\QoL\Options.lua

@@ -524,7 +524,32 @@ local function professionsPage()
     }
 end
 
+-- ---------------------------------------------------------------- macros --
+
+-- One pair per macro this character can use: the switch, and beside it the
+-- button that puts the macro on the cursor.
+local function macrosPage()
+    local M = QoL.Macros
+    local page = {
+        { type = "header", text = L["Macro factory"] },
+        { type = "desc", text = L["|cffaaaaaaMacros this addon writes into your character's macro list and keeps up to date: each one uses the best item of its kind that is in your bags and that your level allows. Tick a macro, take it onto the cursor and drop it on an action bar; from then on the button changes by itself. Macros are rewritten out of combat only. Unticking deletes the macro.|r"] },
+    }
+    for _, def in ipairs(M.DEFS) do
+        if M.Fits(def) then
+            page[#page + 1] = { type = "toggle", label = L[def.label],
+                tooltip = L[def.tip] .. "\n" .. L["Name in the macro list: %s"]:format(def.name),
+                get = function() return QoL.db().macros[def.key] end,
+                set = function(_, v) M.Set(def.key, v); apply() end }
+            page[#page + 1] = { type = "button", label = L["%s: onto the cursor"]:format(L[def.label]), width = 240,
+                tooltip = L["Puts the macro on your cursor: click a slot on an action bar to place it. Out of combat only."],
+                onClick = function() M.Pickup(def.key) end }
+        end
+    end
+    return page
+end
+
 function mod:GetOptions(tabId)
+    if tabId == "macros" then return macrosPage() end
     if tabId == "professions" then return professionsPage() end
     if tabId == "fishing" then return fishingPage() end
     if tabId == "gold"    then return goldPage() end

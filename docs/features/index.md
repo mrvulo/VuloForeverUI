@@ -79,6 +79,7 @@ jemand ohne den Code prüfen kann.
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
+| F-65 | Makro-Fabrik: Essen, Trinken, Gesundheitsstein, Tränke, Seelenstein, Manaedelstein als Makros, die Stufe und Taschen folgen | Komfort | gebaut | – |
 | F-64 | Erinnerungen: Essen per Rechtsklick aus den Taschen wählen | Erinnerungen | gebaut | – |
 | F-63 | Goldprüfung: zwei Charaktere nebeneinander vergleichen | Komfort | gebaut | – |
 | F-62 | Reit-Schmuckstück: beim Aufsitzen anlegen, beim Absitzen das vorherige zurück | Komfort | gebaut | – |
@@ -470,6 +471,18 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du „Automatisch“ wählst, **dann** gilt wieder die Empfehlung der Rolle. Die Wahl gilt pro Charakter.
 - **Dann** nennt der Tooltip der Essens-Erinnerung den Rechtsklick; ein Rechtsklick auf andere Erinnerungen tut nichts.
 - Bekannte Grenze: Das Spiel führt Speisen und Getränke in einer Gruppe, im Menü stehen deshalb auch Getränke. Als satt gilt weiterhin nur ein Essens-Buff, den die Erinnerung kennt (Satt und die vier benannten); nach anderem Essen bleibt das Symbol stehen.
+
+### F-65 Makro-Fabrik
+- **Angenommen** Komfort ist an, **wenn** du unter Komfort → Makros einen Haken setzt (z. B. „Essen“), **dann** steht in der Makroliste deines Charakters ein Makro „VF Food“ (weitere: VF Drink, VF Stone, VF Heal, VF Mana, VF Soul, VF Gem); der Knopf daneben legt es auf den Mauszeiger, ein Klick auf einen Leistenplatz legt es ab.
+- **Angenommen** das Makro liegt auf einer Leiste, **dann** zeigt der Knopf Symbol, Anzahl und Tooltip des besten Gegenstands seiner Art, der in den Taschen liegt und den deine Stufe erlaubt, und ein Klick benutzt ihn.
+- **Wenn** du etwas Besseres kaufst, den Stapel aufbrauchst oder eine Stufe aufsteigst, **dann** wechselt der Knopf außerhalb des Kampfes von selbst auf den nun besten Gegenstand; im Kampf erst nach dem Kampf.
+- **Angenommen** nichts Passendes ist mehr in den Taschen, **dann** zeigt der Knopf weiter den letzten Gegenstand mit Anzahl 0.
+- **Angenommen** du hast Buff-Essen und gewöhnliches Essen dabei, **dann** isst „Essen“ das gewöhnliche; das Buff-Essen erst, wenn sonst nichts da ist.
+- **Angenommen** du bist Hexenmeister ohne Gesundheitsstein (Seelenstein) bzw. Magier ohne Manaedelstein, **dann** wirkt derselbe Knopf den besten Herstellungszauber, den du kannst, und wird wieder zu „benutzen“, sobald der Stein in den Taschen liegt.
+- **Dann** sieht ein Krieger oder Schurke weder „Trinken“ noch „Manatrank“, nur ein Hexenmeister „Seelenstein“, nur ein Magier „Manaedelstein“.
+- **Wenn** du den Haken entfernst, **dann** ist das Makro gelöscht (auch von der Leiste). Modul aus oder Profilwechsel löscht nichts.
+- **Angenommen** alle 30 Charakter-Makroplätze sind belegt, **dann** meldet der Chat das einmal und es wird nichts angelegt.
+- Bekannte Grenzen: Stein- und Edelstein-IDs sowie die Namen der Herstellungszauber stammen aus den Classic-Tabellen, nicht aus diesem Client gemessen. Essen und Trinken erkennt das Makro am Namen des Benutzen-Effekts („Essen“/„Trinken“); heißt er in diesem Client anders, bleibt das Makro leer. Der Magier-Knopf beschwört nur, wenn gar kein Edelstein da ist.
 
 ## Offen
 

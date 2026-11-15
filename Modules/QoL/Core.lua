@@ -241,6 +241,14 @@ local mod = ns:RegisterModule("qol", {
             x = 0, y = -120, scale = 1,
         },
         mapCoordsSize = 12,
+
+        -- ----------------------------------------------------------- macros
+        -- Which macros the factory keeps in the character's macro list
+        -- (Macros.lua). All off: a macro takes one of the character's slots.
+        macros = {
+            food = false, drink = false, stone = false, heal = false, mana = false,
+            soul = false, gem = false,
+        },
     },
 })
 QoL.mod = mod
@@ -275,6 +283,7 @@ mod.tabs = {
     { id = "loot",    label = "Loot" },
     { id = "display", label = "Display" },
     { id = "trinkets", label = "Trinkets" },
+    { id = "macros",  label = "Macros" },
     { id = "gold",    label = "Gold" },
     { id = "fishing", label = "Fishing" },
     { id = "professions", label = "Professions" },

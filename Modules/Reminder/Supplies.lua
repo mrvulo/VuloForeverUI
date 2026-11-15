@@ -15,6 +15,8 @@
 --   class    only for these classes;  noClass: never for these
 --   weapon   "edge" / "blunt": only for that kind of main-hand weapon
 --   from     not before this character level (end-game items with no level)
+--   kind     "heal" / "mana": the two potion chains the macro factory reads
+--            (Modules/QoL/Macros.lua)
 local _, ns = ...
 local L = ns.L
 local R = ns.Reminder
@@ -114,8 +116,8 @@ R.SUPPLIES = {
     { cat = "other", from = 50, roles = set(T), items = { { 8411, 0 } } },                      -- Lung Juice Cocktail
 
     -- potions
-    { cat = "potion", items = { { 13446, 45 }, { 3928, 35 }, { 1710, 21 }, { 929, 12 }, { 858, 3 }, { 118, 1 } } },  -- healing
-    { cat = "potion", mana = true, items = {
+    { cat = "potion", kind = "heal", items = { { 13446, 45 }, { 3928, 35 }, { 1710, 21 }, { 929, 12 }, { 858, 3 }, { 118, 1 } } },  -- healing
+    { cat = "potion", kind = "mana", mana = true, items = {
         { 13444, 49 }, { 13443, 41 }, { 6149, 31 }, { 3827, 22 }, { 3385, 14 }, { 2455, 5 } } },                    -- mana
     { cat = "potion", class = set("WARRIOR"), items = { { 13442, 46 }, { 5633, 25 }, { 5631, 4 } } },                -- rage
     { cat = "potion", roles = set(T), items = { { 13455, 46 }, { 4623, 33 } } },                                    -- stoneshield
