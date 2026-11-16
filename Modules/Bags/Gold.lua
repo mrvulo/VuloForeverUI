@@ -54,8 +54,14 @@ end
 
 -- ---------------------------------------------------------------- record --
 
+-- Called when the module is enabled, on entering the world and on every coin
+-- that moves. Enabling happens at ADDON_LOADED, where the purse still answers
+-- 0: writing that down listed a character that logged in and moved no money
+-- with nothing, and made the whole purse this session's gain.
 function Gold.Record()
-    local money = GetMoney() or 0
+    if not ns.isInitialised then return end
+    local money = GetMoney()
+    if type(money) ~= "number" or not ns.CanRead(money) then return end
     if not startMoney then startMoney = money end
     lastMoney = money
 

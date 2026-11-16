@@ -13,7 +13,14 @@
 --
 -- Every PLAYER_MONEY compares the purse with the last one seen: up is earned,
 -- down is spent. Money does not move while you are offline, so the purse on
--- login only becomes the new reference, it is never counted.
+-- login only becomes the new reference, it is never counted. The balance is
+-- earned minus spent, nothing else: it must add up with the two lines above it.
+--
+-- THE PURSE IS EMPTY UNTIL LOGIN
+--
+-- Modules are enabled at ADDON_LOADED, and there GetMoney() answers 0. A day
+-- that started on that 0 showed the whole purse as its balance (seen
+-- 2026-11-16). Nothing here reads the purse before PLAYER_LOGIN.
 local _, ns = ...
 local L = ns.L
 
@@ -28,6 +35,7 @@ local function db() return QoL.db().gold end
 local function today() return date("%Y-%m-%d") end
 
 local function money()
+    if not ns.isInitialised then return nil end
     local m = GetMoney()
     if ns.CanRead(m) and type(m) == "number" then return m end
     return nil
@@ -41,7 +49,7 @@ local function store()
 end
 
 local function start(s, m)
-    s.day, s.start, s.last = today(), m, m
+    s.day, s.last, s.start = today(), m, nil
     s.earned, s.spent = 0, 0
 end
 
@@ -85,7 +93,7 @@ function Gold.SessionLines(text)
     if not Gold.Active() then return nil end
     local s, m = current()
     if not s then return nil end
-    local net = m - s.start
+    local net = s.earned - s.spent
     local lines = {
         { L["Today"], 1, 0.82, 0 },
         { L["Earned"], right = "|cff55ff55+" .. text(s.earned) .. "|r" },

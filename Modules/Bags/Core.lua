@@ -364,6 +364,7 @@ function mod:OnEnable()
         Bags.Slots.Warm()
         Bags.HookBlizzard()
         if Bags.Bank then Bags.Bank.Hook() end
+        Bags.Gold.Record()
         Bags.Tutorials.Hook()
         Bags.Tutorials.Update()
     end)

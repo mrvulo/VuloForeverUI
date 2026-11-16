@@ -79,6 +79,7 @@ jemand ohne den Code prüfen kann.
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
+| F-66 | Gold-Tooltip der Taschen: Tagesbilanz ist Verdient minus Ausgegeben, Charakterliste stimmt ab dem Einloggen | Taschen / Komfort | gebaut | – |
 | F-65 | Makro-Fabrik: Essen, Trinken, Gesundheitsstein, Tränke, Seelen-, Zauber- und Feuerstein, Manaedelstein als Makros, die Stufe und Taschen folgen | Komfort | gebaut | – |
 | F-64 | Erinnerungen: Essen per Rechtsklick aus den Taschen wählen | Erinnerungen | gebaut | – |
 | F-63 | Goldprüfung: zwei Charaktere nebeneinander vergleichen | Komfort | gebaut | – |
@@ -485,6 +486,12 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Angenommen** alle 30 Charakter-Makroplätze sind belegt, **dann** meldet der Chat das einmal und es wird nichts angelegt.
 - Bekannte Grenzen: Alle IDs und Effektnamen sind aus den Tabellen dieses Clients gelesen (Build 1.60.1.70938), im Spiel aber nicht ausprobiert. Offen ist vor allem, ob der Zauber- und Feuerstein nach „/use“ noch den Klick auf die Waffenhand braucht (das Makro schickt ihn mit, wie die Gift-Erinnerung) und ob „/cast Gesundheitsstein herstellen“ den höchsten Rang wirkt. Der Magier-Knopf beschwört nur, wenn gar kein Edelstein da ist.
 
+### F-66 Gold-Tooltip: Bilanz und Charakterliste
+- **Angenommen** „Gold des Tages verfolgen“ ist an, **wenn** du über die Geldzeile der Taschen fährst, **dann** ist „Bilanz“ genau „Verdient“ minus „Ausgegeben“ (grün mit Plus, rot mit Minus) und nie der ganze Geldbeutel.
+- **Wenn** du dich neu einloggst oder `/reload` machst, **dann** bleiben Verdient, Ausgegeben und Bilanz stehen; der erste Login eines neuen Kalendertages beginnt bei null.
+- **Angenommen** du loggst auf einen anderen Charakter ein und bewegst kein Geld, **wenn** du zurückwechselst und den Tooltip öffnest, **dann** steht dieser Charakter mit seinem echten Geldbetrag in der Liste, und „Gesamt“ zählt ihn mit.
+- Bekannte Grenze: Das Spiel gibt einem Addon nur den Geldbeutel des eingeloggten Charakters. Ein Charakter erscheint in der Liste, sobald er einmal mit dem Addon (Taschen-Modul an) eingeloggt war, und zeigt den Stand seines letzten Logins.
+
 ## Offen
 
 - 2026-11-13 (Namensplaketten): fix built, NOT confirmed. Three screenshots
@@ -555,3 +562,6 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
   (F-57). Vermutete Ursache, im Spiel nicht gemessen: SetFont auf dem Feld
   über dem Schriftobjekt des Clients. Bleibt der Cursor falsch, liegt es
   woanders -- dann `/vfdiag fonts` und die Zeile im Rückkanal ansehen.
+- 2026-11-16: „Bilanz“ im Gold-Tooltip zeigte den ganzen Geldbeutel statt
+  Verdient minus Ausgegeben (F-66). Ursache: Der Tag begann bei ADDON_LOADED
+  mit einem Geldbeutel von 0. Behoben, im Spiel noch zu bestätigen.
