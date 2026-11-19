@@ -79,6 +79,7 @@ jemand ohne den Code prüfen kann.
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
+| F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
 | F-66 | Gold-Tooltip der Taschen: Tagesbilanz ist Verdient minus Ausgegeben, Charakterliste stimmt ab dem Einloggen | Taschen / Komfort | gebaut | – |
 | F-65 | Makro-Fabrik: Essen, Trinken, Gesundheitsstein, Tränke, Seelen-, Zauber- und Feuerstein, Manaedelstein als Makros, die Stufe und Taschen folgen | Komfort | gebaut | – |
 | F-64 | Erinnerungen: Essen per Rechtsklick aus den Taschen wählen | Erinnerungen | gebaut | – |
@@ -491,6 +492,14 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du dich neu einloggst oder `/reload` machst, **dann** bleiben Verdient, Ausgegeben und Bilanz stehen; der erste Login eines neuen Kalendertages beginnt bei null.
 - **Angenommen** du loggst auf einen anderen Charakter ein und bewegst kein Geld, **wenn** du zurückwechselst und den Tooltip öffnest, **dann** steht dieser Charakter mit seinem echten Geldbetrag in der Liste, und „Gesamt“ zählt ihn mit.
 - Bekannte Grenze: Das Spiel gibt einem Addon nur den Geldbeutel des eingeloggten Charakters. Ein Charakter erscheint in der Liste, sobald er einmal mit dem Addon (Taschen-Modul an) eingeloggt war, und zeigt den Stand seines letzten Logins.
+
+### F-67 Handwerkstaschen als eigene Abschnitte
+- **Angenommen** du trägst eine Handwerkstasche (Reagenzientasche im eigenen Platz, Kräuter-, Verzauberer-, Bergbautasche, Köcher, Seelentasche) und „Handwerkstaschen als eigene Abschnitte“ ist an, **wenn** du das Taschenfenster in der Kategorien-Ansicht oder in „Alle Taschen“ öffnest, **dann** stehen ihre Plätze nicht mehr in den Kategorien, nicht unter „Frei“ und nicht im großen Block, sondern darunter als eigener Abschnitt „Taschenname (frei/gesamt)“: volle und freie Plätze nebeneinander in Platzreihenfolge, über dem Schlüsselbund.
+- **Dann** tragen die Plätze dort dieselben Farben und Rahmen wie überall (Familienfarbe der Tasche, Qualitätsring), und das Fenster ist so breit wie vorher.
+- **Wenn** du den Taschen-Knopf in der Werkzeugzeile drückst (Symbol der Handwerkstasche), **dann** klappen die Abschnitte sofort ein bzw. aus; der Knopf ist golden, solange sie offen sind, und der Zustand bleibt nach `/reload`.
+- **Angenommen** die Abschnitte sind eingeklappt, **wenn** du etwas ins Suchfeld tippst, **dann** sind sie für die Dauer der Suche sichtbar, Treffer darin eingeschlossen.
+- **Wenn** du die Einstellung ausschaltest, **dann** liegen die Gegenstände sofort wieder in den Kategorien und der Knopf ist weg. Ohne Handwerkstasche gibt es weder Knopf noch Abschnitt.
+- **Dann** bleiben „Pro Tasche“ und das Bankfenster unverändert; Sortieren, die Zahl freier Plätze in der Kopfzeile und der Taschen-voll-Helfer rechnen wie bisher.
 
 ## Offen
 

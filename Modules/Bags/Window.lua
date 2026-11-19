@@ -194,6 +194,10 @@ local function build(win)
     -- one the client's own keyring frame wears.
     f.keyring = toolButton(f, "Interface\\Icons\\ui-hud-actionbar-keyring", "icon",
         L["Show the keyring"], function() Bags.Keyring.Toggle() end)
+    -- The profession bags' blocks, folded and unfolded (Special.lua). The
+    -- face is the bag's own icon, set whenever the tool row is laid out.
+    f.special = toolButton(f, "Interface\\Icons\\INV_Misc_Bag_08", "icon",
+        L["Show the profession bags"], function() Bags.Special.Toggle() end)
     -- The bank as it was at the last visit, from anywhere (BankView.lua).
     f.bankView = toolButton(f, "Interface\\Icons\\INV_Misc_Coin_02", "icon", L["Show the bank"], function() Bags.BankView.Toggle() end)
     -- The bag settings, one click away from the bags themselves. Always shown:
@@ -569,7 +573,7 @@ end
 -- of the bag that is equipped there.
 function Window.BagLabel(key)
     if key == "allbags" then return L["Bags"] end
-    local bag = tonumber(key:match("^bagsec:(%-?%d+)$"))
+    local bag = tonumber(key:match("^%a+:(%-?%d+)$"))
     if bag == 0 then return L["Backpack"] end
     local name = bag and C_Container.GetBagName and C_Container.GetBagName(bag)
     if type(name) == "string" and name ~= "" then return name end
@@ -585,6 +589,16 @@ function Window.Layout(win)
     local grouped = Bags.Categories.Grouped(rules)
     local bagIDs = win.bags()
     local items, empty = collect(bagIDs)
+    local view = win.view or "all"
+    -- Profession bags leave the shelves and stand underneath as blocks of
+    -- their own (Special.lua). Taken out before anything is merged or
+    -- shelved; the column count still reckons with every slot.
+    local specials, specialSlots = nil, 0
+    if Bags.Special.Applies(win, view) then
+        local before = #items + #empty
+        items, empty, specials = Bags.Special.Split(win, items, empty)
+        specialSlots = before - #items - #empty
+    end
     -- The physical views need every stack in its own slot, so they take the
     -- list before any merging.
     local rawItems = items
@@ -593,7 +607,6 @@ function Window.Layout(win)
     -- The view. A bank tab view ("bag:6") is a filter on the CONTAINER and is
     -- applied before the shelves are built, because it is a different question
     -- from which shelf something belongs on.
-    local view = win.view or "all"
     local onlyBag = tostring(view):match("^bag:(%-?%d+)$")
     if onlyBag then
         onlyBag = tonumber(onlyBag)
@@ -678,6 +691,20 @@ function Window.Layout(win)
         order[#order + 1] = "free"
     end
 
+    -- The profession bags, one block each, while their button has them
+    -- unfolded -- and during a search in any case, so a hit is never hidden.
+    -- Onto a copy of `order` for the same reason as the keyring below.
+    local searching = type(win.filter) == "string" and win.filter ~= ""
+    if specials and (searching or Bags.Special.IsOpen()) then
+        local withBlocks = {}
+        for i, key in ipairs(order) do withBlocks[i] = key end
+        for _, block in ipairs(specials) do
+            withBlocks[#withBlocks + 1] = block.key
+            buckets[block.key] = block.list
+        end
+        order = withBlocks
+    end
+
     -- The keyring: a block of its own under everything else, in every view,
     -- while its button has it unfolded (Keyring.lua). Not a shelf: `order`
     -- may still be the very table the side bar lists (win.shelves), so the
@@ -698,7 +725,7 @@ function Window.Layout(win)
     local left    = PAD + (barW or 0)
     local size    = db.slotSize or 37
     local gap     = db.spacing or 4
-    local columns = db.autoSize and autoColumns(#items + #empty) or math.max(1, db.columns or 12)
+    local columns = db.autoSize and autoColumns(#items + #empty + specialSlots) or math.max(1, db.columns or 12)
     local width   = columns * size + (columns - 1) * gap + PAD * 2 + (barW or 0)
 
     Bags.Slots.Begin(win.key)
@@ -732,7 +759,7 @@ function Window.Layout(win)
             -- The free slots are in the header already; one block of all bags
             -- would only say the same thing again, the other way round.
             head:SetText(Window.BagLabel(key))
-        elseif key:match("^bagsec:") then
+        elseif key:match("^bagsec:") or key:match("^special:") then
             -- Per bag the same count as the header -- free of total -- so the
             -- two never read as different numbers for the same thing.
             local free = 0
@@ -880,11 +907,14 @@ end
 -- not be switched off again.
 local function toolSpecs(win, db)
     local f = win.frame
+    local specialIcon = Bags.Special.Icon(win)
+    if specialIcon then f.special.icon:SetTexture(specialIcon) end
     return {
         { button = f.sort,  on = db.showSortButton },
         { button = f.pin,   on = db.showPinned,    mode = "pin" },
         { button = f.split, on = db.stackSplitter, mode = "split" },
         { button = f.bagBar, on = win.key == "bags" or win.key == "bank", lit = win.showBagBar },
+        { button = f.special, on = Bags.Special.Has(win), lit = Bags.Special.IsOpen() },
         { button = f.keyring, on = Bags.Keyring.Has(win), lit = Bags.Keyring.IsOpen() },
         { button = f.bankView, on = win.key == "bags" },
         { button = f.options, on = true },

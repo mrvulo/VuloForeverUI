@@ -2479,4 +2479,7 @@ ns:RegisterLocale("ruRU", {
     ["Firestone"] = "Камень огня",
     ["Puts your best spellstone on your weapon. Without one in your bags the same button creates one."] = "Накладывает ваш лучший камень чар на оружие. Если его нет в сумках, та же кнопка создаёт его.",
     ["Puts your best firestone on your weapon. Without one in your bags the same button creates one."] = "Накладывает ваш лучший камень огня на оружие. Если его нет в сумках, та же кнопка создаёт его.",
+    ["Show the profession bags"] = "Показывать сумки профессий",
+    ["Profession bags as sections of their own"] = "Сумки профессий отдельными разделами",
+    ["A reagent bag, herb bag, quiver or other bag for one kind of thing leaves the categories and gets a section of its own underneath. The bag button in the window's tool row folds these sections away; a search unfolds them."] = "Сумка для реагентов, сумка травника, колчан или другая сумка для одного вида предметов уходит из категорий и получает ниже собственный раздел. Кнопка с сумкой в строке инструментов окна сворачивает эти разделы; поиск разворачивает их.",
 })

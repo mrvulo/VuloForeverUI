@@ -2442,4 +2442,7 @@ ns:RegisterLocale("ptBR", {
     ["Firestone"] = "Pedra de Fogo",
     ["Puts your best spellstone on your weapon. Without one in your bags the same button creates one."] = "Aplica a sua melhor Pedra de Feitiço na sua arma. Sem nenhuma nas bolsas, o mesmo botão cria uma.",
     ["Puts your best firestone on your weapon. Without one in your bags the same button creates one."] = "Aplica a sua melhor Pedra de Fogo na sua arma. Sem nenhuma nas bolsas, o mesmo botão cria uma.",
+    ["Show the profession bags"] = "Mostrar as bolsas de profissão",
+    ["Profession bags as sections of their own"] = "Bolsas de profissão em seções próprias",
+    ["A reagent bag, herb bag, quiver or other bag for one kind of thing leaves the categories and gets a section of its own underneath. The bag button in the window's tool row folds these sections away; a search unfolds them."] = "Uma bolsa de reagentes, de ervas, uma aljava ou outra bolsa para um só tipo de item sai das categorias e ganha uma seção própria logo abaixo. O botão de bolsa na fileira de ferramentas da janela recolhe essas seções; uma busca as abre.",
 })

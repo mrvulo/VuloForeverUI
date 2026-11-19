@@ -101,6 +101,8 @@ local mod = ns:RegisterModule("bags", {
         showBagBar     = false,
         showKeyring    = true,      -- the keyring as a section of the bag window (Keyring.lua)
         keyringOpen    = true,
+        specialSection = true,      -- profession bags as blocks of their own (Special.lua)
+        specialOpen    = true,
         bankShowBagBar = false,
         recentColor    = { r = 0.3, g = 0.8, b = 1 },
         recentMinutes  = 5,

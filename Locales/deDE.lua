@@ -2479,4 +2479,7 @@ ns:RegisterLocale("deDE", {
     ["Firestone"] = "Feuerstein",
     ["Puts your best spellstone on your weapon. Without one in your bags the same button creates one."] = "Legt deinen besten Zauberstein auf deine Waffe. Liegt keiner in den Taschen, stellt derselbe Knopf einen her.",
     ["Puts your best firestone on your weapon. Without one in your bags the same button creates one."] = "Legt deinen besten Feuerstein auf deine Waffe. Liegt keiner in den Taschen, stellt derselbe Knopf einen her.",
+    ["Show the profession bags"] = "Handwerkstaschen anzeigen",
+    ["Profession bags as sections of their own"] = "Handwerkstaschen als eigene Abschnitte",
+    ["A reagent bag, herb bag, quiver or other bag for one kind of thing leaves the categories and gets a section of its own underneath. The bag button in the window's tool row folds these sections away; a search unfolds them."] = "Eine Reagenzientasche, Kräutertasche, ein Köcher oder eine andere Tasche für nur eine Art von Gegenständen verlässt die Kategorien und bekommt darunter einen eigenen Abschnitt. Der Taschen-Knopf in der Werkzeugzeile des Fensters klappt diese Abschnitte weg; eine Suche klappt sie auf.",
 })

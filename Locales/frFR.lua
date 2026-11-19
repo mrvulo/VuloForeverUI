@@ -2479,4 +2479,7 @@ ns:RegisterLocale("frFR", {
     ["Firestone"] = "Pierre de feu",
     ["Puts your best spellstone on your weapon. Without one in your bags the same button creates one."] = "Applique votre meilleure pierre de sort sur votre arme. Sans pierre dans vos sacs, le même bouton en crée une.",
     ["Puts your best firestone on your weapon. Without one in your bags the same button creates one."] = "Applique votre meilleure pierre de feu sur votre arme. Sans pierre dans vos sacs, le même bouton en crée une.",
+    ["Show the profession bags"] = "Afficher les sacs de métier",
+    ["Profession bags as sections of their own"] = "Sacs de métier dans leurs propres sections",
+    ["A reagent bag, herb bag, quiver or other bag for one kind of thing leaves the categories and gets a section of its own underneath. The bag button in the window's tool row folds these sections away; a search unfolds them."] = "Un sac de composants, un sac d'herbes, un carquois ou tout autre sac réservé à un seul type d'objets quitte les catégories et reçoit en dessous sa propre section. Le bouton de sac de la rangée d'outils de la fenêtre replie ces sections ; une recherche les déplie.",
 })

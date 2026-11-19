@@ -2479,6 +2479,9 @@ local T = {
     ["Firestone"] = "Piedra de fuego",
     ["Puts your best spellstone on your weapon. Without one in your bags the same button creates one."] = "Aplica tu mejor piedra de hechizo a tu arma. Si no llevas ninguna en las bolsas, el mismo botón crea una.",
     ["Puts your best firestone on your weapon. Without one in your bags the same button creates one."] = "Aplica tu mejor piedra de fuego a tu arma. Si no llevas ninguna en las bolsas, el mismo botón crea una.",
+    ["Show the profession bags"] = "Mostrar las bolsas de profesión",
+    ["Profession bags as sections of their own"] = "Bolsas de profesión en secciones propias",
+    ["A reagent bag, herb bag, quiver or other bag for one kind of thing leaves the categories and gets a section of its own underneath. The bag button in the window's tool row folds these sections away; a search unfolds them."] = "Una bolsa de componentes, de hierbas, un carcaj u otra bolsa para un solo tipo de objetos sale de las categorías y recibe debajo una sección propia. El botón de bolsa de la fila de herramientas de la ventana pliega estas secciones; una búsqueda las despliega.",
 }
 
 ns:RegisterLocale("esES", T)

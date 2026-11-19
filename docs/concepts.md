@@ -174,6 +174,17 @@ These apply to every visible change, in every module.
   keyring: no button, no section. The keyring is NOT part of
   `ns.CarriedBags()`: free-slot counts, sorting, junk selling and the full
   helper never see it.
+- **Profession bags** (`Special.lua`, `specialSection`, `specialOpen`; F-67,
+  the player's wish 2026-11-19): a bag for one kind of thing -- the reagent
+  bag's slot always, any other bag the slots tint by family -- leaves the
+  shelves, the "Free" block and the "all bags" block and gets a section of
+  its own underneath (above the keyring): its slots in bag order, full and
+  free side by side, headed by the bag's name and free/total. One button in
+  the tool row (the bag's own icon) folds all of these sections; a search
+  shows them regardless, so a hit is never hidden. Colours and frames stay
+  the window's own (family tint, quality ring). "Per bag" and a bank tab view
+  are untouched; the bank window has no such sections. The auto column count
+  still reckons with every slot, so the window keeps its width.
 - **Client tutorials** that wait for the client's bag frame (reagent bag step
   1 and 2) are faded out while the takeover is on (`Tutorials.lua`).
 

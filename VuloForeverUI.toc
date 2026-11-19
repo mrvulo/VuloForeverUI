@@ -215,6 +215,7 @@ Modules\Bags\Slots.lua
 Modules\Bags\Sidebar.lua
 Modules\Bags\BagBar.lua
 Modules\Bags\Keyring.lua
+Modules\Bags\Special.lua
 Modules\Bags\Window.lua
 Modules\Bags\Bank.lua
 Modules\Bags\BankView.lua

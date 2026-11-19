@@ -179,6 +179,8 @@ local function bagsPage()
             L["Pinned items get a shelf of their own. The pin button in the window's tool row sets them."]),
         toggle("showKeyring", L["Show the keyring"],
             L["Your keys get a section of their own at the bottom of the bag window. The key button in the window's tool row folds it away."]),
+        toggle("specialSection", L["Profession bags as sections of their own"],
+            L["A reagent bag, herb bag, quiver or other bag for one kind of thing leaves the categories and gets a section of its own underneath. The bag button in the window's tool row folds these sections away; a search unfolds them."]),
         toggle("contextFade", L["Fade what cannot be used here"],
             L["At a merchant, items it pays nothing for are faded; at the mailbox, a trade or the auction house, soulbound items."]),
         toggle("showRecent", L["Show recent items"],
