@@ -1071,7 +1071,7 @@ ns:RegisterLocale("frFR", {
     ["Whisper sound"] = "Son de chuchotement",
     ["Keep the last lines across a reload"] = "Conserver les dernières lignes après un rechargement",
     ["How many lines per tab"] = "Combien de lignes par onglet",
-    ["|cffaaaaaaKept per character, and only what was said in the open world: inside an instance the client hands chat over as secrets, which cannot be stored. Links in a restored line are text, not links.|r"] = "|cffaaaaaaConservées par personnage, et uniquement ce qui a été dit dans le monde ouvert : en instance, le client transmet le chat comme secret, ce qui ne peut pas être stocké. Les liens dans une ligne restaurée sont du texte, pas des liens.|r",
+    ["|cffaaaaaaKept per character, and only what was said in the open world: inside an instance the client hands chat over as secrets, which cannot be stored. Links in a restored line are text; a player's name in one can still be clicked to whisper.|r"] = "|cffaaaaaaConservées par personnage, et uniquement ce qui a été dit dans le monde ouvert : en instance, le client transmet le chat comme secret, ce qui ne peut pas être stocké. Les liens dans une ligne restaurée sont du texte ; on peut tout de même cliquer sur le nom d'un joueur pour lui chuchoter.|r",
     ["Forget the stored lines"] = "Oublier les lignes stockées",
     ["The stored chat lines are gone."] = "Les lignes de chat stockées ont disparu.",
     ["There is nothing in this window to copy."] = "Il n'y a rien à copier dans cette fenêtre.",

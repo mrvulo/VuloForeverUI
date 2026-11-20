@@ -164,7 +164,7 @@ local function chatPage()
           set = function(_, v) Chat.db().history = v; apply() end,
           subOptions = {
               slider("historyLines", L["How many lines per tab"], 10, 500, 10),
-              { type = "desc", text = L["|cffaaaaaaKept per character, and only what was said in the open world: inside an instance the client hands chat over as secrets, which cannot be stored. Links in a restored line are text, not links.|r"] },
+              { type = "desc", text = L["|cffaaaaaaKept per character, and only what was said in the open world: inside an instance the client hands chat over as secrets, which cannot be stored. Links in a restored line are text; a player's name in one can still be clicked to whisper.|r"] },
               { type = "button", label = L["Forget the stored lines"],
                 onClick = function()
                     Chat.History.Clear()

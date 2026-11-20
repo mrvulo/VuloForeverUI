@@ -1071,7 +1071,7 @@ ns:RegisterLocale("ruRU", {
     ["Whisper sound"] = "Звук шепота",
     ["Keep the last lines across a reload"] = "Сохранять последние строки после перезагрузки",
     ["How many lines per tab"] = "Сколько строк на вкладку",
-    ["|cffaaaaaaKept per character, and only what was said in the open world: inside an instance the client hands chat over as secrets, which cannot be stored. Links in a restored line are text, not links.|r"] = "|cffaaaaaaСохраняется для каждого персонажа и только то, что сказано в открытом мире: в подземелье клиент отдает чат как скрытые значения, которые нельзя сохранить. Ссылки в восстановленной строке — просто текст, а не ссылки.|r",
+    ["|cffaaaaaaKept per character, and only what was said in the open world: inside an instance the client hands chat over as secrets, which cannot be stored. Links in a restored line are text; a player's name in one can still be clicked to whisper.|r"] = "|cffaaaaaaСохраняется для каждого персонажа и только то, что сказано в открытом мире: в подземелье клиент отдает чат как скрытые значения, которые нельзя сохранить. Ссылки в восстановленной строке — просто текст; по имени игрока в ней всё же можно щёлкнуть, чтобы написать ему шёпотом.|r",
     ["Forget the stored lines"] = "Забыть сохраненные строки",
     ["The stored chat lines are gone."] = "Сохраненные строки чата удалены.",
     ["There is nothing in this window to copy."] = "В этом окне нечего копировать.",

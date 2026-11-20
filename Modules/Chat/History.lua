@@ -34,6 +34,12 @@
 -- where hyperlink clicks come from, and we cannot put a line into it without
 -- calling into its secure side -- so a link in a replayed line is text, not a
 -- link. That is the honest trade for having the text at all.
+--
+-- A PLAYER'S NAME is the one exception, and it is ours, not the client's
+-- (F-70, "names" below): a left click on the name in a replayed line opens a
+-- whisper to that player. The click is read off our own surface -- which line
+-- and which character lie under the mouse -- and nothing is written into the
+-- client's chat frame.
 local _, ns = ...
 local L = ns.L
 local Chat = ns.Chat
@@ -42,6 +48,11 @@ local History = {}
 Chat.History = History
 
 local MAX_TEXT = 4096
+
+-- Rides along with every replayed line as its extra data (the message frame
+-- keeps whatever follows the colour), so a line on screen can be told from
+-- the session's own, whose links are the client's business.
+local OLD = "vfui-old"
 
 -- Per character, not per profile: the conversation belongs to the character
 -- who had it. Saved as { v = 2, windows = { [id] = { name, lines } } }.
@@ -153,7 +164,7 @@ function History.Write(cf)
         if type(entry) == "table" and type(entry.text) == "string" then
             -- As it was captured: a line the client stamped carries that
             -- stamp in its text, with the time it was said.
-            d.smf:AddMessage(entry.text, 0.75, 0.75, 0.75)
+            d.smf:AddMessage(entry.text, 0.75, 0.75, 0.75, OLD)
             count = count + 1
         end
     end
@@ -163,6 +174,105 @@ function History.Write(cf)
     -- lower than ours by exactly this many, and the bridge has to be told or
     -- it reads the difference as "the client cleared its window".
     d.extraLines = count + 2
+end
+
+-- ---------------------------------------------------------------- names --
+
+-- The player link that character `index` of a line's raw text falls into.
+local function playerAt(text, index)
+    local init = 1
+    while true do
+        local s, e, name = text:find("|Hplayer:([^:|]+)[^|]*|h.-|h", init)
+        if not s then return nil end
+        if index >= s and index <= e then return name end
+        init = e + 1
+    end
+end
+
+-- Is the click meant for the chat? Not when another window lies over it:
+-- then that window has the mouse, not the chat frame and not the world.
+-- Second value: what had the mouse, for the measurement note.
+local function chatHasMouse(cf, host)
+    if type(GetMouseFoci) ~= "function" then return true, "?" end
+    local top = GetMouseFoci()[1]
+    if not top then return true, "none" end
+    if top == WorldFrame then return true, "world" end
+    if top.IsForbidden and top:IsForbidden() then return false, "forbidden" end
+    local label = (top.GetName and top:GetName()) or "unnamed"
+    -- a frame that only watches the mouse move takes no click
+    if top.IsMouseClickEnabled and not top:IsMouseClickEnabled() then return true, label end
+    for _ = 1, 6 do
+        if top == cf or top == host then return true, label end
+        top = top.GetParent and top:GetParent()
+        if not top or (top.IsForbidden and top:IsForbidden()) then break end
+    end
+    return false, label
+end
+
+-- The replayed line under the mouse and the character in it, read off our
+-- own surface. Only lines that carry the OLD mark are asked anything: their
+-- text is the string we stored ourselves and never a secret.
+local function oldLineAt(smf)
+    if type(smf.visibleLines) ~= "table" then return nil end
+    local scale = ns.Num(smf:GetEffectiveScale(), 0)
+    if scale <= 0 then return nil end
+    local cx, cy = GetCursorPosition()
+    local x, y = cx / scale, cy / scale
+    for _, line in ipairs(smf.visibleLines) do
+        local info = line.messageInfo
+        local extra = type(info) == "table" and info.extraData
+        if type(extra) == "table" and ns.CanRead(extra[1]) and extra[1] == OLD and line:IsShown()
+            and type(info.message) == "string" and line.FindCharacterIndexAtCoordinate then
+            local index, inside = line:FindCharacterIndexAtCoordinate(x, y)
+            if ns.CanRead(index) and type(index) == "number" and ns.CanRead(inside) and inside then
+                return info.message, index
+            end
+        end
+    end
+    return nil
+end
+
+local downX, downY
+local measured = false
+
+function History.MouseDown(_, button)
+    if button ~= "LeftButton" then downX = nil; return end
+    downX, downY = GetCursorPosition()
+end
+
+-- Any release of the left button, wherever it lands: our surface takes no
+-- mouse (the click belongs to the client's text underneath), so this is
+-- where a click on it can be seen at all.
+function History.MouseUp(_, button)
+    if button ~= "LeftButton" or not downX then return end
+    local cx, cy = GetCursorPosition()
+    local moved = math.abs(cx - downX) > 4 or math.abs(cy - downY) > 4
+    downX = nil
+    if moved or not (Chat.mod.active and Chat.db().history) then return end
+    if IsModifierKeyDown() or IsMouselooking() then return end
+
+    for _, cf in ipairs(Chat.Frames()) do
+        local d = Chat.Owned(cf) and Chat.Data(cf)
+        local smf = d and d.extraLines and d.smf
+        if smf and smf:IsVisible() and smf:IsMouseOver() then
+            local ok, text, index = pcall(oldLineAt, smf)
+            if not (ok and text) then return end
+            local name = playerAt(text, index)
+            local free, under = chatHasMouse(cf, d.host)
+            -- Once per session, for the return channel: what the client's
+            -- "character under the mouse" counts in, and which frame has the
+            -- mouse over the chat text, were never measured.
+            if not measured and ns.Diag then
+                measured = true
+                ns.Diag.Note("chat", ("old line click: character %d of %d, name %s, mouse on %s (%s)")
+                    :format(index, #text, tostring(name), tostring(under), free and "ours" or "blocked"))
+            end
+            if name and free and ChatFrameUtil and ChatFrameUtil.SendTell then
+                ChatFrameUtil.SendTell(name, cf)
+            end
+            return
+        end
+    end
 end
 
 -- The client emptied this window (the player cleared the chat): the old

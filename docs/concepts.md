@@ -605,6 +605,13 @@ scaled together as one mover (`classes_priest`).
   held at the start of the session is ever replayed. A window the client
   emptied loses its old lines for the session (`History.Forget`). Still never
   stored: secret lines (instances), Battle.net tokens.
+- **A name in a replayed line can be clicked** (F-70, the player's wish
+  2026-11-20): left click opens a whisper to that player. The replayed lines
+  stay on our surface only; the click is seen through `GLOBAL_MOUSE_UP` and
+  placed with the surface's own `visibleLines` and
+  `FindCharacterIndexAtCoordinate`, and only lines carrying the `vfui-old`
+  mark (the message's extra data) are asked. Nothing is written into the
+  client's chat frame, and other links in old lines stay text.
 - **The input line** wears ONE plain font object of ours
   (`VuloForeverUIChatInputFont`), on the box and on the strings in front of
   the text (channel name, language tag, prompt), so both always have the same

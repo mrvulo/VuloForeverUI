@@ -269,6 +269,10 @@ function mod:OnEnable()
         end)
     end)
 
+    -- A click on a name in a line of the previous session (History.lua).
+    self:RegisterEvent("GLOBAL_MOUSE_DOWN", Chat.History.MouseDown)
+    self:RegisterEvent("GLOBAL_MOUSE_UP", Chat.History.MouseUp)
+
     self:RegisterEvent("UPDATE_CHAT_WINDOWS", function() Chat.Refresh() end)
     self:RegisterEvent("UPDATE_FLOATING_CHAT_WINDOWS", function() Chat.Refresh() end)
     self:RegisterEvent("UPDATE_CHAT_COLOR", function() Chat.Refresh() end)

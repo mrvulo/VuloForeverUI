@@ -79,6 +79,7 @@ jemand ohne den Code prüfen kann.
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
+| F-70 | Chat-Verlauf: Spielername in einer zurückgeholten Zeile anklicken und anflüstern | Chat | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -510,6 +511,14 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du danach eine Chat-Einstellung änderst, **dann** bleiben die zurückgeholten Zeilen stehen.
 - **Wenn** du „Gespeicherte Zeilen vergessen“ drückst, **dann** sind sie sofort aus allen Reitern weg.
 - Bekannte Grenzen: Battle.net-Flüstern und alles aus Instanzen, Raids und Schlachtfeldern wird nie gespeichert; Links in zurückgeholten Zeilen sind Text. Ein umbenannter Reiter beginnt mit leerem Verlauf. Zeilen aus der Zeit vor diesem Umbau stehen einmalig noch im ersten Reiter.
+
+### F-70 Name in alter Chat-Zeile anklicken
+- **Angenommen** „Letzte Zeilen über ein Neuladen retten“ ist an und in einem Reiter stehen nach `/reload` graue Zeilen der vorherigen Sitzung, **wenn** du dort mit links auf einen Spielernamen in eckigen Klammern klickst (z. B. `[Abunazir Jr]` in „… flüstert:“ oder „Zu …:“), **dann** öffnet sich die Eingabezeile mit einem Flüstern an genau diesen Spieler.
+- **Wenn** du neben den Namen klickst (Zeitstempel, Text, leere Fläche), **dann** passiert nichts.
+- **Dann** verhalten sich Namen und Links in den Zeilen der laufenden Sitzung (unter „--- diese Sitzung ---“) wie bisher, auch mit Shift und Rechtsklick.
+- **Wenn** ein anderes Fenster über dem Chat liegt, du die Maus beim Klick ziehst oder Shift/Strg/Alt hältst, **dann** öffnet sich kein Flüstern.
+- **Angenommen** der Spieler ist offline, **dann** öffnet sich die Eingabezeile trotzdem; ob er da ist, sagt erst das Spiel beim Abschicken.
+- Bekannte Grenzen: nur Linksklick, kein Rechtsklick-Menü; Gegenstands- und andere Links in alten Zeilen bleiben Text; die Maus zeigt über dem Namen keine Hand.
 
 ### F-69 Fenster des Spiels verschieben
 - **Angenommen** „Fenster des Spiels verschieben“ ist an, **wenn** du ein Fenster des Spiels (Charakter, Zauberbuch/Talente, Berufe, Karte, Händler, Post, Handel, Auktionshaus, Lehrer, Freunde, Gilde, Sammlungen, Erfolge, Kalender, Betrachten, Anprobe, Makros, Addon-Liste u. a.) an der Titelleiste mit der linken Maustaste ziehst, **dann** folgt es der Maus und bleibt beim Loslassen dort stehen; es lässt sich nicht aus dem Bildschirm schieben.
