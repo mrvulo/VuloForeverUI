@@ -343,6 +343,17 @@ local function categoriesPage()
         { type = "desc", text = L["Your own categories, each made from a search -- the same words the search box understands (hover it for the list). They come before the built-in categories, in this order; an item that fits two goes to the first. They show while \"Sort into categories\" is on."] },
     }
 
+    -- A category that is the default view and is renamed or removed here
+    -- left the bags opening on a view that no longer exists: only "Free".
+    local function keepDefaultView()
+        local d = Bags.db()
+        for _, v in ipairs(Bags.Categories.ViewValues()) do
+            if v.value == d.defaultView then return end
+        end
+        d.defaultView = "all"
+        if Bags.Window then Bags.Window.view = "all" end
+    end
+
     for i, c in ipairs(list) do
         local entry = c
         items[#items + 1] = { type = "header", text = entry.name }
@@ -352,6 +363,7 @@ local function categoriesPage()
                 v = trim(v)
                 if v == "" or nameTaken(list, v, i) then rebuildCategories(); return end
                 entry.name = v
+                keepDefaultView()
                 Bags.Refresh()
                 rebuildCategories()
             end }
@@ -372,6 +384,7 @@ local function categoriesPage()
         items[#items + 1] = { type = "button", label = L["Remove"], width = 140,
             onClick = function()
                 table.remove(list, i)
+                keepDefaultView()
                 Bags.Refresh()
                 rebuildCategories()
             end }

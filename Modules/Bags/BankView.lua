@@ -98,7 +98,6 @@ end)
 -- ---------------------------------------------------------------- window --
 
 local function build()
-    local db = Bags.db()
     local f = CreateFrame("Frame", "VuloForeverUIBankView", UIParent)
     f:SetFrameStrata("HIGH")
     f:SetToplevel(true)
@@ -107,7 +106,8 @@ local function build()
     f:SetClampedToScreen(true)
     f:RegisterForDrag("LeftButton")
     f:SetScript("OnDragStart", function(self)
-        if db.moveWithoutShift or IsShiftKeyDown() then self:StartMoving() end
+        -- asked now: a profile switch puts another table behind Bags.db()
+        if Bags.db().moveWithoutShift or IsShiftKeyDown() then self:StartMoving() end
     end)
     -- Remembered now, in the same shape as the bag windows' own place.
     f:SetScript("OnDragStop", function(self)
@@ -161,7 +161,7 @@ local function build()
 
     f.heads, f.slots = {}, {}
     BankView.frame = f
-    f:SetScale(db.scale or 1)
+    f:SetScale(Bags.db().scale or 1)
     BankView.Place()
     return f
 end

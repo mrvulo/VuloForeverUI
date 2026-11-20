@@ -179,7 +179,8 @@ local function onClick(self)
     if self.kind == "empty" then return end
     local win, key = self.win, "bag:" .. self.bag
     if win.view == key then
-        win.view = Bags.db().defaultView or "all"
+        -- the default view is the bags' own setting; the bank opens on all
+        win.view = (win.key == "bags") and (Bags.db().defaultView or "all") or "all"
     else
         win.view = key
     end
