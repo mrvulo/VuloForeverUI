@@ -121,6 +121,10 @@ function MF.BuildFrameTimeReadout(f, titleBar, version)
     end)
     f:HookScript("OnHide", function()
         if cpuTicker then cpuTicker:Cancel(); cpuTicker = nil end
+        -- Both hang on UIParent, not on this window: left open they stayed on
+        -- screen and still wrote the setting of a page nobody sees.
+        if UI.CloseDropdownPopup then UI.CloseDropdownPopup() end
+        if UI.CloseRowPopup then UI.CloseRowPopup() end
         for _, fn in ipairs(UI._mainHideHooks) do fn() end
     end)
     return cpuText
@@ -152,7 +156,11 @@ function MF.BuildBottomBar(f)
         tooltip = L["Resets all settings of the current module to defaults."],
         onClick = function()
             if not UI.currentModule then return end
-            local mod = ns.modules[UI.currentModule]
+            -- A sub-module shows as a TAB of its container's page; the button
+            -- means the page on screen, not the container behind it.
+            local tabMod = UI.currentTab and ns.modules[UI.currentTab]
+            local mod = (tabMod and tabMod.parentTab == UI.currentModule and tabMod)
+                or ns.modules[UI.currentModule]
             if not mod then return end
             for k, v in pairs(mod.defaults or {}) do
                 if type(v) == "table" then

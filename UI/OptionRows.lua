@@ -31,6 +31,8 @@ function ns.OptionRows(db, apply, opts)
     local function changed(extra)
         local after = extra and extra.after
         if after then after() elseif apply then apply() end
+        local UI = ns.UI
+        if UI and UI.RefreshDisabledRows then UI.RefreshDisabledRows() end
     end
 
     -- The fields every row type shares, copied from `extra` onto the row.

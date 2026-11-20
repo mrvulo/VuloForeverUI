@@ -8,8 +8,13 @@ local FONT_PATH, clean, attachTooltip = W.FONT_PATH, W.clean, W.attachTooltip
 
 -- EditBox config: { label?, tooltip?, get, set, numeric?, width?, editWidth?, commitOnFocusLost?, onEnter? }
 local function editboxSetup(container, config)
-    container._vcConfig = config
     local label, eb = container._labelFS, container._editBox
+    -- Before the new config, and with none set: a box still focused from the
+    -- row it served until now must not commit that text to the new row, and
+    -- no setter may run from inside a page build.
+    container._vcConfig = nil
+    eb:ClearFocus()
+    container._vcConfig = config
     eb:ClearAllPoints(); label:ClearAllPoints()
     label:SetJustifyH("LEFT"); label:SetWordWrap(false)
 
@@ -78,7 +83,7 @@ function UI:CreateEditBox(parent, config)
         end
         -- opt-in: an adjacent button steals focus before its OnClick, so commit here too
         local cfg = container._vcConfig
-        if cfg and cfg.commitOnFocusLost then
+        if cfg and cfg.commitOnFocusLost and not self._vfuiCommitted then
             local v = self:GetText()
             if cfg.numeric then v = tonumber(v) end
             cfg.set(self, v)
@@ -91,7 +96,9 @@ function UI:CreateEditBox(parent, config)
         local v = self:GetText()
         if cfg.numeric then v = tonumber(v) end
         cfg.set(self, v)
+        self._vfuiCommitted = true   -- Enter has saved it; losing the focus must not save it again
         self:ClearFocus()
+        self._vfuiCommitted = nil
         if cfg.onEnter then cfg.onEnter(v) end
     end)
     eb:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
@@ -156,10 +163,11 @@ function UI:CreateColorSwatch(parent, config)
         local c = cfg and cfg.get and cfg.get()
         ns:ShowColorPicker({ r = r, g = g, b = bl, a = c and (c.a or c[4]) or 1,
             hasAlpha = cfg and cfg.hasAlpha,
+            -- The row that opened the picker, not the one this pooled
+            -- swatch serves by the time the colour arrives.
             onChange = function(nr, ng, nb, na)
-                local cur = b._vcConfig
-                if cur and cur.set then cur.set(nr, ng, nb, na) end
-                refresh()
+                if cfg and cfg.set then cfg.set(nr, ng, nb, na) end
+                if b._vcConfig == cfg then refresh() end
             end })
     end
     b:SetScript("OnClick", open)

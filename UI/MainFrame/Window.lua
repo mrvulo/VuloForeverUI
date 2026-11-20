@@ -66,6 +66,7 @@ function UI:SetMainFrameScale(v)
     if not f then return end
     if UI.CloseRowPopup then UI:CloseRowPopup() end
     f:SetScale(UI:MainFrameScale())
+    ns.RefreshPixels()   -- FitMainFrame below finds the scale already set
     -- A rebuild only when the window actually changed SIZE, which happens where
     -- the screen was cutting it off: the rows are laid out against that width.
     -- Next frame, not here: the rebuild reclaims the very slider whose drag is

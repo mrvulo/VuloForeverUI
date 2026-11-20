@@ -523,9 +523,26 @@ local function applyDisabled(w, item)
             f._vfuiMouseWas = nil
         end
     end
-    mouse(w)
-    if w.GetChildren then
-        for _, c in ipairs({ w:GetChildren() }) do mouse(c) end
+    -- Every level: a slider's step buttons and its value box sit under the
+    -- slider, a segmented row's buttons under its strip.
+    local function walk(f)
+        mouse(f)
+        if f.GetChildren then
+            for _, c in ipairs({ f:GetChildren() }) do walk(c) end
+        end
+    end
+    walk(w)
+end
+
+-- The rows on the page whose `disabled` depends on another setting. Weak: a
+-- widget back in the pool is nobody's row.
+local conditional = setmetatable({}, { __mode = "k" })
+
+-- After any setting changed: the switch a row depends on usually does not
+-- rebuild the page, and the row stayed open (or locked) until the next visit.
+function UI.RefreshDisabledRows()
+    for w, item in pairs(conditional) do
+        if w:IsVisible() then applyDisabled(w, item) end
     end
 end
 
@@ -537,6 +554,7 @@ OB.createWidget = function(parent, item)
     local w, h, wide = rawCreateWidget(parent, item)
     applyOverrideMark(w, item)
     applyDisabled(w, item)
+    if w then conditional[w] = item.disabled and item or nil end
     return w, h, wide
 end
 
