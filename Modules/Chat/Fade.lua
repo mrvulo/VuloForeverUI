@@ -137,6 +137,8 @@ function Fade.Poke()
 end
 
 function Fade.SetMouseOver(over)
+    -- The enter/leave hooks on the chat windows outlive the module.
+    if not Chat.mod.active then return end
     Fade.mouseOver = over and true or false
     if over then
         Fade.Poke()

@@ -441,12 +441,15 @@ local SCROLL_METHODS = {
 
 local function installScroll(cf)
     local d = Chat.Data(cf)
-    if d.scrollHooked then return end
-    d.scrollHooked = true
-
-    for _, method in ipairs(SCROLL_METHODS) do
-        if type(cf[method]) == "function" then
-            hooksecurefunc(cf, method, function(self) mirrorScroll(self) end)
+    -- The hooks once and for good; the wheel script below every time it is
+    -- missing -- switching the module off takes it away again (Unsuppress),
+    -- and switched back on the wheel scrolled nothing until a reload.
+    if not d.scrollHooked then
+        d.scrollHooked = true
+        for _, method in ipairs(SCROLL_METHODS) do
+            if type(cf[method]) == "function" then
+                hooksecurefunc(cf, method, function(self) mirrorScroll(self) end)
+            end
         end
     end
 
@@ -457,7 +460,7 @@ local function installScroll(cf)
     -- that is not ours takes something away that we cannot give back, and if
     -- the client does have a handler it already scrolls -- our mirror hooks
     -- above pick that up either way.
-    if cf:GetScript("OnMouseWheel") then return end
+    if d.wheelSet or cf:GetScript("OnMouseWheel") then return end
     d.wheelSet = true
     cf:SetScript("OnMouseWheel", function(self, delta)
         if not Chat.mod.active then return end
@@ -500,7 +503,7 @@ local function tail(cf, msg, r, g, b, ...)
     -- nothing about it, so its lines are taken off our count before the two
     -- are compared. Without that the first line after a reload looks like
     -- "the client cleared its window" and threw the whole restore away.
-    mine = (type(mine) == "number") and (mine - (d.extraLines or 0)) or mine
+    if type(mine) == "number" and ns.CanRead(mine) then mine = mine - (d.extraLines or 0) end
     if okA and okB and ns.CanRead(mine) and ns.CanRead(theirs)
         and type(mine) == "number" and type(theirs) == "number" and theirs < mine then
         if Chat.History then Chat.History.Forget(cf) end
