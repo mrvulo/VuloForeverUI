@@ -80,6 +80,12 @@ local function snapshotActions()
             if name then out[slot] = { type = "macro", name = name } end
         elseif t == "item" and id then
             out[slot] = { type = "item", id = id, name = C_Item.GetItemInfo(id) }
+        elseif t then
+            -- A mount, an equipment set, a pet, a flyout: nothing a setup can
+            -- put back, but the slot is in use. Marked so a load leaves it
+            -- alone -- without the mark the slot counted as empty and the
+            -- load cleared the button.
+            out[slot] = { type = "other" }
         end
     end
     return out
@@ -124,7 +130,7 @@ end
 --
 -- Bad entries are DROPPED, not the whole setup: one broken row is no reason to
 -- refuse the other hundred, and the load report shows the gap as skipped slots.
-local VALID_ACTION = { spell = true, item = true, macro = true }
+local VALID_ACTION = { spell = true, item = true, macro = true, other = true }
 
 local function sanitizeSetup(d)
     if type(d) ~= "table" then return nil end
@@ -249,6 +255,9 @@ local function restoreSlot(slot, saved, counts)
         end
         return
     end
+
+    -- In use by something a setup cannot restore: whatever is there stays.
+    if saved.type == "other" then return end
 
     -- Skip when the slot already matches (no flicker, no churn)
     if saved.type == "spell" and curType == "spell" and curId == saved.id then return end
