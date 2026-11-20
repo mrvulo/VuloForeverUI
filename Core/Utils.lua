@@ -63,7 +63,8 @@ function ns:Pixel(frame, n)
     -- The scale of a frame inside a restricted tree (a nameplate) can come back
     -- secret; ns.Num is defined later in the load order but only called here.
     local es = frame and frame.GetEffectiveScale and frame:GetEffectiveScale()
-    es = ns.Num and ns.Num(es, nil) or (type(es) == "number" and es) or 1
+    -- A secret scale is a number to type(), so only ns.Num may decide here.
+    if ns.Num then es = ns.Num(es, 1) elseif type(es) ~= "number" then es = 1 end
     if es <= 0 then es = 1 end
     return (n or 1) * (768 / physH) / es
 end

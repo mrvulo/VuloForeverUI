@@ -116,6 +116,13 @@ function ns:MoverSizeMatchSticks(child, axis)
 end
 
 function ns:ResetAllMovers()
+    -- The question can still be on screen when a fight starts. Moving a
+    -- protected window is refused then, without an error to catch, and the
+    -- saved position would say centre while the window stayed where it was.
+    if InCombatLockdown() then
+        ns:Print(ns.L["Not possible in combat."])
+        return
+    end
     -- lets onMove callbacks tell an explicit reset apart from a drag snapped to 0,0
     ns._inMoverReset = true
     for _, mover in ipairs(ns._movers) do

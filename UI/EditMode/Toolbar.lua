@@ -267,6 +267,10 @@ combat:RegisterEvent("PLAYER_REGEN_ENABLED")
 combat:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_REGEN_DISABLED" then
         if ns:IsEditModeActive() then
+            -- An open question would outlive the mode it belongs to, and its
+            -- answer moves windows that are protected for the fight.
+            StaticPopup_Hide("VFUI_EDIT_RESET")
+            StaticPopup_Hide("VFUI_EDIT_DISCARD")
             ns._editResume = true
             ns:SetEditMode(false, { keepSnapshot = true })
         end

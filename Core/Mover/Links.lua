@@ -260,7 +260,7 @@ function ns:OnMoverRepositioned(mover, visited)
     end
 
     for key, link in pairs(store) do
-        if link.to == mover.key and not visited[key] then
+        if type(link) == "table" and link.to == mover.key and not visited[key] then
             local child = ns:GetMoverByKey(key)
             if child then
                 applyLink(child, link)
@@ -279,8 +279,9 @@ function ns:ApplyAllMoverLinks()
         if resolved[key] then return end
         resolved[key] = true
         local link = store[key]
-        if not link then return end
-        if store[link.to] then resolve(link.to) end
+        -- an imported string can carry anything here
+        if type(link) ~= "table" then return end
+        if link.to ~= nil and store[link.to] then resolve(link.to) end
         local child = ns:GetMoverByKey(key)
         if child then applyLink(child, link) end
     end
@@ -304,7 +305,7 @@ function ns:SnapshotEditState()
     if store then
         for k, l in pairs(store) do
             if type(l) == "table" then
-                snap.links[k] = { to = l.to, side = l.side, dx = l.dx, dy = l.dy }
+                snap.links[k] = { to = l.to, side = l.side, dx = l.dx, dy = l.dy, gap = l.gap }
             end
         end
     end
@@ -329,7 +330,7 @@ function ns:RestoreEditState()
     if store then
         wipe(store)
         for k, l in pairs(snap.links) do
-            store[k] = { to = l.to, side = l.side, dx = l.dx, dy = l.dy }
+            store[k] = { to = l.to, side = l.side, dx = l.dx, dy = l.dy, gap = l.gap }
         end
     end
     local sstore = sizeStore()
