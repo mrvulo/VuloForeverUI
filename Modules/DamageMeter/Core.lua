@@ -884,7 +884,9 @@ function mod:OnDisable()
     if DM.Timer and DM.Timer.Hide then DM.Timer.Hide() end
     if DM.SpellHistory and DM.SpellHistory.Disable then DM.SpellHistory.Disable() end
     if DM.Threat and DM.Threat.Disable then DM.Threat.Disable() end
-    setStockMeter(true)
+    -- Only what we switched off: a player who keeps the client's meter off
+    -- by choice must not get it switched on by disabling ours.
+    if DM.db().disableBlizzardMeter then setStockMeter(true) end
 end
 
 -- Profile switch: the frames are torn down, never the database.

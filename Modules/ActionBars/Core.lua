@@ -285,7 +285,11 @@ function mod:OnDisable()
         -- both touch secure buttons and would refuse now; the module's own
         -- regen handler is gone with it, so the restore books its own
         ns:RegisterEventOnce("PLAYER_REGEN_ENABLED", function()
-            if not mod.active then AB.Skin.RestoreAll(); AB.Paging.Release() end
+            if not mod.active then
+                AB.Skin.RestoreAll()
+                AB.Paging.Release()
+                AB.ClassicBar.FreeSlots(false)
+            end
         end)
         return
     end

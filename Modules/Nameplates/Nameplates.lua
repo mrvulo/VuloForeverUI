@@ -361,6 +361,10 @@ local function recheck(_, unit)
             -- a duel started or ended under a plate we keep: the side changed,
             -- and with it the whole colour chain
             plate.friendly = not isEnemy(unit)
+            -- the rows are a matter of the side too: an enemy has them, a
+            -- friend does not
+            NP.Auras.Detach(plate)
+            NP.Auras.Attach(plate)
             NP.Colors.Apply(plate)
             NP.Extras.Update(plate)
         else

@@ -146,9 +146,15 @@ end)
 -- The one place that decides what the player sees. `fresh` throws the
 -- containers away first; without it the rows are only put back if they are not
 -- standing already, because a rebuild costs real frames (see rebuild below).
+local wantFresh = false
+
 local function apply(fresh)
     if not mod.active then return end
+    -- Kept outside the closure: in a fight only the first request is booked,
+    -- and a settings change after it would otherwise never be built.
+    if fresh then wantFresh = true end
     A.WhenSafe(function()
+        fresh, wantFresh = wantFresh, false
         if not mod.active then return end
         if mod.db.ownBars then
             if fresh then A.Teardown() elseif A.IsBuilt() then

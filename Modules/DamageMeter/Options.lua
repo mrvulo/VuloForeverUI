@@ -500,7 +500,12 @@ local function threatOptions()
 end
 
 function mod:GetOptions(tabId)
-    if mod.active then enterPreview() end
+    -- Only for the page itself: the settings search asks every module for its
+    -- rows on each keystroke, and that used to force every meter window on.
+    if mod.active and UI.currentModule == "damagemeter"
+        and UI.mainFrame and UI.mainFrame:IsShown() then
+        enterPreview()
+    end
     if tabId == "window"  then return windowOptions() end
     if tabId == "bars"    then return barsOptions() end
     if tabId == "text"    then return textOptions() end

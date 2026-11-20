@@ -791,6 +791,7 @@ end
 function Skin.RestoreAll()
     AB.ClassicBar.Restore()
     barArt(true, true)
+    wipe(rangeSlots)   -- the range watch stays registered and would tint again
     for _, button in ipairs(AB.Buttons(true)) do
         restore(button)
         lookOf[button] = nil

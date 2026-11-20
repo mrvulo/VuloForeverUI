@@ -122,6 +122,7 @@ end)
 local pendingApply = false
 
 local function applyStyle(oldStyle)
+    if not mod.active then return end   -- switched off while this waited for the fight to end
     if ns:InCombat() then
         if not pendingApply then
             pendingApply = true

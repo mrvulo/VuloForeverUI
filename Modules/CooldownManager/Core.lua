@@ -670,9 +670,18 @@ function mod:OnEnable()
 
     -- The key an icon shows comes from the action bars, so it is rebuilt when
     -- a binding or a slot changes -- and once at login, when both are known.
+    -- Once per frame: a spec change or a setup load sends the slot event for
+    -- every slot, and each rebuild reads all of them.
+    local rebindQueued = false
     local function rebind()
-        CM.Bindings.Rebuild()
-        CM.RequestRefresh()
+        if rebindQueued then return end
+        rebindQueued = true
+        ns.NextFrame(function()
+            rebindQueued = false
+            if not mod.active then return end
+            CM.Bindings.Rebuild()
+            CM.RequestRefresh()
+        end)
     end
     self:RegisterEvent("UPDATE_BINDINGS", rebind)
     self:RegisterEvent("ACTIONBAR_SLOT_CHANGED", rebind)

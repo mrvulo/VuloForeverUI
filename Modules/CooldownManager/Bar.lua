@@ -939,7 +939,7 @@ function CM.SetProc(spellID, on)
             local list = CM.Display(bar, key)
             for i = 1, math.min(#list, #frame.icons) do
                 local entry = list[i]
-                if entry.id == spellID and CM.Val(bar, entry, "procGlow") then
+                if CM.RowIs(entry, spellID) and CM.Val(bar, entry, "procGlow") then
                     CM.Glow.Set(frame.icons[i], "proc", "proc",
                         entry.glowColor or bar.glowColor, on and true or false)
                 end

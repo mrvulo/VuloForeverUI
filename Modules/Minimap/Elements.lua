@@ -75,7 +75,8 @@ local function difficultyText()
     local name, instanceType, _, difficultyName, maxPlayers = GetInstanceInfo()
     if not name or instanceType == "none" then return nil end
     if maxPlayers and maxPlayers > 0 then
-        local short = (difficultyName or ""):sub(1, 1):upper()
+        -- the first character, which is two bytes in Cyrillic
+        local short = ((difficultyName or ""):match("^[%z\1-\127\194-\244][\128-\191]*") or ""):upper()
         return ("%d%s"):format(maxPlayers, short ~= "" and short or "")
     end
     return difficultyName
