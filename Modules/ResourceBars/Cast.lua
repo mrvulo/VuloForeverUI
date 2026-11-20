@@ -230,12 +230,24 @@ function Cast.Update()
 end
 
 function Cast.RegisterEvents(mod)
-    local function onStart(_, unit)
+    -- The cast on the bar, by its id. A second spell pressed mid-cast is
+    -- refused with a FAILED of its own, and that one must not take the bar
+    -- of the cast still running. A channel has no id (nil), and nil only
+    -- matches the stop the client sends without one.
+    local shown
+    local function onStart(_, unit, guid)
         if unit and unit ~= "player" then return end
+        shown = guid
         start()
     end
-    local function onStop(_, unit)
+    local function onStop(_, unit, guid)
         if unit and unit ~= "player" then return end
+        -- Both ids readable and different: the end of some other cast.
+        if type(guid) ~= "nil" and type(shown) ~= "nil"
+            and not ns.IsSecret(guid) and not ns.IsSecret(shown) and guid ~= shown then
+            return
+        end
+        shown = nil
         stop()
     end
 
