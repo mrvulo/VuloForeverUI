@@ -2482,4 +2482,9 @@ ns:RegisterLocale("deDE", {
     ["Show the profession bags"] = "Handwerkstaschen anzeigen",
     ["Profession bags as sections of their own"] = "Handwerkstaschen als eigene Abschnitte",
     ["A reagent bag, herb bag, quiver or other bag for one kind of thing leaves the categories and gets a section of its own underneath. The bag button in the window's tool row folds these sections away; a search unfolds them."] = "Eine Reagenzientasche, Kräutertasche, ein Köcher oder eine andere Tasche für nur eine Art von Gegenständen verlässt die Kategorien und bekommt darunter einen eigenen Abschnitt. Der Taschen-Knopf in der Werkzeugzeile des Fensters klappt diese Abschnitte weg; eine Suche klappt sie auf.",
+    ["Move the game's windows"] = "Fenster des Spiels verschieben",
+    ["Drag a window of the game by its title bar -- character, spellbook, map, merchant, mail and the others -- and it opens in that place from then on. During a fight a protected window can be neither moved nor put back; it shows in its own place until the fight is over."] = "Ziehe ein Fenster des Spiels an seiner Titelleiste -- Charakter, Zauberbuch, Karte, Händler, Post und die übrigen -- und es öffnet sich fortan an dieser Stelle. Im Kampf lässt sich ein geschütztes Fenster weder verschieben noch zurücksetzen; es erscheint dann an seinem eigenen Platz, bis der Kampf vorbei ist.",
+    ["Reset window positions"] = "Fensterpositionen zurücksetzen",
+    ["Forgets every place you gave a window of the game."] = "Vergisst jeden Platz, den du einem Fenster des Spiels gegeben hast.",
+    ["Window positions reset. Each window is back in its own place the next time it opens."] = "Fensterpositionen zurückgesetzt. Jedes Fenster steht beim nächsten Öffnen wieder an seinem eigenen Platz.",
 })

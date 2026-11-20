@@ -2482,4 +2482,9 @@ ns:RegisterLocale("ruRU", {
     ["Show the profession bags"] = "Показывать сумки профессий",
     ["Profession bags as sections of their own"] = "Сумки профессий отдельными разделами",
     ["A reagent bag, herb bag, quiver or other bag for one kind of thing leaves the categories and gets a section of its own underneath. The bag button in the window's tool row folds these sections away; a search unfolds them."] = "Сумка для реагентов, сумка травника, колчан или другая сумка для одного вида предметов уходит из категорий и получает ниже собственный раздел. Кнопка с сумкой в строке инструментов окна сворачивает эти разделы; поиск разворачивает их.",
+    ["Move the game's windows"] = "Перемещать окна игры",
+    ["Drag a window of the game by its title bar -- character, spellbook, map, merchant, mail and the others -- and it opens in that place from then on. During a fight a protected window can be neither moved nor put back; it shows in its own place until the fight is over."] = "Перетащите окно игры за строку заголовка -- персонаж, книга заклинаний, карта, торговец, почта и остальные -- и оно будет открываться на этом месте. В бою защищённое окно нельзя ни переместить, ни вернуть на место; оно появляется на своём обычном месте, пока бой не закончится.",
+    ["Reset window positions"] = "Сбросить положение окон",
+    ["Forgets every place you gave a window of the game."] = "Забывает все места, которые вы задали окнам игры.",
+    ["Window positions reset. Each window is back in its own place the next time it opens."] = "Положение окон сброшено. Каждое окно вернётся на своё место при следующем открытии.",
 })

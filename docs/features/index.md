@@ -79,6 +79,7 @@ jemand ohne den Code prüfen kann.
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
+| F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | gebaut | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
 | F-66 | Gold-Tooltip der Taschen: Tagesbilanz ist Verdient minus Ausgegeben, Charakterliste stimmt ab dem Einloggen | Taschen / Komfort | gebaut | – |
@@ -509,6 +510,15 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du danach eine Chat-Einstellung änderst, **dann** bleiben die zurückgeholten Zeilen stehen.
 - **Wenn** du „Gespeicherte Zeilen vergessen“ drückst, **dann** sind sie sofort aus allen Reitern weg.
 - Bekannte Grenzen: Battle.net-Flüstern und alles aus Instanzen, Raids und Schlachtfeldern wird nie gespeichert; Links in zurückgeholten Zeilen sind Text. Ein umbenannter Reiter beginnt mit leerem Verlauf. Zeilen aus der Zeit vor diesem Umbau stehen einmalig noch im ersten Reiter.
+
+### F-69 Fenster des Spiels verschieben
+- **Angenommen** „Fenster des Spiels verschieben“ ist an, **wenn** du ein Fenster des Spiels (Charakter, Zauberbuch/Talente, Berufe, Karte, Händler, Post, Handel, Auktionshaus, Lehrer, Freunde, Gilde, Sammlungen, Erfolge, Kalender, Betrachten, Anprobe, Makros, Addon-Liste u. a.) an der Titelleiste mit der linken Maustaste ziehst, **dann** folgt es der Maus und bleibt beim Loslassen dort stehen; es lässt sich nicht aus dem Bildschirm schieben.
+- **Wenn** du das Fenster schließt und wieder öffnest, ein zweites Fenster daneben öffnest oder schließt, oder `/reload` machst, **dann** steht es wieder an deinem Platz.
+- **Dann** funktionieren Schließen-Knopf, Minimieren/Maximieren und alles im Fenster wie vorher; beim Erfolgsfenster ist die Punkte-Plakette über dem Fenster der Griff.
+- **Angenommen** du bist im Kampf, **wenn** du ein geschütztes Fenster ziehen willst oder es sich öffnet, **dann** passiert kein Fehler („Aktion blockiert“): Es lässt sich nicht ziehen und steht an Blizzards Platz, nach dem Kampf wieder an deinem.
+- **Angenommen** die Weltkarte ist maximiert, **dann** bleibt sie unberührt; verkleinert steht sie an deinem Platz.
+- **Wenn** du „Fensterpositionen zurücksetzen“ drückst, **dann** steht im Chat die Bestätigung, und jedes Fenster ist beim nächsten Öffnen wieder an Blizzards Platz. Schaltest du die Einstellung aus, gilt dasselbe, die gemerkten Plätze bleiben aber gespeichert.
+- Bekannte Grenzen: nicht verschiebbar sind Beutefenster (Edit Mode), Spielmenü, Einstellungen, Vollbild-Szenen und das Lesefenster der Post (hängt am Postfenster). Welche Fenster im Kampf als geschützt gelten, entscheidet das Spiel.
 
 ## Offen
 

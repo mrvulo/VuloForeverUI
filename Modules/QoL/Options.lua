@@ -101,6 +101,13 @@ local function generalPage()
         toggle("world", "zoneLevels", L["Show zone levels on the world map"],
             L["The level range of the zone the map shows, in its top left corner, coloured like a quest of that level. On a continent, the zone under the cursor."]),
 
+        { type = "header", text = L["Windows"] },
+        toggle("windows", "move", L["Move the game's windows"],
+            L["Drag a window of the game by its title bar -- character, spellbook, map, merchant, mail and the others -- and it opens in that place from then on. During a fight a protected window can be neither moved nor put back; it shows in its own place until the fight is over."]),
+        { type = "button", label = L["Reset window positions"], width = 240,
+          tooltip = L["Forgets every place you gave a window of the game."],
+          onClick = function() QoL.Windows.Reset() end },
+
         { type = "header", text = L["Group"] },
         toggle("world", "inviteWhisper", L["Invite on a whispered keyword"],
             L["Whoever whispers you exactly the keyword gets a group invite -- as long as you are alone, the leader, or an assistant in a raid. Battle.net whispers work too."]),

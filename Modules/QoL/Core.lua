@@ -151,6 +151,13 @@ local mod = ns:RegisterModule("qol", {
             x = 0, y = -180, scale = 1,
         },
 
+        -- ------------------------------------------------------------ windows
+        -- The game's own windows, movable by their title bar (Windows.lua).
+        -- The places themselves are written into windows.pos as they are made.
+        windows = {
+            move = true,
+        },
+
         -- --------------------------------------------------------------- gold
         -- The day's numbers live per character (VuloForeverUICharDB.qolGold),
         -- the trade scans account-wide (ns.db.global.qolTradeScans).

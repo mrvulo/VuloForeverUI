@@ -2445,4 +2445,9 @@ ns:RegisterLocale("ptBR", {
     ["Show the profession bags"] = "Mostrar as bolsas de profissão",
     ["Profession bags as sections of their own"] = "Bolsas de profissão em seções próprias",
     ["A reagent bag, herb bag, quiver or other bag for one kind of thing leaves the categories and gets a section of its own underneath. The bag button in the window's tool row folds these sections away; a search unfolds them."] = "Uma bolsa de reagentes, de ervas, uma aljava ou outra bolsa para um só tipo de item sai das categorias e ganha uma seção própria logo abaixo. O botão de bolsa na fileira de ferramentas da janela recolhe essas seções; uma busca as abre.",
+    ["Move the game's windows"] = "Mover as janelas do jogo",
+    ["Drag a window of the game by its title bar -- character, spellbook, map, merchant, mail and the others -- and it opens in that place from then on. During a fight a protected window can be neither moved nor put back; it shows in its own place until the fight is over."] = "Arraste uma janela do jogo pela barra de título -- personagem, grimório, mapa, comerciante, correio e as demais -- e ela passa a abrir nesse lugar. Durante um combate, uma janela protegida não pode ser movida nem recolocada; ela aparece no próprio lugar até o combate acabar.",
+    ["Reset window positions"] = "Redefinir posições das janelas",
+    ["Forgets every place you gave a window of the game."] = "Esquece todos os lugares que você deu às janelas do jogo.",
+    ["Window positions reset. Each window is back in its own place the next time it opens."] = "Posições das janelas redefinidas. Cada janela volta ao próprio lugar na próxima vez que abrir.",
 })

@@ -529,6 +529,22 @@ scaled together as one mover (`classes_priest`).
   UI-HUD-ActionBar-IconFrame / -Background / -Slot / -Mask, drawn for 45 px)
   at the on-screen size of a shown action button, measured against the
   window's own scale; Modern = our frame, rounded or square.
+- **Movable game windows** (`Windows.lua`, `windows.move`, `windows.pos`;
+  F-69, the player's wish 2026-11-20): the client's own windows are dragged
+  by a grip of OURS over the title bar (a child frame, between portrait and
+  the buttons on the right; the achievement window's grip lies on its points
+  plate because filter and search sit in the top strip). The place is saved
+  per profile as the top left corner from the screen's bottom left and put
+  back behind every `SetPoint` the panel manager writes (`hooksecurefunc`
+  on the window). Nothing else of the window is touched: no script replaced
+  or hooked, no field written, no parent or visibility change, no client
+  function called to refresh -- which is why "reset" only takes effect when a
+  window next opens. A protected window is neither dragged nor placed in a
+  fight (`InCombatLockdown() and frame:IsProtected()`); a running drag ends
+  at `PLAYER_REGEN_DISABLED`. A maximized window (world map) is left alone.
+  `SetUserPlaced(false)` after every drag, so the client's layout cache never
+  takes the window over. Not in the list: loot window (Edit Mode), game menu,
+  settings window, full-screen scenes, mail's reading pane.
 - **Macro factory** (`Macros.lua`, tab "Macros"; F-65): real macros in the
   character's macro list (`VF Food`, `VF Drink`, `VF Stone`, `VF Heal`,
   `VF Mana`, `VF Soul`, `VF Spell`, `VF Fire`, `VF Gem` -- the fixed name is how the macro is found

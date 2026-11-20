@@ -2482,6 +2482,11 @@ local T = {
     ["Show the profession bags"] = "Mostrar las bolsas de profesión",
     ["Profession bags as sections of their own"] = "Bolsas de profesión en secciones propias",
     ["A reagent bag, herb bag, quiver or other bag for one kind of thing leaves the categories and gets a section of its own underneath. The bag button in the window's tool row folds these sections away; a search unfolds them."] = "Una bolsa de componentes, de hierbas, un carcaj u otra bolsa para un solo tipo de objetos sale de las categorías y recibe debajo una sección propia. El botón de bolsa de la fila de herramientas de la ventana pliega estas secciones; una búsqueda las despliega.",
+    ["Move the game's windows"] = "Mover las ventanas del juego",
+    ["Drag a window of the game by its title bar -- character, spellbook, map, merchant, mail and the others -- and it opens in that place from then on. During a fight a protected window can be neither moved nor put back; it shows in its own place until the fight is over."] = "Arrastra una ventana del juego por su barra de título -- personaje, libro de hechizos, mapa, vendedor, correo y las demás -- y desde entonces se abrirá en ese lugar. Durante un combate, una ventana protegida no se puede mover ni recolocar; aparece en su propio sitio hasta que el combate termina.",
+    ["Reset window positions"] = "Restablecer posiciones de ventanas",
+    ["Forgets every place you gave a window of the game."] = "Olvida todos los lugares que diste a las ventanas del juego.",
+    ["Window positions reset. Each window is back in its own place the next time it opens."] = "Posiciones de ventanas restablecidas. Cada ventana vuelve a su propio sitio la próxima vez que se abra.",
 }
 
 ns:RegisterLocale("esES", T)
