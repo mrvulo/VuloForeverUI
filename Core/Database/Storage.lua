@@ -419,12 +419,26 @@ function ns:ImportProfilePayload(payload, opts)
         data.overrideGroups = nil
     end
 
+    -- A FULL string says "this module is on its defaults" by leaving it out
+    -- (the exporter strips defaults). Once the import turns partial that
+    -- silence must not be read as "keep mine": only what the player unticked
+    -- keeps the importer's values, the rest of the string still applies.
+    local wasFull = not partial
+    local unticked = {}
+    local keepLayout, keepOverrides = false, false
+
     if opts then
         if opts.modules and type(data.modules) == "table" then
             for k in pairs(data.modules) do
-                if not opts.modules[k] then data.modules[k] = nil; partial = true end
+                if not opts.modules[k] then
+                    data.modules[k] = nil
+                    unticked[k] = true
+                    partial = true
+                end
             end
         end
+        keepLayout = opts.layout == false
+        keepOverrides = opts.overrides == false
         if opts.layout == false then
             for _, k in ipairs(PROFILE_LAYOUT_KEYS) do
                 if data[k] ~= nil then data[k] = nil; partial = true end
@@ -451,6 +465,15 @@ function ns:ImportProfilePayload(payload, opts)
         local active = VuloForeverUIDB.profiles[ns:GetActiveProfileName()]
         local merged = active and ns:DeepCopy(active) or {}
         merged.modules = merged.modules or {}
+        if wasFull then
+            for k in pairs(merged.modules) do
+                if not unticked[k] then merged.modules[k] = {} end
+            end
+            if not keepLayout then
+                for _, k in ipairs(PROFILE_LAYOUT_KEYS) do merged[k] = nil end
+            end
+            if not keepOverrides then merged.overrideGroups = nil end
+        end
         for k, v in pairs(data.modules or {}) do merged.modules[k] = v end
         for _, k in ipairs(PROFILE_LAYOUT_KEYS) do
             if data[k] ~= nil then merged[k] = data[k] end

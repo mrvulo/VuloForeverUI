@@ -217,7 +217,17 @@ local function ensureProfileBindButton(profileName)
             return
         end
         if ns:GetActiveProfileName() == name then return end
-        if ns:SwitchProfile(name) then showProfileReloadPrompt() end
+        if ns:SwitchProfile(name) then
+            -- Kept past the reload the prompt asks for: without the
+            -- assignment the login picks the pinned or class profile again
+            -- and the key would have switched nothing.
+            if ns:GetCharAssignment() then
+                ns:AssignCharToProfile(name)
+            else
+                ns:AssignClassToProfile(getClassKey(), name)
+            end
+            showProfileReloadPrompt()
+        end
     end)
     profileBindButtons[profileName] = btn
     return btn
