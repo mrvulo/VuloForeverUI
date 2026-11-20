@@ -155,6 +155,13 @@ local function mailOpen() return interactingWith("MailInfo") end
 
 local function bankOpen()
     return interactingWith("Banker") or interactingWith("AccountBanker")
+        or interactingWith("GuildBanker")
+end
+
+-- A right-click puts the item INTO these windows instead of opening it.
+local function handoverOpen()
+    return interactingWith("TradePartner") or interactingWith("Auctioneer")
+        or ((TradeFrame and TradeFrame:IsShown()) and true or false)
 end
 
 local function playerIsCasting()
@@ -222,7 +229,7 @@ scanAndOpen = function(skipMerchantGate)
     if not (cacheBuilt and openEnabled()) then return end
     if InCombatLockdown() then return end
     if not skipMerchantGate and merchantOpen() then return end
-    if mailOpen() or bankOpen() then return end
+    if mailOpen() or bankOpen() or handoverOpen() then return end
     -- A cast is transient, so this defers rather than gives up; the spellcast
     -- events below bring the cycle back.
     if playerIsCasting() then missedScan = true; return end
@@ -270,7 +277,7 @@ scanAndOpen = function(skipMerchantGate)
         if myGen ~= cycleGen then return end
         if idx > #toOpen then return finish() end
         if not openEnabled() or InCombatLockdown() or merchantOpen()
-            or mailOpen() or bankOpen() or lootOpen then
+            or mailOpen() or bankOpen() or handoverOpen() or lootOpen then
             return finish()
         end
         -- Re-checked per step: a cycle paces itself across seconds, so a cast

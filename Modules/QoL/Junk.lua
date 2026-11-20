@@ -194,17 +194,41 @@ end
 
 -- One item per step. The greys go first through the client's own sale, which
 -- has a sweep of its own (Vendor.lua); this starts after it has had its go.
+-- Asked of the client on every step, not remembered from MERCHANT_SHOW: a
+-- lost MERCHANT_CLOSED would leave this loop USING the marked items -- eating
+-- the food, equipping the gear, dropping them into a trade or the mail.
+local function atMerchant()
+    if not (merchantOpen and MerchantFrame and MerchantFrame:IsShown()) then return false end
+    local M, T = C_PlayerInteractionManager, Enum.PlayerInteractionType
+    if M and M.IsInteractingWithNpcOfType and T and T.Merchant then
+        return M.IsInteractingWithNpcOfType(T.Merchant) and true or false
+    end
+    return true
+end
+
+-- The same slot offered again and again is an item the merchant answers with
+-- a question instead of a sale; it is left alone after a few tries.
+local lastKey, tries = nil, 0
+
 local function sellStep()
     selling = nil
-    if not (merchantOpen and db().sellJunk) then return end
+    if not (db().sellJunk and atMerchant()) then merchantOpen = false; return end
     local bag, slot = nextMarked()
     if not bag then return end
+    local key = bag * 1000 + slot
+    if key == lastKey then
+        tries = tries + 1
+        if tries >= 5 then return end
+    else
+        lastKey, tries = key, 0
+    end
     C_Container.UseContainerItem(bag, slot)
     selling = C_Timer.NewTimer(SELL_STEP, sellStep)
 end
 
 local function onMerchantShow()
     merchantOpen = true
+    lastKey, tries = nil, 0
     stopSelling()
     if J.Count() > 0 then selling = C_Timer.NewTimer(1.5, sellStep) end
 end

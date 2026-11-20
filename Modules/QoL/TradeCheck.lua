@@ -786,7 +786,9 @@ local function updateWindow()
 
     f.peakValue:SetText(money(a.peak))
     local width = W - 32
-    if a.peak and a.peak > 0 then
+    -- explained/unexplained only exist once the income is known; a partial
+    -- scan has a peak and nothing to split it by.
+    if a.peak and a.peak > 0 and a.explained and a.unexplained then
         local good = math.max(1, width * (a.explained / a.peak))
         f.barGood:SetWidth(good)
         f.barBad:SetWidth(math.max(1, width - good))
@@ -1651,6 +1653,7 @@ end
 -- -------------------------------------------------------------- events --
 
 local function onTradeShow()
+    tradeKey = nil   -- never the partner of the trade before
     if not db().tradeCheck then return end
     local _, key = unitName("npc")
     tradeKey = key
@@ -1687,6 +1690,10 @@ local EVENTS = {
 
 function TC.Apply()
     local on = QoL.mod.active and (db().tradeCheck or db().mailCheck) and true or false
+    -- Before the early return: one of the two switches going off leaves `on`
+    -- as it was, and its panel stayed up.
+    if mailPanel and not (on and db().mailCheck) then mailPanel:Hide() end
+    if panel and not (on and db().tradeCheck) then panel:Hide() end
     if on == registered then return end
     registered = on
     for event, fn in pairs(EVENTS) do QoL.SyncEvent(on, event, fn) end
