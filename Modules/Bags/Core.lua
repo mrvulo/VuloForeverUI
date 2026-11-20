@@ -534,7 +534,10 @@ function Bags.HookBlizzard()
     -- The client re-anchors every shown bag after any bag opens or closes; a
     -- stashed one would land back on screen, invisible but still in the way.
     if type(_G.UpdateContainerFrameAnchors) == "function" then
-        hooksecurefunc("UpdateContainerFrameAnchors", function() Bags.RestashBlizzard() end)
+        hooksecurefunc("UpdateContainerFrameAnchors", function()
+            Bags.TraceAnchors()
+            Bags.RestashBlizzard()
+        end)
     end
 
     Bags.hooked = installed > 0
@@ -561,17 +564,138 @@ local waitingUnpark = {}   -- frame -> parent, open under the park when the take
 -- The measurement behind the rule above, on the record (/vfdiag, saved
 -- variables): whether the client's list of shown bags is still its own after
 -- a pass of ours. Once per session is enough to know.
-local taintNoted = false
+local taintNoted, cleanNoted = false, false
+
+-- What the client READS right before it rebuilds that list (client source:
+-- UpdateContainerFrameAnchors asks the two right-hand bars whether they are
+-- initialised and in their default position, and both answers come out of
+-- fields on the bar). A tainted field there taints every rebuild after it,
+-- whatever the bag code does -- so the note says whether one is.
+local function barState()
+    local out = {}
+    for _, name in ipairs({ "MultiBarLeft", "MultiBarRight" }) do
+        local bar = _G[name]
+        if type(bar) == "table" then
+            out[#out + 1] = name .. ((bar.IsVisible and bar:IsVisible()) and " visible" or " hidden")
+            for _, key in ipairs({ "systemInfo", "IsInitialized", "IsInDefaultPosition" }) do
+                local secure, by = issecurevariable(bar, key)
+                if not secure then out[#out + 1] = name .. "." .. key .. " by " .. tostring(by) end
+            end
+            local info = bar.systemInfo
+            if type(info) == "table" then
+                local secure, by = issecurevariable(info, "isInDefaultPosition")
+                if not secure then
+                    out[#out + 1] = name .. ".systemInfo.isInDefaultPosition by " .. tostring(by)
+                end
+            end
+        end
+    end
+    return table.concat(out, ", ")
+end
+
+-- WHO asked for the rebuild that came out tainted. The client refills its
+-- list inside UpdateContainerFrameAnchors, and this runs right behind every
+-- one of those: the first pass that leaves the list tainted is noted with the
+-- call stack that led to it. A file of ours in that stack is the caller; a
+-- stack of the client's own files means the run was tainted by something it
+-- read on the way (measured 2026-11-20: not the right-hand bars' fields).
+local traced, anchorPasses, loadedAt = false, 0, GetTime()
+
+local function listTainted()
+    local manager = _G.ContainerFrameSettingsManager
+    if type(manager) ~= "table" then return false end
+    local secure, by = issecurevariable(manager, "bagsShown")
+    return not secure, by
+end
+
+-- Measured 2026-11-20: the tainted pass came from a plain click on a bag
+-- button, with nothing but the client's own files in the stack. So the click
+-- READS something of ours on its way. This lists it: every tainted global the
+-- chain names, and every tainted field on the frames it touches.
+local SCAN_GLOBALS = {
+    "ToggleBag", "ToggleBag_Individual", "ToggleBag_Combined", "ToggleAllBags", "ToggleBackpack",
+    "OpenBag", "CloseBag", "OpenAllBags", "CloseAllBags", "OpenBackpack", "CloseBackpack",
+    "ContainerFrame_GenerateFrame", "UpdateContainerFrameAnchors", "ContainerFrame_AllowedToOpenBags",
+    "ContainerFrameUtil_GetShownFrameForID", "ContainerFrame_GetOpenFrame",
+    "ContainerFrame_GetContainerNumSlots", "ContainerFrameUtil_EnumerateContainerFrames",
+    "ContainerFrameSettingsManager", "KeybindFrames_InQuickKeybindMode", "IsModifiedClick",
+    "CanAutoSetGamePadCursorControl", "EditModeUtil", "InputUtil", "BankFrame", "UIParent",
+    "CONTAINER_OFFSET_X", "CONTAINER_OFFSET_Y", "CONTAINER_SCALE", "KEYRING_CONTAINER",
+    "NUM_CONTAINER_FRAMES", "NUM_BAG_FRAMES", "ContainerFrameContainer", "ContainerFrameCombinedBags",
+    "MainMenuBarBackpackButton", "KeyRingButton", "BagsBar", "MultiBarLeft", "MultiBarRight",
+}
+local SCAN_TABLES = {
+    "ContainerFrameSettingsManager", "ContainerFrameCombinedBags", "ContainerFrameContainer",
+    "MainMenuBarBackpackButton", "CharacterBag0Slot", "CharacterBag1Slot", "CharacterBag2Slot",
+    "CharacterBag3Slot", "CharacterReagentBag0Slot", "KeyRingButton", "BagsBar",
+    "MicroButtonAndBagsBar", "MultiBarLeft", "MultiBarRight", "MainActionBar", "BankFrame",
+    "EditModeManagerFrame", "EditModeUtil", "InputUtil",
+}
+
+local function scanTaint()
+    local out, more = {}, 0
+    local function add(text)
+        if #out < 45 then out[#out + 1] = text else more = more + 1 end
+    end
+    for _, name in ipairs(SCAN_GLOBALS) do
+        local secure, by = issecurevariable(name)
+        if not secure then add("_G." .. name .. "<" .. tostring(by) .. ">") end
+    end
+    local function fields(label, tbl)
+        if type(tbl) ~= "table" then return end
+        for key in pairs(tbl) do
+            local secure, by = issecurevariable(tbl, key)
+            if not secure then add(label .. "." .. tostring(key) .. "<" .. tostring(by) .. ">") end
+        end
+    end
+    for _, name in ipairs(SCAN_TABLES) do fields(name, _G[name]) end
+    for i = 1, 16 do
+        local frame = _G["ContainerFrame" .. i]
+        if type(frame) == "table" then
+            fields("ContainerFrame" .. i, frame)
+            if type(frame.Items) == "table" then
+                for n, button in ipairs(frame.Items) do
+                    if n > 4 then break end   -- a sample; they are all made alike
+                    fields("ContainerFrame" .. i .. ".Items[" .. n .. "]", button)
+                end
+            end
+        end
+    end
+    if #out == 0 then return "nothing tainted among the names and frames the click reads" end
+    return table.concat(out, ", ") .. (more > 0 and (" (+" .. more .. " more)") or "")
+end
+
+function Bags.TraceAnchors()
+    if traced or type(issecurevariable) ~= "function" then return end
+    anchorPasses = anchorPasses + 1
+    local tainted, by = listTainted()
+    if not tainted then return end
+    traced = true
+    local stack = (type(debugstack) == "function" and debugstack(2, 10, 6)) or "?"
+    stack = stack:gsub("Interface/AddOns/", ""):gsub("%s+", " ")
+    ns.Diag.Note("taint", ("bag list tainted by %s at anchor pass %d, %d s after load: %s")
+        :format(tostring(by), anchorPasses, GetTime() - loadedAt, stack:sub(1, 1400)))
+    ns.Diag.Note("taint", "tainted on the click's way: " .. scanTaint())
+end
 
 function Bags.CheckTaint(where)
     if taintNoted or type(issecurevariable) ~= "function" then return end
     local manager = _G.ContainerFrameSettingsManager
     if type(manager) ~= "table" then return end
     local secure, by = issecurevariable(manager, "bagsShown")
-    if secure then return end
+    if secure then
+        -- Said once as well: without it a session with no note could be a
+        -- clean one or one in which no bag was ever opened.
+        if not cleanNoted then
+            cleanNoted = true
+            ns.Diag.Note("taint", "bag list clean after " .. tostring(where))
+        end
+        return
+    end
     taintNoted = true
     ns.Diag.Note("taint", "ContainerFrameSettingsManager.bagsShown tainted by "
         .. tostring(by) .. " after " .. tostring(where))
+    ns.Diag.Note("taint", "bars read before the bag list: " .. barState())
 end
 
 local function moveAway(frame)

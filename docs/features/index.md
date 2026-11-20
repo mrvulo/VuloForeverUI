@@ -558,6 +558,34 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
   Next step: `/console taintLog 1`, get the error at the banker, then read
   `Logs/taint.log` on the PC (it names the variable and the file:line that
   wrote it).
+  2026-11-20: the note came back under 0.25.0 (session 480). New lead from
+  the client source, NOT measured: `UpdateContainerFrameAnchors` starts with
+  `GetContainerScale` -> `EditModeUtil:GetRightActionBarWidth`, which asks
+  `MultiBarLeft` / `MultiBarRight` (when visible) `IsInitialized()` and
+  `IsInDefaultPosition()` -- both read `bar.systemInfo`. If that field is
+  tainted, every rebuild of `bagsShown` runs tainted, the secure ones
+  included, which fits "every session" and explains why no change in the bag
+  code ever helped. Also: `ManageFramePositions` ends in
+  `UpdateContainerFrameAnchors` and is reached through a plain `SetAttribute`,
+  so it carries the caller's taint. `Bags.CheckTaint` now adds a second note
+  ("bars read before the bag list: ...") naming which bar is visible and which
+  of those fields is tainted by whom. Read it from the return channel after
+  the next session with a bag toggle.
+  Measured the same evening (sessions 483-488): the bar fields are clean, so
+  that lead was wrong. The call stack of the first tainted rebuild is a plain
+  click on a bag button with only client files in it, and the scan shows
+  nothing tainted BEFORE that run -- everything it wrote is tainted, from
+  `isUsingCombinedBags` on. So the run reads something tainted that is not a
+  field: the list behind `ContainerFrameUtil_EnumerateContainerFrames`, which
+  the client builds on the first call and keeps. `Modules/QoL/Junk.lua` made
+  that first call at every login (since 2026-10-03, the day before the first
+  bank error). FIX BUILT, not confirmed: the junk mark walks the frames by
+  name, `check.js` refuses the call.
+  Session 490 (35 minutes, first one on the fix): "bag list clean after bag
+  toggle", no tainted anchor pass, no error -- the list is the client's own
+  again. Still to confirm by the player: a bank tab purchase and a right-click
+  item use after a bank visit. `Bags.TraceAnchors` stays as the guard: any
+  tainted rebuild is noted with its call stack and a scan of what is tainted.
   The error only comes while the free first bank tab is still unbought; after
   buying it with the buy button in our bank window it stops.
   2026-11-06: cause found in the client source (Camelot BankFrame.lua): the

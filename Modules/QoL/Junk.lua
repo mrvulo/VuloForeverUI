@@ -84,19 +84,42 @@ local function markFrame(frame)
     end
 end
 
+-- The client's bag frames BY NAME, never through its own enumerator.
+--
+-- ContainerFrameUtil_EnumerateContainerFrames builds its list on the first
+-- call and keeps it. Called from here first -- which it was, at every login --
+-- that list is ours for the session, and every later run of the client's that
+-- reads it is tainted from that line on: opening a bag wrote the client's
+-- list of shown bags tainted, and with it went the bank tab purchase and
+-- every protected item use (measured 2026-11-20, in the game since
+-- 2026-10-03). tools/check.js keeps the call out.
 local hookedFrames
-local function hookClientBags()
-    if hookedFrames or type(ContainerFrameUtil_EnumerateContainerFrames) ~= "function" then return end
-    hookedFrames = true
-    for _, frame in ContainerFrameUtil_EnumerateContainerFrames() do
-        hooksecurefunc(frame, "UpdateItems", markFrame)
+local function clientBags()
+    if hookedFrames then return hookedFrames end
+    local out = {}
+    for i = 1, (NUM_CONTAINER_FRAMES or 13) do
+        local frame = _G["ContainerFrame" .. i]
+        if frame then out[#out + 1] = frame end
     end
+    if _G.ContainerFrameCombinedBags then out[#out + 1] = _G.ContainerFrameCombinedBags end
+    return out
+end
+
+local function hookClientBags()
+    if hookedFrames then return end
+    local frames = clientBags()
+    for _, frame in ipairs(frames) do
+        if type(frame.UpdateItems) == "function" then
+            hooksecurefunc(frame, "UpdateItems", markFrame)
+        end
+    end
+    hookedFrames = frames
 end
 
 local function refreshBags()
     if ns.Bags and ns.Bags.Refresh and ns:IsModuleEnabled("bags") then ns.Bags.Refresh() end
     if hookedFrames then
-        for _, frame in ContainerFrameUtil_EnumerateContainerFrames() do pcall(markFrame, frame) end
+        for _, frame in ipairs(hookedFrames) do pcall(markFrame, frame) end
     end
 end
 

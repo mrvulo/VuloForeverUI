@@ -839,6 +839,9 @@ console.log('\n== secret values ==');
 //     bars show from secure code; reading HelpTip.framePool is fine
 //   * Hide() / SetParent() on a named client frame -- its OnHide runs in our
 //     execution (bank tab purchase forbidden, Edit Mode exit error, 2026-10)
+//   * a client function that fills a cache on its first call -- called by us
+//     first, the cache is ours for the session and every secure read of it
+//     runs tainted (the bag frame list: bagsShown, bank tab, 2026-10 to 2026-11)
 // A deliberate exception gets "-- taint-ok: <reason>" on the same line.
 console.log('\n== taint traps ==');
 {
@@ -854,13 +857,26 @@ console.log('\n== taint traps ==');
             && n.base.name === '_G' && n.identifier) return n.identifier.name;
         return null;
     };
+    // Client functions that build a cache the first time anyone asks.
+    const LAZY_CACHE = new Set(['ContainerFrameUtil_EnumerateContainerFrames',
+        'ContainerFrameUtil_EnumerateBagFrames', 'ContainerFrameUtil_GetShownFrameForID',
+        'ContainerFrame_GetOpenFrame', 'UpdateContainerFrameAnchors']);
     let traps = 0;
     for (const [f, ast] of asts) {
         const rel = path.relative(ROOT, f);
         if (rel.split(path.sep)[0] === 'Libs') continue;
         const lines = fs.readFileSync(f, 'utf8').split(/\r?\n/);
         eachNode(ast, (n) => {
-            if (n.type !== 'CallExpression' || !n.base || n.base.type !== 'MemberExpression') return;
+            if (n.type !== 'CallExpression' || !n.base) return;
+            const fn = nameOf(n.base);
+            if (fn && LAZY_CACHE.has(fn)) {
+                const line = n.loc ? n.loc.start.line : 0;
+                if (/taint-ok:/.test(lines[line - 1] || '')) return;
+                traps++;
+                console.log('  TRAP [' + rel + ':' + line + '] call into ' + fn + ' (fills a client cache in our taint)');
+                return;
+            }
+            if (n.base.type !== 'MemberExpression') return;
             const m = n.base;
             const method = m.identifier && m.identifier.name;
             const target = nameOf(m.base);
