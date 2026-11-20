@@ -163,11 +163,12 @@ local function chatPage()
           get = function() return Chat.db().history end,
           set = function(_, v) Chat.db().history = v; apply() end,
           subOptions = {
-              slider("historyLines", L["How many lines"], 10, 500, 10),
+              slider("historyLines", L["How many lines per tab"], 10, 500, 10),
               { type = "desc", text = L["|cffaaaaaaKept per character, and only what was said in the open world: inside an instance the client hands chat over as secrets, which cannot be stored. Links in a restored line are text, not links.|r"] },
               { type = "button", label = L["Forget the stored lines"],
                 onClick = function()
                     Chat.History.Clear()
+                    Chat.Refresh()
                     ns:Print(L["The stored chat lines are gone."])
                 end },
           } },

@@ -1065,7 +1065,7 @@ ns:RegisterLocale("ptBR", {
     ["Hide the tooltip on hover"] = "Ocultar a dica ao passar o mouse",
     ["Whisper sound"] = "Som de sussurro",
     ["Keep the last lines across a reload"] = "Manter as últimas linhas após uma recarga",
-    ["How many lines"] = "Quantas linhas",
+    ["How many lines per tab"] = "Quantas linhas por aba",
     ["|cffaaaaaaKept per character, and only what was said in the open world: inside an instance the client hands chat over as secrets, which cannot be stored. Links in a restored line are text, not links.|r"] = "|cffaaaaaaGuardadas por personagem, e somente o que foi dito no mundo aberto: dentro de uma instância o cliente entrega o bate-papo como segredos, que não podem ser armazenados. Links em uma linha restaurada são texto, não links.|r",
     ["Forget the stored lines"] = "Esquecer as linhas armazenadas",
     ["The stored chat lines are gone."] = "As linhas de bate-papo armazenadas foram apagadas.",

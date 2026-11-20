@@ -252,7 +252,6 @@ function Chat.Refresh()
         Chat.Panel.ApplyAll()
         if Chat.Tabs then Chat.Tabs.Refresh() end
         if Chat.Sidebar then Chat.Sidebar.Refresh() end
-        if Chat.History then Chat.History.Replay() end
         if Chat.Fade then Chat.Fade.Install() end
     end)
 end

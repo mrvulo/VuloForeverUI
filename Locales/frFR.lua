@@ -1070,7 +1070,7 @@ ns:RegisterLocale("frFR", {
     ["Hide the tooltip on hover"] = "Masquer l'infobulle au survol",
     ["Whisper sound"] = "Son de chuchotement",
     ["Keep the last lines across a reload"] = "Conserver les dernières lignes après un rechargement",
-    ["How many lines"] = "Combien de lignes",
+    ["How many lines per tab"] = "Combien de lignes par onglet",
     ["|cffaaaaaaKept per character, and only what was said in the open world: inside an instance the client hands chat over as secrets, which cannot be stored. Links in a restored line are text, not links.|r"] = "|cffaaaaaaConservées par personnage, et uniquement ce qui a été dit dans le monde ouvert : en instance, le client transmet le chat comme secret, ce qui ne peut pas être stocké. Les liens dans une ligne restaurée sont du texte, pas des liens.|r",
     ["Forget the stored lines"] = "Oublier les lignes stockées",
     ["The stored chat lines are gone."] = "Les lignes de chat stockées ont disparu.",

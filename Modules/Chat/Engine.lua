@@ -503,13 +503,14 @@ local function tail(cf, msg, r, g, b, ...)
     mine = (type(mine) == "number") and (mine - (d.extraLines or 0)) or mine
     if okA and okB and ns.CanRead(mine) and ns.CanRead(theirs)
         and type(mine) == "number" and type(theirs) == "number" and theirs < mine then
+        if Chat.History then Chat.History.Forget(cf) end
         Chat.Queue("chat.rebuild", function() Engine.RebuildAll() end)
     end
 
     -- Everything below runs INSIDE the client's own AddMessage, so each piece
     -- is wrapped: an error of ours here would abort the client's handling of
     -- that line, which is how one bad profile value turns into no chat at all.
-    if Chat.History then pcall(Chat.History.Capture, msg) end
+    if Chat.History then pcall(Chat.History.Capture, cf, msg) end
     if Chat.Fade then pcall(Chat.Fade.Poke) end
     if Chat.Tabs then Chat.Tabs.OnMessage(cf) end
 end
@@ -520,6 +521,10 @@ function Engine.Rebuild(cf)
     local d = Chat.Data(cf)
     if not d.smf then return end
     d.smf:Clear()
+    -- The window's lines of the previous session first, above everything the
+    -- client still holds (History.lua); it sets extraLines to what it wrote.
+    d.extraLines = nil
+    if Chat.History then Chat.History.Write(cf) end
 
     local ok, count = pcall(cf.GetNumMessages, cf)
     if not (ok and ns.CanRead(count) and type(count) == "number") then return end

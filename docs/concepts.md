@@ -576,6 +576,18 @@ scaled together as one mover (`classes_priest`).
   Ctrl+C copies everything. "Select text" switches to the EditBox for a part.
   Measured with `/vfdiag fonts`: no single font file of this client has
   umlauts, Chinese and Korean together.
+- **Chat history** (`History.lua`, `history`, `historyLines`; F-68): one log
+  per chat window, per character, and each window gets exactly its own lines
+  back (the player's report 2026-11-20: whispers from a tab of their own came
+  back in "General" or were pushed out of the one shared list). A log carries
+  its window's name; a window with another name by now gets nothing. The
+  limit counts per window. The old lines are written by `Engine.Rebuild`
+  right after it empties our surface and before the client's buffer is
+  copied in, so they stand above the session's lines and survive every later
+  integrate pass (a settings change used to wipe them). Only what the store
+  held at the start of the session is ever replayed. A window the client
+  emptied loses its old lines for the session (`History.Forget`). Still never
+  stored: secret lines (instances), Battle.net tokens.
 - **The input line** wears ONE plain font object of ours
   (`VuloForeverUIChatInputFont`), on the box and on the strings in front of
   the text (channel name, language tag, prompt), so both always have the same

@@ -1070,7 +1070,7 @@ ns:RegisterLocale("deDE", {
     ["Hide the tooltip on hover"] = "Tooltip beim Darüberfahren ausblenden",
     ["Whisper sound"] = "Flüsterton",
     ["Keep the last lines across a reload"] = "Letzte Zeilen über ein Neuladen retten",
-    ["How many lines"] = "Wie viele Zeilen",
+    ["How many lines per tab"] = "Wie viele Zeilen je Reiter",
     ["|cffaaaaaaKept per character, and only what was said in the open world: inside an instance the client hands chat over as secrets, which cannot be stored. Links in a restored line are text, not links.|r"] = "|cffaaaaaaJe Charakter gespeichert, und nur was in der offenen Welt gesagt wurde: in einer Instanz übergibt der Client den Chat als Geheimnisse, die sich nicht speichern lassen. Verweise in einer wiederhergestellten Zeile sind Text, keine Verweise.|r",
     ["Forget the stored lines"] = "Gespeicherte Zeilen vergessen",
     ["The stored chat lines are gone."] = "Die gespeicherten Chatzeilen sind gelöscht.",

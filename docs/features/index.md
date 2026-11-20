@@ -79,6 +79,7 @@ jemand ohne den Code prüfen kann.
 | F-58 | Chat-Links treffen genau: Zeitstempel schreibt das Spiel | Chat | gebaut | – |
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
+| F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
 | F-66 | Gold-Tooltip der Taschen: Tagesbilanz ist Verdient minus Ausgegeben, Charakterliste stimmt ab dem Einloggen | Taschen / Komfort | gebaut | – |
 | F-65 | Makro-Fabrik: Essen, Trinken, Gesundheitsstein, Tränke, Seelen-, Zauber- und Feuerstein, Manaedelstein als Makros, die Stufe und Taschen folgen | Komfort | gebaut | – |
@@ -501,6 +502,14 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du die Einstellung ausschaltest, **dann** liegen die Gegenstände sofort wieder in den Kategorien und der Knopf ist weg. Ohne Handwerkstasche gibt es weder Knopf noch Abschnitt.
 - **Dann** bleiben „Pro Tasche“ und das Bankfenster unverändert; Sortieren, die Zahl freier Plätze in der Kopfzeile und der Taschen-voll-Helfer rechnen wie bisher.
 
+### F-68 Chat-Verlauf je Reiter
+- **Angenommen** „Letzte Zeilen über ein Neuladen retten“ ist an und du hast einen eigenen Reiter für Flüstern (z. B. „DMs“), **wenn** du dort Flüsternachrichten bekommst oder schreibst und dann neu einloggst oder `/reload` machst, **dann** stehen diese Zeilen grau unter „--- vorherige Sitzung ---“ wieder in genau diesem Reiter, darunter „--- diese Sitzung ---“ und die neuen Zeilen.
+- **Dann** bekommt jeder Reiter nur seine eigenen Zeilen zurück; eine Zeile, die zwei Reiter gezeigt haben, steht in beiden.
+- **Angenommen** im Handelschat laufen nach dem Flüstern hunderte Zeilen durch, **dann** sind die Flüsternachrichten im eigenen Reiter nach dem Relog trotzdem da: „Wie viele Zeilen je Reiter“ zählt für jeden Reiter einzeln.
+- **Wenn** du danach eine Chat-Einstellung änderst, **dann** bleiben die zurückgeholten Zeilen stehen.
+- **Wenn** du „Gespeicherte Zeilen vergessen“ drückst, **dann** sind sie sofort aus allen Reitern weg.
+- Bekannte Grenzen: Battle.net-Flüstern und alles aus Instanzen, Raids und Schlachtfeldern wird nie gespeichert; Links in zurückgeholten Zeilen sind Text. Ein umbenannter Reiter beginnt mit leerem Verlauf. Zeilen aus der Zeit vor diesem Umbau stehen einmalig noch im ersten Reiter.
+
 ## Offen
 
 - 2026-11-13 (Namensplaketten): fix built, NOT confirmed. Three screenshots
@@ -574,3 +583,7 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - 2026-11-16: „Bilanz“ im Gold-Tooltip zeigte den ganzen Geldbeutel statt
   Verdient minus Ausgegeben (F-66). Ursache: Der Tag begann bei ADDON_LOADED
   mit einem Geldbeutel von 0. Behoben, im Spiel noch zu bestätigen.
+- 2026-11-20: Flüsternachrichten aus einem eigenen Reiter waren nach dem
+  Relog weg (F-68). Ursache: ein gemeinsamer Verlauf für alle Reiter, nur in
+  den ersten zurückgeschrieben. Umgebaut auf einen Verlauf je Reiter, im
+  Spiel noch zu bestätigen.

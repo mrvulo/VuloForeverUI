@@ -1070,7 +1070,7 @@ ns:RegisterLocale("ruRU", {
     ["Hide the tooltip on hover"] = "Скрывать подсказку при наведении",
     ["Whisper sound"] = "Звук шепота",
     ["Keep the last lines across a reload"] = "Сохранять последние строки после перезагрузки",
-    ["How many lines"] = "Сколько строк",
+    ["How many lines per tab"] = "Сколько строк на вкладку",
     ["|cffaaaaaaKept per character, and only what was said in the open world: inside an instance the client hands chat over as secrets, which cannot be stored. Links in a restored line are text, not links.|r"] = "|cffaaaaaaСохраняется для каждого персонажа и только то, что сказано в открытом мире: в подземелье клиент отдает чат как скрытые значения, которые нельзя сохранить. Ссылки в восстановленной строке — просто текст, а не ссылки.|r",
     ["Forget the stored lines"] = "Забыть сохраненные строки",
     ["The stored chat lines are gone."] = "Сохраненные строки чата удалены.",
