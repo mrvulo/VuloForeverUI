@@ -48,7 +48,7 @@ ns:RegisterLocale("frFR", {
     ["A button beside the flight bar opens a word game: guess the word of the day in six tries. Landing closes it; /vfword opens it any time."] = "Un bouton à côté de la barre de vol ouvre un jeu de mots : devinez le mot du jour en six essais. L'atterrissage le ferme ; /vfword l'ouvre à tout moment.",
     ["No fishing pole in your bags."] = "Aucune canne à pêche dans vos sacs.",
     ["Fishing key"] = "Touche de pêche",
-    ["|cffaaaaaaOne key, a step per press: equips your pole, applies a lure, casts, and reels in while the bobber is out. Set the key in the game's key bindings under AddOns → VuloForeverUI: Fishing.|r"] = "|cffaaaaaaUne touche, une étape par appui : équipe la canne, pose un appât, lance et ramène tant que le bouchon est dehors. Définissez la touche dans les raccourcis du jeu : AddOns → VuloForeverUI: Pêche.|r",
+    ["|cffaaaaaaOne key, a step per press: equips your pole, applies a lure, casts, and reels in while the bobber is out. Set the key in the game's key bindings under AddOns > VuloForeverUI: Fishing.|r"] = "|cffaaaaaaUne touche, une étape par appui : équipe la canne, pose un appât, lance et ramène tant que le bouchon est dehors. Définissez la touche dans les raccourcis du jeu : AddOns > VuloForeverUI: Pêche.|r",
     ["Current key: %s"] = "Touche actuelle : %s",
     ["|cffff6666No key set yet.|r"] = "|cffff6666Aucune touche définie.|r",
     ["Apply a lure"] = "Poser un appât",

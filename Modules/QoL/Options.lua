@@ -492,7 +492,7 @@ local function fishingPage()
     local key = QoL.Fishing and QoL.Fishing.KeyText()
     return {
         { type = "header", text = L["Fishing key"] },
-        { type = "desc", text = L["|cffaaaaaaOne key, a step per press: equips your pole, applies a lure, casts, and reels in while the bobber is out. Set the key in the game's key bindings under AddOns → VuloForeverUI: Fishing.|r"] },
+        { type = "desc", text = L["|cffaaaaaaOne key, a step per press: equips your pole, applies a lure, casts, and reels in while the bobber is out. Set the key in the game's key bindings under AddOns > VuloForeverUI: Fishing.|r"] },
         { type = "desc", text = key and L["Current key: %s"]:format(key) or L["|cffff6666No key set yet.|r"] },
         toggle("fishing", "enabled", L["Fishing key"]),
         toggle("fishing", "lure", L["Apply a lure"],

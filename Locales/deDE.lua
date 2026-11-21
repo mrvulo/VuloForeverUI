@@ -48,7 +48,7 @@ ns:RegisterLocale("deDE", {
     ["A button beside the flight bar opens a word game: guess the word of the day in six tries. Landing closes it; /vfword opens it any time."] = "Ein Knopf neben der Flugleiste öffnet ein Wortspiel: Errate das Wort des Tages in sechs Versuchen. Die Landung schließt es, /vfword öffnet es jederzeit.",
     ["No fishing pole in your bags."] = "Keine Angel in deinen Taschen.",
     ["Fishing key"] = "Angeltaste",
-    ["|cffaaaaaaOne key, a step per press: equips your pole, applies a lure, casts, and reels in while the bobber is out. Set the key in the game's key bindings under AddOns → VuloForeverUI: Fishing.|r"] = "|cffaaaaaaEine Taste, ein Schritt pro Druck: legt die Angel an, bringt einen Köder an, wirft aus und holt ein, solange der Schwimmer draußen ist. Die Taste legst du in der Tastenbelegung des Spiels fest: AddOns → „VuloForeverUI: Angeln“.|r",
+    ["|cffaaaaaaOne key, a step per press: equips your pole, applies a lure, casts, and reels in while the bobber is out. Set the key in the game's key bindings under AddOns > VuloForeverUI: Fishing.|r"] = "|cffaaaaaaEine Taste, ein Schritt pro Druck: legt die Angel an, bringt einen Köder an, wirft aus und holt ein, solange der Schwimmer draußen ist. Die Taste legst du in der Tastenbelegung des Spiels fest: AddOns > „VuloForeverUI: Angeln“.|r",
     ["Current key: %s"] = "Aktuelle Taste: %s",
     ["|cffff6666No key set yet.|r"] = "|cffff6666Noch keine Taste festgelegt.|r",
     ["Apply a lure"] = "Köder anbringen",

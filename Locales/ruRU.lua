@@ -48,7 +48,7 @@ ns:RegisterLocale("ruRU", {
     ["A button beside the flight bar opens a word game: guess the word of the day in six tries. Landing closes it; /vfword opens it any time."] = "Кнопка рядом с панелью полёта открывает игру в слова: отгадайте слово дня за шесть попыток. После посадки окно закрывается; /vfword открывает его в любой момент.",
     ["No fishing pole in your bags."] = "В сумках нет удочки.",
     ["Fishing key"] = "Клавиша рыбалки",
-    ["|cffaaaaaaOne key, a step per press: equips your pole, applies a lure, casts, and reels in while the bobber is out. Set the key in the game's key bindings under AddOns → VuloForeverUI: Fishing.|r"] = "|cffaaaaaaОдна клавиша, шаг за нажатие: берёт удочку, ставит приманку, забрасывает и подсекает, пока поплавок в воде. Клавишу задайте в назначениях клавиш игры: AddOns → VuloForeverUI: Рыбная ловля.|r",
+    ["|cffaaaaaaOne key, a step per press: equips your pole, applies a lure, casts, and reels in while the bobber is out. Set the key in the game's key bindings under AddOns > VuloForeverUI: Fishing.|r"] = "|cffaaaaaaОдна клавиша, шаг за нажатие: берёт удочку, ставит приманку, забрасывает и подсекает, пока поплавок в воде. Клавишу задайте в назначениях клавиш игры: AddOns > VuloForeverUI: Рыбная ловля.|r",
     ["Current key: %s"] = "Текущая клавиша: %s",
     ["|cffff6666No key set yet.|r"] = "|cffff6666Клавиша не задана.|r",
     ["Apply a lure"] = "Ставить приманку",
