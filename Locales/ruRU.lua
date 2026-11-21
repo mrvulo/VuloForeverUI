@@ -1859,6 +1859,7 @@ ns:RegisterLocale("ruRU", {
     ["Flight time"] = "Время полета",
     ["In flight"] = "В полете",
     ["Flight took %s."] = "Полет занял %s.",
+    ["Arriving"] = "вот-вот",
     ["Show a flight time bar"] = "Показывать полосу времени полета",
     ["The client never says how long a ride takes, so the first flight of a route is measured and every one after it counts down."] = "Клиент никогда не сообщает, сколько длится перелет, поэтому первый полет по маршруту измеряется, а каждый следующий ведет обратный отсчет.",
     ["Say the flight time in chat"] = "Сообщать время полета в чат",

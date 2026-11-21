@@ -81,6 +81,7 @@ jemand ohne den Code prüfen kann.
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
 | F-70 | Chat-Verlauf: Spielername in einer zurückgeholten Zeile anklicken und anflüstern | Chat | gebaut | – |
 | F-71 | Angeln leichter skillen: Taste im Fenster festlegen, Skill-Anzeige, Stufen-Hinweis, Auto-Beute, Schwimmer hören, Waffen zurück | Komfort | gebaut | – |
+| F-72 | Flugleiste: genaue Flugzeit aus den Flugpfaden des Clients, auch beim ersten Flug | Komfort | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -325,6 +326,12 @@ jemand ohne den Code prüfen kann.
 - Angenommen „Beute beim Angeln automatisch aufheben“ ist an und das automatische Plündern des Spiels aus, **wenn** du einholst, **dann** landet der Fang ohne Klick in der Tasche; ein paar Sekunden nach dem Angeln ist das Spiel wieder auf deiner Einstellung.
 - Angenommen „Schwimmer besser hören“ ist an, **wenn** die Leine draußen ist, **dann** sind Effekte voll und ohne Dämpfung über die Entfernung, Musik, Umgebung, Stimmen und Nebengeräusche (Begleiter, Emotes, Rüstungsrascheln, Fehlerstimme) stumm, auch mit dem Spiel im Hintergrund — der Platscher hebt sich deutlich ab; ein paar Sekunden nach dem Angeln sind deine Lautstärken zurück.
 - Angenommen „Waffen beim Aufsitzen zurück“ ist an und die Angeltaste hat die Angel angelegt, **wenn** du aufsitzt, **dann** liegen die Waffen von vorher wieder in den Händen. Hast du inzwischen selbst etwas anderes angelegt, passiert nichts.
+
+### F-72 Genaue Flugzeit beim ersten Flug
+- Angenommen eine Route ist noch nie geflogen (z. B. Burg Cenarius → Gadgetzan), **wenn** du abfliegst, **dann** zeigt die Flugleiste die Gesamtzeit ohne „~“, und du landest höchstens ein paar Sekunden neben ihr.
+- **Dann** stehen auch die Zeiten bis zu den Zwischenstopps im Streifen unter der Leiste ohne „~“ und stimmen auf wenige Sekunden.
+- **Wenn** eine Route schon geflogen ist, **dann** gilt die gemessene Zeit wie bisher.
+- **Wenn** eine Zeit abläuft, während du noch in der Luft bist, **dann** steht im Streifen „gleich“ statt „~0:00“.
 
 ### F-45 Tägliches Wort
 - Angenommen die Flugleiste ist an, **wenn** du fliegst, **dann** sitzt rechts neben der Leiste ein Knopf „Wort“; ein Klick öffnet „Tägliches Wort #N“ mit 6 × 5 Feldern, QWERTZ-Tastatur, „Nächstes Wort in …“ und der Statistik.

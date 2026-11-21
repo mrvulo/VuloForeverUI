@@ -1825,6 +1825,7 @@ ns:RegisterLocale("ptBR", {
     ["Flight time"] = "Tempo de voo",
     ["In flight"] = "Em voo",
     ["Flight took %s."] = "O voo levou %s.",
+    ["Arriving"] = "quase lá",
     ["Show a flight time bar"] = "Mostrar uma barra de tempo de voo",
     ["The client never says how long a ride takes, so the first flight of a route is measured and every one after it counts down."] = "O cliente nunca informa quanto tempo dura uma viagem, então o primeiro voo de uma rota é medido e todos os seguintes fazem a contagem regressiva.",
     ["Say the flight time in chat"] = "Informar o tempo de voo no bate-papo",

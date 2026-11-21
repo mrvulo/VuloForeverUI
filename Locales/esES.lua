@@ -1859,6 +1859,7 @@ local T = {
     ["Flight time"] = "Tiempo de vuelo",
     ["In flight"] = "En vuelo",
     ["Flight took %s."] = "El vuelo duró %s.",
+    ["Arriving"] = "ya casi",
     ["Show a flight time bar"] = "Mostrar una barra de tiempo de vuelo",
     ["The client never says how long a ride takes, so the first flight of a route is measured and every one after it counts down."] = "El cliente nunca dice cuánto dura un trayecto, así que se mide el primer vuelo de una ruta y todos los siguientes hacen cuenta atrás.",
     ["Say the flight time in chat"] = "Decir el tiempo de vuelo en el chat",

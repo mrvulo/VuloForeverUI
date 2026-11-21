@@ -1859,6 +1859,7 @@ ns:RegisterLocale("deDE", {
     ["Flight time"] = "Flugzeit",
     ["In flight"] = "Im Flug",
     ["Flight took %s."] = "Der Flug hat %s gedauert.",
+    ["Arriving"] = "gleich",
     ["Show a flight time bar"] = "Flugzeitbalken anzeigen",
     ["The client never says how long a ride takes, so the first flight of a route is measured and every one after it counts down."] = "Der Client sagt nie, wie lange ein Flug dauert -- darum wird der erste Flug einer Strecke gemessen, und jeder danach zählt herunter.",
     ["Say the flight time in chat"] = "Flugzeit im Chat ausgeben",
