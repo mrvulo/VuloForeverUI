@@ -1,7 +1,7 @@
 import re,json,sys
 def parse(s,name):
     i=s.index(name+' = ')+len(name)+3
-    tok=re.compile(r'\s*(?:(\{)|(\})|(,)|(;)|\[\s*("(?:[^"\\]|\\.)*"|-?[\d.e+-]+)\s*\]\s*=|("(?:[^"\\]|\\.)*")|(true|false|nil)|(-?(?:0x[0-9a-fA-F]+|[\d.]+(?:[eE][+-]?\d+)?)))',re.S)
+    tok=re.compile(r'\s*(?:(\{)|(\})|(,)|(;)|\[\s*("(?:[^"\\]|\\.)*"|-?[\d.e+-]+)\s*\]\s*=|("(?:[^"\\]|\\.)*")|(true|false|nil)\b(?!\s*=)|(-?(?:0x[0-9a-fA-F]+|[\d.]+(?:[eE][+-]?\d+)?))|([A-Za-z_]\w*)\s*=(?!=))',re.S)
     pos=[i]
     def val():
         m=tok.match(s,pos[0]); pos[0]=m.end()
@@ -15,6 +15,8 @@ def parse(s,name):
                     pos[0]=m2.end(); k=m2.group(5)
                     k=json.loads(k) if k.startswith('"') else (int(float(k)) if float(k).is_integer() else float(k))
                     t[k]=val()
+                elif m2.group(9):
+                    pos[0]=m2.end(); t[m2.group(9)]=val()
                 else:
                     t[n]=val(); n+=1
         if m.group(6): return json.loads(m.group(6).replace('\\\n','\\n'))
@@ -31,6 +33,12 @@ def parse(s,name):
 # Reads the account SavedVariables (default: ~/addons/_SavedVariables/
 # VuloForeverUI.lua, the copy that comes back from the gaming PC), takes the
 # named profile (default: the active one) and writes Core/Database/Shipped.lua.
+#
+# The profile is laid OVER the current Shipped.lua, not written instead of it:
+# at logout every value equal to its default is stripped, and the default
+# already holds the shipped look -- so a saved profile only carries what
+# differs from it. Shipping the profile alone would drop everything it shares
+# with the previous shipped look.
 # Left out on purpose -- see the header of the generated file for why:
 SKIP = {
     ("modules", "cooldownmanager"),                 # bars hold class spell lists and an order array
@@ -55,6 +63,17 @@ def strip(t, path=()):
                 continue
         out[k] = v
     return out
+
+def overlay(dst, src):
+    """Same walk as ns.ShippedOverlay: src wins, tables are merged, never replaced."""
+    for k, v in src.items():
+        if isinstance(v, dict):
+            if not isinstance(dst.get(k), dict):
+                dst[k] = {}
+            overlay(dst[k], v)
+        else:
+            dst[k] = v
+    return dst
 
 def lua(v, ind=1):
     pad = "    " * ind
@@ -83,9 +102,18 @@ if __name__ == "__main__":
     prof = strip(db["profiles"][name])
     modules = prof.pop("modules", {})
     glob = {k: db["global"][k] for k in ("fonts", "classColors", "powerColors") if db["global"].get(k)}
-    body = {"global": glob, "profile": prof, "modules": modules, "modulesOff": {m: True for m in MODULES_OFF}}
-    head = open(os.path.join(here, "ship_profile_header.lua"), encoding="utf-8").read()
-    out = head.replace("@PROFILE@", name) + "local SHIPPED = " + lua(body) + "\n\n" + open(os.path.join(here, "ship_profile_footer.lua"), encoding="utf-8").read()
     dst = os.path.join(here, "..", "Core", "Database", "Shipped.lua")
+    body, chain = {}, []
+    if os.path.exists(dst):
+        cur = open(dst, encoding="utf-8").read()
+        body = parse(cur, "SHIPPED")
+        m = re.search(r'from the player.s profile(?:s)? (.+?)\.\n', cur)
+        chain = re.findall(r'"([^"]+)"', m.group(1)) if m else []
+    overlay(body, {"global": glob, "profile": prof, "modules": modules})
+    body["modulesOff"] = {m: True for m in MODULES_OFF}
+    chain = [c for c in chain if c != name] + [name]
+    label = ('"%s"' % chain[0]) if len(chain) == 1 else ("s " + " then ".join('"%s"' % c for c in chain))
+    head = open(os.path.join(here, "ship_profile_header.lua"), encoding="utf-8").read()
+    out = head.replace('profile "@PROFILE@"', "profile" + (" " if len(chain) == 1 else "") + label) + "local SHIPPED = " + lua(body) + "\n\n" + open(os.path.join(here, "ship_profile_footer.lua"), encoding="utf-8").read()
     open(dst, "w", encoding="utf-8").write(out)
     print("wrote", os.path.normpath(dst), "from profile", name, "-", len(modules), "modules")
