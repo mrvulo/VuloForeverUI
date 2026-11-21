@@ -65,7 +65,7 @@ ns:RegisterLocale("ruRU", {
     ["Loot automatically while fishing"] = "Автодобыча во время рыбалки",
     ["Turns the game's auto loot on while the line is out, so the catch goes straight into your bags. Your own setting comes back afterwards."] = "Включает автодобычу игры, пока леска в воде: улов сразу попадает в сумки. Ваша настройка потом возвращается.",
     ["Hear the bobber better"] = "Лучше слышать поплавок",
-    ["While the line is out: music and ambience off, effects at full volume, also with the game in the background. Your own volumes come back afterwards."] = "Пока леска в воде: музыка и окружение выключены, эффекты на полной громкости, даже когда игра в фоне. Ваша громкость потом возвращается.",
+    ["While the line is out: effects at full volume, without the muffling over distance; music, ambience, voices and other noises off, also with the game in the background. Your own settings come back afterwards."] = "Пока леска в воде: эффекты на полной громкости, без приглушения на расстоянии; музыка, окружение, голоса и прочие шумы выключены, даже когда игра в фоне. Ваши настройки потом возвращаются.",
     ["Weapons back when you mount"] = "Вернуть оружие при посадке на транспорт",
     ["When the fishing key put the pole in your hands, the weapons you held before come back as soon as you mount."] = "Если клавиша рыбалки надела удочку, прежнее оружие возвращается, как только вы садитесь на транспорт.",
     ["Tell me when a skill rank is full"] = "Сообщать, когда ступень заполнена",

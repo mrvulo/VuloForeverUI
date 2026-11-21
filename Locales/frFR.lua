@@ -65,7 +65,7 @@ ns:RegisterLocale("frFR", {
     ["Loot automatically while fishing"] = "Butin automatique pendant la pêche",
     ["Turns the game's auto loot on while the line is out, so the catch goes straight into your bags. Your own setting comes back afterwards."] = "Active le butin automatique du jeu tant que la ligne est à l'eau : la prise va directement dans tes sacs. Ton propre réglage revient ensuite.",
     ["Hear the bobber better"] = "Mieux entendre le bouchon",
-    ["While the line is out: music and ambience off, effects at full volume, also with the game in the background. Your own volumes come back afterwards."] = "Tant que la ligne est à l'eau : musique et ambiance coupées, effets à plein volume, même avec le jeu en arrière-plan. Tes volumes reviennent ensuite.",
+    ["While the line is out: effects at full volume, without the muffling over distance; music, ambience, voices and other noises off, also with the game in the background. Your own settings come back afterwards."] = "Tant que la ligne est à l'eau : effets à plein volume, sans l'atténuation due à la distance ; musique, ambiance, voix et autres bruits coupés, même avec le jeu en arrière-plan. Tes réglages reviennent ensuite.",
     ["Weapons back when you mount"] = "Reprendre les armes en montant en selle",
     ["When the fishing key put the pole in your hands, the weapons you held before come back as soon as you mount."] = "Si la touche de pêche t'a mis la canne en main, les armes d'avant reviennent dès que tu montes en selle.",
     ["Tell me when a skill rank is full"] = "Prévenir quand un rang est plein",

@@ -323,7 +323,7 @@ jemand ohne den Code prüfen kann.
 - Unter „Skillen“ steht „Angelskill: 215 / 225“ (ohne Angeln: ein roter Hinweis).
 - Angenommen „Melden, wenn eine Stufe voll ist“ ist an, **wenn** der Skill das Maximum seiner Stufe erreicht (75/75, 150/150, 225/225), **dann** sagt eine Zeile im Chat, dass die nächste Stufe beim Angellehrer wartet — einmal je Stufe, auch nicht wieder nach `/reload`.
 - Angenommen „Beute beim Angeln automatisch aufheben“ ist an und das automatische Plündern des Spiels aus, **wenn** du einholst, **dann** landet der Fang ohne Klick in der Tasche; ein paar Sekunden nach dem Angeln ist das Spiel wieder auf deiner Einstellung.
-- Angenommen „Schwimmer besser hören“ ist an, **wenn** die Leine draußen ist, **dann** sind Musik und Umgebung stumm und Effekte voll, auch mit dem Spiel im Hintergrund; ein paar Sekunden nach dem Angeln sind deine Lautstärken zurück.
+- Angenommen „Schwimmer besser hören“ ist an, **wenn** die Leine draußen ist, **dann** sind Effekte voll und ohne Dämpfung über die Entfernung, Musik, Umgebung, Stimmen und Nebengeräusche (Begleiter, Emotes, Rüstungsrascheln, Fehlerstimme) stumm, auch mit dem Spiel im Hintergrund — der Platscher hebt sich deutlich ab; ein paar Sekunden nach dem Angeln sind deine Lautstärken zurück.
 - Angenommen „Waffen beim Aufsitzen zurück“ ist an und die Angeltaste hat die Angel angelegt, **wenn** du aufsitzt, **dann** liegen die Waffen von vorher wieder in den Händen. Hast du inzwischen selbst etwas anderes angelegt, passiert nichts.
 
 ### F-45 Tägliches Wort

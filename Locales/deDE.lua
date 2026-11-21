@@ -65,7 +65,7 @@ ns:RegisterLocale("deDE", {
     ["Loot automatically while fishing"] = "Beute beim Angeln automatisch aufheben",
     ["Turns the game's auto loot on while the line is out, so the catch goes straight into your bags. Your own setting comes back afterwards."] = "Schaltet das automatische Plündern des Spiels ein, solange die Leine draußen ist: Der Fang landet ohne Klick in der Tasche. Deine eigene Einstellung kommt danach zurück.",
     ["Hear the bobber better"] = "Schwimmer besser hören",
-    ["While the line is out: music and ambience off, effects at full volume, also with the game in the background. Your own volumes come back afterwards."] = "Solange die Leine draußen ist: Musik und Umgebung aus, Effekte voll, auch wenn das Spiel im Hintergrund läuft. Deine Lautstärken kommen danach zurück.",
+    ["While the line is out: effects at full volume, without the muffling over distance; music, ambience, voices and other noises off, also with the game in the background. Your own settings come back afterwards."] = "Solange die Leine draußen ist: Effekte voll und ohne Dämpfung über die Entfernung; Musik, Umgebung, Stimmen und Nebengeräusche aus, auch wenn das Spiel im Hintergrund läuft. Deine Einstellungen kommen danach zurück.",
     ["Weapons back when you mount"] = "Waffen beim Aufsitzen zurück",
     ["When the fishing key put the pole in your hands, the weapons you held before come back as soon as you mount."] = "Hat die Angeltaste die Angel angelegt, kommen die Waffen von vorher zurück, sobald du aufsitzt.",
     ["Tell me when a skill rank is full"] = "Melden, wenn eine Stufe voll ist",

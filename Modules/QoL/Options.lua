@@ -515,7 +515,7 @@ local function fishingPage()
         toggle("fishing", "autoLoot", L["Loot automatically while fishing"],
             L["Turns the game's auto loot on while the line is out, so the catch goes straight into your bags. Your own setting comes back afterwards."]),
         toggle("fishing", "sound", L["Hear the bobber better"],
-            L["While the line is out: music and ambience off, effects at full volume, also with the game in the background. Your own volumes come back afterwards."]),
+            L["While the line is out: effects at full volume, without the muffling over distance; music, ambience, voices and other noises off, also with the game in the background. Your own settings come back afterwards."]),
         toggle("fishing", "swapBack", L["Weapons back when you mount"],
             L["When the fishing key put the pole in your hands, the weapons you held before come back as soon as you mount."]),
         toggle("fishing", "capNotice", L["Tell me when a skill rank is full"],

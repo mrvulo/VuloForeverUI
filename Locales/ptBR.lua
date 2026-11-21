@@ -65,7 +65,7 @@ ns:RegisterLocale("ptBR", {
     ["Loot automatically while fishing"] = "Saque automático ao pescar",
     ["Turns the game's auto loot on while the line is out, so the catch goes straight into your bags. Your own setting comes back afterwards."] = "Liga o saque automático do jogo enquanto a linha está na água: a pesca vai direto para as bolsas. Sua configuração volta depois.",
     ["Hear the bobber better"] = "Ouvir melhor a boia",
-    ["While the line is out: music and ambience off, effects at full volume, also with the game in the background. Your own volumes come back afterwards."] = "Enquanto a linha está na água: música e ambiente desligados, efeitos no volume máximo, também com o jogo em segundo plano. Seus volumes voltam depois.",
+    ["While the line is out: effects at full volume, without the muffling over distance; music, ambience, voices and other noises off, also with the game in the background. Your own settings come back afterwards."] = "Enquanto a linha está na água: efeitos no volume máximo, sem o abafamento pela distância; música, ambiente, vozes e outros ruídos desligados, também com o jogo em segundo plano. Suas configurações voltam depois.",
     ["Weapons back when you mount"] = "Reequipar armas ao montar",
     ["When the fishing key put the pole in your hands, the weapons you held before come back as soon as you mount."] = "Se a tecla de pesca equipou a vara, as armas de antes voltam assim que você monta.",
     ["Tell me when a skill rank is full"] = "Avisar quando um nível estiver cheio",

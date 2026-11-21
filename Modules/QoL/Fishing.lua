@@ -64,10 +64,19 @@ local LURES = {
 -- SoftTargetInteract is a secure CVar -- never written in combat.
 local CVARS = { SoftTargetInteract = "3", SoftTargetIconGameObject = "1", SoftTargetIconInteract = "1" }
 local LOOT_CVARS = { autoLootDefault = "1" }
--- the splash is a sound effect: effects on and loud, music and ambience off
+-- The splash is a positional sound effect some 15-20 yards away. Effects
+-- cannot go past full, so the rest goes quiet instead: music, ambience,
+-- voices, pets, emotes, armour rustle and error speech off; and the
+-- distance low-pass and reverb that muffle a sound that far away are off too.
 local SOUND_CVARS = {
-    Sound_EnableAllSound = "1", Sound_EnableSFX = "1", Sound_SFXVolume = "1",
-    Sound_MusicVolume = "0", Sound_AmbienceVolume = "0", Sound_EnableSoundWhenGameIsInBG = "1",
+    Sound_EnableAllSound = "1", Sound_MasterVolume = "1",
+    Sound_EnableSFX = "1", Sound_SFXVolume = "1",
+    Sound_EnableGameplaySFX = "1", Sound_GameplaySFX = "1",
+    Sound_EnableSoundWhenGameIsInBG = "1",
+    Sound_MusicVolume = "0", Sound_AmbienceVolume = "0", Sound_DialogVolume = "0",
+    Sound_EnablePetSounds = "0", Sound_EnableEmoteSounds = "0", Sound_EnableErrorSpeech = "0",
+    Sound_EnableArmorFoleySoundForSelf = "0", Sound_EnableArmorFoleySoundForOthers = "0",
+    Sound_EnablePositionalLowPassFilter = "0", Sound_EnableReverb = "0",
 }
 local TOP_RANK = 300                       -- below this a full rank means "see the trainer"
 local MODIFIER = { LSHIFT = true, RSHIFT = true, LCTRL = true, RCTRL = true,
