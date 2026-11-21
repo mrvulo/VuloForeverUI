@@ -80,6 +80,7 @@ jemand ohne den Code prüfen kann.
 | F-59 | Klassen-Modul mit Tab je Klasse; Priester: Schild-Bogen und Bogen für Inneres Feuer | Klassen | gebaut | – |
 | F-60 | Erinnerungen: eigene Vorwarnzeit für Essen und Lagerfeuer-Buff, Countdown auf ablaufenden Symbolen | Erinnerungen | gebaut | – |
 | F-70 | Chat-Verlauf: Spielername in einer zurückgeholten Zeile anklicken und anflüstern | Chat | gebaut | – |
+| F-71 | Angeln leichter skillen: Taste im Fenster festlegen, Skill-Anzeige, Stufen-Hinweis, Auto-Beute, Schwimmer hören, Waffen zurück | Komfort | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -315,6 +316,15 @@ jemand ohne den Code prüfen kann.
 - **Dann** sind deine Soft-Target-Einstellungen ein paar Sekunden nach dem Angeln wieder wie vorher — auch nach Kampf oder `/reload` mitten im Angeln.
 - Angenommen „Mit Doppel-Rechtsklick auswerfen“ ist an, **wenn** du mit der Angel in der Hand schnell zweimal rechts in die Welt klickst, **dann** wirft sie aus; einfacher Rechtsklick dreht weiter die Kamera, und im Kampf verhält sich Rechtsklick ganz normal.
 - **Wenn** „Angeltaste“ aus ist, **dann** tut die belegte Taste nichts.
+
+### F-71 Angeln leichter skillen
+- Angenommen `/vfui → Komfort → Angeln` ist offen, **wenn** du „Taste festlegen“ klickst und eine Taste drückst (auch mit Shift, Strg oder Alt, oder Maustaste 3 bis 5 über dem kleinen Fenster), **dann** ist sie die Angeltaste, „Aktuelle Taste“ zeigt sie, und der Chat sagt, was vorher auf ihr lag. Eine vorher belegte Angeltaste ist danach frei. Esc bricht ab; ein Kampf schließt das Fenster.
+- **Wenn** du „Taste entfernen“ klickst, **dann** ist keine Angeltaste mehr belegt und der rote Hinweis steht wieder da.
+- Unter „Skillen“ steht „Angelskill: 215 / 225“ (ohne Angeln: ein roter Hinweis).
+- Angenommen „Melden, wenn eine Stufe voll ist“ ist an, **wenn** der Skill das Maximum seiner Stufe erreicht (75/75, 150/150, 225/225), **dann** sagt eine Zeile im Chat, dass die nächste Stufe beim Angellehrer wartet — einmal je Stufe, auch nicht wieder nach `/reload`.
+- Angenommen „Beute beim Angeln automatisch aufheben“ ist an und das automatische Plündern des Spiels aus, **wenn** du einholst, **dann** landet der Fang ohne Klick in der Tasche; ein paar Sekunden nach dem Angeln ist das Spiel wieder auf deiner Einstellung.
+- Angenommen „Schwimmer besser hören“ ist an, **wenn** die Leine draußen ist, **dann** sind Musik und Umgebung stumm und Effekte voll, auch mit dem Spiel im Hintergrund; ein paar Sekunden nach dem Angeln sind deine Lautstärken zurück.
+- Angenommen „Waffen beim Aufsitzen zurück“ ist an und die Angeltaste hat die Angel angelegt, **wenn** du aufsitzt, **dann** liegen die Waffen von vorher wieder in den Händen. Hast du inzwischen selbst etwas anderes angelegt, passiert nichts.
 
 ### F-45 Tägliches Wort
 - Angenommen die Flugleiste ist an, **wenn** du fliegst, **dann** sitzt rechts neben der Leiste ein Knopf „Wort“; ein Klick öffnet „Tägliches Wort #N“ mit 6 × 5 Feldern, QWERTZ-Tastatur, „Nächstes Wort in …“ und der Statistik.

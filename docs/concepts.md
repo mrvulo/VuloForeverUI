@@ -462,6 +462,21 @@ scaled together as one mover (`classes_priest`).
   right-click: a second secure button with `useOnKeyDown = false` (the
   override is set on the second mouse-down, so only the release reaches it),
   cleared after the click or after 1 s.
+- **Fishing for skilling** (F-71, 2026-11-21): the options page binds the key
+  itself (a small window with an invisible focused edit box takes the next
+  key, `SetBinding` + `SaveBindings`, only out of combat; the new key
+  replaces the old ones). Auto loot and the sound CVars ride the same keep
+  as the bobber CVars (`fishing.savedCVars`), so they come back with them.
+  The weapons the key takes off are kept per character
+  (`VuloForeverUICharDB.fishing.weaponsBack`, survives a reload; profiles are
+  often shared) and go back on mounting -- equipping is fine out of combat,
+  and the trinket queue already equips on mounting. Every pole press writes
+  the current weapons anew; no pole in hand at mounting drops the note. The
+  rank notice says each full rank below 300 once per character
+  (`...fishing.capNoticed`). The key capture skips what the client's own key
+  bindings skip, puts the old keys back if binding fails, and is parented to
+  the options window so closing it ends the capture.
+  `fishing.savedCVars` is SKIP in ship_profile.py.
 - **Gathering icon** (`Professions.lua`, `professions.gatherIcon`): no
   addon can make world objects sparkle or read node positions; the part sets
   the client's soft-interact CVars (SoftTargetInteract 3, icons for game

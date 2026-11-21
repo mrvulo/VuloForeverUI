@@ -10,6 +10,11 @@
 -- Optionally a double right-click casts, and while the line is out the
 -- client's own interact icon marks the bobber.
 --
+-- For skilling: the key can be set from the options page (a small window
+-- that takes the next key press), auto loot and a louder bobber while the
+-- line is out, the weapons the key took off come back on mounting, and one
+-- chat line when the skill sits at the top of its rank.
+--
 -- HOW, AND WHY THIS WAY
 --
 -- Equipping, using a lure on the main hand and casting are protected: they
@@ -58,13 +63,33 @@ local LURES = {
 -- changed: whatever is kept there goes back at the next chance out of combat.
 -- SoftTargetInteract is a secure CVar -- never written in combat.
 local CVARS = { SoftTargetInteract = "3", SoftTargetIconGameObject = "1", SoftTargetIconInteract = "1" }
+local LOOT_CVARS = { autoLootDefault = "1" }
+-- the splash is a sound effect: effects on and loud, music and ambience off
+local SOUND_CVARS = {
+    Sound_EnableAllSound = "1", Sound_EnableSFX = "1", Sound_SFXVolume = "1",
+    Sound_MusicVolume = "0", Sound_AmbienceVolume = "0", Sound_EnableSoundWhenGameIsInBG = "1",
+}
+local TOP_RANK = 300                       -- below this a full rank means "see the trainer"
+local MODIFIER = { LSHIFT = true, RSHIFT = true, LCTRL = true, RCTRL = true,
+                   LALT = true, RALT = true, LMETA = true, RMETA = true }
+local MOUSE_KEYS = { MiddleButton = true, Button4 = true, Button5 = true }
 
 local button, mouseButton, owner, registered
 local reeling = false
 local lastRight, lastNote = 0, 0
 local mouseTimer
+local capture
 
 local function db() return QoL.db().fishing end
+
+-- What belongs to this character, not to the (often shared) profile: the
+-- weapons the key took off and the skill rank already announced.
+local function charDB()
+    local c = VuloForeverUICharDB
+    if type(c) ~= "table" then return {} end
+    if type(c.fishing) ~= "table" then c.fishing = {} end
+    return c.fishing
+end
 
 -- ------------------------------------------------------------ bags --
 
@@ -94,15 +119,16 @@ local function findPole()
     return best
 end
 
+-- rank, max; nil when the character never learned Fishing
 local function fishingSkill()
     local _, _, _, fishing = GetProfessions()
-    if not fishing then return 0 end
-    local _, _, rank = GetProfessionInfo(fishing)
-    return ns.Num(rank, 0)
+    if not fishing then return nil end
+    local _, _, rank, max = GetProfessionInfo(fishing)
+    return ns.Num(rank, 0), ns.Num(max, 0)
 end
 
 local function findLure()
-    local skill = fishingSkill()
+    local skill = fishingSkill() or 0
     for _, lure in ipairs(LURES) do
         if lure.skill <= skill and C_Item.GetItemCount(lure.id) > 0 then
             for _, bag in ipairs(ns.CarriedBags()) do
@@ -128,6 +154,17 @@ local function hasLure()
     return false
 end
 
+-- The weapons the key is about to take off, kept per character so a reload
+-- between fishing and mounting does not lose them. Only reached with no pole
+-- in hand, so whatever is held is the player's current weapon: it always
+-- replaces an older note (weapons changed by hand since the last pole).
+local function rememberWeapons()
+    if not db().swapBack then return end
+    local main = GetInventoryItemID("player", INVSLOT_MAINHAND or 16)
+    if not main then return end
+    charDB().weaponsBack = { main = main, off = GetInventoryItemID("player", INVSLOT_OFFHAND or 17) }
+end
+
 -- -------------------------------------------------------- the step --
 
 -- PreClick: the next step into the secure attributes. Out of combat only;
@@ -143,6 +180,7 @@ local function prepare(self)
     if not poleInHand() then
         local pole = findPole()
         if pole then
+            rememberWeapons()
             self:SetAttribute("type", "item")
             self:SetAttribute("item", pole)
         elseif GetTime() - lastNote > 2 then
@@ -186,12 +224,9 @@ local function restoreCVars()
     db().savedCVars = nil
 end
 
-local function setCVars()
-    if InCombatLockdown() then return end
-    local keep = db().savedCVars
-    if type(keep) ~= "table" then keep = {}; db().savedCVars = keep end
-    for k, v in pairs(CVARS) do
-        if db().indicator or k == "SoftTargetInteract" then
+local function setGroup(keep, list, only)
+    for k, v in pairs(list) do
+        if not only or k == only then
             local cur = C_CVar.GetCVar(k)
             if cur ~= nil then
                 if keep[k] == nil then keep[k] = cur end
@@ -199,6 +234,15 @@ local function setCVars()
             end
         end
     end
+end
+
+local function setCVars()
+    if InCombatLockdown() then return end
+    local keep = db().savedCVars
+    if type(keep) ~= "table" then keep = {}; db().savedCVars = keep end
+    setGroup(keep, CVARS, not db().indicator and "SoftTargetInteract" or nil)
+    if db().autoLoot then setGroup(keep, LOOT_CVARS) end
+    if db().sound then setGroup(keep, SOUND_CVARS) end
 end
 
 -- While the line is out every bound key interacts; otherwise they are the
@@ -222,6 +266,55 @@ end
 local function channelIsFishing()
     local _, _, _, _, _, _, _, spellID = UnitChannelInfo("player")
     return isFishing(spellID)
+end
+
+-- ------------------------------------------------- weapons, skill --
+
+-- Back to the weapons the key took off. Only while the pole is still what
+-- the key put there: anything the player equipped since is their choice.
+-- The off hand waits until the main hand is in place and unlocked (the pole
+-- out of both hands); a slow server gets a few more tries.
+local function offHandBack(main, off, tries)
+    if InCombatLockdown() or GetInventoryItemID("player", INVSLOT_OFFHAND or 17) == off then return end
+    local mainSlot = INVSLOT_MAINHAND or 16
+    if GetInventoryItemID("player", mainSlot) ~= main or IsInventoryItemLocked(mainSlot) then
+        if tries > 0 then C_Timer.After(0.5, function() offHandBack(main, off, tries - 1) end) end
+        return
+    end
+    if C_Item.GetItemCount(off) > 0 then C_Item.EquipItemByName(off, INVSLOT_OFFHAND or 17) end
+end
+
+local function weaponsBack()
+    local c = charDB()
+    local w = c.weaponsBack
+    if type(w) ~= "table" then return end
+    if InCombatLockdown() or UnitIsDeadOrGhost("player") or channelIsFishing() then return end
+    if not db().swapBack or not poleInHand() or C_Item.GetItemCount(w.main) == 0 then
+        c.weaponsBack = nil
+        return
+    end
+    c.weaponsBack = nil
+    C_Item.EquipItemByName(w.main, INVSLOT_MAINHAND or 16)
+    if w.off then
+        C_Timer.After(0.5, function() offHandBack(w.main, w.off, 6) end)
+    end
+end
+
+local function onMount()
+    if IsMounted() then weaponsBack() end
+end
+
+-- One line when the skill sits at the top of a rank below the last; the max
+-- it was said for is kept, so neither a reload nor the next skill event
+-- repeats it.
+local function checkRank()
+    if not db().capNotice then return end
+    local rank, max = fishingSkill()
+    if not rank or max <= 0 or max >= TOP_RANK or rank < max then return end
+    local c = charDB()
+    if c.capNoticed == max then return end
+    c.capNoticed = max
+    ns:Print(L["Fishing is at %d / %d: the next rank waits at the fishing trainer."]:format(rank, max))
 end
 
 -- ---------------------------------------------------------- events --
@@ -250,6 +343,7 @@ end
 -- the reel one and a double-click one alike, or the right mouse button
 -- would click the fishing button for the whole fight.
 local function onCombatStart()
+    if capture then capture:Hide() end
     if owner then ClearOverrideBindings(owner) end
     reeling = false
     restoreCVars()
@@ -268,6 +362,8 @@ local EVENTS = {
     UNIT_SPELLCAST_CHANNEL_STOP = onChannelStop,
     PLAYER_REGEN_DISABLED = onCombatStart,
     PLAYER_REGEN_ENABLED = onCombatEnd,
+    PLAYER_MOUNT_DISPLAY_CHANGED = onMount,
+    SKILL_LINES_CHANGED = checkRank,
 }
 
 -- ------------------------------------------------------ double click --
@@ -327,6 +423,7 @@ function Fish.Apply()
         build()
         -- left over from a reload or a fight mid-fishing
         if not channelIsFishing() then restoreCVars() end
+        checkRank()
     end
     if on == (registered or false) then return end
     registered = on
@@ -361,4 +458,119 @@ function Fish.KeyText()
     local out = {}
     for i, key in ipairs(keys) do out[i] = GetBindingText(key) end
     return table.concat(out, ", ")
+end
+
+function Fish.SkillText()
+    local rank, max = fishingSkill()
+    if not rank then return nil end
+    return L["Fishing skill: %d / %d"]:format(rank, max)
+end
+
+-- ------------------------------------------------------ key capture --
+--
+-- The options page sets the key itself: a small window takes the next key
+-- press through an edit box nobody sees (no protected keyboard propagation),
+-- and the key replaces whatever was bound to the fishing button before.
+-- Binding is refused in a fight, and a fight closes the window.
+
+local function bindTo(chord)
+    if capture then capture:Hide() end
+    if InCombatLockdown() then
+        ns:Print(L["Key bindings cannot be changed during a fight."])
+        return
+    end
+    local old = GetBindingAction(chord)
+    if old == BINDING then old = nil end
+    -- the new key replaces the old ones; they come back if it cannot be bound
+    local before = boundKeys()
+    for _, key in ipairs(before) do SetBinding(key) end
+    if not SetBinding(chord, BINDING) then
+        for _, key in ipairs(before) do SetBinding(key, BINDING) end
+        ns:Print(L["That key cannot be bound."])
+        return
+    end
+    SaveBindings(GetCurrentBindingSet())
+    local text = GetBindingText(chord)
+    if type(old) == "string" and old ~= "" then
+        ns:Print(L["Fishing key: %s (was: %s)"]:format(text, _G["BINDING_NAME_" .. old] or old))
+    else
+        ns:Print(L["Fishing key: %s"]:format(text))
+    end
+    if ns.UI.RebuildCurrentPage then ns.UI:RebuildCurrentPage() end
+end
+
+local function buildCapture()
+    local f = CreateFrame("Frame", "VuloForeverUIFishKeyCapture", UIParent)
+    f:SetSize(380, 110)
+    f:SetPoint("CENTER", 0, 140)
+    f:SetFrameStrata("FULLSCREEN_DIALOG")
+    f:SetToplevel(true)
+    f:EnableMouse(true)
+    ns.UI:StyleBackdrop(f)
+    ns.UI:CreateCloseX(f, function() f:Hide() end)
+
+    f.title = f:CreateFontString(nil, "OVERLAY")
+    ns.UI.Font(f.title, 14, "")
+    f.title:SetPoint("TOP", 0, -14)
+    f.text = f:CreateFontString(nil, "OVERLAY")
+    ns.UI.Font(f.text, 11, "")
+    f.text:SetPoint("TOPLEFT", 18, -42)
+    f.text:SetPoint("TOPRIGHT", -18, -42)
+    f.text:SetJustifyH("CENTER")
+
+    local input = CreateFrame("EditBox", nil, f)
+    input:SetSize(1, 1)
+    input:SetPoint("TOPLEFT")
+    input:SetAutoFocus(false)
+    input:SetFontObject(ChatFontNormal)
+    input:SetAlpha(0)
+    input:SetScript("OnChar", function(self) self:SetText("") end)
+    input:SetScript("OnEscapePressed", function() f:Hide() end)
+    input:SetScript("OnKeyDown", function(_, key)
+        if key == "ESCAPE" then f:Hide(); return end
+        -- what the client's own key bindings skip: modifiers alone, unknown
+        -- keys, the screenshot key
+        if MODIFIER[key] or key == "PRINTSCREEN"
+            or (IsKeyPressIgnoredForBinding and IsKeyPressIgnoredForBinding(key)) then return end
+        bindTo(CreateKeyChordStringUsingMetaKeyState(key))
+    end)
+    f:SetScript("OnMouseDown", function(_, mouse)
+        if MOUSE_KEYS[mouse] then
+            bindTo(CreateKeyChordStringUsingMetaKeyState(GetConvertedKeyOrButton(mouse)))
+        end
+    end)
+    f:SetScript("OnShow", function()
+        f.title:SetText(L["Set the fishing key"])
+        f.text:SetText(L["Press the key now, with Shift, Ctrl or Alt if you like, or mouse button 3, 4 or 5 over this window. Escape cancels."])
+        input:SetFocus()
+    end)
+    -- parented to the options window: closing it ends the capture too, so a
+    -- key pressed afterwards (say W) can never become the fishing key
+    f:SetScript("OnHide", function(self)
+        input:ClearFocus()
+        if self:IsShown() then self:Hide() end
+    end)
+    f:Hide()
+    return f
+end
+
+function Fish.CaptureKey()
+    if InCombatLockdown() then
+        ns:Print(L["Key bindings cannot be changed during a fight."])
+        return
+    end
+    capture = capture or buildCapture()
+    capture:SetParent(ns.UI.mainFrame or UIParent)
+    capture:SetFrameStrata("FULLSCREEN_DIALOG")
+    capture:Show()
+end
+
+function Fish.ClearKey()
+    if InCombatLockdown() then
+        ns:Print(L["Key bindings cannot be changed during a fight."])
+        return
+    end
+    for _, key in ipairs(boundKeys()) do SetBinding(key) end
+    SaveBindings(GetCurrentBindingSet())
+    if ns.UI.RebuildCurrentPage then ns.UI:RebuildCurrentPage() end
 end

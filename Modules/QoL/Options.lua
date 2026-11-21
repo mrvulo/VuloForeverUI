@@ -489,11 +489,20 @@ end
 -- ---------------------------------------------------------------- fishing --
 
 local function fishingPage()
-    local key = QoL.Fishing and QoL.Fishing.KeyText()
+    local F = QoL.Fishing
+    local key = F and F.KeyText()
+    local skill = F and F.SkillText()
+    local keyButtons = {
+        { type = "button", label = L["Set key"], width = 180, onClick = function() F.CaptureKey() end },
+    }
+    if key then
+        keyButtons[2] = { type = "button", label = L["Remove key"], width = 180, onClick = function() F.ClearKey() end }
+    end
     return {
         { type = "header", text = L["Fishing key"] },
         { type = "desc", text = L["|cffaaaaaaOne key, a step per press: equips your pole, applies a lure, casts, and reels in while the bobber is out. Set the key in the game's key bindings under AddOns > VuloForeverUI: Fishing.|r"] },
         { type = "desc", text = key and L["Current key: %s"]:format(key) or L["|cffff6666No key set yet.|r"] },
+        { type = "group", layout = "row", items = keyButtons },
         toggle("fishing", "enabled", L["Fishing key"]),
         toggle("fishing", "lure", L["Apply a lure"],
             L["When the pole has no lure, the next press puts the best one on that your fishing skill allows."]),
@@ -501,6 +510,16 @@ local function fishingPage()
             L["Out of combat, with the pole in hand: a quick double right-click anywhere in the world casts."]),
         toggle("fishing", "indicator", L["Mark the bobber"],
             L["While the line is out, the game's interact icon sits over the bobber. Your own settings come back afterwards."]),
+        { type = "header", text = L["Skilling"] },
+        { type = "desc", text = skill or L["|cffff6666This character has not learned Fishing.|r"] },
+        toggle("fishing", "autoLoot", L["Loot automatically while fishing"],
+            L["Turns the game's auto loot on while the line is out, so the catch goes straight into your bags. Your own setting comes back afterwards."]),
+        toggle("fishing", "sound", L["Hear the bobber better"],
+            L["While the line is out: music and ambience off, effects at full volume, also with the game in the background. Your own volumes come back afterwards."]),
+        toggle("fishing", "swapBack", L["Weapons back when you mount"],
+            L["When the fishing key put the pole in your hands, the weapons you held before come back as soon as you mount."]),
+        toggle("fishing", "capNotice", L["Tell me when a skill rank is full"],
+            L["When the skill sits at the top of its rank (75, 150 or 225) it stops rising: one line in chat says the next rank waits at the fishing trainer."]),
     }
 end
 

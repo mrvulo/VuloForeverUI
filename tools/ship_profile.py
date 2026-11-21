@@ -47,6 +47,7 @@ SKIP = {
     ("modules", "damagemeter", "classicSeeded"),    # one-time migration marker
     ("modules", "nameplates", "savedCVars"),        # the player's own client values, kept to restore
     ("modules", "nameplates", "savedStacking"),
+    ("modules", "qol", "fishing", "savedCVars"),    # the player's client values while fishing
 }
 SKIP_KEYS = {"seeded", "_filled"}                    # state markers wherever they sit
 MODULES_OFF = ["cooldownmanager"]                    # every other module ships on

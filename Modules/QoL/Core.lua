@@ -121,6 +121,10 @@ local mod = ns:RegisterModule("qol", {
             lure        = true,     -- apply a lure when the pole has none
             doubleClick = false,    -- double right-click casts
             indicator   = true,     -- the client's interact icon over the bobber
+            autoLoot    = true,     -- the client's auto loot while the line is out
+            sound       = false,    -- music/ambience off, effects loud while the line is out
+            swapBack    = true,     -- the weapons the key took off come back on mounting
+            capNotice   = true,     -- one chat line when a skill rank is full
         },
 
         -- --------------------------------------------------------- stack split
