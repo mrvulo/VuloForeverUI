@@ -530,8 +530,59 @@ end
 -- What an entry POINTS AT right now: its own id for a spell or an item, and
 -- for a slot whatever is worn there. An empty slot answers nil, and the icon
 -- that draws it stays blank rather than drawing the last thing it saw.
+-- Name -> the rank of that spell the spellbook holds. A row keeps the id it
+-- was saved with (rank 1, or an id typed in by hand); what it DRAWS is the
+-- rank the character has now. Passives are left out: a talent passive that
+-- shares a name with a buff must not take the buff's place. Built on first
+-- use, dropped on SPELLS_CHANGED.
+local topRank
+
+local function buildTopRank()
+    local map = {}
+    local function scan(slot, bank)
+        local item = C_SpellBook.GetSpellBookItemInfo(slot, bank)
+        local sid = item and item.spellID
+        if type(sid) ~= "number" or item.isPassive then return end
+        local name = item.name
+        if type(name) ~= "string" or name == "" then name = C_Spell.GetSpellName(sid) end
+        if type(name) ~= "string" or name == "" then return end
+        local low = false
+        if C_SpellBook.IsSpellBookItemLowRank then
+            local ok, v = pcall(C_SpellBook.IsSpellBookItemLowRank, slot, bank)
+            low = ok and v == true
+        end
+        -- A low rank never pushes out a higher one already found.
+        if map[name] == nil or not low then map[name] = sid end
+    end
+    local lines = C_SpellBook.GetNumSpellBookSkillLines and C_SpellBook.GetNumSpellBookSkillLines() or 0
+    for i = 1, lines do
+        local line = C_SpellBook.GetSpellBookSkillLineInfo(i)
+        if line then
+            for slot = line.itemIndexOffset + 1, line.itemIndexOffset + line.numSpellBookItems do
+                scan(slot, Enum.SpellBookSpellBank.Player)
+            end
+        end
+    end
+    local n = C_SpellBook.HasPetSpells and C_SpellBook.HasPetSpells()
+    for slot = 1, (type(n) == "number" and n or 0) do
+        scan(slot, Enum.SpellBookSpellBank.Pet)
+    end
+    return map
+end
+
+function CM.CurrentRank(spellID)
+    if type(spellID) ~= "number" then return spellID end
+    if not topRank then topRank = buildTopRank() end
+    local name = C_Spell.GetSpellName(spellID)
+    local top = type(name) == "string" and topRank[name] or nil
+    return top or spellID
+end
+
+function CM.InvalidateRanks() topRank = nil end
+
 function CM.Resolve(entry)
     if type(entry) ~= "table" then return nil, "spell" end
+    if entry.kind == "spell" then return CM.CurrentRank(entry.id), "spell" end
     if entry.kind ~= "slot" then return entry.id, entry.kind end
     local itemID = GetInventoryItemID("player", entry.id)
     if type(itemID) == "number" then return itemID, "item" end
@@ -541,11 +592,22 @@ end
 function CM.AddSpell(barKey, spellID, kind)
     local bar = CM.Bar(barKey)
     if not bar or type(spellID) ~= "number" then return end
-    -- A row lives on one bar only: adding it elsewhere moves it, which is
-    -- what someone dragging it to another bar means.
-    CM.RemoveSpellEverywhere(spellID, kind or "spell")
+    kind = kind or "spell"
     local list = CM.Spells(bar)
-    list[#list + 1] = { id = spellID, kind = kind or "spell" }
+    -- Already on this bar, at any rank: the row stays where it is and keeps
+    -- its own settings; only the id follows the pick.
+    for _, e in ipairs(list) do
+        if CM.RowIs(e, spellID, kind) then
+            e.id = spellID
+            CM.RestyleAll()
+            return
+        end
+    end
+    -- A row lives on one bar only: adding it elsewhere moves it, which is
+    -- what someone dragging it to another bar means -- settings and all.
+    local row = CM.RemoveSpellEverywhere(spellID, kind) or {}
+    row.id, row.kind = spellID, kind
+    list[#list + 1] = row
     -- Restyle, not Refresh: the number of icons changed, and only Restyle
     -- creates them.
     CM.RestyleAll()
@@ -553,20 +615,23 @@ end
 
 -- The KIND is part of the match. Without it, adding trinket slot 13 swept
 -- away any other row that happened to carry the number 13. A spell matches
--- across its ranks, so adding the new rank moves the old row.
+-- across its ranks, so adding the new rank moves the old row. Returns a
+-- row taken out, so a move can carry its settings along.
 function CM.RemoveSpellEverywhere(spellID, kind)
     local db = CM.db()
+    local taken
     for _, key in ipairs(db.barOrder or {}) do
         local bar = db.bars[key]
         if bar then
             local list = CM.Spells(bar)
             for i = #list, 1, -1 do
                 if CM.RowIs(list[i], spellID, kind) then
-                    table.remove(list, i)
+                    taken = table.remove(list, i)
                 end
             end
         end
     end
+    return taken
 end
 
 function CM.RemoveSpell(barKey, index)
@@ -637,11 +702,13 @@ function mod:OnEnable()
     -- should show; the icons are rebuilt from the saved list either way.
     self:RegisterEvent("SPELLS_CHANGED", function()
         CM.candidates = nil
+        CM.InvalidateRanks()
         CM.RequestRefresh()
     end)
     self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", function()
         -- A different spec means a different list and a different icon count.
         CM.candidates = nil
+        CM.InvalidateRanks()
         CM.Talents.Invalidate()
         CM.RestyleAll()
     end)

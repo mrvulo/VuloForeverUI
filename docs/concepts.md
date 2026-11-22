@@ -236,6 +236,11 @@ These apply to every visible change, in every module.
 - **A spell is its name, not its id** (2026-11-08): every rank shares the
   name and the book keeps only the top rank, so rows, the picker, the preview
   filler and the keybind lookup match spells by name (`CM.RowIs`).
+  A row keeps the id it was saved with; everything that DRAWS asks for the
+  rank the spellbook holds under that name (`CM.CurrentRank`, via
+  `CM.Resolve`, 2026-11-22): icon, tooltip, cooldown, charges, queued
+  light, active phase, dot set. Re-adding a spell moves its row table, so
+  its own settings go with it.
 - **Talent conditions** (`Talents.lua`, 2026-11-08): a row carries
   `talents = { [nodeID] = true | false }` (only with / only without). Forever's
   three trees are one C_Traits tree of the combat config, split into node

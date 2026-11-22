@@ -82,6 +82,7 @@ jemand ohne den Code prüfen kann.
 | F-70 | Chat-Verlauf: Spielername in einer zurückgeholten Zeile anklicken und anflüstern | Chat | gebaut | – |
 | F-71 | Angeln leichter skillen: Taste im Fenster festlegen, Skill-Anzeige, Stufen-Hinweis, Auto-Beute, Schwimmer hören, Waffen zurück | Komfort | gebaut | – |
 | F-72 | Flugleiste: genaue Flugzeit aus den Flugpfaden des Clients, auch beim ersten Flug | Komfort | gebaut | – |
+| F-73 | Zeilen mit älterem Zauberrang zeigen den höchsten bekannten Rang | Cooldown Manager | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -332,6 +333,11 @@ jemand ohne den Code prüfen kann.
 - **Dann** stehen auch die Zeiten bis zu den Zwischenstopps im Streifen unter der Leiste ohne „~“ und stimmen auf wenige Sekunden.
 - **Wenn** eine Route schon geflogen ist, **dann** gilt die gemessene Zeit wie bisher.
 - **Wenn** eine Zeit abläuft, während du noch in der Luft bist, **dann** steht im Streifen „gleich“ statt „~0:00“.
+
+### F-73 Höchster bekannter Rang
+- Angenommen ein Zauber mit Abklingzeit steht mit Rang 1 auf einer Leiste, **wenn** du Rang 2 lernst, **dann** bleibt das Symbol an seinem Platz, der Tooltip zeigt Rang 2, und nach dem Wirken von Rang 2 läuft die Abklingzeit auf dem Symbol.
+- Angenommen ein Buff steht mit „Aktive Phase anzeigen“ und einer älteren Rang-ID auf der Leiste (auch per ID hinzugefügt), **wenn** du den höchsten Rang wirkst, **dann** zeigt das Symbol außerhalb des Kampfes die ablaufende Buffdauer.
+- Angenommen eine Zeile hat eigene Einstellungen (z. B. Glühen), **wenn** du den neuen Rang über „+“ noch einmal auf dieselbe Leiste setzt, **dann** bleibt die Zeile an ihrem Platz und behält ihre Einstellungen; auf eine andere Leiste wandert sie mit ihren Einstellungen ans Ende.
 
 ### F-45 Tägliches Wort
 - Angenommen die Flugleiste ist an, **wenn** du fliegst, **dann** sitzt rechts neben der Leiste ein Knopf „Wort“; ein Klick öffnet „Tägliches Wort #N“ mit 6 × 5 Feldern, QWERTZ-Tastatur, „Nächstes Wort in …“ und der Statistik.

@@ -101,7 +101,7 @@ function B.For(entry)
     end
     -- A row saved at an older rank still finds the button that casts the
     -- new one: same spell, same name.
-    local text = spells[entry.id]
+    local text = spells[CM.Resolve(entry)] or spells[entry.id]
     if text then return text end
     local name = C_Spell.GetSpellName(entry.id)
     return type(name) == "string" and byName[name] or nil

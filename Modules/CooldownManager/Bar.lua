@@ -686,7 +686,8 @@ local function applyCooldown(icon, entry)
     local cd = icon.cooldown
     -- A slot row answers with the item worn in it; from here on it IS an item.
     local rid, rkind = CM.Resolve(entry)
-    if rid and rkind ~= entry.kind then entry = { id = rid, kind = rkind } end
+    -- A spell row answers with the rank the spellbook holds now.
+    if rid and (rkind ~= entry.kind or rid ~= entry.id) then entry = { id = rid, kind = rkind } end
     if entry.kind == "item" then
         local getter = C_Item and C_Item.GetItemCooldown
         if getter then
@@ -785,7 +786,8 @@ local function paintIcon(bar, icon, entry)
     -- The active phase wins over the cooldown: a buff that is running is what
     -- the row is about while it lasts.
     local aura, auraDuration
-    if entry.activePhase then aura, auraDuration = activeAura(entry.id) end
+    -- The buff on the player is the rank that was cast: the current one.
+    if entry.activePhase and rkind == "spell" then aura, auraDuration = activeAura(rid) end
     local active = type(auraDuration) ~= "nil"
 
     local duration, kept = auraDuration, false
@@ -877,7 +879,7 @@ local function paintIcon(bar, icon, entry)
         -- one throws -- type() says "table" either way, so the guard has to be
         -- the pcall, not the type check.
         local ok = pcall(function()
-            local charges = C_Spell.GetSpellCharges(entry.id)
+            local charges = C_Spell.GetSpellCharges(rid)
             if type(charges) ~= "table" then return end
             icon.charges:SetFormattedText("%d", charges.currentCharges)
         end)
