@@ -88,6 +88,7 @@ jemand ohne den Code prüfen kann.
 | F-76 | Angeln: Ton, wenn der Fisch entkommt, und Erinnerung zum Neuauswerfen | Komfort | gebaut | – |
 | F-77 | Angeln: Sitzungsstatistik | Komfort | gebaut | – |
 | F-78 | Angeln: kurze Fangübersicht nach dem Einholen | Komfort | gebaut | – |
+| F-79 | Taschen: „Am Rucksack anzeigen“ aus dem Währungsfenster zeigt die Währung in der Taschen-Kopfzeile | Taschen | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -368,6 +369,11 @@ jemand ohne den Code prüfen kann.
 ### F-78 Fangübersicht
 - Angenommen „Fang kurz zeigen“ ist an, **wenn** du einholst, **dann** zeigt sich über der Bildschirmmitte ein paar Sekunden Symbol, Menge und Name jedes Fangs in Qualitätsfarbe, darunter grau die Fänge der Sitzung und pro Stunde; danach blendet es aus.
 - **Dann** verdeckt es keine Klicks (die Maus geht hindurch).
+
+### F-79 Rucksack-Währungen in den Taschen
+- Angenommen „Am Rucksack angezeigte Währungen“ ist an, **wenn** du im Währungsfenster des Spiels bei einer Währung (z. B. Händlergunst) „Am Rucksack anzeigen“ ankreuzt, **dann** steht sie mit Symbol und Menge sofort in der Kopfzeile der offenen Taschen, vor dem Gold.
+- **Wenn** du das Häkchen wieder entfernst, **dann** verschwindet sie, außer sie ist auch unter „Aktivierte Währungen“ gewählt; doppelt steht keine Währung da.
+- **Wenn** sich die Menge ändert, **dann** zieht die Zahl mit.
 
 ### F-45 Tägliches Wort
 - Angenommen die Flugleiste ist an, **wenn** du fliegst, **dann** sitzt rechts neben der Leiste ein Knopf „Wort“; ein Klick öffnet „Tägliches Wort #N“ mit 6 × 5 Feldern, QWERTZ-Tastatur, „Nächstes Wort in …“ und der Statistik.

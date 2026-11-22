@@ -153,6 +153,8 @@ local function bagsPage()
 
         categoryRow(),
         currencyRow(),
+        toggle("backpackCurrencies", L["Currencies shown on the backpack"],
+            L["Currencies you tick 'Show on backpack' for in the game's currency window appear in the bag header too, before the ones picked here."]),
 
         slider("countSize", L["Item count text size"], 7, 18, 1),
         slider("itemLevelSize", L["Item level text size"], 7, 18, 1,

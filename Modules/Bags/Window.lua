@@ -552,14 +552,29 @@ local function headerText(win, bagIDs, db)
         parts[#parts + 1] = text
     end
 
+    -- What the client's currency window marks "show on backpack" first, in
+    -- its order, then the ones picked in our options; each currency once.
+    local seen = {}
+    local function currency(id, quantity, iconID)
+        if id and seen[id] then return end
+        if id then seen[id] = true end
+        if quantity == nil then return end
+        local icon = iconID and ("|T" .. iconID .. ":12|t") or ""
+        parts[#parts + 1] = icon .. tostring(quantity)
+    end
+    if db.backpackCurrencies ~= false and C_CurrencyInfo and C_CurrencyInfo.GetBackpackCurrencyInfo then
+        for i = 1, 20 do
+            local ok, cur = pcall(C_CurrencyInfo.GetBackpackCurrencyInfo, i)
+            if not ok or type(cur) ~= "table" then break end
+            currency(cur.currencyTypesID, cur.quantity, cur.iconFileID)
+        end
+    end
     local list = db.currencies
     if type(list) == "table" and C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo then
         for id in pairs(list) do
-            local ok, cur = pcall(C_CurrencyInfo.GetCurrencyInfo, tonumber(id))
-            if ok and type(cur) == "table" and cur.quantity then
-                local icon = cur.iconFileID and ("|T" .. cur.iconFileID .. ":12|t") or ""
-                parts[#parts + 1] = icon .. tostring(cur.quantity)
-            end
+            local num = tonumber(id)
+            local ok, cur = pcall(C_CurrencyInfo.GetCurrencyInfo, num)
+            if ok and type(cur) == "table" then currency(num, cur.quantity, cur.iconFileID) end
         end
     end
 

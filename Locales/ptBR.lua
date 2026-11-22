@@ -764,6 +764,8 @@ ns:RegisterLocale("ptBR", {
     ["Categories switched off here are folded into 'Everything else'. Nothing is hidden."] = "As categorias desativadas aqui são reunidas em “Todo o resto”. Nada é ocultado.",
     ["This character has no currencies yet."] = "Este personagem ainda não tem moedas.",
     ["Enabled currencies"] = "Moedas ativadas",
+    ["Currencies shown on the backpack"] = "Moedas exibidas na mochila",
+    ["Currencies you tick 'Show on backpack' for in the game's currency window appear in the bag header too, before the ones picked here."] = "As moedas marcadas com \"Mostrar na mochila\" na janela de moedas do jogo aparecem também no cabeçalho das bolsas, antes das escolhidas aqui.",
     ["Window scale"] = "Escala da janela",
     ["Hide categories with 0 items"] = "Ocultar categorias com 0 itens",
     ["Size automatically"] = "Ajustar tamanho automaticamente",

@@ -769,6 +769,8 @@ ns:RegisterLocale("deDE", {
     ["Categories switched off here are folded into 'Everything else'. Nothing is hidden."] = "Hier abgeschaltete Kategorien landen unter „Alles Übrige“. Ausgeblendet wird nichts.",
     ["This character has no currencies yet."] = "Dieser Charakter hat noch keine Währungen.",
     ["Enabled currencies"] = "Aktivierte Währungen",
+    ["Currencies shown on the backpack"] = "Am Rucksack angezeigte Währungen",
+    ["Currencies you tick 'Show on backpack' for in the game's currency window appear in the bag header too, before the ones picked here."] = "Währungen, bei denen du im Währungsfenster des Spiels „Am Rucksack anzeigen“ ankreuzt, stehen auch in der Kopfzeile der Taschen, vor den hier gewählten.",
     ["Window scale"] = "Fensterskalierung",
     ["Hide categories with 0 items"] = "Kategorien mit 0 Gegenständen ausblenden",
     ["Size automatically"] = "Größe automatisch anpassen",

@@ -769,6 +769,8 @@ ns:RegisterLocale("ruRU", {
     ["Categories switched off here are folded into 'Everything else'. Nothing is hidden."] = "Выключенные здесь категории сливаются с «Все остальное». Ничто не скрывается.",
     ["This character has no currencies yet."] = "У этого персонажа пока нет валют.",
     ["Enabled currencies"] = "Включенные валюты",
+    ["Currencies shown on the backpack"] = "Валюты, показанные на рюкзаке",
+    ["Currencies you tick 'Show on backpack' for in the game's currency window appear in the bag header too, before the ones picked here."] = "Валюты, отмеченные «Показывать на рюкзаке» в окне валют игры, тоже видны в заголовке сумок, перед выбранными здесь.",
     ["Window scale"] = "Масштаб окна",
     ["Hide categories with 0 items"] = "Скрывать категории без предметов",
     ["Size automatically"] = "Автоматический размер",

@@ -76,6 +76,7 @@ local mod = ns:RegisterModule("bags", {
         -- the list has not switched anything off.
         enabledCategories = {},
         currencies        = {},
+        backpackCurrencies = true,  -- what the client's currency window marks "show on backpack"
 
         -- gear
         splitEquipmentSets = false,
@@ -309,6 +310,15 @@ function mod:OnEnable()
         Bags.Gold.Record()
         Bags.Refresh()
     end)
+    -- A currency gained or spent, or ticked "show on backpack" in the
+    -- client's currency window: the header lists them.
+    self:RegisterEvent("CURRENCY_DISPLAY_UPDATE", function() Bags.Refresh() end)
+    if not Bags.backpackHooked and C_CurrencyInfo and C_CurrencyInfo.SetCurrencyBackpack then
+        Bags.backpackHooked = true
+        hooksecurefunc(C_CurrencyInfo, "SetCurrencyBackpack", function()
+            if mod.active then Bags.Refresh() end
+        end)
+    end
     -- An item the client had not loaded yet answered with nothing, so its tags
     -- were left undecided rather than decided wrongly. This is the answer.
     self:RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID)
