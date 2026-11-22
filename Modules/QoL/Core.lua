@@ -125,6 +125,13 @@ local mod = ns:RegisterModule("qol", {
             sound       = false,    -- music/ambience off, effects loud while the line is out
             swapBack    = true,     -- the weapons the key took off come back on mounting
             capNotice   = true,     -- one chat line when a skill rank is full
+            quickRecast = true,     -- Ctrl + key while the line is out casts again
+            gear        = true,     -- bound fishing gear from the bags goes on with the key
+            escapeAlert = true,     -- a sound when the fish got away
+            recastReminder = false, -- one sound when nothing was cast again
+            recastDelay = 10,       -- seconds before that sound
+            alertSound  = "readycheck",
+            recap       = true,     -- the catch for a few seconds on screen
         },
 
         -- --------------------------------------------------------- stack split

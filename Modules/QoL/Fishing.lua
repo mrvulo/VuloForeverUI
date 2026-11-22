@@ -90,6 +90,7 @@ local mouseTimer
 local capture
 
 local function db() return QoL.db().fishing end
+Fish.db = db
 
 -- What belongs to this character, not to the (often shared) profile: the
 -- weapons the key took off and the skill rank already announced.
@@ -99,6 +100,7 @@ local function charDB()
     if type(c.fishing) ~= "table" then c.fishing = {} end
     return c.fishing
 end
+Fish.CharDB = charDB
 
 -- ------------------------------------------------------------ bags --
 
@@ -108,11 +110,12 @@ local function poleInHand()
     local _, _, _, _, _, classID, subID = C_Item.GetItemInfoInstant(id)
     return classID == POLE_CLASS and subID == POLE_SUB
 end
+Fish.PoleInHand = poleInHand
 
--- "bag slot" of the best pole (highest item level) or of a lure, for the
--- secure "item" attribute.
+-- "bag slot" of the best pole (most fishing bonus, then highest item level)
+-- or of a lure, for the secure "item" attribute.
 local function findPole()
-    local best, bestLevel
+    local best, bestBonus, bestLevel
     for _, bag in ipairs(ns.CarriedBags()) do
         for slot = 1, (C_Container.GetContainerNumSlots(bag) or 0) do
             local id = C_Container.GetContainerItemID(bag, slot)
@@ -120,7 +123,10 @@ local function findPole()
                 local _, _, _, _, _, classID, subID = C_Item.GetItemInfoInstant(id)
                 if classID == POLE_CLASS and subID == POLE_SUB then
                     local lvl = C_Item.GetDetailedItemLevelInfo(C_Container.GetContainerItemLink(bag, slot)) or 0
-                    if not bestLevel or lvl > bestLevel then best, bestLevel = bag .. " " .. slot, lvl end
+                    local bonus = Fish.BagBonus and Fish.BagBonus(bag, slot) or 0
+                    if not bestLevel or bonus > bestBonus or (bonus == bestBonus and lvl > bestLevel) then
+                        best, bestBonus, bestLevel = bag .. " " .. slot, bonus, lvl
+                    end
                 end
             end
         end
@@ -135,6 +141,7 @@ local function fishingSkill()
     local _, _, rank, max = GetProfessionInfo(fishing)
     return ns.Num(rank, 0), ns.Num(max, 0)
 end
+Fish.Skill = fishingSkill
 
 local function findLure()
     local skill = fishingSkill() or 0
@@ -178,7 +185,15 @@ end
 
 -- PreClick: the next step into the secure attributes. Out of combat only;
 -- in a fight the button keeps the step it had.
-local function prepare(self)
+local function castFishing(self)
+    local name = C_Spell.GetSpellName(FISHING_SPELL)
+    if name then
+        self:SetAttribute("type", "spell")
+        self:SetAttribute("spell", name)
+    end
+end
+
+local function prepare(self, mouse)
     if InCombatLockdown() then return end
     self:SetAttribute("type", nil)
     self:SetAttribute("item", nil)
@@ -186,6 +201,13 @@ local function prepare(self)
     self:SetAttribute("target-slot", nil)
     -- switched off: the binding may still point here, the button does nothing
     if not registered then return end
+    -- Ctrl + key while the line is out: straight back to casting, no gear,
+    -- no lure -- for landing the bobber in a school of fish.
+    if mouse == "Recast" then
+        castFishing(self)
+        return
+    end
+    if db().gear and Fish.WearGear then Fish.WearGear() end
     if not poleInHand() then
         local pole = findPole()
         if pole then
@@ -208,11 +230,7 @@ local function prepare(self)
             return
         end
     end
-    local name = C_Spell.GetSpellName(FISHING_SPELL)
-    if name then
-        self:SetAttribute("type", "spell")
-        self:SetAttribute("spell", name)
-    end
+    castFishing(self)
 end
 
 -- ---------------------------------------------------------- binding --
@@ -254,7 +272,28 @@ local function setCVars()
     if db().sound then setGroup(keep, SOUND_CVARS) end
 end
 
--- While the line is out every bound key interacts; otherwise they are the
+-- The same chord with Ctrl added, modifiers in the client's own order; nil
+-- when the key already carries Ctrl.
+local CHORD_ORDER = { "ALT", "CTRL", "SHIFT", "META" }
+local function withCtrl(key)
+    local mods, base = {}, key
+    while true do
+        local m, rest = base:match("^(%u+)%-(.+)$")
+        if not (m and MODIFIER["L" .. m]) then break end
+        mods[m] = true
+        base = rest
+    end
+    if mods.CTRL then return nil end
+    mods.CTRL = true
+    local out = ""
+    for _, m in ipairs(CHORD_ORDER) do
+        if mods[m] then out = out .. m .. "-" end
+    end
+    return out .. base
+end
+
+-- While the line is out every bound key interacts and, with quick recast,
+-- Ctrl + key clicks the button as "Recast"; otherwise the keys are the
 -- button again (their binding points there, so nothing is overridden).
 local function setReel(on)
     if InCombatLockdown() or not owner then return end
@@ -263,6 +302,8 @@ local function setReel(on)
     if on then
         for _, key in ipairs(boundKeys()) do
             SetOverrideBinding(owner, true, key, "INTERACTTARGET")
+            local recast = db().quickRecast and withCtrl(key)
+            if recast then SetOverrideBindingClick(owner, true, recast, BUTTON, "Recast") end
         end
     end
 end
@@ -276,6 +317,7 @@ local function channelIsFishing()
     local _, _, _, _, _, _, _, spellID = UnitChannelInfo("player")
     return isFishing(spellID)
 end
+Fish.ChannelIsFishing = channelIsFishing
 
 -- ------------------------------------------------- weapons, skill --
 
@@ -310,7 +352,9 @@ local function weaponsBack()
 end
 
 local function onMount()
-    if IsMounted() then weaponsBack() end
+    if not IsMounted() then return end
+    weaponsBack()
+    if Fish.GearBack then Fish.GearBack() end
 end
 
 -- One line when the skill sits at the top of a rank below the last; the max
@@ -332,6 +376,7 @@ local function onChannelStart(_, unit, _, spellID)
     if unit ~= "player" or not isFishing(spellID) then return end
     setCVars()
     setReel(true)
+    if Fish.OnCast then Fish.OnCast() end
 end
 
 -- the CVars stay through the loot window; back a little later, unless the
@@ -344,8 +389,10 @@ end
 
 local function onChannelStop(_, unit)
     if unit ~= "player" then return end
+    local wasFishing = reeling
     if reeling then setReel(false) end
     restoreSoon()
+    if wasFishing and Fish.OnLineIn then Fish.OnLineIn() end
 end
 
 -- PLAYER_REGEN_DISABLED runs before the lockdown: every override goes now,
@@ -373,6 +420,10 @@ local EVENTS = {
     PLAYER_REGEN_ENABLED = onCombatEnd,
     PLAYER_MOUNT_DISPLAY_CHANGED = onMount,
     SKILL_LINES_CHANGED = checkRank,
+    -- the catch and the fish that got away (FishingSession.lua)
+    LOOT_OPENED = function() if Fish.OnLoot then Fish.OnLoot() end end,
+    UI_ERROR_MESSAGE = function(_, _, msg) if Fish.OnMessage then Fish.OnMessage(msg) end end,
+    UI_INFO_MESSAGE = function(_, _, msg) if Fish.OnMessage then Fish.OnMessage(msg) end end,
 }
 
 -- ------------------------------------------------------ double click --
@@ -452,6 +503,7 @@ function Fish.Disable()
     end
     reeling = false
     restoreCVars()
+    if Fish.StopReminder then Fish.StopReminder() end
 end
 
 -- The key's name in the client's key bindings, in the player's language.

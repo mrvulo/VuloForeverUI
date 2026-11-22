@@ -83,6 +83,11 @@ jemand ohne den Code prüfen kann.
 | F-71 | Angeln leichter skillen: Taste im Fenster festlegen, Skill-Anzeige, Stufen-Hinweis, Auto-Beute, Schwimmer hören, Waffen zurück | Komfort | gebaut | – |
 | F-72 | Flugleiste: genaue Flugzeit aus den Flugpfaden des Clients, auch beim ersten Flug | Komfort | gebaut | – |
 | F-73 | Zeilen mit älterem Zauberrang zeigen den höchsten bekannten Rang | Cooldown Manager | gebaut | – |
+| F-74 | Angeln: schnell neu auswerfen mit Strg + Angeltaste | Komfort | gebaut | – |
+| F-75 | Angeln: ganze Angelausrüstung anlegen, Angel nach Angelbonus | Komfort | gebaut | – |
+| F-76 | Angeln: Ton, wenn der Fisch entkommt, und Erinnerung zum Neuauswerfen | Komfort | gebaut | – |
+| F-77 | Angeln: Sitzungsstatistik | Komfort | gebaut | – |
+| F-78 | Angeln: kurze Fangübersicht nach dem Einholen | Komfort | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -338,6 +343,31 @@ jemand ohne den Code prüfen kann.
 - Angenommen ein Zauber mit Abklingzeit steht mit Rang 1 auf einer Leiste, **wenn** du Rang 2 lernst, **dann** bleibt das Symbol an seinem Platz, der Tooltip zeigt Rang 2, und nach dem Wirken von Rang 2 läuft die Abklingzeit auf dem Symbol.
 - Angenommen ein Buff steht mit „Aktive Phase anzeigen“ und einer älteren Rang-ID auf der Leiste (auch per ID hinzugefügt), **wenn** du den höchsten Rang wirkst, **dann** zeigt das Symbol außerhalb des Kampfes die ablaufende Buffdauer.
 - Angenommen eine Zeile hat eigene Einstellungen (z. B. Glühen), **wenn** du den neuen Rang über „+“ noch einmal auf dieselbe Leiste setzt, **dann** bleibt die Zeile an ihrem Platz und behält ihre Einstellungen; auf eine andere Leiste wandert sie mit ihren Einstellungen ans Ende.
+
+### F-74 Schnell neu auswerfen
+- Angenommen „Schnell neu auswerfen mit Strg“ ist an und die Leine ist draußen, **wenn** du Strg + Angeltaste drückst, **dann** bricht der Wurf ab und die Angel wirft sofort neu aus, ohne Angel oder Köder anzufassen.
+- **Wenn** die Leine nicht draußen ist, **dann** macht Strg + Angeltaste das, was du selbst darauf gelegt hast.
+- Angenommen die Angeltaste trägt schon Strg, **dann** gibt es keinen schnellen Neuwurf.
+
+### F-75 Angelausrüstung
+- Angenommen „Angelausrüstung anlegen“ ist an und in der Tasche liegt gebundene Ausrüstung mit Angelbonus (z. B. ein Angelhut, Stiefel, Handschuhe mit Angel-Verzauberung), **wenn** du die Angeltaste drückst, **dann** wird sie angelegt, wo sie mehr Angelbonus bringt als das Getragene.
+- **Dann** nimmt die Angeltaste die Angel mit dem höchsten Angelbonus aus der Tasche, nicht die mit der höchsten Gegenstandsstufe.
+- Angenommen „Waffen und Ausrüstung beim Aufsitzen zurück“ ist an, **wenn** du aufsitzt, **dann** liegen Waffen und die vorher getragenen Teile wieder an. Was du inzwischen selbst getauscht hast, bleibt.
+- Ungebundene Teile werden nicht angefasst (kein Bindungsfenster).
+- Teile und Angeln, für die dein Angelskill noch zu niedrig ist, werden übergangen (keine rote Fehlermeldung bei jedem Druck).
+
+### F-76 Entkommen und Neuwurf
+- Angenommen „Ton, wenn der Fisch entkommt“ ist an, **wenn** der Fisch entkommt oder du klickst, bevor etwas angebissen hat, **dann** spielt der gewählte Warnton.
+- Angenommen „Erinnern, neu auszuwerfen“ ist an, **wenn** du nach dem Einholen still stehst und die eingestellten Sekunden nicht neu auswirfst, **dann** spielt der Warnton einmal. Wer läuft, reitet oder kämpft, hört nichts.
+- Unter „Warnton“ stehen „Bereitschaftscheck“, „Schlachtzugswarnung“ und die Töne geteilter Medien; die Wahl spielt sofort zur Probe.
+
+### F-77 Sitzungsstatistik
+- **Wenn** du angelst, **dann** steht unter `/vfui → Komfort → Angeln → Sitzung` „Würfe, Fänge (Quote), pro Stunde, Angelzeit“ und zählt mit; auch nach `/reload`.
+- **Wenn** du 30 Minuten nicht angelst, **dann** beginnt der nächste Wurf eine neue Sitzung; „Sitzung zurücksetzen“ beginnt sofort eine.
+
+### F-78 Fangübersicht
+- Angenommen „Fang kurz zeigen“ ist an, **wenn** du einholst, **dann** zeigt sich über der Bildschirmmitte ein paar Sekunden Symbol, Menge und Name jedes Fangs in Qualitätsfarbe, darunter grau die Fänge der Sitzung und pro Stunde; danach blendet es aus.
+- **Dann** verdeckt es keine Klicks (die Maus geht hindurch).
 
 ### F-45 Tägliches Wort
 - Angenommen die Flugleiste ist an, **wenn** du fliegst, **dann** sitzt rechts neben der Leiste ein Knopf „Wort“; ein Klick öffnet „Tägliches Wort #N“ mit 6 × 5 Feldern, QWERTZ-Tastatur, „Nächstes Wort in …“ und der Statistik.

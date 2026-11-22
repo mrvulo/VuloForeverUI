@@ -491,6 +491,20 @@ scaled together as one mover (`classes_priest`).
   bindings skip, puts the old keys back if binding fails, and is parented to
   the options window so closing it ends the capture.
   `fishing.savedCVars` is SKIP in ship_profile.py.
+- **Fishing extras** (F-74..F-78, 2026-11-22): quick recast is an override
+  binding Ctrl+key -> our button with the virtual mouse button "Recast", set
+  only while the line is out, next to the reel overrides; PreClick sees
+  "Recast" and casts Fishing directly. Fishing gear (`FishingGear.lua`):
+  the bonus is read from item tooltips (a line with the Fishing skill name
+  and a number, not the "Requires" line), cached per item link; only BOUND
+  items in armour slots, equipped out of combat with `EquipItemByName`; what
+  came off is kept per character (`...fishing.gearBack`) and goes back on
+  mounting with the weapons, only where the fishing item is still worn.
+  Session, alerts and catch recap live in `FishingSession.lua`; the session
+  is per character (`...fishing.session`), a 30 min gap starts a new one,
+  fishing time only counts gaps under 2 min. A catch is the first
+  `IsFishingLoot()` LOOT_OPENED after a cast. Sounds: two client sound kits
+  plus shared media.
 - **Gathering icon** (`Professions.lua`, `professions.gatherIcon`): no
   addon can make world objects sparkle or read node positions; the part sets
   the client's soft-interact CVars (SoftTargetInteract 3, icons for game
