@@ -121,7 +121,7 @@ local function unitName(unit)
     name, realm = readable(name), readable(realm)
     if type(name) ~= "string" then return nil end
     if type(realm) ~= "string" or realm == "" then
-        realm = GetRealmName()
+        realm = ns.RealmName()
     end
     return name, name .. "-" .. (realm or "?")
 end
@@ -861,7 +861,7 @@ local marks = {}
 local function senderKey(sender)
     if type(sender) ~= "string" or sender == "" then return nil end
     if sender:find("-", 1, true) then return sender end
-    return sender .. "-" .. (GetRealmName() or "?")
+    return sender .. "-" .. ns.RealmName()
 end
 
 local function isTrue(v) return ns.CanRead(v) and v == true end
@@ -1624,7 +1624,7 @@ local function menuUnit(ctx)
     if type(name) ~= "string" then return nil end
     if not name:find("-", 1, true) then
         local server = readable(ctx.server)
-        name = name .. "-" .. ((type(server) == "string" and server ~= "") and server or GetRealmName())
+        name = name .. "-" .. ((type(server) == "string" and server ~= "") and server or ns.RealmName())
     end
     return unitFor(name)
 end

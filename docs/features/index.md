@@ -553,6 +553,7 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Angenommen** „Gold des Tages verfolgen“ ist an, **wenn** du über die Geldzeile der Taschen fährst, **dann** ist „Bilanz“ genau „Verdient“ minus „Ausgegeben“ (grün mit Plus, rot mit Minus) und nie der ganze Geldbeutel.
 - **Wenn** du dich neu einloggst oder `/reload` machst, **dann** bleiben Verdient, Ausgegeben und Bilanz stehen; der erste Login eines neuen Kalendertages beginnt bei null.
 - **Angenommen** du loggst auf einen anderen Charakter ein und bewegst kein Geld, **wenn** du zurückwechselst und den Tooltip öffnest, **dann** steht dieser Charakter mit seinem echten Geldbetrag in der Liste, und „Gesamt“ zählt ihn mit.
+- **Angenommen** der Client meldet den Realm-Namen leer (seit Ende Nov. 2026), **wenn** du den Tooltip öffnest, **dann** steht jeder Charakter genau einmal als „Name - Realm“, mit seinem neuesten Betrag; die alten Einträge „Name -“ ohne Realm sind weg (Migration 4), „Gesamt“ zählt jeden nur einmal. Dasselbe gilt für die eigenen Charaktere im Postfenster.
 - Bekannte Grenze: Das Spiel gibt einem Addon nur den Geldbeutel des eingeloggten Charakters. Ein Charakter erscheint in der Liste, sobald er einmal mit dem Addon (Taschen-Modul an) eingeloggt war, und zeigt den Stand seines letzten Logins.
 
 ### F-67 Handwerkstaschen als eigene Abschnitte

@@ -60,8 +60,7 @@ local function trusted() return list("qolMailTrusted") end
 local function roster()  return list("qolMailChars") end
 
 local function realmName()
-    local r = GetRealmName()
-    return type(r) == "string" and r or "?"
+    return ns.RealmName()
 end
 
 local function same(a, b)

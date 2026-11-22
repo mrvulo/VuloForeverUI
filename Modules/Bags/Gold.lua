@@ -28,8 +28,7 @@ end
 local function me()
     local name = UnitName("player")
     if type(name) ~= "string" then return nil end
-    local realm = GetRealmName()
-    return name .. " - " .. (type(realm) == "string" and realm or "?")
+    return name .. " - " .. ns.RealmName()
 end
 
 -- Money as the client writes it, with the coin icons. GetMoneyString does not

@@ -329,3 +329,18 @@ function ns:ApplyDefaults(target, defaults)
     return target
 end
 
+
+-- The realm this character is on. The Forever client has started answering
+-- GetRealmName() with "" for the whole session, which split every
+-- account-wide list keyed by realm into a second, nameless copy of each
+-- character. The last real name is kept account-wide and stands in while
+-- the client says nothing. "" only when no name was ever seen.
+function ns.RealmName()
+    local g = ns.db and ns.db.global
+    local r = GetRealmName()
+    if type(r) == "string" and r ~= "" and ns.CanRead(r) then
+        if g then g.realm = r end
+        return r
+    end
+    return (g and type(g.realm) == "string") and g.realm or ""
+end

@@ -257,7 +257,7 @@ frame:SetScript("OnEvent", function(_, event, a, b)
             cur.handlerAtLoad = handlerTook
             cur.handlerAtLogin = geterrorhandler() == errorHandler
             local _, class = UnitClass("player")
-            cur.char = clean(UnitName("player")) .. "-" .. clean(GetRealmName())
+            cur.char = clean(UnitName("player")) .. "-" .. clean(ns.RealmName())
             cur.class = class
         end
     elseif event == "LUA_WARNING" then

@@ -94,7 +94,7 @@ end
 -- anything -- a fresh install has no old shape to convert.
 -- Schema 1 is this addon's first release; the saved variables of
 -- VuloClassicUI are a different product's, under a different name.
-local SCHEMA = 3
+local SCHEMA = 4
 local MIGRATIONS = {}
 
 -- [2] The Modern unit frames now take their first place from Blizzard's
@@ -137,6 +137,55 @@ MIGRATIONS[3] = function()
         for realm in pairs(g.qolMailChars) do
             if beta(realm) then g.qolMailChars[realm] = nil end
         end
+    end
+end
+
+-- [4] The client answered GetRealmName() with "" for a while, so the gold
+-- list and the mail roster grew a nameless copy of every character ("Vulo - "
+-- next to "Vulo - <realm>"). With exactly one real realm on record, the
+-- copies fold into it -- the newer gold figure wins -- and that realm is
+-- remembered as the stand-in (ns.RealmName). With several realms there is
+-- no telling which one the copies belong to, and they stay.
+MIGRATIONS[4] = function()
+    local g = VuloForeverUIDB.global
+    local gold = type(g.bagsGold) == "table" and g.bagsGold or nil
+    local mail = type(g.qolMailChars) == "table" and g.qolMailChars or nil
+    local realms, only, count = {}, nil, 0
+    if gold then
+        for key in pairs(gold) do
+            local realm = type(key) == "string" and key:match(" %- (.+)$")
+            if realm then realms[realm] = true end
+        end
+    end
+    if mail then
+        for realm in pairs(mail) do
+            if type(realm) == "string" and realm ~= "" then realms[realm] = true end
+        end
+    end
+    for realm in pairs(realms) do only, count = realm, count + 1 end
+    if count ~= 1 then return end
+    if type(g.realm) ~= "string" or g.realm == "" then g.realm = only end
+    if gold then
+        -- collected first: a new key written during pairs() is undefined
+        local nameless = {}
+        for key in pairs(gold) do
+            local name = type(key) == "string" and key:match("^(.-) %- ?$")
+            if name then nameless[key] = name end
+        end
+        for key, name in pairs(nameless) do
+            local entry, full = gold[key], name .. " - " .. only
+            local have = gold[full]
+            if type(entry) == "table" and (type(have) ~= "table" or (entry.at or 0) > (have.at or 0)) then
+                gold[full] = entry
+            end
+            gold[key] = nil
+        end
+    end
+    if mail and type(mail[""]) == "table" then
+        local into = type(mail[only]) == "table" and mail[only] or {}
+        mail[only] = into
+        for name, info in pairs(mail[""]) do into[name] = info end
+        mail[""] = nil
     end
 end
 
