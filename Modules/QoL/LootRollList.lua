@@ -159,20 +159,18 @@ local function makeRow()
 
     local bg = row:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints(row)
-    bg:SetColorTexture(0, 0, 0, 0.6)
+    bg:SetColorTexture(0.05, 0.05, 0.05, 0.85)
     row.edges = ns.MakeEdges(row, "BORDER")
 
     local icon = CreateFrame("Button", nil, row)
-    icon:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0)
+    icon:SetPoint("TOPLEFT", row, "TOPLEFT", 3, -3)
     icon.tex = icon:CreateTexture(nil, "ARTWORK")
     icon.tex:SetAllPoints(icon)
     icon.tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     icon.count = icon:CreateFontString(nil, "OVERLAY")
     icon.count:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", -2, 2)
-    icon.sep = icon:CreateTexture(nil, "OVERLAY")
-    icon.sep:SetColorTexture(0, 0, 0, 1)
-    icon.sep:SetPoint("TOPLEFT", icon, "TOPRIGHT", 0, 0)
-    icon.sep:SetPoint("BOTTOMLEFT", icon, "BOTTOMRIGHT", 0, 0)
+    -- a frame in the item's quality colour, like the bag slots
+    icon.edges = ns.MakeEdges(icon, "OVERLAY")
     icon:SetScript("OnEnter", iconEnter)
     icon:SetScript("OnLeave", GameTooltip_Hide)
     icon:SetScript("OnClick", iconClick)
@@ -188,12 +186,16 @@ local function makeRow()
     bar.bg = bar:CreateTexture(nil, "BACKGROUND")
     bar.bg:SetAllPoints(bar)
     bar.bg:SetColorTexture(1, 1, 1, 0.08)
+    -- a bright edge where the time runs out
+    bar.spark = bar:CreateTexture(nil, "OVERLAY")
+    bar.spark:SetColorTexture(1, 1, 1, 0.9)
+    bar.spark:SetBlendMode("ADD")
     bar.time = bar:CreateFontString(nil, "OVERLAY")
     bar.time:SetPoint("RIGHT", bar, "RIGHT", -3, 0)
     bar.result = bar:CreateFontString(nil, "OVERLAY")
     bar.result:SetPoint("LEFT", bar, "LEFT", 3, 0)
     bar.result:SetPoint("RIGHT", bar, "RIGHT", -3, 0)
-    bar.result:SetJustifyH("LEFT")
+    bar.result:SetJustifyH("CENTER")
     bar.result:SetWordWrap(false)
     row.bar = bar
 
@@ -209,8 +211,8 @@ local function styleRow(row, d)
     row:SetSize(d.width, h)
     ns.LayoutEdges(row.edges, row, 1, 0, 0, 0, 1, 0)
 
-    row.icon:SetSize(h, h)
-    row.icon.sep:SetWidth(ns:Pixel(row.icon, 1))
+    row.icon:SetSize(h - 6, h - 6)
+    ns.LayoutEdges(row.icon.edges, row.icon, 1, 0, 0, 0, 1, 0)
     row.icon.count:SetFont(font, math.max(8, fs - 1), "OUTLINE")
     row.name:SetFont(font, fs, outline)
     row.boe:SetFont(font, small, outline)
@@ -218,13 +220,16 @@ local function styleRow(row, d)
     row.bar.result:SetFont(font, small, outline)
     row.bar:SetStatusBarTexture(ns.MediaStatusbar(d.barTexture))
 
-    local bs = math.max(14, math.floor(h * 0.62))
+    -- a slim bar along the bottom; name and buttons share the line above it
+    row.barH = math.max(6, math.floor(h * 0.26))
+    row.topH = h - row.barH - 6
+    local bs = math.max(14, math.min(row.topH, math.floor(h * 0.6)))
     for _, b in pairs(row.btn) do
         b:SetSize(bs, bs)
         b.count:SetFont(font, math.max(8, fs - 3), "OUTLINE")
     end
     row.btnSize = bs
-    row.barH = math.max(6, math.floor(h * 0.36))
+    row.bar.spark:SetSize(ns:Pixel(row.bar, 2), row.barH + 4)
     row.btnKey = nil      -- the buttons are placed again with the new size
     row.gen = styleGen
 end
@@ -238,27 +243,29 @@ local function placeButtons(row, shown)
     if row.btnKey == key then return end
     row.btnKey = key
     local x, bs, pad = -4, row.btnSize, 4
+    local mid = -(3 + row.topH / 2)       -- the middle of the line above the bar
     for i = #ORDER, 1, -1 do
         local t = ORDER[i]
         local b = row.btn[t]
         b:ClearAllPoints()
         if shown[t] then
-            b:SetPoint("RIGHT", row, "RIGHT", x, 0)
+            b:SetPoint("RIGHT", row, "TOPRIGHT", x, mid)
             b:Show()
             x = x - bs - 3
         else
             b:Hide()
         end
     end
-    local left = row.icon:GetWidth() + 6
+    local left = row.icon:GetWidth() + 10
     row.boe:ClearAllPoints()
-    row.boe:SetPoint("TOPRIGHT", row, "TOPRIGHT", x - pad + 3, -4)
+    row.boe:SetPoint("RIGHT", row, "TOPRIGHT", x - pad + 3, mid)
     row.name:ClearAllPoints()
-    row.name:SetPoint("TOPLEFT", row, "TOPLEFT", left, -4)
+    row.name:SetPoint("LEFT", row, "TOPLEFT", left, mid)
     row.name:SetPoint("RIGHT", row.boe, "LEFT", -4, 0)
+    -- the bar runs the whole width, under the buttons too
     row.bar:ClearAllPoints()
     row.bar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", left, 4)
-    row.bar:SetPoint("RIGHT", row, "RIGHT", x - pad + 3, 0)
+    row.bar:SetPoint("RIGHT", row, "RIGHT", -4, 0)
     row.bar:SetHeight(row.barH)
 end
 
@@ -268,6 +275,11 @@ local function updateTimer(row)
     local left = LR.TimeLeft(r)
     row.bar:SetValue(left)
     row.bar.time:SetText(clock(left))
+    local dur = r.duration or 1
+    local frac = dur > 0 and math.min(1, math.max(0, left / dur)) or 0
+    row.bar.spark:ClearAllPoints()
+    row.bar.spark:SetPoint("CENTER", row.bar, "LEFT", row.bar:GetWidth() * frac, 0)
+    row.bar.spark:SetShown(frac > 0 and frac < 1)
 end
 
 local function fillRow(row, r)
@@ -275,6 +287,7 @@ local function fillRow(row, r)
     row.icon.tex:SetTexture(r.texture)
     row.icon.count:SetText((r.count or 1) > 1 and tostring(r.count) or "")
     local cr, cg, cb = LR.QualityColor(r.quality)
+    for _, t in pairs(row.icon.edges) do t:SetColorTexture(cr, cg, cb, 1) end
     row.name:SetText(r.name)
     row.name:SetTextColor(cr, cg, cb)
     row.boe:SetText(r.boe and L["BoE"] or "")
@@ -285,11 +298,14 @@ local function fillRow(row, r)
         local text, won = LR.ResultText(r)
         bar:SetValue(r.duration or 1)
         if won then bar:SetStatusBarColor(0.2, 0.75, 0.3) else bar:SetStatusBarColor(0.45, 0.45, 0.45) end
+        bar.bg:SetColorTexture(1, 1, 1, 0.08)
+        bar.spark:Hide()
         bar.result:SetText(text)
         bar.result:Show()
         bar.time:Hide()
     else
         bar:SetStatusBarColor(cr, cg, cb)
+        bar.bg:SetColorTexture(cr * 0.35, cg * 0.35, cb * 0.35, 0.6)
         bar.result:Hide()
         bar.time:Show()
         updateTimer(row)
