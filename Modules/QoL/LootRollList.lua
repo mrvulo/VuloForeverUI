@@ -377,6 +377,30 @@ local function toggleCollapsed()
     LR.Layout()
 end
 
+-- The header moves the list freely; the place is saved through the mover,
+-- so edit mode and the profile see the same spot.
+local function dragStart()
+    list:SetMovable(true)
+    list:SetClampedToScreen(true)
+    list:StartMoving()
+end
+
+local function dragStop()
+    list:StopMovingOrSizing()
+    list:SetUserPlaced(false)
+    list.head.dragEnd = GetTime()
+    local x, y = ns:GetCenterOffsets(list)
+    if x and list.mover then
+        ns:MoverSetCenter(list.mover, math.floor(x + 0.5), math.floor(y + 0.5))
+    end
+end
+
+local function headClick(self)
+    -- the release that ends a drag is no click
+    if self.dragEnd and GetTime() - self.dragEnd < 0.2 then return end
+    toggleCollapsed()
+end
+
 local function buildHead()
     local head = CreateFrame("Button", nil, list)
     head:SetHeight(HEAD)
@@ -387,7 +411,14 @@ local function buildHead()
     head.title = head:CreateFontString(nil, "OVERLAY")
     head.title:SetPoint("LEFT", head, "LEFT", 6, 0)
     head.title:SetJustifyH("LEFT")
-    head:SetScript("OnClick", toggleCollapsed)
+    head:SetScript("OnClick", headClick)
+    head:RegisterForDrag("LeftButton")
+    head:SetScript("OnDragStart", dragStart)
+    head:SetScript("OnDragStop", dragStop)
+    head:SetScript("OnEnter", function(self)
+        headTip(self, L["Loot roll list"], L["Drag to move the list, click to fold it."])
+    end)
+    head:SetScript("OnLeave", GameTooltip_Hide)
 
     local close = ns.UI:CreateCloseX(head, function()
         LR.hidden = true

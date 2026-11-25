@@ -250,14 +250,15 @@ local function lootPage()
             { value = "UP",   text = L["Up"] },
         }),
         slider("lootRoll", "width", L["Width"], 300, 800, 10),
-        slider("lootRoll", "iconSize", L["Icon size"], 24, 64, 1),
+        slider("lootRoll", "iconSize", L["Height"], 24, 64, 1,
+            L["The height of one row; the icon and the buttons grow with it."]),
         slider("lootRoll", "fontSize", L["Text size"], 8, 24, 1),
         slider("lootRoll", "spacing", L["Spacing"], 0, 20, 1),
         dropdown("lootRoll", "barTexture", L["Bar texture"], ns.MediaStatusbarValues(), { width = 220 }),
         { type = "button", label = L["Show test rolls"], width = 200,
           tooltip = L["Fills the list with examples for 20 seconds, or until clicked again."],
           onClick = function() QoL.LootRoll.ToggleTest() end },
-        { type = "desc", text = L["|cffaaaaaaCounts, players and the winner come from the game's loot history; when it does not know a roll they stay empty. Placing the list is Edit Mode's job: /vedit.|r"] },
+        { type = "desc", text = L["|cffaaaaaaCounts, players and the winner come from the game's loot history; when it does not know a roll they stay empty. Drag the list by its header to move it, or place it in Edit Mode: /vedit.|r"] },
     }
 end
 
