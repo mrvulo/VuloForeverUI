@@ -54,7 +54,7 @@ ns:RegisterLocale("deDE", {
     ["Set key"] = "Taste festlegen",
     ["Remove key"] = "Taste entfernen",
     ["Set the fishing key"] = "Angeltaste festlegen",
-    ["Press the key now, with Shift, Ctrl or Alt if you like, or mouse button 3, 4 or 5 over this window. Escape cancels."] = "Drück jetzt die Taste, gern mit Shift, Strg oder Alt, oder Maustaste 3, 4 oder 5 über diesem Fenster. Esc bricht ab.",
+    ["Press the key now, with Shift, Ctrl or Alt if you like, or mouse button 3, 4 or 5 or the mouse wheel over this window. Escape cancels."] = "Drück jetzt die Taste, gern mit Shift, Strg oder Alt, oder Maustaste 3, 4, 5 oder das Mausrad über diesem Fenster. Esc bricht ab.",
     ["Key bindings cannot be changed during a fight."] = "Im Kampf lassen sich keine Tasten belegen.",
     ["That key cannot be bound."] = "Diese Taste lässt sich nicht belegen.",
     ["Fishing key: %s"] = "Angeltaste: %s",

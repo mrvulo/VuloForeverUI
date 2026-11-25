@@ -54,7 +54,7 @@ ns:RegisterLocale("ptBR", {
     ["Set key"] = "Definir tecla",
     ["Remove key"] = "Remover tecla",
     ["Set the fishing key"] = "Definir a tecla de pesca",
-    ["Press the key now, with Shift, Ctrl or Alt if you like, or mouse button 3, 4 or 5 over this window. Escape cancels."] = "Pressione a tecla agora, com Shift, Ctrl ou Alt se quiser, ou o botão 3, 4 ou 5 do mouse sobre esta janela. Esc cancela.",
+    ["Press the key now, with Shift, Ctrl or Alt if you like, or mouse button 3, 4 or 5 or the mouse wheel over this window. Escape cancels."] = "Pressione a tecla agora, com Shift, Ctrl ou Alt se quiser, ou o botão 3, 4 ou 5 do mouse ou a roda do mouse sobre esta janela. Esc cancela.",
     ["Key bindings cannot be changed during a fight."] = "Não é possível mudar as teclas em combate.",
     ["That key cannot be bound."] = "Essa tecla não pode ser atribuída.",
     ["Fishing key: %s"] = "Tecla de pesca: %s",

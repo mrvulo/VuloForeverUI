@@ -54,7 +54,7 @@ ns:RegisterLocale("frFR", {
     ["Set key"] = "Définir la touche",
     ["Remove key"] = "Retirer la touche",
     ["Set the fishing key"] = "Définir la touche de pêche",
-    ["Press the key now, with Shift, Ctrl or Alt if you like, or mouse button 3, 4 or 5 over this window. Escape cancels."] = "Appuie maintenant sur la touche, avec Maj, Ctrl ou Alt si tu veux, ou sur le bouton 3, 4 ou 5 de la souris au-dessus de cette fenêtre. Échap annule.",
+    ["Press the key now, with Shift, Ctrl or Alt if you like, or mouse button 3, 4 or 5 or the mouse wheel over this window. Escape cancels."] = "Appuie maintenant sur la touche, avec Maj, Ctrl ou Alt si tu veux, ou sur le bouton 3, 4 ou 5 de la souris ou la molette au-dessus de cette fenêtre. Échap annule.",
     ["Key bindings cannot be changed during a fight."] = "Impossible de changer les raccourcis en combat.",
     ["That key cannot be bound."] = "Cette touche ne peut pas être attribuée.",
     ["Fishing key: %s"] = "Touche de pêche : %s",

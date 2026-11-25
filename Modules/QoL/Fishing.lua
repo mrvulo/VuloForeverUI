@@ -89,6 +89,25 @@ local lastRight, lastNote = 0, 0
 local mouseTimer
 local capture
 
+-- The mouse wheel as the key: one turn is a burst of notches, each one a
+-- press. Two guards keep a burst to one action -- presses of the same edge
+-- within WHEEL_SETTLE do nothing, and the wheel reels in only WHEEL_REEL
+-- after the cast, when no fish can have bitten yet anyway.
+local WHEEL_SETTLE = 0.6
+local WHEEL_REEL = 1
+local lastActed = { [true] = 0, [false] = 0 }   -- per edge: down, up
+
+local function isWheel(key)
+    return type(key) == "string" and key:find("MOUSEWHEEL", 1, true) ~= nil
+end
+
+local function wheelBound()
+    for _, key in ipairs({ GetBindingKey(BINDING) }) do
+        if isWheel(key) then return true end
+    end
+    return false
+end
+
 local function db() return QoL.db().fishing end
 Fish.db = db
 
@@ -193,7 +212,7 @@ local function castFishing(self)
     end
 end
 
-local function prepare(self, mouse)
+local function prepare(self, mouse, down)
     if InCombatLockdown() then return end
     self:SetAttribute("type", nil)
     self:SetAttribute("item", nil)
@@ -201,6 +220,16 @@ local function prepare(self, mouse)
     self:SetAttribute("target-slot", nil)
     -- switched off: the binding may still point here, the button does nothing
     if not registered then return end
+    -- the line is out: only Ctrl + key casts again. The keyboard is the
+    -- reel key by now; this catches a late wheel notch before the wheel is.
+    if reeling and mouse ~= "Recast" then return end
+    -- the rest of a wheel turn: nothing
+    local edge = down and true or false
+    if wheelBound() then
+        local now = GetTime()
+        if now - lastActed[edge] < WHEEL_SETTLE then return end
+        lastActed[edge] = now
+    end
     -- Ctrl + key while the line is out: straight back to casting, no gear,
     -- no lure -- for landing the bobber in a school of fish.
     if mouse == "Recast" then
@@ -295,17 +324,30 @@ end
 -- While the line is out every bound key interacts and, with quick recast,
 -- Ctrl + key clicks the button as "Recast"; otherwise the keys are the
 -- button again (their binding points there, so nothing is overridden).
+local function reelKey(key)
+    SetOverrideBinding(owner, true, key, "INTERACTTARGET")
+    local recast = db().quickRecast and withCtrl(key)
+    if recast then SetOverrideBindingClick(owner, true, recast, BUTTON, "Recast") end
+end
+
+local reelSerial = 0
 local function setReel(on)
     if InCombatLockdown() or not owner then return end
     ClearOverrideBindings(owner)
     reeling = on
-    if on then
-        for _, key in ipairs(boundKeys()) do
-            SetOverrideBinding(owner, true, key, "INTERACTTARGET")
-            local recast = db().quickRecast and withCtrl(key)
-            if recast then SetOverrideBindingClick(owner, true, recast, BUTTON, "Recast") end
-        end
+    reelSerial = reelSerial + 1
+    if not on then return end
+    local wheels = {}
+    for _, key in ipairs(boundKeys()) do
+        if isWheel(key) then wheels[#wheels + 1] = key else reelKey(key) end
     end
+    if #wheels == 0 then return end
+    -- the wheel turn that cast must not reel straight back in
+    local serial = reelSerial
+    C_Timer.After(WHEEL_REEL, function()
+        if serial ~= reelSerial or not reeling or InCombatLockdown() then return end
+        for _, key in ipairs(wheels) do reelKey(key) end
+    end)
 end
 
 local function isFishing(spellID)
@@ -600,9 +642,13 @@ local function buildCapture()
             bindTo(CreateKeyChordStringUsingMetaKeyState(GetConvertedKeyOrButton(mouse)))
         end
     end)
+    f:EnableMouseWheel(true)
+    f:SetScript("OnMouseWheel", function(_, delta)
+        bindTo(CreateKeyChordStringUsingMetaKeyState(delta > 0 and "MOUSEWHEELUP" or "MOUSEWHEELDOWN"))
+    end)
     f:SetScript("OnShow", function()
         f.title:SetText(L["Set the fishing key"])
-        f.text:SetText(L["Press the key now, with Shift, Ctrl or Alt if you like, or mouse button 3, 4 or 5 over this window. Escape cancels."])
+        f.text:SetText(L["Press the key now, with Shift, Ctrl or Alt if you like, or mouse button 3, 4 or 5 or the mouse wheel over this window. Escape cancels."])
         input:SetFocus()
     end)
     -- parented to the options window: closing it ends the capture too, so a

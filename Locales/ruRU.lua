@@ -54,7 +54,7 @@ ns:RegisterLocale("ruRU", {
     ["Set key"] = "Назначить клавишу",
     ["Remove key"] = "Убрать клавишу",
     ["Set the fishing key"] = "Назначить клавишу рыбалки",
-    ["Press the key now, with Shift, Ctrl or Alt if you like, or mouse button 3, 4 or 5 over this window. Escape cancels."] = "Нажмите клавишу сейчас, можно с Shift, Ctrl или Alt, или кнопку мыши 3, 4 или 5 над этим окном. Esc отменяет.",
+    ["Press the key now, with Shift, Ctrl or Alt if you like, or mouse button 3, 4 or 5 or the mouse wheel over this window. Escape cancels."] = "Нажмите клавишу сейчас, можно с Shift, Ctrl или Alt, или кнопку мыши 3, 4 или 5, или прокрутите колесо мыши над этим окном. Esc отменяет.",
     ["Key bindings cannot be changed during a fight."] = "В бою нельзя менять назначения клавиш.",
     ["That key cannot be bound."] = "Эту клавишу нельзя назначить.",
     ["Fishing key: %s"] = "Клавиша рыбалки: %s",

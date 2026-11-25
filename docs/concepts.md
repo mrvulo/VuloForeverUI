@@ -491,6 +491,11 @@ scaled together as one mover (`classes_priest`).
   bindings skip, puts the old keys back if binding fails, and is parented to
   the options window so closing it ends the capture.
   `fishing.savedCVars` is SKIP in ship_profile.py.
+- **Wheel as fishing key** (F-80, 2026-11-25): one wheel turn is a burst of
+  presses. While a wheel key is bound, PreClick ignores presses of the same
+  edge within 0.6 s; while the line is out the button only takes "Recast";
+  and the wheel's reel override is set 1 s after the channel starts, the
+  keyboard's at once. Do not shorten these without trying a fast turn.
 - **Fishing extras** (F-74..F-78, 2026-11-22): quick recast is an override
   binding Ctrl+key -> our button with the virtual mouse button "Recast", set
   only while the line is out, next to the reel overrides; PreClick sees

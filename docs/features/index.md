@@ -89,6 +89,7 @@ jemand ohne den Code prüfen kann.
 | F-77 | Angeln: Sitzungsstatistik | Komfort | gebaut | – |
 | F-78 | Angeln: kurze Fangübersicht nach dem Einholen | Komfort | gebaut | – |
 | F-79 | Taschen: „Am Rucksack anzeigen“ aus dem Währungsfenster zeigt die Währung in der Taschen-Kopfzeile | Taschen | gebaut | – |
+| F-80 | Angeln: Mausrad (auch mit Shift/Strg/Alt) als Angeltaste | Komfort | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -374,6 +375,13 @@ jemand ohne den Code prüfen kann.
 - Angenommen „Am Rucksack angezeigte Währungen“ ist an, **wenn** du im Währungsfenster des Spiels bei einer Währung (z. B. Händlergunst) „Am Rucksack anzeigen“ ankreuzt, **dann** steht sie mit Symbol und Menge sofort in der Kopfzeile der offenen Taschen, vor dem Gold.
 - **Wenn** du das Häkchen wieder entfernst, **dann** verschwindet sie, außer sie ist auch unter „Aktivierte Währungen“ gewählt; doppelt steht keine Währung da.
 - **Wenn** sich die Menge ändert, **dann** zieht die Zahl mit.
+
+
+### F-80 Mausrad als Angeltaste
+- **Wenn** du unter Komfort → Angeln „Taste festlegen“ drückst und über dem Fenster das Mausrad drehst (gern mit Shift, Strg oder Alt), **dann** ist „Mausrad hoch“ bzw. „Mausrad runter“ mit diesem Zusatz die Angeltaste, und die Seite zeigt sie an.
+- **Wenn** du mit der Angel in der Hand einmal am Rad drehst, **dann** wirfst du genau einmal aus — die restlichen Rasten desselben Drehs holen die Leine nicht gleich wieder ein und werfen nicht neu aus.
+- **Wenn** der Schwimmer anbeißt und du am Rad drehst, **dann** holst du ein wie mit einer Taste; Strg + Rad wirft bei draußener Leine sofort neu aus (wenn „Schnell neu auswerfen“ an ist).
+- Bekannte Grenze: Rund eine Sekunde nach dem Auswerfen holt das Rad noch nicht ein; vorher beißt ohnehin nichts.
 
 ### F-45 Tägliches Wort
 - Angenommen die Flugleiste ist an, **wenn** du fliegst, **dann** sitzt rechts neben der Leiste ein Knopf „Wort“; ein Klick öffnet „Tägliches Wort #N“ mit 6 × 5 Feldern, QWERTZ-Tastatur, „Nächstes Wort in …“ und der Statistik.
