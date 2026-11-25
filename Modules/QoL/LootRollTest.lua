@@ -77,6 +77,7 @@ local function showTest(on)
     if on then
         for _, t in ipairs(testRows()) do rolls[#rolls + 1] = t end
         LR.testing = true
+        LR.hidden, LR.collapsed = nil, nil
     end
     LR.Layout()
 end

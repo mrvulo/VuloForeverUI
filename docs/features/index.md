@@ -392,6 +392,7 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du die Liste im Bearbeitungsmodus verschiebst oder Breite, Symbolgröße, Schriftgröße, Abstand, Wachstumsrichtung oder Balkentextur änderst, **dann** sieht man das sofort; „Testwürfe zeigen“ füllt die Liste mit Beispielen.
 - **Wenn** du die Würfelliste ausschaltest, **dann** fragt ein Fenster „Jetzt neu laden?“; bis zum `/reload` arbeitet die Liste weiter (laufende Würfe lassen sich noch beantworten), danach sind die Würfelfenster des Spiels zurück. War die Liste seit dem Einloggen nie an, ist aus sofort aus.
 - **Angenommen** die Gamepad-Oberfläche ist an, **dann** bleibt die Würfelliste leer und das Spiel zeigt seine eigenen Würfe.
+- **Dann** steht über der Liste (bei „Nach oben“ darunter) eine Kopfleiste „Würfe (Anzahl)“ mit „-“ und einem roten X. **Wenn** du auf „-“ oder die Kopfleiste klickst, **dann** klappen die Zeilen weg und nur die Kopfleiste bleibt („+“ klappt sie wieder auf). **Wenn** du auf das X klickst, **dann** verschwindet die Liste, bis der nächste Wurf beginnt; offene Würfe laufen weiter und zählen bei Ablauf als Passen. Beides gilt bis zum nächsten Einloggen bzw. `/reload`; „Testwürfe zeigen“ öffnet die Liste wieder.
 - Bekannte Grenze: Zähler, Spielerliste und Gewinner kommen aus dem Beuteverlauf des Spiels. Kennt der Verlauf einen Wurf nicht oder liegt derselbe Gegenstand zweimal in der Liste, bleiben sie leer; würfeln geht trotzdem. Läuft ein Wurf über einen Ladebildschirm, öffnet das Spiel ihn danach zusätzlich in seinem eigenen Fenster.
 
 ### F-45 Tägliches Wort

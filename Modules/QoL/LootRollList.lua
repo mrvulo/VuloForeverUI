@@ -357,6 +357,96 @@ local function onUpdate(_, elapsed)
     end
 end
 
+-- ----------------------------------------------------------- header --
+--
+-- A strip on the anchor side of the list: how many rolls are open, a button
+-- that folds the rows away (and back), and one that hides the list until the
+-- next roll arrives. Both last for the session only.
+
+local HEAD = 18
+
+local function headTip(self, text, sub)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:SetText(text)
+    if sub then GameTooltip:AddLine(sub, 1, 1, 1, true) end
+    GameTooltip:Show()
+end
+
+local function toggleCollapsed()
+    LR.collapsed = not LR.collapsed or nil
+    LR.Layout()
+end
+
+local function buildHead()
+    local head = CreateFrame("Button", nil, list)
+    head:SetHeight(HEAD)
+    local bg = head:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints(head)
+    bg:SetColorTexture(0.05, 0.05, 0.05, 0.85)
+    head.edges = ns.MakeEdges(head, "BORDER")
+    head.title = head:CreateFontString(nil, "OVERLAY")
+    head.title:SetPoint("LEFT", head, "LEFT", 6, 0)
+    head.title:SetJustifyH("LEFT")
+    head:SetScript("OnClick", toggleCollapsed)
+
+    local close = ns.UI:CreateCloseX(head, function()
+        LR.hidden = true
+        GameTooltip_Hide()
+        LR.Layout()
+    end, "box")
+    close:ClearAllPoints()
+    close:SetSize(HEAD - 4, HEAD - 4)
+    close:SetPoint("RIGHT", head, "RIGHT", -2, 0)
+    close:HookScript("OnEnter", function(self)
+        headTip(self, CLOSE, L["Hides the list until the next roll. A roll left open counts as pass when its time runs out."])
+    end)
+    close:HookScript("OnLeave", GameTooltip_Hide)
+    head.close = close
+
+    local min = CreateFrame("Button", nil, head)
+    min:SetSize(HEAD - 4, HEAD - 4)
+    min:SetPoint("RIGHT", close, "LEFT", -3, 0)
+    local mbg = min:CreateTexture(nil, "BACKGROUND")
+    mbg:SetAllPoints(min)
+    mbg:SetColorTexture(0.06, 0.06, 0.07, 0.95)
+    min.edges = ns.MakeEdges(min, "BORDER")
+    min.text = min:CreateFontString(nil, "OVERLAY")
+    min.text:SetPoint("CENTER", min, "CENTER", 0, 1)
+    min:SetScript("OnClick", toggleCollapsed)
+    min:SetScript("OnEnter", function(self)
+        self.text:SetTextColor(1, 1, 1)
+        headTip(self, LR.collapsed and L["Expand"] or L["Minimize"])
+    end)
+    min:SetScript("OnLeave", function(self)
+        self.text:SetTextColor(0.8, 0.8, 0.8)
+        GameTooltip_Hide()
+    end)
+    head.min = min
+    return head
+end
+
+local function layoutHead(d, n, up)
+    local head = list.head
+    if n == 0 or LR.hidden then head:Hide(); return end
+    local font, outline = QoL.Font(), QoL.Outline()
+    head:SetWidth(d.width)
+    ns.LayoutEdges(head.edges, head, 1, 0, 0, 0, 1, 0)
+    ns.LayoutEdges(head.min.edges, head.min, 1, 0.32, 0.32, 0.36, 1, 0)
+    head.title:SetFont(font, math.max(9, d.fontSize - 2), outline)
+    head.title:SetTextColor(0.85, 0.85, 0.85)
+    head.title:SetText(L["Loot rolls (%d)"]:format(n))
+    head.min.text:SetFont(font, 14, outline)
+    head.min.text:SetTextColor(0.8, 0.8, 0.8)
+    head.min.text:SetText(LR.collapsed and "+" or "-")
+    head:ClearAllPoints()
+    if up then
+        head:SetPoint("TOPLEFT", list, "BOTTOMLEFT", 0, -d.spacing)
+    else
+        head:SetPoint("BOTTOMLEFT", list, "TOPLEFT", 0, d.spacing)
+    end
+    head:Show()
+end
+
 local function build()
     if list then return end
     local d = LR.db()
@@ -375,6 +465,7 @@ local function build()
         editPreview = function(on) LR.EditPreview(on) end,
     })
     ns:ApplyMover(list.mover)
+    list.head = buildHead()
 end
 
 function LR.Layout()
@@ -382,7 +473,11 @@ function LR.Layout()
     local d = LR.db()
     local h, gap, up = d.iconSize, d.spacing, d.grow == "UP"
     local rolls = LR.rolls
-    for i, r in ipairs(rolls) do
+    layoutHead(d, #rolls, up)
+    -- folded or closed: the rows wait, their timers and endings run on
+    local shownRows = (LR.hidden or LR.collapsed) and 0 or #rolls
+    for i = 1, shownRows do
+        local r = rolls[i]
         local row = rowsUI[i]
         if not row then row = makeRow(); rowsUI[i] = row end
         if row.gen ~= styleGen then styleRow(row, d) end
@@ -400,7 +495,7 @@ function LR.Layout()
         fillRow(row, r)
         row:Show()
     end
-    for i = #rolls + 1, #rowsUI do
+    for i = shownRows + 1, #rowsUI do
         rowsUI[i]:Hide()
         rowsUI[i].roll = nil
     end

@@ -328,6 +328,8 @@ function addRoll(id, rollTime, tries)
     r.duration = dur
     r.startedAt = GetTime() - math.max(0, dur - LR.TimeLeft(r)) / 1000
     rolls[#rolls + 1] = r
+    -- a new roll brings a closed list back
+    LR.hidden = nil
     readBinds()
     scanAll()
     LR.Layout()
