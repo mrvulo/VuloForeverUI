@@ -241,6 +241,23 @@ local function lootPage()
         { type = "header", text = L["Deleting"] },
         toggle(nil, "autoFillDelete", L["Type the delete word for you"],
             L["Only the box is filled in. The button is still yours to press."]),
+
+        { type = "header", text = L["Loot roll list"] },
+        toggle("lootRoll", "enabled", L["Show the loot roll list"],
+            L["Group loot rolls appear as rows in one movable list instead of the game's roll windows. Switched off, the game's windows come back after a reload; until then the list keeps working."]),
+        dropdown("lootRoll", "grow", L["Grow direction"], {
+            { value = "DOWN", text = L["Down"] },
+            { value = "UP",   text = L["Up"] },
+        }),
+        slider("lootRoll", "width", L["Width"], 300, 800, 10),
+        slider("lootRoll", "iconSize", L["Icon size"], 24, 64, 1),
+        slider("lootRoll", "fontSize", L["Text size"], 8, 24, 1),
+        slider("lootRoll", "spacing", L["Spacing"], 0, 20, 1),
+        dropdown("lootRoll", "barTexture", L["Bar texture"], ns.MediaStatusbarValues(), { width = 220 }),
+        { type = "button", label = L["Show test rolls"], width = 200,
+          tooltip = L["Fills the list with examples for 20 seconds, or until clicked again."],
+          onClick = function() QoL.LootRoll.ToggleTest() end },
+        { type = "desc", text = L["|cffaaaaaaCounts, players and the winner come from the game's loot history; when it does not know a roll they stay empty. Placing the list is Edit Mode's job: /vedit.|r"] },
     }
 end
 

@@ -90,6 +90,7 @@ jemand ohne den Code prüfen kann.
 | F-78 | Angeln: kurze Fangübersicht nach dem Einholen | Komfort | gebaut | – |
 | F-79 | Taschen: „Am Rucksack anzeigen“ aus dem Währungsfenster zeigt die Währung in der Taschen-Kopfzeile | Taschen | gebaut | – |
 | F-80 | Angeln: Mausrad (auch mit Shift/Strg/Alt) als Angeltaste | Komfort | gebaut | – |
+| F-81 | Würfelliste: Gruppenbeute-Würfe als eine kompakte, verschiebbare Liste statt der Spiel-Fenster | Komfort | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -382,6 +383,16 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du mit der Angel in der Hand einmal am Rad drehst, **dann** wirfst du genau einmal aus — die restlichen Rasten desselben Drehs holen die Leine nicht gleich wieder ein und werfen nicht neu aus.
 - **Wenn** der Schwimmer anbeißt und du am Rad drehst, **dann** holst du ein wie mit einer Taste; Strg + Rad wirft bei draußener Leine sofort neu aus (wenn „Schnell neu auswerfen“ an ist).
 - Bekannte Grenze: Rund eine Sekunde nach dem Auswerfen holt das Rad noch nicht ein; vorher beißt ohnehin nichts.
+
+### F-81 Würfelliste
+- **Angenommen** „Würfelliste“ ist an (Standard: aus), **wenn** in der Gruppe ein Gegenstand ausgewürfelt wird, **dann** erscheinen nicht mehr die Würfelfenster des Spiels, sondern eine Zeile in unserer Liste: Symbol mit Anzahl, Name in Qualitätsfarbe, „BoE“ bei Gegenständen, die beim Anlegen binden, ein Zeitbalken in Qualitätsfarbe mit Restzeit, rechts Bedarf, Gier (bzw. Transmog), Entzaubern (nur wenn möglich) und Passen.
+- **Wenn** du auf einen der Knöpfe klickst, **dann** würfelst du genau so wie im Spiel-Fenster; ein Seelengebunden-Gegenstand fragt wie gewohnt nach. Ein Knopf, den du nicht nehmen darfst, ist grau, und sein Tooltip nennt den Grund.
+- **Dann** steht unter jedem Knopf, wie viele diese Wahl schon getroffen haben; über der Zeile zeigt ein Tooltip alle Spieler in Klassenfarbe mit ihrer Wahl („?“ = noch offen) und nach dem Ende die Wurfzahlen. Über dem Symbol zeigt der Tooltip den Gegenstand.
+- **Wenn** der Wurf zu Ende ist, **dann** bleibt die Zeile noch einige Sekunden mit „✓ Gewinner Zahl“ im Balken stehen (oder „Alle haben gepasst“) und verschwindet dann.
+- **Wenn** du die Liste im Bearbeitungsmodus verschiebst oder Breite, Symbolgröße, Schriftgröße, Abstand, Wachstumsrichtung oder Balkentextur änderst, **dann** sieht man das sofort; „Testwürfe zeigen“ füllt die Liste mit Beispielen.
+- **Wenn** du die Würfelliste ausschaltest, **dann** fragt ein Fenster „Jetzt neu laden?“; bis zum `/reload` arbeitet die Liste weiter (laufende Würfe lassen sich noch beantworten), danach sind die Würfelfenster des Spiels zurück. War die Liste seit dem Einloggen nie an, ist aus sofort aus.
+- **Angenommen** die Gamepad-Oberfläche ist an, **dann** bleibt die Würfelliste leer und das Spiel zeigt seine eigenen Würfe.
+- Bekannte Grenze: Zähler, Spielerliste und Gewinner kommen aus dem Beuteverlauf des Spiels. Kennt der Verlauf einen Wurf nicht oder liegt derselbe Gegenstand zweimal in der Liste, bleiben sie leer; würfeln geht trotzdem. Läuft ein Wurf über einen Ladebildschirm, öffnet das Spiel ihn danach zusätzlich in seinem eigenen Fenster.
 
 ### F-45 Tägliches Wort
 - Angenommen die Flugleiste ist an, **wenn** du fliegst, **dann** sitzt rechts neben der Leiste ein Knopf „Wort“; ein Klick öffnet „Tägliches Wort #N“ mit 6 × 5 Feldern, QWERTZ-Tastatur, „Nächstes Wort in …“ und der Statistik.

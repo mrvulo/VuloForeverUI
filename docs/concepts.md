@@ -622,6 +622,26 @@ scaled together as one mover (`classes_priest`).
   per kind (buffs / debuffs): mask + one ring texture for the border and one
   for the dispel colour (registered with the engine like the four strips).
 
+- **Loot roll list** (F-81, `LootRoll.lua`): the client opens its roll
+  popups from one internal event handler (`GameEvent`, START_LOOT_ROLL ->
+  `GameEvent.HandleStartLootRoll` -> `GroupLootContainer_AddRoll`). The part
+  takes that ONE handler out with `GameEvent.UnregisterInternalEvent` and puts
+  it back on disable -- no Blizzard frame is hidden or moved (see the Hide
+  taint rule). Counts, players and winner come from `C_LootHistory`, matched
+  to a roll by item link; rolling never depends on that match.
+  Known gap: on PLAYER_ENTERING_WORLD the client re-reads every active roll
+  into its own windows (`GroupLootContainer_RefreshRolls`), so a roll open
+  across a loading screen shows in both places.
+  **Off needs a reload:** re-registering START_LOOT_ROLL from addon code (or
+  calling `GroupLootContainer_AddRoll`) runs the client's container and the
+  bottom managed frame container's Layout in our taint -- in combat that is
+  ADDON_ACTION_BLOCKED (the extra action button lives there). So once the
+  handler is out, switching off keeps the list answering rolls and offers a
+  /reload; nothing of ours ever puts the handler back. Never touched with the
+  gamepad UI on (its own roll frame takes the event). A drop is matched only
+  while exactly one row has its item link; a matched row waits after CANCEL
+  for the drop's winner or all-passed (cap: end + 10 s).
+
 ## Chat (`Modules/Chat/`, copy dialog in `UI/StringDialog.lua`)
 
 - **Both chat surfaces carry the same text, to the letter** (the player's

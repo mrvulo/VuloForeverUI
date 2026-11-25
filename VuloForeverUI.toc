@@ -234,6 +234,9 @@ Modules\QoL\Mail.lua
 Modules\QoL\Vendor.lua
 Modules\QoL\Junk.lua
 Modules\QoL\Loot.lua
+Modules\QoL\LootRoll.lua
+Modules\QoL\LootRollList.lua
+Modules\QoL\LootRollTest.lua
 Modules\QoL\Display.lua
 Modules\QoL\Trinkets.lua
 Modules\QoL\TrinketFlyout.lua

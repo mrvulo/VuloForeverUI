@@ -2530,6 +2530,17 @@ local T = {
     ["Reset window positions"] = "Restablecer posiciones de ventanas",
     ["Forgets every place you gave a window of the game."] = "Olvida todos los lugares que diste a las ventanas del juego.",
     ["Window positions reset. Each window is back in its own place the next time it opens."] = "Posiciones de ventanas restablecidas. Cada ventana vuelve a su propio sitio la próxima vez que se abra.",
+    ["Loot roll list"] = "Lista de tiradas de botín",
+    ["Show the loot roll list"] = "Mostrar la lista de tiradas de botín",
+    ["Group loot rolls appear as rows in one movable list instead of the game's roll windows. Switched off, the game's windows come back after a reload; until then the list keeps working."] = "Las tiradas de botín de grupo aparecen como filas en una lista movible en lugar de las ventanas de tirada del juego. Al desactivarla, las ventanas del juego vuelven tras recargar; hasta entonces la lista sigue funcionando.",
+    ["The game's roll windows come back after a reload. Reload now?"] = "Las ventanas de tirada del juego vuelven tras recargar. ¿Recargar ahora?",
+    ["Show test rolls"] = "Mostrar tiradas de prueba",
+    ["Fills the list with examples for 20 seconds, or until clicked again."] = "Llena la lista con ejemplos durante 20 segundos, o hasta volver a hacer clic.",
+    ["|cffaaaaaaCounts, players and the winner come from the game's loot history; when it does not know a roll they stay empty. Placing the list is Edit Mode's job: /vedit.|r"] = "|cffaaaaaaLos contadores, los jugadores y el ganador vienen del historial de botín del juego; si no conoce una tirada, quedan vacíos. Colocar la lista es tarea del modo edición: /vedit.|r",
+    ["Everyone passed"] = "Todos han pasado",
+    ["Roll ended"] = "Tirada terminada",
+    ["Example item %d"] = "Objeto de ejemplo %d",
+    ["The loot history does not know this roll."] = "El historial de botín no conoce esta tirada.",
 }
 
 ns:RegisterLocale("esES", T)

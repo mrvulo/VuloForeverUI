@@ -192,6 +192,20 @@ local mod = ns:RegisterModule("qol", {
         autoOpen       = false,
         autoFillDelete = true,
 
+        -- ---------------------------------------------------------- loot roll
+        -- The group loot rolls as one list instead of the client's windows
+        -- (LootRoll.lua). Off: it takes the client's popups out.
+        lootRoll = {
+            enabled    = false,
+            grow       = "DOWN",        -- DOWN | UP from the anchor
+            width      = 500,
+            iconSize   = 36,
+            fontSize   = 13,
+            spacing    = 4,
+            barTexture = "Matte",
+            x = -420, y = 150, scale = 1,
+        },
+
         -- ----------------------------------------------------------- display
         fps = {
             enabled   = false,
