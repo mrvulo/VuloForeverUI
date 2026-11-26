@@ -436,6 +436,12 @@ end
 
 local HEAD = 18
 
+-- shared with the loot history list (LootRollHistory.lua)
+LR._ui = {
+    makeGround = makeGround, styleGround = styleGround,
+    addPlayer = addPlayer, classColor = classColor, atlasMarkup = atlasMarkup,
+}
+
 local function headTip(self, text, sub)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:SetText(text)
@@ -490,6 +496,7 @@ local function buildHead()
 
     local close = ns.UI:CreateCloseX(head, function()
         LR.hidden = true
+        LR.historyOpen = nil
         GameTooltip_Hide()
         LR.Layout()
     end, "box")
@@ -521,19 +528,36 @@ local function buildHead()
         GameTooltip_Hide()
     end)
     head.min = min
+
+    -- the loot history of the session, left of the minimize button
+    local hist = CreateFrame("Button", nil, head)
+    hist:SetSize(HEAD - 4, HEAD - 4)
+    hist:SetPoint("RIGHT", min, "LEFT", -3, 0)
+    hist.icon = hist:CreateTexture(nil, "ARTWORK")
+    hist.icon:SetPoint("TOPLEFT", 2, -2)
+    hist.icon:SetPoint("BOTTOMRIGHT", -2, 2)
+    hist.icon:SetAtlas("auctionhouse-icon-clock")
+    hist:SetScript("OnClick", function() LR.ToggleHistory() end)
+    hist:SetScript("OnEnter", function(self)
+        headTip(self, L["Loot history"], L["The rolls of this session with their winner."])
+    end)
+    hist:SetScript("OnLeave", GameTooltip_Hide)
+    head.hist = hist
     return head
 end
 
 local function layoutHead(d, n, up)
     local head = list.head
-    if n == 0 or LR.hidden then head:Hide(); return end
+    if (n == 0 and not LR.historyOpen) or LR.hidden then head:Hide(); return end
     local font, outline = QoL.Font(), QoL.Outline()
     head:SetWidth(d.width)
     styleGround(head.ground, head, d.rounded)
     ns.LayoutEdges(head.min.edges, head.min, 1, 0.32, 0.32, 0.36, 1, 0)
     head.title:SetFont(font, math.max(9, d.fontSize - 2), outline)
     head.title:SetTextColor(0.85, 0.85, 0.85)
-    head.title:SetText(L["Loot rolls (%d)"]:format(n))
+    head.title:SetText(n > 0 and L["Loot rolls (%d)"]:format(n) or L["Loot history"])
+    head.hist.icon:SetDesaturated(not LR.historyOpen)
+    head.hist.icon:SetAlpha(LR.historyOpen and 1 or 0.6)
     head.min.text:SetFont(font, 14, outline)
     head.min.text:SetTextColor(0.8, 0.8, 0.8)
     head.min.text:SetText(LR.collapsed and "+" or "-")
@@ -565,6 +589,7 @@ local function build()
     })
     ns:ApplyMover(list.mover)
     list.head = buildHead()
+    LR._list = list
 end
 
 function LR.Layout()
@@ -598,6 +623,7 @@ function LR.Layout()
         rowsUI[i]:Hide()
         rowsUI[i].roll = nil
     end
+    if LR.LayoutHistory then LR.LayoutHistory(d, up) end
     list:SetScript("OnUpdate", (#rolls > 0) and onUpdate or nil)
 end
 

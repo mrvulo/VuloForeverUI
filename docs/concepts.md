@@ -622,6 +622,12 @@ scaled together as one mover (`classes_priest`).
   per kind (buffs / debuffs): mask + one ring texture for the border and one
   for the dispel colour (registered with the engine like the four strips).
 
+- **Loot history** (F-81, `LootRollHistory.lua`, 2026-11-26): a finished row
+  goes after `lootRoll.linger` seconds (player's choice: default 3, no more
+  waiting for the winner) and becomes a session history entry that keeps its
+  drop (encounterID, lootListKey). A drop owned by an entry is never taken
+  by a newer row with the same item; an unmatched entry claims a drop only
+  when exactly one entry and no row has that link.
 - **Loot roll list** (F-81, `LootRoll.lua`): the client opens its roll
   popups from one internal event handler (`GameEvent`, START_LOOT_ROLL ->
   `GameEvent.HandleStartLootRoll` -> `GroupLootContainer_AddRoll`). The part
@@ -639,8 +645,8 @@ scaled together as one mover (`classes_priest`).
   handler is out, switching off keeps the list answering rolls and offers a
   /reload; nothing of ours ever puts the handler back. Never touched with the
   gamepad UI on (its own roll frame takes the event). A drop is matched only
-  while exactly one row has its item link; a matched row waits after CANCEL
-  for the drop's winner or all-passed (cap: end + 10 s).
+  while exactly one row has its item link; after CANCEL a row stays only
+  `linger` seconds -- its winner shows in the loot history (see above).
 
 ## Chat (`Modules/Chat/`, copy dialog in `UI/StringDialog.lua`)
 

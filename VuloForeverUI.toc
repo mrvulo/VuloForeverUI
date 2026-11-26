@@ -236,6 +236,7 @@ Modules\QoL\Junk.lua
 Modules\QoL\Loot.lua
 Modules\QoL\LootRoll.lua
 Modules\QoL\LootRollList.lua
+Modules\QoL\LootRollHistory.lua
 Modules\QoL\LootRollTest.lua
 Modules\QoL\Display.lua
 Modules\QoL\Trinkets.lua

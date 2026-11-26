@@ -203,6 +203,7 @@ local mod = ns:RegisterModule("qol", {
             iconSize   = 36,
             fontSize   = 13,
             spacing    = 4,
+            linger     = 3,             -- seconds a finished roll stays
             barTexture = "Matte",
             x = -420, y = 150, scale = 1,
         },

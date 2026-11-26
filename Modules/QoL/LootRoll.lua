@@ -35,10 +35,10 @@
 -- apart, so such rows stay without counts, players and winner. Rolling never
 -- depends on that match; the buttons work all the same.
 --
--- CANCEL_LOOT_ROLL can come right after the player's own click, long before
--- the others are done. A matched row therefore stays (buttons off, counts
--- live) until the drop has a winner or everyone passed, then shows the result
--- for LINGER seconds; an unmatched row lingers from the CANCEL on.
+-- A roll the player is done with (CANCEL_LOOT_ROLL, which can come right
+-- after the player's own click) shows its end for the "Show the result"
+-- seconds of the settings and goes. Its result -- often only known later --
+-- lives on in the loot history list (LootRollHistory.lua).
 local _, ns = ...
 local L = ns.L
 
@@ -54,9 +54,11 @@ LR.PASS, LR.NEED, LR.GREED, LR.DISENCHANT, LR.TRANSMOG = 0, 1, 2, 3, 4
 LR.rolls = {}
 local rolls = LR.rolls
 
-local LINGER    = 8     -- seconds a finished roll stays with its result
+local function linger()
+    local v = tonumber(QoL.db().lootRoll.linger)
+    return v and math.max(0, v) or 3
+end
 
-local CAP       = 10    -- seconds past the roll's end a closed row waits for the result
 local ZERO_WAIT = 3     -- seconds at 0:00 without a CANCEL before a row is closed
 
 local active, suppressed, confirmHooked = false, false, false
@@ -207,6 +209,8 @@ local function useDrop(e, info, fresh)
     local k = ns.Num(info.lootListKey)
     if not k then return nil end
     local r = claimedBy(e, k)
+    -- a drop of a roll already in the loot history stays there
+    if not r and LR.PastOwns and LR.PastOwns(e, k) then return nil end
     if not r then
         local link = info.itemHyperlink
         if type(link) ~= "string" or not ns.CanRead(link) then return nil end
@@ -224,8 +228,6 @@ local function useDrop(e, info, fresh)
     end
     r.info = info
     if duplicate(r) then return r end
-    -- closed and waiting for the result: it is there now
-    if r.closed and not r.doneAt and finishedDrop(info) then r.doneAt = GetTime() end
     if r.choice == nil then
         local s = ns.Num(info.playerRollState)
         local t = s and STATE_TYPE[s]
@@ -361,12 +363,10 @@ end
 -- The player is done with a roll: no more buttons. A matched row waits for
 -- the history's result; any other shows its end at once. now: show the end
 -- right away (the roll is gone from the client).
-local function close(r, now)
+local function close(r)
     if r.doneAt then return end
     r.closed = true
-    if now or not r.encounterID or duplicate(r) or finishedDrop(r.info) then
-        r.doneAt = GetTime()
-    end
+    r.doneAt = GetTime()
 end
 
 local function rehydrate()
@@ -375,24 +375,11 @@ local function rehydrate()
     for _, id in ipairs(ids) do open[id] = true end
     -- rows the client no longer knows (a loading screen ate the CANCEL)
     for _, r in ipairs(rolls) do
-        if not r.test and not r.closed and not open[r.id] then close(r, true) end
+        if not r.test and not r.closed and not open[r.id] then close(r) end
     end
     for _, id in ipairs(ids) do
         if not clientShows(id) then addRoll(id) end
     end
-end
-
--- A closed row whose result never came: past the end of the drop (history
--- clock) or of the roll (ours), plus CAP seconds.
-local function overdue(r, now)
-    if now > r.startedAt + r.duration / 1000 + CAP then return true end
-    local info, H = r.info, C_LootHistory
-    if type(info) == "table" and H and H.GetLootHistoryTime then
-        local start, dur = ns.Num(info.startTime), ns.Num(info.duration)
-        local t = ns.Num(H.GetLootHistoryTime())
-        if start and dur and t and t > start + dur + CAP then return true end
-    end
-    return false
 end
 
 -- Finished rows that have shown their result long enough. Called from the
@@ -409,11 +396,9 @@ function LR.Expire()
             else
                 r.zeroSince = nil
             end
-        elseif not r.test and not r.doneAt and overdue(r, now) then
-            r.doneAt = now
-            changed = true
         end
-        if r.doneAt and not r.test and now - r.doneAt > LINGER then
+        if r.doneAt and not r.test and now - r.doneAt >= linger() then
+            if LR.Archive then LR.Archive(r) end
             table.remove(rolls, i)
             changed = true
         end
@@ -452,7 +437,10 @@ end
 
 local function onCancelAll()
     for i = #rolls, 1, -1 do
-        if not rolls[i].test then table.remove(rolls, i) end
+        if not rolls[i].test then
+            if LR.Archive then LR.Archive(rolls[i]) end
+            table.remove(rolls, i)
+        end
     end
     readBinds()
     LR.Layout()
@@ -463,7 +451,10 @@ local function onDrop(_, e, k)
     e, k = ns.Num(e), ns.Num(k)
     if not (H and H.GetSortedInfoForDrop and e and k) then return end
     local ok, info = pcall(H.GetSortedInfoForDrop, e, k)
-    if ok and useDrop(e, info, true) then LR.Layout() end
+    if not ok then return end
+    -- a roll already gone from the list may still get its result
+    if LR.PastDrop and LR.PastDrop(e, info) then LR.Layout(); return end
+    if useDrop(e, info, true) then LR.Layout() end
 end
 
 local function onEncounter(_, e)
