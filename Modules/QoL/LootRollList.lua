@@ -19,6 +19,7 @@ local LR = QoL.LootRoll
 
 local list
 local rowsUI = {}
+local BAR_GAP = 6          -- between the line of buttons and the timer bar
 local styleGen = 0
 
 -- Left to right.
@@ -143,7 +144,7 @@ local function makeButton(row, t)
     b:SetPushedAtlas(a .. "-down")
     b:SetHighlightAtlas(a .. "-highlight", "ADD")
     b.count = b:CreateFontString(nil, "OVERLAY")
-    b.count:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", 2, -2)
+    b.count:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", 3, 0)
     b:SetMotionScriptsWhileDisabled(true)
     b:SetScript("OnClick", buttonClick)
     b:SetScript("OnEnter", buttonEnter)
@@ -221,8 +222,10 @@ local function styleRow(row, d)
     row.bar:SetStatusBarTexture(ns.MediaStatusbar(d.barTexture))
 
     -- a slim bar along the bottom; name and buttons share the line above it
-    row.barH = math.max(6, math.floor(h * 0.26))
-    row.topH = h - row.barH - 6
+    -- a clear gap between the buttons and the bar: the counts and the time
+    -- sit in it instead of on top of each other
+    row.barH = math.max(5, math.floor(h * 0.2))
+    row.topH = h - row.barH - 3 - BAR_GAP - 3
     local bs = math.max(14, math.min(row.topH, math.floor(h * 0.6)))
     for _, b in pairs(row.btn) do
         b:SetSize(bs, bs)
@@ -264,7 +267,7 @@ local function placeButtons(row, shown)
     row.name:SetPoint("RIGHT", row.boe, "LEFT", -4, 0)
     -- the bar runs the whole width, under the buttons too
     row.bar:ClearAllPoints()
-    row.bar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", left, 4)
+    row.bar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", left, 3)
     row.bar:SetPoint("RIGHT", row, "RIGHT", -4, 0)
     row.bar:SetHeight(row.barH)
 end
