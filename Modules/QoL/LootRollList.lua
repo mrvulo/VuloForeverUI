@@ -20,6 +20,72 @@ local LR = QoL.LootRoll
 local list
 local rowsUI = {}
 local BAR_GAP = 6          -- between the line of buttons and the timer bar
+
+-- --------------------------------------------------------- grounds --
+--
+-- Every row and the header stand on a ground: square (a plain fill and four
+-- one-pixel edges) or rounded (the house's sliced round fill and ring, the
+-- same cut the guide cards use). The icon is rounded with the bag slots'
+-- mask and wears its quality ring.
+
+local ROUND_FILL = "Interface\\AddOns\\VuloForeverUI\\Media\\textures\\round-fill"
+local ROUND_RING = "Interface\\AddOns\\VuloForeverUI\\Media\\textures\\round-ring"
+local ROUND_CUT  = 8          -- texels kept whole at each corner
+local ICON_MASK  = "Interface\\AddOns\\VuloForeverUI\\Media\\Masks\\csquare_mask.tga"
+
+local function cutTexture(f, path, layer, sub)
+    local t = f:CreateTexture(nil, layer, nil, sub)
+    t:SetTexture(path)
+    t:SetTextureSliceMargins(ROUND_CUT, ROUND_CUT, ROUND_CUT, ROUND_CUT)
+    t:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
+    if t.SetSnapToPixelGrid   then t:SetSnapToPixelGrid(false) end
+    if t.SetTexelSnappingBias then t:SetTexelSnappingBias(0) end
+    t:SetAllPoints(f)
+    return t
+end
+
+local function makeGround(f)
+    local flat = f:CreateTexture(nil, "BACKGROUND")
+    flat:SetAllPoints(f)
+    return {
+        flat  = flat,
+        edges = ns.MakeEdges(f, "BORDER"),
+        fill  = cutTexture(f, ROUND_FILL, "BACKGROUND", -7),
+        ring  = cutTexture(f, ROUND_RING, "BORDER", 7),
+    }
+end
+
+local function styleGround(g, f, round)
+    local r, gr, b, a = 0.05, 0.05, 0.05, 0.85
+    g.flat:SetColorTexture(r, gr, b, a)
+    g.fill:SetVertexColor(r, gr, b, a)
+    g.ring:SetVertexColor(0.22, 0.22, 0.25, 1)
+    g.flat:SetShown(not round)
+    g.fill:SetShown(round)
+    g.ring:SetShown(round)
+    if round then
+        for _, t in pairs(g.edges) do t:Hide() end
+    else
+        ns.LayoutEdges(g.edges, f, 1, 0, 0, 0, 1, 0)
+    end
+end
+
+-- the icon: the mask goes on or off only when the look changes
+local function styleIcon(icon, round)
+    if round and not icon.masked then
+        icon.tex:AddMaskTexture(icon.mask)
+        icon.masked = true
+    elseif not round and icon.masked then
+        icon.tex:RemoveMaskTexture(icon.mask)
+        icon.masked = nil
+    end
+    icon.ring:SetShown(round)
+    if round then
+        for _, t in pairs(icon.edges) do t:Hide() end
+    else
+        ns.LayoutEdges(icon.edges, icon, 1, 0, 0, 0, 1, 0)
+    end
+end
 local styleGen = 0
 
 -- Left to right.
@@ -158,10 +224,7 @@ local function makeRow()
     row:SetScript("OnEnter", rowEnter)
     row:SetScript("OnLeave", GameTooltip_Hide)
 
-    local bg = row:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints(row)
-    bg:SetColorTexture(0.05, 0.05, 0.05, 0.85)
-    row.edges = ns.MakeEdges(row, "BORDER")
+    row.ground = makeGround(row)
 
     local icon = CreateFrame("Button", nil, row)
     icon:SetPoint("TOPLEFT", row, "TOPLEFT", 3, -3)
@@ -172,6 +235,10 @@ local function makeRow()
     icon.count:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", -2, 2)
     -- a frame in the item's quality colour, like the bag slots
     icon.edges = ns.MakeEdges(icon, "OVERLAY")
+    icon.ring = cutTexture(icon, ROUND_RING, "OVERLAY", 7)
+    icon.mask = icon:CreateMaskTexture()
+    icon.mask:SetTexture(ICON_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    icon.mask:SetAllPoints(icon.tex)
     icon:SetScript("OnEnter", iconEnter)
     icon:SetScript("OnLeave", GameTooltip_Hide)
     icon:SetScript("OnClick", iconClick)
@@ -210,10 +277,10 @@ local function styleRow(row, d)
     local font, outline = QoL.Font(), QoL.Outline()
     local small = math.max(8, fs - 2)
     row:SetSize(d.width, h)
-    ns.LayoutEdges(row.edges, row, 1, 0, 0, 0, 1, 0)
+    styleGround(row.ground, row, d.rounded)
 
     row.icon:SetSize(h - 6, h - 6)
-    ns.LayoutEdges(row.icon.edges, row.icon, 1, 0, 0, 0, 1, 0)
+    styleIcon(row.icon, d.rounded)
     row.icon.count:SetFont(font, math.max(8, fs - 1), "OUTLINE")
     row.name:SetFont(font, fs, outline)
     row.boe:SetFont(font, small, outline)
@@ -268,7 +335,7 @@ local function placeButtons(row, shown)
     -- the bar runs the whole width, under the buttons too
     row.bar:ClearAllPoints()
     row.bar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", left, 3)
-    row.bar:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+    row.bar:SetPoint("RIGHT", row, "RIGHT", -6, 0)     -- clear of a rounded corner
     row.bar:SetHeight(row.barH)
 end
 
@@ -291,6 +358,7 @@ local function fillRow(row, r)
     row.icon.count:SetText((r.count or 1) > 1 and tostring(r.count) or "")
     local cr, cg, cb = LR.QualityColor(r.quality)
     for _, t in pairs(row.icon.edges) do t:SetColorTexture(cr, cg, cb, 1) end
+    row.icon.ring:SetVertexColor(cr, cg, cb, 1)
     row.name:SetText(r.name)
     row.name:SetTextColor(cr, cg, cb)
     row.boe:SetText(r.boe and L["BoE"] or "")
@@ -407,10 +475,7 @@ end
 local function buildHead()
     local head = CreateFrame("Button", nil, list)
     head:SetHeight(HEAD)
-    local bg = head:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints(head)
-    bg:SetColorTexture(0.05, 0.05, 0.05, 0.85)
-    head.edges = ns.MakeEdges(head, "BORDER")
+    head.ground = makeGround(head)
     head.title = head:CreateFontString(nil, "OVERLAY")
     head.title:SetPoint("LEFT", head, "LEFT", 6, 0)
     head.title:SetJustifyH("LEFT")
@@ -464,7 +529,7 @@ local function layoutHead(d, n, up)
     if n == 0 or LR.hidden then head:Hide(); return end
     local font, outline = QoL.Font(), QoL.Outline()
     head:SetWidth(d.width)
-    ns.LayoutEdges(head.edges, head, 1, 0, 0, 0, 1, 0)
+    styleGround(head.ground, head, d.rounded)
     ns.LayoutEdges(head.min.edges, head.min, 1, 0.32, 0.32, 0.36, 1, 0)
     head.title:SetFont(font, math.max(9, d.fontSize - 2), outline)
     head.title:SetTextColor(0.85, 0.85, 0.85)

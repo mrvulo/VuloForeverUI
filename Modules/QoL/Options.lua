@@ -249,6 +249,7 @@ local function lootPage()
             { value = "DOWN", text = L["Down"] },
             { value = "UP",   text = L["Up"] },
         }),
+        toggle("lootRoll", "rounded", L["Rounded"]),
         slider("lootRoll", "width", L["Width"], 300, 800, 10),
         slider("lootRoll", "iconSize", L["Height"], 24, 64, 1,
             L["The height of one row; the icon and the buttons grow with it."]),

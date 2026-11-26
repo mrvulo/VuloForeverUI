@@ -198,6 +198,7 @@ local mod = ns:RegisterModule("qol", {
         lootRoll = {
             enabled    = false,
             grow       = "DOWN",        -- DOWN | UP from the anchor
+            rounded    = true,          -- rounded rows, header and icons
             width      = 500,
             iconSize   = 36,
             fontSize   = 13,
