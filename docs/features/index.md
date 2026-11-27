@@ -442,6 +442,7 @@ jemand ohne den Code prüfen kann.
 
 ### F-46 DoT-Leisten
 - Angenommen ein Klassen-Charakter mit DoTs (z. B. Hexenmeister, Priester, Schamane) und ein feindliches Ziel, **dann** steht über dem Zielrahmen pro bekanntem DoT eine Zeile mit Symbol; ist der DoT nicht auf dem Ziel, ist die Zeile grau.
+- **Dann** schließt der Balken direkt an das Symbol an; zwischen Symbol und Balken scheint kein Streifen der Spielwelt durch.
 - **Wenn** du den DoT wirkst, **dann** füllt sich die Leiste mit der Restzeit, das Symbol wird farbig und rechts steht die Zeit – auch im Kampf.
 - **Dann** hat jeder DoT seine eigene Balkenfarbe (rot, lila, orange, blau, gelb in Zeilenreihenfolge), je Zauber unter „Verfolgte Zauber“ änderbar.
 - **Wenn** du danach einen Buff bekommst, der den DoT stärker macht, **dann** wird der Balken grün und links steht z. B. „+13%“; ohne Gewinn (gleich oder schwächer) steht nichts und der Balken behält seine Farbe.
