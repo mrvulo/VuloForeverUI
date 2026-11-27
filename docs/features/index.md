@@ -92,6 +92,8 @@ jemand ohne den Code prüfen kann.
 | F-80 | Angeln: Mausrad (auch mit Shift/Strg/Alt) als Angeltaste | Komfort | gebaut | – |
 | F-81 | Würfelliste: Gruppenbeute-Würfe als eine kompakte, verschiebbare Liste statt der Spiel-Fenster | Komfort | gebaut | – |
 | F-82 | Erinnerungen: Klick auf die Essens-Erinnerung isst deine Wahl, sonst das zuletzt gegessene, sonst das beste Essen | Erinnerungen | gebaut | – |
+| F-83 | Cooldown Manager: Leuchten bei vollen Ladungen; Proc-Leuchten auch für per ID hinzugefügte Zauber und gleich nach dem Hinzufügen | Cooldown Manager | gebaut | – |
+| F-84 | Cooldown Manager: Symbol nur zeigen, solange der Zauber wirkbar ist | Cooldown Manager | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -384,6 +386,21 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du mit der Angel in der Hand einmal am Rad drehst, **dann** wirfst du genau einmal aus — die restlichen Rasten desselben Drehs holen die Leine nicht gleich wieder ein und werfen nicht neu aus.
 - **Wenn** der Schwimmer anbeißt und du am Rad drehst, **dann** holst du ein wie mit einer Taste; Strg + Rad wirft bei draußener Leine sofort neu aus (wenn „Schnell neu auswerfen“ an ist).
 - Bekannte Grenze: Rund eine Sekunde nach dem Auswerfen holt das Rad noch nicht ein; vorher beißt ohnehin nichts.
+
+### F-83 Cooldown Manager: Leuchten bei Ladungen und Procs
+- **Angenommen** ein Zauber mit Ladungen steht in einer Leiste und „Leuchten bei vollen Ladungen“ ist an, **dann** leuchtet sein Symbol, solange alle Ladungen da sind, und erlischt, sobald eine verbraucht ist — auch im Kampf.
+- **Angenommen** du hast einen Zauber über „Eigene Zauber-ID“ hinzugefügt und „Leuchten bei einem Proc“ ist an, **wenn** der Zauber aufleuchtet (wie am Aktionsknopf), **dann** leuchtet auch sein Symbol.
+- **Wenn** du einen Zauber hinzufügst, während er schon aufleuchtet, **dann** leuchtet er sofort, nicht erst beim nächsten Proc.
+- **Wenn** sich die Reihenfolge der Symbole ändert, **dann** bleibt kein Proc-Leuchten auf dem falschen Symbol stehen.
+- **Dann** steht im Rechtsklick-Menü eines Symbols unter „Ladungen“ der Punkt „Leuchten bei vollen Ladungen“ (Von der Leiste / Ja / Nein); „Leuchten bei einem Proc“ steht weiter im Menü selbst.
+- Bekannte Grenze: Endet ein Proc im Kampf mit verdeckter Zauber-ID, kann das Leuchten bis Kampfende stehen bleiben.
+
+### F-84 Cooldown Manager: Nur wenn wirkbar
+- **Angenommen** „Nur wenn wirkbar“ ist für einen Zauber an, **dann** ist sein Symbol nur zu sehen, solange er benutzbar ist, keine Abklingzeit läuft und die Ressource reicht; sonst ist sein Platz leer.
+- **Wenn** dir Mana, Wut oder Energie für den Zauber fehlt, **dann** verschwindet das Symbol und kommt wieder, sobald es reicht — auch im Kampf.
+- **Dann** gilt das auch für per ID hinzugefügte Zauber; Gegenstände und Ausrüstungsplätze zeigt die Einstellung immer.
+- **Wenn** du die Einstellungen offen hast, **dann** zeigt die Vorschau solche Symbole blass statt gar nicht.
+- Bekannte Grenzen: Der Platz in der Leiste bleibt frei (die Leiste rückt nicht zusammen, das ließe der Kampf nicht zu). Das globale Abklingen zählt als Abklingzeit, das Symbol blinkt also bei jedem Zauber kurz weg. Ein unsichtbares Symbol zeigt beim Drüberfahren trotzdem seinen Tooltip.
 
 ### F-82 Essens-Erinnerung: was ein Klick isst
 - **Angenommen** du hast per Rechtsklick ein Essen gewählt und trägst es, **wenn** du die Essens-Erinnerung links anklickst, **dann** isst du genau dieses.

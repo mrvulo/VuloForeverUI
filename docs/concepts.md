@@ -250,6 +250,19 @@ These apply to every visible change, in every module.
   combat only, cached, dropped on the talent events. A talent the client
   does not answer about never hides anything.
 
+- **Glow and visibility from two secret answers** (2026-11-27): full
+  charges = the recharge's duration object `IsZero()` (only for spells
+  `GetSpellCharges` answers a table for). The proc slot is painted on every
+  refresh from `CM.procs` (by spell NAME, filled by the overlay events,
+  wiped at regen) or `C_SpellActivationOverlay.IsSpellOverlayed`, so it
+  never stays on an icon whose row moved. "Only while castable"
+  (`castableOnly`) needs usable AND off cooldown: each icon has a `gate`
+  frame between bar and button; the button folds `IsSpellUsable`, the gate
+  the cooldown's `IsZero`, and the alphas multiply. The slot stays — the
+  bar cannot close up on a secret. Preview fades instead of hiding.
+  The row menu root is at the 18 rows a menu shows unscrolled: further
+  yes/no settings go into flyouts as a title plus three radios (`triRows`).
+
 ## Unit Frames (`Modules/UnitFrames/`)
 
 - Dispellable buffs on the target (`DispelGlow.lua`): the player's call

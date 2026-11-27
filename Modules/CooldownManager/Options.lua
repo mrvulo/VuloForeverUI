@@ -398,6 +398,7 @@ local function spellPage()
         eOpacity(L["Swipe darkness"], "swipeAlpha"),
         eTri(L["Show the countdown"], "showCountdown"),
         eTri(L["Dim the icon"], "desaturateOnCooldown"),
+        eTri(L["Only while castable"], "castableOnly", L["Shows the icon only while the spell can be cast right now: usable, off cooldown and with enough power. Its place on the bar stays free. Spells only, also ones added by id."]),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Threshold"] },
@@ -458,6 +459,7 @@ local function spellPage()
         eColor(L["Glow color"], "glowColor", bar().glowColor),
         eTri(L["Glow when it is ready"], "readyGlow"),
         eTri(L["Glow on a proc"], "procGlow"),
+        eTri(L["Glow at full charges"], "chargeGlow"),
         { type = "slider", label = L["Glow from this many stacks"], min = 0, max = 10, step = 1,
           get = function() local e = entry(); return (e and e.stackGlow) or 0 end,
           set = function(_, v)
@@ -550,6 +552,19 @@ local function menuTri(e, label, key)
         { text = L["Yes"],          radio = true, keepOpen = true, checked = is(true),  func = pick(true) },
         { text = L["No"],           radio = true, keepOpen = true, checked = is(false), func = pick(false) },
     } }
+end
+
+-- The same three choices as rows of a flyout, under a title: a flyout cannot
+-- open a flyout of its own.
+local function triRows(e, label, key)
+    local function pick(v) return function() e[key] = v; menuApply() end end
+    local function is(v) return function() return e[key] == v end end
+    return {
+        { text = label, title = true },
+        { text = L["From the bar"], radio = true, keepOpen = true, checked = is(nil),   func = pick(nil) },
+        { text = L["Yes"],          radio = true, keepOpen = true, checked = is(true),  func = pick(true) },
+        { text = L["No"],           radio = true, keepOpen = true, checked = is(false), func = pick(false) },
+    }
 end
 
 -- A flyout of fixed values for a key; `none` is the value that means "off"
@@ -647,6 +662,21 @@ function CM.RowMenu(barKey, index)
     glow.submenu[#glow.submenu + 1] = { separator = true }
     glow.submenu[#glow.submenu + 1] = menuColor(e, L["Glow color"], "glowColor", b.glowColor)
 
+    -- The root is at the 18 rows a menu shows without scrolling, so two
+    -- yes/no settings ride in flyouts as a title plus their three choices.
+    local dimHide = { text = L["Dim and hide"], submenu = {} }
+    for _, r in ipairs(triRows(e, L["Dim the icon"], "desaturateOnCooldown")) do dimHide.submenu[#dimHide.submenu + 1] = r end
+    dimHide.submenu[#dimHide.submenu + 1] = { separator = true }
+    for _, r in ipairs(triRows(e, L["Only while castable"], "castableOnly")) do dimHide.submenu[#dimHide.submenu + 1] = r end
+
+    local charges = menuPick(e, L["Charges"], "chargeMode", {
+        { value = "",      text = L["From the bar"] },
+        { value = "count", text = L["Show the number"] },
+        { value = "none",  text = L["Show nothing"] },
+    }, "")
+    charges.submenu[#charges.submenu + 1] = { separator = true }
+    for _, r in ipairs(triRows(e, L["Glow at full charges"], "chargeGlow")) do charges.submenu[#charges.submenu + 1] = r end
+
     return {
         { text = entryName(e), title = true },
         { text = L["Remove from this bar"], func = function()
@@ -657,13 +687,9 @@ function CM.RowMenu(barKey, index)
         { separator = true },
         menuTri(e, L["Show the swipe"], "showSwipe"),
         menuTri(e, L["Show the countdown"], "showCountdown"),
-        menuTri(e, L["Dim the icon"], "desaturateOnCooldown"),
+        dimHide,
         threshold,
-        menuPick(e, L["Charges"], "chargeMode", {
-            { value = "",      text = L["From the bar"] },
-            { value = "count", text = L["Show the number"] },
-            { value = "none",  text = L["Show nothing"] },
-        }, ""),
+        charges,
         soundItem,
         glow,
         menuTri(e, L["Glow when it is ready"], "readyGlow"),
@@ -786,6 +812,7 @@ local function iconsPage()
           tooltip = L["The client dims it, so it also works while you are in combat."],
           get = function() return bar().desaturateOnCooldown end,
           set = function(_, v) bar().desaturateOnCooldown = v; apply() end },
+        toggle("castableOnly", L["Only while castable"], L["Shows the icon only while the spell can be cast right now: usable, off cooldown and with enough power. Its place on the bar stays free. Spells only, also ones added by id."]),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Text"] },
@@ -828,6 +855,8 @@ local function glowPage()
         toggle("readyGlow", L["Glow when it is ready"]),
         toggle("procGlow", L["Glow on a proc"],
             L["The client says which spell lit up. In a fight it sometimes says it secretly, and a proc we cannot place is left alone rather than guessed at."]),
+        toggle("chargeGlow", L["Glow at full charges"],
+            L["For spells with charges: glows while every charge is there. The client answers this in combat too."]),
         slider("stackGlow", L["Glow from this many stacks"], 0, 10, 1),
         { type = "desc", text = L["|cffaaaaaaStacks are readable only while auras are open to addons, which in a fight they are not. The glow then waits rather than flickering.|r"] },
     }

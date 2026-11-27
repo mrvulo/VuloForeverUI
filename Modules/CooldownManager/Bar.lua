@@ -121,7 +121,14 @@ CM.SoundPath = ns.MediaSoundPath
 
 local function makeIcon(parent, index)
     local icon = {}
-    local b = CreateFrame("Button", nil, parent)
+    -- The gate sits between the bar and the button and only ever carries an
+    -- alpha. "Only while castable" needs two secret answers at once (usable,
+    -- off cooldown); they cannot be combined in Lua, but a parent's alpha
+    -- multiplies into its child's, so each frame folds one of them.
+    local gate = CreateFrame("Frame", nil, parent)
+    gate:SetAllPoints(parent)
+    icon.gate = gate
+    local b = CreateFrame("Button", nil, gate)
     b:RegisterForClicks("AnyUp")
     icon.button = b
 
@@ -853,6 +860,15 @@ local function paintIcon(bar, icon, entry)
     local glowType = CM.Val(bar, entry, "glowType") or "pixel"
     local glowColor = entry.glowColor or bar.glowColor
     local stackGlow = tonumber(CM.Val(bar, entry, "stackGlow")) or 0
+    -- Full charges: the recharge's duration object is zero exactly then. Only
+    -- for a spell the client answers charges for at all (a table, secret or
+    -- not; type() is safe on either).
+    local full
+    if rkind == "spell" and CM.Val(bar, entry, "chargeGlow") and C_Spell.GetSpellChargeDuration
+        and type(C_Spell.GetSpellCharges(rid)) == "table" then
+        local d = C_Spell.GetSpellChargeDuration(rid)
+        if type(d) ~= "nil" and d.IsZero then full = d:IsZero() end
+    end
     if active and entry.activeGlow then
         CM.Glow.Set(icon, "main", glowType, entry.activeColor or glowColor, true)
     elseif stackGlow > 0 and type(aura) == "table" then
@@ -861,10 +877,26 @@ local function paintIcon(bar, icon, entry)
         local ok, n = pcall(function() return aura.applications end)
         local readable = ok and ns.CanRead(n) and type(n) == "number"
         CM.Glow.Set(icon, "main", glowType, glowColor, (readable and n >= stackGlow) or false)
+    elseif type(full) ~= "nil" then
+        CM.Glow.Set(icon, "main", glowType, glowColor, full)
     elseif CM.Val(bar, entry, "readyGlow") and type(isZero) ~= "nil" then
         CM.Glow.Set(icon, "main", glowType, glowColor, isZero)
     else
         CM.Glow.Set(icon, "main", "none")
+    end
+
+    -- The proc slot. The client's event fills CM.procs; the overlay question
+    -- covers a row added or redrawn while its spell is already lit. Set on
+    -- every paint, so a glow never stays behind on an icon whose row moved.
+    if rkind == "spell" and CM.Val(bar, entry, "procGlow") then
+        local lit = CM.procs[C_Spell.GetSpellName(rid) or ""]
+        if not lit and C_SpellActivationOverlay and C_SpellActivationOverlay.IsSpellOverlayed then
+            lit = C_SpellActivationOverlay.IsSpellOverlayed(rid)
+        end
+        if type(lit) == "nil" then lit = false end
+        CM.Glow.Set(icon, "proc", "proc", glowColor, lit)
+    else
+        CM.Glow.Set(icon, "proc", "none")
     end
 
     -- Charges. The count is secret in combat, and a font string takes one as
@@ -889,6 +921,13 @@ local function paintIcon(bar, icon, entry)
     end
 
     paintTexts(bar, icon, entry, aura)
+    icon.ready = isZero
+    icon.usable = nil
+    if rkind == "spell" and CM.Val(bar, entry, "castableOnly") then
+        icon.usable = C_Spell.IsSpellUsable(rid)
+        if type(icon.usable) == "nil" then icon.usable = false end
+        if type(isZero) == "nil" then icon.ready = true end
+    end
 end
 
 -- The live half: what each row shows right now. Takes any frame that went
@@ -909,7 +948,18 @@ function CM.PaintFrame(frame, bar, list, owned)
             -- found and its conditions changed.
             local resting = not borrowed and frame.showAll and CM.Talents
                 and not CM.Talents.Pass(list[i])
-            icon.button:SetAlpha((borrowed or resting) and 0.45 or 1)
+            local base = (borrowed or resting) and 0.45 or 1
+            if type(icon.usable) ~= "nil" then
+                -- Only while castable: the button folds "usable with the
+                -- power you have", the gate "off cooldown". The settings
+                -- preview fades instead of hiding, so the row stays findable.
+                local off = frame.showAll and 0.45 or 0
+                ns.AlphaFromBool(icon.button, icon.usable, base, base * off)
+                ns.AlphaFromBool(icon.gate, icon.ready, 1, frame.showAll and 1 or 0)
+            else
+                icon.button:SetAlpha(base)
+                icon.gate:SetAlpha(1)
+            end
             icon.button:EnableMouse(not borrowed)
         end
     end
@@ -932,22 +982,15 @@ end
 -- The client tells us which spell lit up. The id it hands over may itself be
 -- secret in a fight, and a secret cannot be compared with anything -- so a
 -- proc we cannot place is a proc we ignore, rather than one we guess at.
+-- Kept by NAME, like every row: a spell added by id at another rank, or an
+-- override the event names instead of the base spell, still finds its row.
+CM.procs = {}
 function CM.SetProc(spellID, on)
     if not ns.CanRead(spellID) or type(spellID) ~= "number" then return end
-    local db = CM.db()
-    for _, key in ipairs(db.barOrder or {}) do
-        local frame, bar = CM.frames[key], CM.Bar(key)
-        if frame and bar then
-            local list = CM.Display(bar, key)
-            for i = 1, math.min(#list, #frame.icons) do
-                local entry = list[i]
-                if CM.RowIs(entry, spellID) and CM.Val(bar, entry, "procGlow") then
-                    CM.Glow.Set(frame.icons[i], "proc", "proc",
-                        entry.glowColor or bar.glowColor, on and true or false)
-                end
-            end
-        end
-    end
+    local name = C_Spell.GetSpellName(spellID)
+    if type(name) ~= "string" or name == "" then return end
+    CM.procs[name] = on and true or nil
+    CM.RequestRefresh()
 end
 
 -- ---------------------------------------------------------------- visible --

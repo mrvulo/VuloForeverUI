@@ -91,6 +91,8 @@ CM.BAR_DEFAULTS = {
     glowType    = "pixel",       -- none | pixel | shine | proc
     glowColor   = { r = 1, g = 0.86, b = 0.32 },
     procGlow    = false,         -- the client says the spell lit up
+    chargeGlow  = false,         -- every charge of the spell is there
+    castableOnly = false,        -- icon shows only while the spell can be cast
     stackGlow   = 0,             -- glow from this many stacks on; 0 is off
     -- Overflow. Everything past maxIcons is handed to another bar, which is
     -- how a long list stays one readable row instead of a wall.
@@ -723,11 +725,20 @@ function mod:OnEnable()
     self:RegisterEvent("ACTIVE_COMBAT_CONFIG_CHANGED", talentsChanged)
     self:RegisterEvent("TRAIT_CONFIG_LIST_UPDATED", talentsChanged)
     self:RegisterEvent("PLAYER_REGEN_DISABLED", function() CM.UpdateVisibilityAll() end)
-    self:RegisterEvent("PLAYER_REGEN_ENABLED", function() CM.UpdateVisibilityAll() end)
+    self:RegisterEvent("PLAYER_REGEN_ENABLED", function()
+        -- a proc that ended with a secret id stays in CM.procs; out of the
+        -- fight the client's own overlay answer is the whole truth again
+        wipe(CM.procs)
+        CM.UpdateVisibilityAll()
+        CM.RequestRefresh()
+    end)
     -- The cooldown of a spell we show has started or ended. The duration
     -- object is re-fetched here; the engine does the rest on its own.
     self:RegisterEvent("SPELL_UPDATE_COOLDOWN", function() CM.RequestRefresh() end)
     self:RegisterEvent("SPELL_UPDATE_CHARGES", function() CM.RequestRefresh() end)
+    -- Power gained or spent, a target that makes a spell usable: "only while
+    -- castable" asks the client again.
+    self:RegisterEvent("SPELL_UPDATE_USABLE", function() CM.RequestRefresh() end)
     -- An aura on us drives the active phase and the stack glow; a bag change
     -- drives the item count. Both are cheap refreshes, both coalesced.
     self:RegisterEvent("UNIT_AURA", function(_, unit)
