@@ -236,6 +236,9 @@ local CONSUMABLE = { flask = "Flask", elixir = "Elixir", food = "Food" }
 -- Regeneration", Grilled Squid "Increased Agility", Runn Tum Tuber Surprise
 -- "Increased Intellect", Dirge's Chops "Increased Stamina".
 R.FOOD_BUFFS = { 19705, 18194, 18192, 22730, 25661 }
+-- Auras of a food buff's name that did not come from food (spell table,
+-- 2026-11-27): Mageblood Potion leaves "Mana Regeneration" too.
+R.NOT_FOOD = { [24363] = true }
 local FOOD_BUFF_ID = {}
 for _, id in ipairs(R.FOOD_BUFFS) do FOOD_BUFF_ID[id] = true end
 
@@ -243,14 +246,16 @@ for _, id in ipairs(R.FOOD_BUFFS) do FOOD_BUFF_ID[id] = true end
 -- on its own counts as present, a false "missing" is the worse mistake.
 -- notFood: an aura of the same name that came from food does not count --
 -- Mageblood and Nightfin Soup both leave "Mana Regeneration".
+-- onlyFood: the reverse, for the food buffs.
 -- Seconds left on it, math.huge when it does not run out or cannot be read,
 -- nil when it is not on you.
-local function auraLeft(name, notFood)
+local function auraLeft(name, notFood, onlyFood)
     if not name then return nil end
     local aura = C_UnitAuras.GetAuraDataBySpellName("player", name, "HELPFUL")
     if type(aura) ~= "table" then return nil end
     if not ns.CanRead(aura) then return math.huge end
     if notFood and FOOD_BUFF_ID[aura.spellId] then return nil end
+    if onlyFood and R.NOT_FOOD[aura.spellId] then return nil end
     local exp = aura.expirationTime
     if ns.CanRead(exp) and type(exp) == "number" and exp > 0 then return exp - GetTime() end
     return math.huge
@@ -262,13 +267,21 @@ local function longer(a, b)
     return math.max(a, b)
 end
 
+-- The longest time left on any food buff, nil when none is on you. A buff
+-- that is secret on its own counts as there.
+local function fedLeftNow()
+    local best
+    for _, id in ipairs(R.FOOD_BUFFS) do
+        if ns.SpellAuraRestricted(id) then return math.huge end
+        best = longer(best, auraLeft(R.SpellName(id), false, true))
+    end
+    return best
+end
+
 -- The longest time left on any rank of the chain, nil when none is on you.
 local function chainLeft(c)
     local best
-    if c.cat == "food" then
-        for _, id in ipairs(R.FOOD_BUFFS) do best = longer(best, auraLeft(R.SpellName(id))) end
-        return best
-    end
+    if c.cat == "food" then return fedLeftNow() end
     for _, it in ipairs(c.items) do
         local name = C_Item.GetItemSpell(it[1])
         if name then
@@ -337,8 +350,8 @@ end
 -- (while carried), then the best for the role, then the best known buff food
 -- of any chain the level allows. "Last eaten" is learned, not guessed: a
 -- food or drink went down in the bags and a food buff came up within
--- FED_MATCH seconds. Eating and drinking at once drop two stacks; then only
--- a known buff food is learned, otherwise nothing.
+-- FED_MATCH seconds. Eating and drinking at once drop two different items;
+-- then only a known buff food is learned, otherwise nothing.
 
 local FED_MATCH = 60
 local BUFF_FOOD = {}            -- every item of every food chain
@@ -348,7 +361,7 @@ for _, c in ipairs(R.SUPPLIES) do
     end
 end
 
-local dropped, droppedAt = {}, nil
+local dropped = {}              -- item id -> when its stack last went down
 local fedLeft                   -- food buff time left at the last look
 
 function R.FoodLast()
@@ -362,30 +375,30 @@ function R.NoteFoodDrop(id)
     if not FOODDRINK then return end
     local _, _, _, _, _, classID, subID = C_Item.GetItemInfoInstant(id)
     if classID ~= Enum.ItemClass.Consumable or subID ~= FOODDRINK then return end
-    if not droppedAt or GetTime() - droppedAt > FED_MATCH then wipe(dropped) end
-    dropped[#dropped + 1] = id
-    droppedAt = GetTime()
+    dropped[id] = GetTime()
 end
 
 -- Called on every look at the auras: a food buff that is new, or whose time
 -- jumped up (eaten again), names the food that went down just before.
 function R.WatchFood()
     if ns.AurasRestricted() then return end
-    local left
-    for _, id in ipairs(R.FOOD_BUFFS) do left = longer(left, auraLeft(R.SpellName(id))) end
+    local left = fedLeftNow()
     local before = fedLeft
     fedLeft = left
-    if not left or not droppedAt or GetTime() - droppedAt > FED_MATCH then return end
-    if before and (left == math.huge or before == math.huge or left <= before + 60) then return end
-    local pick
-    if #dropped == 1 then
-        pick = dropped[1]
-    else
-        for _, id in ipairs(dropped) do
-            if BUFF_FOOD[id] then pick = id; break end
+    -- only what went down in the last FED_MATCH seconds, each item once
+    local now, n, only, known = GetTime(), 0, nil, nil
+    for id, t in pairs(dropped) do
+        if now - t > FED_MATCH then
+            dropped[id] = nil
+        else
+            n, only = n + 1, id
+            if BUFF_FOOD[id] then known = id end
         end
     end
-    wipe(dropped); droppedAt = nil
+    if not left or n == 0 then return end
+    if before and (left == math.huge or before == math.huge or left <= before + 60) then return end
+    local pick = (n == 1) and only or known
+    wipe(dropped)
     local c = _G.VuloForeverUICharDB
     if pick and type(c) == "table" then c.reminderLastFood = pick end
 end

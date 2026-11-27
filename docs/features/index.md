@@ -400,7 +400,7 @@ jemand ohne den Code prüfen kann.
 - **Wenn** dir Mana, Wut oder Energie für den Zauber fehlt, **dann** verschwindet das Symbol und kommt wieder, sobald es reicht — auch im Kampf.
 - **Dann** gilt das auch für per ID hinzugefügte Zauber; Gegenstände und Ausrüstungsplätze zeigt die Einstellung immer.
 - **Wenn** du die Einstellungen offen hast, **dann** zeigt die Vorschau solche Symbole blass statt gar nicht.
-- Bekannte Grenzen: Der Platz in der Leiste bleibt frei (die Leiste rückt nicht zusammen, das ließe der Kampf nicht zu). Das globale Abklingen zählt als Abklingzeit, das Symbol blinkt also bei jedem Zauber kurz weg. Ein unsichtbares Symbol zeigt beim Drüberfahren trotzdem seinen Tooltip.
+- Bekannte Grenzen: Der Platz in der Leiste bleibt frei (die Leiste rückt nicht zusammen, das ließe der Kampf nicht zu). Das globale Abklingen zählt nicht mit. Ein unsichtbares Symbol zeigt beim Drüberfahren trotzdem seinen Tooltip.
 
 ### F-82 Essens-Erinnerung: was ein Klick isst
 - **Angenommen** du hast per Rechtsklick ein Essen gewählt und trägst es, **wenn** du die Essens-Erinnerung links anklickst, **dann** isst du genau dieses.

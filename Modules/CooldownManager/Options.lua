@@ -517,9 +517,10 @@ local function spellPage()
           onClick = function()
               local e = entry()
               if not e then return end
-              local id, kind = e.id, e.kind
+              -- Talent conditions are not a bar setting; they stay.
+              local id, kind, talents = e.id, e.kind, e.talents
               wipe(e)
-              e.id, e.kind = id, kind
+              e.id, e.kind, e.talents = id, kind, talents
               apply()
               rebuild("spell")
           end },

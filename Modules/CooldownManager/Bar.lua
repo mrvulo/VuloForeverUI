@@ -170,11 +170,15 @@ local function makeIcon(parent, index)
     -- and without reading anything.
     -- pcall, because a script element a client does not know is a throw and
     -- not a nil: on a build without this one the icon simply stays silent.
+    -- The client sends no event when a cooldown runs out, so this is also
+    -- where dimming, the ready glow and "only while castable" are asked again
+    -- (coalesced; the client's own viewer refreshes from the same script).
     pcall(cd.SetScript, cd, "OnCooldownDone", function()
         local file = icon.readySound
         if type(file) == "string" and file ~= "" then
             pcall(PlaySoundFile, file, "SFX")
         end
+        if CM.mod.active then CM.RequestRefresh() end
     end)
 
     local text = b:CreateFontString(nil, "OVERLAY")
@@ -926,7 +930,11 @@ local function paintIcon(bar, icon, entry)
     if rkind == "spell" and CM.Val(bar, entry, "castableOnly") then
         icon.usable = C_Spell.IsSpellUsable(rid)
         if type(icon.usable) == "nil" then icon.usable = false end
-        if type(isZero) == "nil" then icon.ready = true end
+        -- The spell's own cooldown without the global one (else every icon
+        -- would blink out on each cast) and without the active phase.
+        local own = C_Spell.GetSpellCooldownDuration(rid, true)
+        icon.ready = true
+        if type(own) ~= "nil" and own.IsZero then icon.ready = own:IsZero() end
     end
 end
 

@@ -326,7 +326,7 @@ end
 -- of this file is filled again: without that, a saved bar from before a new
 -- setting existed reaches the paint pass with the key missing, and the first
 -- thing that reads bar.countColor.r takes the whole bar down.
-CM.DEFAULTS_VERSION = 2
+CM.DEFAULTS_VERSION = 3
 
 function CM.Bar(key)
     local db = CM.db()

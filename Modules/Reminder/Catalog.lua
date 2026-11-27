@@ -66,20 +66,22 @@ R.FmtLeft = fmtLeft      -- the row's and the preview's tooltips
 -- Seconds left on an aura of this name; nil = not on you, false = cannot be
 -- read right now (a fight). Unlike the reminder row, "unreadable" is shown as
 -- such here, never as present.
-local function auraByName(name, spellID)
+local function auraByName(name, spellID, onlyFood)
     if not name then return nil end
     if ns.AurasRestricted() or (spellID and ns.SpellAuraRestricted(spellID)) then return false end
     local aura = C_UnitAuras.GetAuraDataBySpellName("player", name, "HELPFUL")
     if type(aura) ~= "table" or not ns.CanRead(aura) then return nil end
+    -- the food row: an aura of the food buff's name from a potion is not food
+    if onlyFood and R.NOT_FOOD[aura.spellId] then return nil end
     local exp = aura.expirationTime
     if ns.CanRead(exp) and type(exp) == "number" and exp > 0 then return exp - GetTime() end
     return math.huge
 end
 
-local function auraAny(ids)
+local function auraAny(ids, onlyFood)
     local best
     for _, id in ipairs(ids) do
-        local left = auraByName(R.SpellName(id), id)
+        local left = auraByName(R.SpellName(id), id, onlyFood)
         if left == false then return false end
         if left and (not best or left > best) then best = left end
     end
@@ -295,7 +297,7 @@ local function collect()
             local fed = R.SpellName(WELL_FED)
             if fed then
                 -- any food buff counts, not only the ones named Well Fed
-                local line, color = status(auraAny(R.FOOD_BUFFS))
+                local line, color = status(auraAny(R.FOOD_BUFFS, true))
                 -- a click eats what the reminder row would eat
                 list[1] = { icon = C_Spell.GetSpellTexture(WELL_FED), spell = WELL_FED,
                     name = fed, line = line, color = color, eat = R.FoodToEat(ctx, role) }
