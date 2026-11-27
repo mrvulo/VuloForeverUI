@@ -576,6 +576,13 @@ scaled together as one mover (`classes_priest`).
   character on show beside the LAST SAVED scan of one picked from the
   Players list in pick mode (`list.pick`), counter by counter; the higher
   of two known numbers is the brighter one, a missing one stays "--".
+  Layout like a character sheet (the player's call, 2026-11-27): header with
+  portrait (live unit while it is still that character, else class emblem),
+  tabs Overview / Players / History / Compare with the scan buttons on the
+  same row, verdict with the explained/unexplained bar, four big counters,
+  sections with icons in three columns. Another character's counters carry
+  your own beside them ("You", read live with GetStatistic); money is
+  shortened (no copper from 1 g, no silver from 100 g) so two columns fit.
 - **Trinkets** (`Trinkets.lua`, `TrinketFlyout.lua`): the click is a secure
   button running `/use 13|14`; everything else is plain frames. The pick grid
   on hover is NOT secure (equipping is refused in combat anyway): a click in

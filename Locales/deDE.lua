@@ -2345,6 +2345,7 @@ ns:RegisterLocale("deDE", {
     ["Earned, spent, what is left and the balance, under the money line of the bags. Survives a reload and a relog and starts over on the first login of a new day."] = "Verdient, ausgegeben, was übrig ist und die Bilanz, unter der Goldzeile der Taschen. Übersteht Reload und Relog und beginnt beim ersten Login eines neuen Tages von vorn.",
     ["Start a new session now"] = "Jetzt eine neue Sitzung beginnen",
     ["Gold check"] = "Goldprüfung",
+    ["You: %s"] = "Du: %s",
     ["Check a trade partner's gold"] = "Gold des Handelspartners prüfen",
     ["Beside the trade window: the most gold they ever owned against everything they ever earned themselves. What has no recorded source came by trade or mail."] = "Neben dem Handelsfenster: das meiste Gold, das der Charakter je besaß, gegen alles, was er je selbst verdient hat. Was keine erfasste Quelle hat, kam per Handel oder Post.",
     ["Open the gold check"] = "Goldprüfung öffnen",

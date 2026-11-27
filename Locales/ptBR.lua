@@ -2308,6 +2308,7 @@ ns:RegisterLocale("ptBR", {
     ["Earned, spent, what is left and the balance, under the money line of the bags. Survives a reload and a relog and starts over on the first login of a new day."] = "Ganho, gasto, o que sobrou e o saldo, sob a linha de dinheiro das bolsas. Sobrevive a uma recarga e a um novo login e recomeça no primeiro login de um novo dia.",
     ["Start a new session now"] = "Iniciar uma nova sessão agora",
     ["Gold check"] = "Verificação de ouro",
+    ["You: %s"] = "Você: %s",
     ["Check a trade partner's gold"] = "Verificar o ouro de um parceiro de troca",
     ["Beside the trade window: the most gold they ever owned against everything they ever earned themselves. What has no recorded source came by trade or mail."] = "Ao lado da janela de troca: o máximo de ouro que a pessoa já teve em comparação com tudo que ela mesma já ganhou. O que não tem origem registrada veio por troca ou correio.",
     ["Open the gold check"] = "Abrir a verificação de ouro",

@@ -255,6 +255,9 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du zweimal kurz hintereinander prüfst, **dann** steht „Kurz warten …“ und die zweite Abfrage geht nach wenigen Sekunden von selbst raus.
 - Angenommen der Spieler ist zu weit weg, du bist im Kampf oder der Erfolgsvergleich ist offen, **dann** sagt die Prüfung genau das statt nur „keine Statistiken“.
 - **Dann** stehen Werte, die das Spiel nicht liefert, als „--“ da, und oben rechts „x / y Zähler lesbar“; neu sind „Durchschnittlich verdient pro Tag“, „Talentumverteilungen“, „Ehrenhafte Siege“; „Mich prüfen“ zeigt die eigenen Zahlen.
+- **Angenommen** ein anderer Spieler wird angezeigt, **dann** sieht das Fenster aus wie ein Charakterbogen: oben Porträt (Klassenwappen, wenn er nicht mehr dein Ziel ist), Name in Klassenfarbe, „Stufe 60 Gnom Krieger - <Gilde>“, darunter die Reiter Übersicht · Spieler · Verlauf · Vergleich und rechts in derselben Zeile „Mich prüfen“, „Ziel scannen“, „Bericht kopieren“.
+- **Dann** folgen das Urteil mit dem grün/roten Balken, vier große Kacheln mit Symbol (Kreaturen getötet, Quests, Tode, Höchststand Gold) je mit „Du: …“ darunter, und Abschnitte mit Symbol und goldener Überschrift: Einkommen, Ausgaben, Auktionen, Spielweise, Berufe (Balken bis 300), euer Verlauf, Beobachtungen.
+- **Dann** steht in Einkommen, Ausgaben, Auktionen und Spielweise rechts neben jedem Wert gedämpft dein eigener (Spalte „Du“); bei „Mich prüfen“ fehlt diese Spalte. Nichts überlappt, lange Bezeichnungen enden in „…“.
 
 ### F-32 Bedrohung in Prozent
 - Angenommen Stil Classic oder Standard, **wenn** du unter Einheitenfenster „Bedrohung in Prozent“ einschaltest und einen Gegner angreifst, **dann** steht über dem Zielrahmen ein Kästchen mit deiner Bedrohung in Prozent, gefärbt gelb → orange → rot.
@@ -580,7 +583,7 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Wenn** du dort einen Charakter anklickst, **dann** stehen beide nebeneinander: links der angezeigte, rechts der gewählte, je mit Name in Klassenfarbe, Stufe, Klasse und Gilde; darunter Zeile für Zeile Urteil, Stufe, Höchststand, erklärt/unerklärt, alle Einkommensquellen, Reisen, Porto, Auktionen, Quests, Kills, Dungeons, Tode, Flugrouten, ehrenhafte Siege und letzter Scan.
 - **Dann** ist bei zwei bekannten Zahlen die höhere weiß und die niedrigere gedämpft; was das Spiel nicht geliefert hat, steht als „--“ und zählt nie als 0.
 - **Wenn** du dich mit jemandem vergleichen willst, **dann** klickst du erst „Mich prüfen“ und dann „Vergleichen“; für zwei andere öffnest du den ersten über „Spieler“ und wählst den zweiten über „Vergleichen“.
-- **Wenn** du „Anderer Charakter“ klickst, **dann** kommt die Auswahlliste wieder; ein zweiter Klick auf „Vergleichen“ schließt die Ansicht, ein späterer öffnet sie mit demselben Partner.
+- **Wenn** du „Anderer Charakter“ klickst, **dann** kommt die Auswahlliste wieder; der Reiter „Übersicht“ schließt die Ansicht, ein späterer Klick auf „Vergleich“ öffnet sie mit demselben Partner.
 - **Wenn** während des Vergleichs ein neuer Scan fertig wird, **dann** zeigt die linke Seite den neuen Charakter.
 - Bekannte Grenze: Die rechte Seite ist immer der letzte gespeicherte Scan dieses Charakters, kein frischer.
 

@@ -2345,6 +2345,7 @@ ns:RegisterLocale("ruRU", {
     ["Earned, spent, what is left and the balance, under the money line of the bags. Survives a reload and a relog and starts over on the first login of a new day."] = "Получено, потрачено, остаток и баланс — под строкой денег в сумках. Сохраняется после перезагрузки и повторного входа и начинается заново при первом входе нового дня.",
     ["Start a new session now"] = "Начать новый сеанс сейчас",
     ["Gold check"] = "Проверка золота",
+    ["You: %s"] = "Вы: %s",
     ["Check a trade partner's gold"] = "Проверять золото партнера по обмену",
     ["Beside the trade window: the most gold they ever owned against everything they ever earned themselves. What has no recorded source came by trade or mail."] = "Рядом с окном обмена: больше всего золота, что у него было, в сравнении со всем, что он сам заработал. Золото без записанного источника получено обменом или почтой.",
     ["Open the gold check"] = "Открыть проверку золота",

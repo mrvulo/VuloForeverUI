@@ -165,7 +165,7 @@ local function save(p)
     end
     -- the whole latest scan, for a mail from them while they are far away
     entry.last = { at = p.at, level = p.level, class = p.class, className = p.className,
-        guild = p.guild, level10 = p.level10, stats = p.stats, professions = p.professions }
+        guild = p.guild, race = p.race, level10 = p.level10, stats = p.stats, professions = p.professions }
     local snap = { at = p.at, level = p.level, peak = p.stats.peak, acquired = p.stats.acquired }
     local last = entry.scans[#entry.scans]
     -- one snapshot an hour is history enough; a second trade a minute later
@@ -274,6 +274,7 @@ function TC.Scan(unit)
         level = readable(UnitLevel(unit)),
         class = readable(class), className = readable(className),
         guild = readable(GetGuildInfo(unit)),
+        race = readable(UnitRace(unit)),
         own = UnitIsUnit(unit, "player"),
     }
     if pending and pending ~= p then finish(pending, false, "replaced") end
@@ -608,24 +609,205 @@ local function updatePanel()
 end
 
 -- ------------------------------------------------------------- window --
+--
+-- Laid out like a character sheet (the player's call, 2026-11-27): a header
+-- with portrait, name and the scan's age; tabs for the views; the verdict
+-- with its explained / unexplained bar; four big counters; then sections in
+-- three columns, each with an icon. Beside every counter of another
+-- character stands your own -- GetStatistic answers at once for yourself.
 
-local W, H = 700, 560
+local W, H = 780, 604
+local GOLD = { 1.00, 0.82, 0.10 }
+local SEC_W, SEC_GAP = 236, 18
+local VAL_X = SEC_W - 72            -- right edge of their value; yours ends at SEC_W
+local TILE_W = math.floor((W - 32 - 30) / 4)
+local PROF_MAX = 300
+local PROF_ICON = {
+    Alchemy = "Trade_Alchemy", Blacksmithing = "Trade_BlackSmithing", Enchanting = "Trade_Engraving",
+    Engineering = "Trade_Engineering", Herbalism = "Trade_Herbalism", Leatherworking = "Trade_LeatherWorking",
+    Mining = "Trade_Mining", Skinning = "INV_Misc_Pelt_Wolf_01", Tailoring = "Trade_Tailoring",
+    ["First Aid"] = "Spell_Holy_SealOfSacrifice", Cooking = "INV_Misc_Food_15", Fishing = "Trade_Fishing",
+}
 
-local function column(parent, x, y, title, n)
-    local c = {}
-    c.title = text(parent, 12, ns.TC("heading"))
-    c.title:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
-    c.title:SetText(title)
-    c.rows = {}
-    for i = 1, n do c.rows[i] = pairRow(parent, y - 18 - (i - 1) * 15, x, 212) end
-    return c
+local function icon(parent, size, file)
+    local t = parent:CreateTexture(nil, "ARTWORK")
+    t:SetSize(size, size)
+    t:SetTexture("Interface\\Icons\\" .. file)
+    t:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    return t
 end
 
-local function fillColumn(c, data)
-    for i, row in ipairs(c.rows) do
-        local d = data[i]
-        setPair(row, d and d[1], d and d[2])
+-- Gold to the coin that matters: no copper from 1 g on, no silver from 100 g.
+local function short(v)
+    if type(v) ~= "number" then return "--" end
+    if v >= 1000000 then v = v - v % 10000
+    elseif v >= 10000 then v = v - v % 100 end
+    return coinText(v)
+end
+
+local function count(v) return v and tostring(v) or "--" end
+
+-- A heading with icon and a thin gold rule; `you` puts "You" over the
+-- right-hand column.
+local function heading(parent, x, y, width, file, title)
+    local h = {}
+    h.icon = icon(parent, 16, file)
+    h.icon:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    h.title = text(parent, 12, GOLD[1], GOLD[2], GOLD[3])
+    h.title:SetPoint("LEFT", h.icon, "RIGHT", 6, 0)
+    h.title:SetText(title)
+    h.you = text(parent, 10, ns.TC("textDim"))
+    h.you:SetJustifyH("RIGHT")
+    h.you:SetPoint("TOPRIGHT", parent, "TOPLEFT", x + width, y - 3)
+    h.you:SetText(L["You"])
+    local rule = parent:CreateTexture(nil, "ARTWORK")
+    rule:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.25)
+    rule:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y - 19)
+    rule:SetSize(width, 1)
+    return h
+end
+
+-- label | their value | your value
+local function section(parent, x, y, file, title, n)
+    local s = heading(parent, x, y, SEC_W, file, title)
+    s.rows = {}
+    for i = 1, n do
+        local ry = y - 25 - (i - 1) * 15
+        local row = { x = x, y = ry }
+        row.l = text(parent, 11, ns.TC("textDim"))
+        row.l:SetPoint("TOPLEFT", parent, "TOPLEFT", x, ry)
+        row.l:SetWordWrap(false)
+        row.v = text(parent, 11)
+        row.v:SetJustifyH("RIGHT")
+        row.v:SetWordWrap(false)
+        row.o = text(parent, 11, ns.TC("textDim"))
+        row.o:SetJustifyH("RIGHT")
+        row.o:SetWordWrap(false)
+        row.o:SetPoint("TOPRIGHT", parent, "TOPLEFT", x + SEC_W, ry)
+        s.rows[i] = row
     end
+    s.parent = parent
+    return s
+end
+
+-- `data` rows are { label, theirs, yours }. Without your column their value
+-- moves to the right edge; the label always gets what is left and ends in
+-- "..." rather than running under a value.
+local function fillSection(s, data, you)
+    s.you:SetShown(you)
+    for _, row in ipairs(s.rows) do row.v:ClearAllPoints() end
+    for i, row in ipairs(s.rows) do
+        local d = data[i]
+        local right = you and VAL_X or SEC_W
+        row.v:SetPoint("TOPRIGHT", s.parent, "TOPLEFT", row.x + right, row.y)
+        row.v:SetText(d and d[2] or "")
+        row.o:SetText(you and d and d[3] or "")
+        local vw = (d and d[2]) and math.ceil(row.v:GetUnboundedStringWidth()) or 0
+        row.l:SetWidth(math.max(20, right - vw - 8))
+        row.l:SetText(d and d[1] or "")
+    end
+end
+
+-- Profession rows: icon, name and skill over a bar to the level-60 cap.
+local function profSection(parent, x, y, n)
+    local s = heading(parent, x, y, SEC_W, "Trade_BlackSmithing", L["Professions"])
+    s.you:Hide()
+    s.rows = {}
+    for i = 1, n do
+        local ry = y - 25 - (i - 1) * 18
+        local row = {}
+        row.icon = icon(parent, 14, "INV_Misc_QuestionMark")
+        row.icon:SetPoint("TOPLEFT", parent, "TOPLEFT", x, ry)
+        row.bg = parent:CreateTexture(nil, "BORDER")
+        row.bg:SetColorTexture(1, 1, 1, 0.05)
+        row.bg:SetPoint("TOPLEFT", parent, "TOPLEFT", x + 18, ry)
+        row.bg:SetSize(SEC_W - 18, 14)
+        row.fill = parent:CreateTexture(nil, "ARTWORK")
+        row.fill:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.30)
+        row.fill:SetPoint("TOPLEFT", row.bg, "TOPLEFT")
+        row.fill:SetHeight(14)
+        row.l = text(parent, 11)
+        row.l:SetPoint("LEFT", row.bg, "LEFT", 5, 0)
+        row.v = text(parent, 11)
+        row.v:SetJustifyH("RIGHT")
+        row.v:SetPoint("RIGHT", row.bg, "RIGHT", -5, 0)
+        s.rows[i] = row
+    end
+    s.none = text(parent, 11, ns.TC("textDim"))
+    s.none:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y - 25)
+    s.none:SetText(L["None recorded"])
+    return s
+end
+
+local function profName(key)
+    local names = {
+        Alchemy = L["Alchemy"], Blacksmithing = L["Blacksmithing"], Enchanting = L["Enchanting"],
+        Engineering = L["Engineering"], Herbalism = L["Herbalism"], Leatherworking = L["Leatherworking"],
+        Mining = L["Mining"], Skinning = L["Skinning"], Tailoring = L["Tailoring"],
+        ["First Aid"] = L["First Aid"], Cooking = L["Cooking"], Fishing = L["Fishing"],
+    }
+    return names[key] or key
+end
+
+local function fillProfs(s, profs)
+    profs = profs or {}
+    s.none:SetShown(#profs == 0)
+    for i, row in ipairs(s.rows) do
+        local d = profs[i]
+        local on = d ~= nil
+        row.icon:SetShown(on); row.bg:SetShown(on); row.fill:SetShown(on)
+        row.l:SetShown(on); row.v:SetShown(on)
+        if on then
+            row.icon:SetTexture("Interface\\Icons\\" .. (PROF_ICON[d.key] or "INV_Misc_QuestionMark"))
+            row.l:SetText(profName(d.key))
+            row.v:SetText(("%d / %d"):format(d.value, PROF_MAX))
+            row.fill:SetWidth(math.max(1, (SEC_W - 18) * math.min(1, d.value / PROF_MAX)))
+        end
+    end
+end
+
+-- A big counter: icon, gold label, value, and yours under it.
+local function tile(parent, i, file, label)
+    local t = box(parent)
+    t:SetPoint("TOPLEFT", parent, "TOPLEFT", 16 + (i - 1) * (TILE_W + 10), -184)
+    t:SetSize(TILE_W, 52)
+    t.icon = icon(t, 36, file)
+    t.icon:SetPoint("LEFT", 8, 0)
+    t.label = text(t, 11, GOLD[1], GOLD[2], GOLD[3])
+    t.label:SetPoint("TOPLEFT", 52, -6)
+    t.label:SetWidth(TILE_W - 60)
+    t.label:SetWordWrap(false)
+    t.label:SetText(label)
+    t.value = text(t, 16)
+    t.value:SetPoint("TOPLEFT", 52, -19)
+    t.you = text(t, 10, ns.TC("textDim"))
+    t.you:SetPoint("TOPLEFT", 52, -38)
+    return t
+end
+
+local function tab(parent, label, onClick)
+    local b = CreateFrame("Button", nil, parent)
+    b:SetHeight(24)
+    b.fs = text(b, 13, ns.TC("textSoft"))
+    b.fs:SetPoint("CENTER", 0, 1)
+    b.fs:SetText(label)
+    b:SetWidth(math.ceil(b.fs:GetUnboundedStringWidth()) + 22)
+    b.line = b:CreateTexture(nil, "ARTWORK")
+    b.line:SetPoint("BOTTOMLEFT", 8, 0)
+    b.line:SetPoint("BOTTOMRIGHT", -8, 0)
+    b.line:SetHeight(2)
+    b.line:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 1)
+    b.line:Hide()
+    local hl = b:CreateTexture(nil, "HIGHLIGHT")
+    hl:SetAllPoints(b)
+    hl:SetColorTexture(1, 1, 1, 0.05)
+    b:SetScript("OnClick", onClick)
+    return b
+end
+
+local function setTab(b, on)
+    b.line:SetShown(on)
+    if on then b.fs:SetTextColor(GOLD[1], GOLD[2], GOLD[3]) else b.fs:SetTextColor(ns.TC("textSoft")) end
 end
 
 local function buildWindow()
@@ -645,64 +827,97 @@ local function buildWindow()
     tinsert(UISpecialFrames, "VuloForeverUITradeCheck")
     ns.UI:CreateCloseX(f, function() f:Hide() end)
 
-    f.head = text(f, 12, ns.TC("textDim"))
-    f.head:SetPoint("TOPLEFT", 16, -12)
-    f.head:SetText(L["Gold check"])
+    -- ---- header: a warm band behind portrait, name and the scan's age
+    local band = f:CreateTexture(nil, "BACKGROUND", nil, 1)
+    band:SetPoint("TOPLEFT", 1, -1)
+    band:SetPoint("TOPRIGHT", -1, -1)
+    band:SetHeight(84)
+    ns.UI.SetGradient(band, "VERTICAL", 0.20, 0.15, 0.05, 0, 0.30, 0.22, 0.06, 0.55)
 
+    f.portrait = f:CreateTexture(nil, "ARTWORK")
+    f.portrait:SetSize(60, 60)
+    f.portrait:SetPoint("TOPLEFT", 16, -12)
     f.name = text(f, 20)
-    f.name:SetPoint("TOPLEFT", 16, -36)
+    f.name:SetPoint("TOPLEFT", 88, -18)
     f.info = text(f, 12, ns.TC("textSoft"))
-    f.info:SetPoint("TOPLEFT", 16, -60)
+    f.info:SetPoint("TOPLEFT", 88, -44)
+    f.seen = text(f, 11, ns.TC("textDim"))
+    f.seen:SetPoint("TOPLEFT", 88, -62)
+    f.head = text(f, 11, GOLD[1], GOLD[2], GOLD[3])
+    f.head:SetJustifyH("RIGHT")
+    f.head:SetPoint("TOPRIGHT", -40, -14)
+    f.head:SetText(L["Gold check"])
     f.snaps = text(f, 11, ns.TC("textDim"))
     f.snaps:SetJustifyH("RIGHT")
-    f.snaps:SetPoint("TOPRIGHT", -36, -40)
+    f.snaps:SetPoint("TOPRIGHT", -16, -32)
 
+    -- ---- tab row: the views on the left (TC.BuildViews), scans on the right
+    f.tabY = -88
+    f.copy = ns.UI:CreateButton(f, { label = L["Copy report"], width = 110, height = 22,
+        onClick = function() TC.CopyReport() end })
+    f.copy:SetPoint("TOPRIGHT", -16, f.tabY)
+    f.rescan = ns.UI:CreateButton(f, { label = L["Scan your target"], width = 130, height = 22,
+        onClick = function() TC.Scan("target") end })
+    f.rescan:SetPoint("RIGHT", f.copy, "LEFT", -6, 0)
+    f.self = ns.UI:CreateButton(f, { label = L["Check yourself"], width = 110, height = 22,
+        onClick = function() TC.Scan("player") end })
+    f.self:SetPoint("RIGHT", f.rescan, "LEFT", -6, 0)
+    local rule = f:CreateTexture(nil, "ARTWORK")
+    rule:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.30)
+    rule:SetPoint("TOPLEFT", 1, -114)
+    rule:SetPoint("TOPRIGHT", -1, -114)
+    rule:SetHeight(1)
+
+    -- ---- verdict with the explained / unexplained split of the peak
     f.banner = box(f)
-    f.banner:SetPoint("TOPLEFT", 16, -82)
-    f.banner:SetSize(W - 32, 46)
+    f.banner:SetPoint("TOPLEFT", 16, -122)
+    f.banner:SetSize(W - 32, 52)
     f.bdot = dot(f.banner, 12)
-    f.bdot:SetPoint("LEFT", 12, 0)
+    f.bdot:SetPoint("TOPLEFT", 12, -11)
     f.bline = text(f.banner, 15)
     f.bline:SetPoint("TOPLEFT", 32, -8)
     f.bsub = text(f.banner, 11, ns.TC("textSoft"))
-    f.bsub:SetPoint("TOPLEFT", 32, -27)
-
-    f.peakLabel = text(f, 12, ns.TC("textSoft"))
-    f.peakLabel:SetPoint("TOPLEFT", 16, -140)
-    f.peakLabel:SetText(L["Most gold ever owned"])
-    f.peakValue = text(f, 12)
-    f.peakValue:SetJustifyH("RIGHT")
-    f.peakValue:SetPoint("TOPRIGHT", -16, -140)
-    f.bar = CreateFrame("Frame", nil, f)
-    f.bar:SetPoint("TOPLEFT", 16, -158)
-    f.bar:SetSize(W - 32, 10)
+    f.bsub:SetPoint("TOPLEFT", 32, -26)
+    f.legend = text(f.banner, 11, ns.TC("textDim"))
+    f.legend:SetJustifyH("RIGHT")
+    f.legend:SetPoint("TOPRIGHT", -12, -10)
+    f.bar = CreateFrame("Frame", nil, f.banner)
+    f.bar:SetPoint("BOTTOMLEFT", 12, 8)
+    f.bar:SetSize(W - 32 - 24, 5)
     f.barBg = f.bar:CreateTexture(nil, "BACKGROUND")
     f.barBg:SetAllPoints()
-    f.barBg:SetColorTexture(0.12, 0.12, 0.15, 1)
+    f.barBg:SetColorTexture(1, 1, 1, 0.06)
     f.barGood = f.bar:CreateTexture(nil, "ARTWORK")
     f.barGood:SetPoint("TOPLEFT"); f.barGood:SetPoint("BOTTOMLEFT")
     f.barGood:SetColorTexture(0.35, 0.75, 0.40, 1)
     f.barBad = f.bar:CreateTexture(nil, "ARTWORK")
     f.barBad:SetPoint("TOPLEFT", f.barGood, "TOPRIGHT"); f.barBad:SetPoint("BOTTOMLEFT", f.barGood, "BOTTOMRIGHT")
     f.barBad:SetColorTexture(0.85, 0.35, 0.30, 1)
-    f.legend = text(f, 11, ns.TC("textDim"))
-    f.legend:SetPoint("TOPLEFT", 16, -174)
 
-    local colX = { 16, 16 + 226, 16 + 452 }
-    f.cIncome  = column(f, colX[1], -200, L["Income sources"], 6)
-    f.cSpend   = column(f, colX[2], -200, L["Spending"], 5)
-    f.cAuction = column(f, colX[3], -200, L["Auction activity"], 4)
-    f.cPlay    = column(f, colX[1], -320, L["Gameplay footprint"], 7)
-    f.cProf    = column(f, colX[2], -320, L["Professions"], 7)
-    f.cHist    = column(f, colX[3], -320, L["Your history with them"], 3)
+    -- ---- the four big counters
+    f.tiles = {
+        kills = tile(f, 1, "Ability_DualWield", L["Creatures killed"]),
+        quests = tile(f, 2, "INV_Misc_Book_09", L["Quests completed"]),
+        deaths = tile(f, 3, "INV_Misc_Bone_HumanSkull_01", L["Deaths"]),
+        peak = tile(f, 4, "INV_Misc_Coin_02", L["Most gold ever owned"]),
+    }
+    f.tiles.peak.value:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
-    f.obsTitle = text(f, 12, ns.TC("heading"))
-    f.obsTitle:SetPoint("TOPLEFT", 16, -452)
-    f.obsTitle:SetText(L["Observations"])
+    -- ---- sections, three columns in two rows
+    local x1, x2, x3 = 16, 16 + SEC_W + SEC_GAP, 16 + 2 * (SEC_W + SEC_GAP)
+    f.cIncome  = section(f, x1, -248, "INV_Misc_Coin_01", L["Income sources"], 6)
+    f.cSpend   = section(f, x2, -248, "INV_Misc_Bag_08", L["Spending"], 5)
+    f.cAuction = section(f, x3, -248, "INV_Misc_Note_01", L["Auction activity"], 4)
+    f.cPlay    = section(f, x1, -374, "INV_Misc_Map_01", L["Gameplay footprint"], 4)
+    f.cProf    = profSection(f, x2, -374, 6)
+    f.cHist    = section(f, x3, -374, "INV_Misc_PocketWatch_01", L["Your history with them"], 3)
+
+    local obs = heading(f, 16, -512, W - 32, "INV_Misc_Spyglass_02", L["Observations"])
+    obs.you:Hide()
     f.obs = {}
     for i = 1, 4 do
         local d = dot(f, 7)
-        d:SetPoint("TOPLEFT", 18, -472 - (i - 1) * 15)
+        d:SetPoint("TOPLEFT", 18, -540 - (i - 1) * 15)
         local fs = text(f, 11, ns.TC("textSoft"))
         fs:SetPoint("LEFT", d, "RIGHT", 7, 0)
         fs:SetWidth(W - 60)
@@ -710,16 +925,7 @@ local function buildWindow()
         f.obs[i] = { d = d, fs = fs }
     end
 
-    f.copy = ns.UI:CreateButton(f, { label = L["Copy report"], width = 110, height = 22,
-        onClick = function() TC.CopyReport() end })
-    f.copy:SetPoint("BOTTOMRIGHT", -16, 12)
-    f.rescan = ns.UI:CreateButton(f, { label = L["Scan your target"], width = 130, height = 22,
-        onClick = function() TC.Scan("target") end })
-    f.rescan:SetPoint("RIGHT", f.copy, "LEFT", -8, 0)
-    f.self = ns.UI:CreateButton(f, { label = L["Check yourself"], width = 120, height = 22,
-        onClick = function() TC.Scan("player") end })
-    f.self:SetPoint("RIGHT", f.rescan, "LEFT", -8, 0)
-    -- the two other views of the same window (built further down)
+    -- the tabs and the other views of the same window (built further down)
     if TC.BuildViews then TC.BuildViews(f) end
 
     f:Hide()
@@ -733,19 +939,33 @@ local function ago(at)
     return L["%d h old"]:format(math.floor(mins / 60))
 end
 
--- Spelled out so every name is a literal key the locale check can see.
-local function profName(key)
-    local names = {
-        Alchemy = L["Alchemy"], Blacksmithing = L["Blacksmithing"], Enchanting = L["Enchanting"],
-        Engineering = L["Engineering"], Herbalism = L["Herbalism"], Leatherworking = L["Leatherworking"],
-        Mining = L["Mining"], Skinning = L["Skinning"], Tailoring = L["Tailoring"],
-        ["First Aid"] = L["First Aid"], Cooking = L["Cooking"], Fishing = L["Fishing"],
-    }
-    return names[key] or key
+local function money(v) return v and coinText(v) or "--" end
+
+-- The live unit's own portrait while it is still that character; else the
+-- class emblem; nothing scanned, a coin.
+local function setPortrait(t, p)
+    if p and p.unit and not p.stored and UnitExists(p.unit) and select(2, unitName(p.unit)) == p.key then
+        t:SetTexCoord(0, 1, 0, 1)
+        SetPortraitTexture(t, p.unit)
+        return
+    end
+    local tc = p and p.class and CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[p.class]
+    if tc then
+        t:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
+        t:SetTexCoord(tc[1], tc[2], tc[3], tc[4])
+    else
+        t:SetTexture("Interface\\Icons\\INV_Misc_Coin_02")
+        t:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    end
 end
 
-local function money(v) return v and coinText(v) or "--" end
-local function count(v) return v and tostring(v) or "--" end
+-- Your own counters, for the "You" column. A counter that turns secret or
+-- is not reported stays nil like any other.
+local function ownScan()
+    local me = { own = true, level = readable(UnitLevel("player")) }
+    readStats(me)
+    return me
+end
 
 local function updateWindow()
     local f = window
@@ -754,25 +974,35 @@ local function updateWindow()
     -- nothing scanned yet: the start view instead of an empty frame
     if TC.RenderEmpty then TC.RenderEmpty(p == nil) end
     f.copy:SetShown(p ~= nil)
-    if f.histBtn then f.histBtn:SetShown(p ~= nil) end
-    if f.cmpBtn then f.cmpBtn:SetShown(p ~= nil) end
+    if TC.SyncTabs then TC.SyncTabs() end
+    setPortrait(f.portrait, p)
     if not p then
-        f.name:SetText("")
+        f.name:SetText(L["Gold check"])
+        f.name:SetTextColor(1, 1, 1)
         f.info:SetText("")
+        f.seen:SetText("")
+        f.snaps:SetText("")
         return
     end
     local tradeOpen = TradeFrame and TradeFrame:IsShown()
     local a = analyse(p, tradeOpen and offerNow() or nil)
     local s = p.stats or {}
+    -- yours beside theirs, unless they are you
+    local you = not p.own
+    local me = you and ownScan() or nil
+    local ms = me and me.stats or {}
+    local ma = me and analyse(me, nil) or {}
 
     local cc = p.class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[p.class]
     f.name:SetText(p.name)
     if cc then f.name:SetTextColor(cc.r, cc.g, cc.b) else f.name:SetTextColor(1, 1, 1) end
-    f.info:SetText(L["Level %s %s - %s"]:format(p.level or "?", p.className or "",
+    local who = p.race and (p.race .. " " .. (p.className or "")) or (p.className or "")
+    f.info:SetText(L["Level %s %s - %s"]:format(p.level or "?", who,
         p.guild and ("<" .. p.guild .. ">") or L["No guild"]))
+    f.seen:SetText(ago(p.at))
     local entry = store()[p.key]
     local nScans = entry and entry.scans and #entry.scans or 0
-    local lines = L["%d scans saved"]:format(nScans) .. "\n" .. ago(p.at)
+    local lines = L["%d scans saved"]:format(nScans)
     -- how much of the record the client gave; a missing counter is not zero
     if p.done and not p.failed and p.readable then
         lines = lines .. "\n" .. L["%d / %d counters readable"]:format(p.readable, NUM_STATS)
@@ -784,8 +1014,7 @@ local function updateWindow()
     f.bline:SetText(line)
     f.bsub:SetText(sub or "")
 
-    f.peakValue:SetText(money(a.peak))
-    local width = W - 32
+    local width = f.bar:GetWidth()
     -- explained/unexplained only exist once the income is known; a partial
     -- scan has a peak and nothing to split it by.
     if a.peak and a.peak > 0 and a.explained and a.unexplained then
@@ -797,52 +1026,54 @@ local function updateWindow()
     else
         f.barGood:Hide(); f.barBad:Hide()
     end
-    f.legend:SetText(("|cff59bf66%s|r: %s     |cffd9594d%s|r: %s"):format(
-        L["Explained by recorded income"], money(a.explained), L["Unexplained"], money(a.unexplained)))
+    f.legend:SetText(("|cff59bf66%s|r %s     |cffd9594d%s|r %s"):format(
+        L["Explained by recorded income"], short(a.explained), L["Unexplained"], short(a.unexplained)))
 
-    fillColumn(f.cIncome, {
-        { L["Gold looted"], money(s.looted) },
-        { L["Quest rewards"], money(s.quest) },
-        { L["Vendor sales"], money(s.vendor) },
-        { L["Auction earnings"], money(s.auction) },
-        { L["Total gold acquired"], money(a.acq) },
-        { L["Average earned per day"], money(s.daily) },
-    })
-    local pct = (a.spent and a.acq and a.acq > 0) and ("%d%%"):format(math.floor(a.spent / a.acq * 100 + 0.5)) or "--"
-    fillColumn(f.cSpend, {
-        { L["Travel"], money(s.travel) },
-        { L["Postage"], money(s.postage) },
-        { L["Barber shops"], money(s.barber) },
-        { L["Talent respecs"], money(s.respec) },
-        { L["Spent vs acquired"], pct },
-    })
-    fillColumn(f.cAuction, {
-        { L["Auctions posted"], count(s.posted) },
-        { L["Auction purchases"], count(s.bought) },
-        { L["Largest sale"], money(s.bestSale) },
-        { L["Largest bid"], money(s.bestBid) },
-    })
-    fillColumn(f.cPlay, {
-        { L["Quests completed"], count(s.quests) },
-        { L["Creatures killed"], count(s.kills) },
-        { L["Dungeons entered"], count(s.dungeons) },
-        { L["Deaths"], count(s.deaths) },
-        { L["Flight paths taken"], count(s.flights) },
-        { L["Honorable kills"], count(s.honor) },
-        { L["Level 10 reached"], p.level10 or "--" },
-    })
-    local profs = {}
-    for i, prof in ipairs(p.professions or {}) do
-        if i > 7 then break end
-        profs[i] = { profName(prof.key), tostring(prof.value) }
+    local function big(t, v, mine, isMoney)
+        t.value:SetText(isMoney and short(v) or count(v))
+        t.you:SetText(you and L["You: %s"]:format(isMoney and short(mine) or count(mine)) or "")
     end
-    if #profs == 0 then profs[1] = { L["None recorded"], "" } end
-    fillColumn(f.cProf, profs)
-    fillColumn(f.cHist, {
+    big(f.tiles.kills, s.kills, ms.kills)
+    big(f.tiles.quests, s.quests, ms.quests)
+    big(f.tiles.deaths, s.deaths, ms.deaths)
+    big(f.tiles.peak, a.peak, ma.peak, true)
+
+    fillSection(f.cIncome, {
+        { L["Gold looted"], short(s.looted), short(ms.looted) },
+        { L["Quest rewards"], short(s.quest), short(ms.quest) },
+        { L["Vendor sales"], short(s.vendor), short(ms.vendor) },
+        { L["Auction earnings"], short(s.auction), short(ms.auction) },
+        { L["Total gold acquired"], short(a.acq), short(ma.acq) },
+        { L["Average earned per day"], short(s.daily), short(ms.daily) },
+    }, you)
+    local function pct(x)
+        return (x.spent and x.acq and x.acq > 0) and ("%d%%"):format(math.floor(x.spent / x.acq * 100 + 0.5)) or "--"
+    end
+    fillSection(f.cSpend, {
+        { L["Travel"], short(s.travel), short(ms.travel) },
+        { L["Postage"], short(s.postage), short(ms.postage) },
+        { L["Barber shops"], short(s.barber), short(ms.barber) },
+        { L["Talent respecs"], short(s.respec), short(ms.respec) },
+        { L["Spent vs acquired"], pct(a), pct(ma) },
+    }, you)
+    fillSection(f.cAuction, {
+        { L["Auctions posted"], count(s.posted), count(ms.posted) },
+        { L["Auction purchases"], count(s.bought), count(ms.bought) },
+        { L["Largest sale"], short(s.bestSale), short(ms.bestSale) },
+        { L["Largest bid"], short(s.bestBid), short(ms.bestBid) },
+    }, you)
+    fillSection(f.cPlay, {
+        { L["Dungeons entered"], count(s.dungeons), count(ms.dungeons) },
+        { L["Flight paths taken"], count(s.flights), count(ms.flights) },
+        { L["Honorable kills"], count(s.honor), count(ms.honor) },
+        { L["Level 10 reached"], p.level10 or "--", me and me.level10 or "--" },
+    }, you)
+    fillProfs(f.cProf, p.professions)
+    fillSection(f.cHist, {
         { L["Trades with you"], tostring(entry and entry.trades or 0) },
         { L["Scans saved"], tostring(nScans) },
         { L["First scanned"], entry and date("%d.%m.%Y", entry.first) or "--" },
-    })
+    }, false)
     fillObs(f.obs, p.done and not p.failed and a.obs or nil)
     -- the left side of an open comparison is this character
     if TC.RenderCompare then TC.RenderCompare() end
@@ -1032,8 +1263,8 @@ end
 --   Compare  the character on show beside one picked from the Players
 --            list (the list in "pick" mode), counter by counter
 
-local VIEW_TOP, VIEW_BOTTOM = 82, 46
-local ROWS, ROW_H = 15, 22
+local VIEW_TOP, VIEW_BOTTOM = 116, 1
+local ROWS, ROW_H = 19, 22
 local CMP_ROWS, CMP_H = 24, 15
 local compareKey            -- the character on the right of the Compare view
 
@@ -1236,7 +1467,7 @@ function TC.BuildViews(f)
     -- ---- start view: shown while nothing has been scanned this session
     local empty = CreateFrame("Frame", nil, f)
     f.emptyView = empty
-    empty:SetPoint("TOPLEFT", f, "TOPLEFT", 1, -30)
+    empty:SetPoint("TOPLEFT", f, "TOPLEFT", 1, -VIEW_TOP)
     empty:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -1, VIEW_BOTTOM)
     empty:SetFrameLevel(f:GetFrameLevel() + 15)
     empty:EnableMouse(true)
@@ -1311,38 +1542,51 @@ function TC.BuildViews(f)
     empty.note:SetWidth(W - 80); empty.note:SetJustifyH("CENTER")
     empty.note:SetText(L["A hint, not proof: a guild bank or a generous friend looks the same as bought gold."])
 
-    -- ---- switches: one view at a time; its own button closes it again
+    -- ---- tabs: one view at a time, Overview closes the others
     local function closeAll()
         list:Hide(); hist:Hide(); cmp:Hide()
         list.pick = false
     end
-    f.listBtn = ns.UI:CreateButton(f, { label = L["Players"], width = 84, height = 22,
-        onClick = function()
-            local was = list:IsShown() and not list.pick
-            closeAll()
-            if not was then list:Show(); TC.RenderList() end
-        end })
-    f.listBtn:SetPoint("BOTTOMLEFT", 16, 12)
-    f.histBtn = ns.UI:CreateButton(f, { label = L["History"], width = 84, height = 22,
-        onClick = function()
-            local was = hist:IsShown()
-            closeAll()
-            if not was then hist:Show(); TC.RenderHistory() end
-        end })
-    f.histBtn:SetPoint("LEFT", f.listBtn, "RIGHT", 8, 0)
-    f.cmpBtn = ns.UI:CreateButton(f, { label = L["Compare"], width = 100, height = 22,
-        onClick = function()
-            local was = cmp:IsShown() or (list:IsShown() and list.pick)
-            closeAll()
-            if was or not result then return end
-            -- the partner of last time, while there is one; else pick one
-            if compareKey and compareKey ~= result.key and kept(compareKey, nameOf(compareKey)) then
-                cmp:Show(); TC.RenderCompare()
-            else
-                TC.PickCompare()
-            end
-        end })
-    f.cmpBtn:SetPoint("LEFT", f.histBtn, "RIGHT", 8, 0)
+    f.tabOverview = tab(f, L["Overview"], closeAll)
+    f.tabOverview:SetPoint("TOPLEFT", 12, f.tabY)
+    f.listBtn = tab(f, L["Players"], function()
+        closeAll(); list:Show(); TC.RenderList()
+    end)
+    f.listBtn:SetPoint("LEFT", f.tabOverview, "RIGHT", 2, 0)
+    f.histBtn = tab(f, L["History"], function()
+        if not result then return end
+        closeAll(); hist:Show(); TC.RenderHistory()
+    end)
+    f.histBtn:SetPoint("LEFT", f.listBtn, "RIGHT", 2, 0)
+    f.cmpBtn = tab(f, L["Compare"], function()
+        if not result then return end
+        closeAll()
+        -- the partner of last time, while there is one; else pick one
+        if compareKey and compareKey ~= result.key and kept(compareKey, nameOf(compareKey)) then
+            cmp:Show(); TC.RenderCompare()
+        else
+            TC.PickCompare()
+        end
+    end)
+    f.cmpBtn:SetPoint("LEFT", f.histBtn, "RIGHT", 2, 0)
+    for _, v in ipairs({ list, hist, cmp }) do
+        v:HookScript("OnShow", function() TC.SyncTabs() end)
+        v:HookScript("OnHide", function() TC.SyncTabs() end)
+    end
+end
+
+-- The tab of the view on show is lit; History and Compare need a character.
+function TC.SyncTabs()
+    local f = window
+    if not (f and f.tabOverview) then return end
+    local picking = f.listView:IsShown() and f.listView.pick
+    local active = (f.cmpView:IsShown() or picking) and f.cmpBtn
+        or f.listView:IsShown() and f.listBtn
+        or f.histView:IsShown() and f.histBtn
+        or f.tabOverview
+    for _, b in ipairs({ f.tabOverview, f.listBtn, f.histBtn, f.cmpBtn }) do setTab(b, b == active) end
+    f.histBtn:SetShown(result ~= nil)
+    f.cmpBtn:SetShown(result ~= nil)
 end
 
 -- The Players list as a picker: a click names the partner.

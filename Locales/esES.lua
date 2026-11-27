@@ -2345,6 +2345,7 @@ local T = {
     ["Earned, spent, what is left and the balance, under the money line of the bags. Survives a reload and a relog and starts over on the first login of a new day."] = "Ganado, gastado, lo que queda y el balance, bajo la línea de dinero de las bolsas. Sobrevive a una recarga y a una reconexión, y empieza de nuevo en el primer inicio de sesión de un día nuevo.",
     ["Start a new session now"] = "Empezar una nueva sesión ahora",
     ["Gold check"] = "Comprobación de oro",
+    ["You: %s"] = "Tú: %s",
     ["Check a trade partner's gold"] = "Comprobar el oro de un compañero de intercambio",
     ["Beside the trade window: the most gold they ever owned against everything they ever earned themselves. What has no recorded source came by trade or mail."] = "Junto a la ventana de intercambio: el máximo de oro que tuvo frente a todo lo que ganó él mismo. Lo que no tiene origen registrado llegó por intercambio o correo.",
     ["Open the gold check"] = "Abrir la comprobación de oro",
