@@ -239,6 +239,22 @@ local function readRoute(slot)
     return yards, list, mapID, sized and w or nil, sized and h or nil, exact
 end
 
+-- How long the ride from here to this taxi slot takes, for the flight map's
+-- tooltip (FlightTooltip.lua): seconds and how they are known -- "learned"
+-- (flown before), "computed" (the paths' lengths) or "estimate" -- in the
+-- same order the bar trusts them. Nil when nothing can say.
+function Flight.RouteTime(slot)
+    local from = firstLine(currentNodeName())
+    local to   = firstLine(TaxiNodeName and TaxiNodeName(slot))
+    if not (from and to) then return nil end
+    local t = tonumber(learned()[from .. " -> " .. to])
+    if t then return t, "learned" end
+    local ok, yards, _, _, _, _, exact = pcall(readRoute, slot)
+    if not ok then return nil end
+    if exact then return TAXI_START + exact / TAXI_SPEED, "computed" end
+    if yards then return yards / speed(), "estimate" end
+end
+
 local function onTakeTaxiNode(slot)
     -- The hook cannot be taken off again: with the feature (or the module)
     -- off it does nothing at all.
@@ -409,6 +425,7 @@ local function clock(seconds)
     if seconds < 0 then seconds = 0 end
     return string.format("%d:%02d", math.floor(seconds / 60), math.floor(seconds % 60))
 end
+Flight.Clock = clock
 
 -- ------------------------------------------------------------ route --
 
@@ -711,6 +728,7 @@ function Flight.Apply()
         end
         hooked = true
     end
+    if Flight.ApplyTooltip then Flight.ApplyTooltip() end
     QoL.SyncEvent(on, "PLAYER_CONTROL_LOST",   waitForTaxi)
     QoL.SyncEvent(on, "TAXIMAP_CLOSED",        waitForTaxi)
     QoL.SyncEvent(on, "PLAYER_CONTROL_GAINED", endFlight)

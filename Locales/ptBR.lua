@@ -1856,6 +1856,8 @@ ns:RegisterLocale("ptBR", {
     ["Show a flight time bar"] = "Mostrar uma barra de tempo de voo",
     ["The client never says how long a ride takes, so the first flight of a route is measured and every one after it counts down."] = "O cliente nunca informa quanto tempo dura uma viagem, então o primeiro voo de uma rota é medido e todos os seguintes fazem a contagem regressiva.",
     ["Say the flight time in chat"] = "Informar o tempo de voo no bate-papo",
+    ["Flight time in the flight map tooltip"] = "Tempo de voo na dica do mapa de voo",
+    ["Hovering a destination on the flight map shows how long the ride takes: the real time once you have flown the route, until then the time worked out from the flight paths."] = "Passar o mouse sobre um destino no mapa de voo mostra quanto dura a viagem: o tempo real assim que você voar a rota uma vez, até lá o calculado a partir das rotas de voo.",
     ["Show the route under the bar"] = "Mostrar a rota sob a barra",
     ["Every stop of the ride with the time until it. The list moves on by one each time a stop goes by."] = "Todas as paradas da viagem com o tempo até cada uma. A lista avança uma posição a cada parada que passa.",
     ["Stops shown"] = "Paradas exibidas",

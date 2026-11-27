@@ -1890,6 +1890,8 @@ ns:RegisterLocale("frFR", {
     ["Show a flight time bar"] = "Afficher une barre de temps de vol",
     ["The client never says how long a ride takes, so the first flight of a route is measured and every one after it counts down."] = "Le client n'indique jamais la durée d'un trajet : le premier vol d'un itinéraire est donc mesuré, et chaque suivant fait un compte à rebours.",
     ["Say the flight time in chat"] = "Annoncer le temps de vol dans le chat",
+    ["Flight time in the flight map tooltip"] = "Durée de vol dans l'infobulle de la carte de vol",
+    ["Hovering a destination on the flight map shows how long the ride takes: the real time once you have flown the route, until then the time worked out from the flight paths."] = "Survoler une destination sur la carte de vol indique la durée du trajet : le temps réel dès que vous avez fait la route une fois, sinon celui calculé à partir des trajets aériens.",
     ["Show the route under the bar"] = "Afficher l'itinéraire sous la barre",
     ["Every stop of the ride with the time until it. The list moves on by one each time a stop goes by."] = "Chaque étape du trajet avec le temps restant avant elle. La liste avance d'un cran à chaque étape passée.",
     ["Stops shown"] = "Étapes affichées",

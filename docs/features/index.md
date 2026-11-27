@@ -94,6 +94,7 @@ jemand ohne den Code prüfen kann.
 | F-82 | Erinnerungen: Klick auf die Essens-Erinnerung isst deine Wahl, sonst das zuletzt gegessene, sonst das beste Essen | Erinnerungen | gebaut | – |
 | F-83 | Cooldown Manager: Leuchten bei vollen Ladungen; Proc-Leuchten auch für per ID hinzugefügte Zauber und gleich nach dem Hinzufügen | Cooldown Manager | gebaut | – |
 | F-84 | Cooldown Manager: Symbol nur zeigen, solange der Zauber wirkbar ist | Cooldown Manager | gebaut | – |
+| F-85 | Flugkarte: Tooltip eines Ziels nennt die Flugzeit, nach einem Flug die echte | Komfort | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -386,6 +387,13 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du mit der Angel in der Hand einmal am Rad drehst, **dann** wirfst du genau einmal aus — die restlichen Rasten desselben Drehs holen die Leine nicht gleich wieder ein und werfen nicht neu aus.
 - **Wenn** der Schwimmer anbeißt und du am Rad drehst, **dann** holst du ein wie mit einer Taste; Strg + Rad wirft bei draußener Leine sofort neu aus (wenn „Schnell neu auswerfen“ an ist).
 - Bekannte Grenze: Rund eine Sekunde nach dem Auswerfen holt das Rad noch nicht ein; vorher beißt ohnehin nichts.
+
+### F-85 Flugzeit im Tooltip der Flugkarte
+- **Angenommen** du hast eine Route schon einmal ganz geflogen, **wenn** du beim Flugmeister mit der Maus auf dieses Ziel fährst, **dann** steht unter dem Preis „Flugzeit“ mit der gemessenen Zeit in Weiß, z. B. „2:31“ — dieselbe, mit der die Flugleiste dann herunterzählt.
+- **Angenommen** die Route ist noch nie geflogen, **dann** steht dort die aus den Flugpfaden berechnete Zeit etwas blasser; fehlt ein Flugpfad in den Daten, eine Schätzung mit „~“.
+- **Wenn** du ganz geflogen bist und die Karte beim nächsten Flugmeister wieder öffnest, **dann** zeigt die Gegenrichtung weiter ihre eigene Zeit (Hin und Zurück sind zwei Routen).
+- **Dann** steht bei deinem eigenen Standort, bei nicht erreichbaren Zielen und mit „Flugzeit im Tooltip der Flugkarte“ aus keine Zeile.
+- Bekannte Grenze: Gelernt wird nur ein Flug bis zum Ziel; wer früher landet, lehrt nichts. Die Zeiten gelten für alle Charaktere des Accounts.
 
 ### F-83 Cooldown Manager: Leuchten bei Ladungen und Procs
 - **Angenommen** ein Zauber mit Ladungen steht in einer Leiste und „Leuchten bei vollen Ladungen“ ist an, **dann** leuchtet sein Symbol, solange alle Ladungen da sind, und erlischt, sobald eine verbraucht ist — auch im Kampf.

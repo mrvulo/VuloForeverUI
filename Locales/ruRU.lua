@@ -1890,6 +1890,8 @@ ns:RegisterLocale("ruRU", {
     ["Show a flight time bar"] = "Показывать полосу времени полета",
     ["The client never says how long a ride takes, so the first flight of a route is measured and every one after it counts down."] = "Клиент никогда не сообщает, сколько длится перелет, поэтому первый полет по маршруту измеряется, а каждый следующий ведет обратный отсчет.",
     ["Say the flight time in chat"] = "Сообщать время полета в чат",
+    ["Flight time in the flight map tooltip"] = "Время полёта в подсказке карты полётов",
+    ["Hovering a destination on the flight map shows how long the ride takes: the real time once you have flown the route, until then the time worked out from the flight paths."] = "При наведении на пункт назначения на карте полётов видно, сколько длится полёт: реальное время, как только вы пролетели маршрут, до этого — рассчитанное по траекториям полёта.",
     ["Show the route under the bar"] = "Показывать маршрут под полосой",
     ["Every stop of the ride with the time until it. The list moves on by one each time a stop goes by."] = "Каждая остановка перелета со временем до нее. Список сдвигается на одну позицию при каждой пройденной остановке.",
     ["Stops shown"] = "Показано остановок",

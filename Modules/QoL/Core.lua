@@ -148,6 +148,7 @@ local mod = ns:RegisterModule("qol", {
         flight = {
             showBar = true,
             chat    = false,
+            mapTooltip = true,      -- the route's time in the flight map tooltip
             -- the stops of the ride under the bar, and the land-early button
             showRoute = true, routeRows = 3,
             landButton = true,

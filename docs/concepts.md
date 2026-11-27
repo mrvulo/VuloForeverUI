@@ -483,6 +483,11 @@ scaled together as one mover (`classes_priest`).
   mean error 0.2 s; several hops add up. Shown without "~". Regenerate the
   data after a client patch. Known deviation: Hyjal paths (data longer than
   the flight), where the measured time takes over after one ride.
+  The flight map tooltip names the same time (`FlightTooltip.lua`,
+  `Flight.RouteTime`, F-85, 2026-11-27): post-hooks on the taxi window's
+  `TaxiNodeOnButtonEnter` and on `FlightMap_FlightPointPinMixin.OnMouseEnter`
+  (canvas map, load on demand), only for REACHABLE nodes; learned in white,
+  computed quieter, estimate with "~". Setting `flight.mapTooltip`.
 - **Fishing key** (`Fishing.lua`, `Bindings.xml`): a CLICK binding the
   player sets in the client's key bindings ("VuloForeverUI: Fishing") on a
   secure button; PreClick (out of combat, gated on the part being on) points

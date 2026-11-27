@@ -136,6 +136,8 @@ local function generalPage()
         toggle("flight", "showBar", L["Show a flight time bar"],
             L["The client never says how long a ride takes, so the first flight of a route is measured and every one after it counts down."]),
         toggle("flight", "chat", L["Say the flight time in chat"]),
+        toggle("flight", "mapTooltip", L["Flight time in the flight map tooltip"],
+            L["Hovering a destination on the flight map shows how long the ride takes: the real time once you have flown the route, until then the time worked out from the flight paths."]),
         toggle("flight", "showRoute", L["Show the route under the bar"],
             L["Every stop of the ride with the time until it. The list moves on by one each time a stop goes by."]),
         slider("flight", "routeRows", L["Stops shown"], 1, 8, 1),

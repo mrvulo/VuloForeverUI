@@ -230,6 +230,7 @@ Modules\QoL\ZoneLevels.lua
 Modules\QoL\StackSplit.lua
 Modules\QoL\FlightPathData.lua
 Modules\QoL\Flight.lua
+Modules\QoL\FlightTooltip.lua
 Modules\QoL\Mail.lua
 Modules\QoL\Vendor.lua
 Modules\QoL\Junk.lua
