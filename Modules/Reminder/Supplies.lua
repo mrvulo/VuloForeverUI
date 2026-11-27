@@ -331,6 +331,92 @@ function R.BagFood()
     return list
 end
 
+-- THE FOOD A CLICK EATS
+--
+-- In this order: the player's right-click choice, then the food last eaten
+-- (while carried), then the best for the role, then the best known buff food
+-- of any chain the level allows. "Last eaten" is learned, not guessed: a
+-- food or drink went down in the bags and a food buff came up within
+-- FED_MATCH seconds. Eating and drinking at once drop two stacks; then only
+-- a known buff food is learned, otherwise nothing.
+
+local FED_MATCH = 60
+local BUFF_FOOD = {}            -- every item of every food chain
+for _, c in ipairs(R.SUPPLIES) do
+    if c.cat == "food" then
+        for _, it in ipairs(c.items) do BUFF_FOOD[it[1]] = it[2] end
+    end
+end
+
+local dropped, droppedAt = {}, nil
+local fedLeft                   -- food buff time left at the last look
+
+function R.FoodLast()
+    local c = _G.VuloForeverUICharDB
+    local id = type(c) == "table" and c.reminderLastFood or nil
+    if type(id) == "number" and (C_Item.GetItemCount(id) or 0) > 0 then return id end
+end
+
+-- Core.lua's bag watch: this item's stack went down.
+function R.NoteFoodDrop(id)
+    if not FOODDRINK then return end
+    local _, _, _, _, _, classID, subID = C_Item.GetItemInfoInstant(id)
+    if classID ~= Enum.ItemClass.Consumable or subID ~= FOODDRINK then return end
+    if not droppedAt or GetTime() - droppedAt > FED_MATCH then wipe(dropped) end
+    dropped[#dropped + 1] = id
+    droppedAt = GetTime()
+end
+
+-- Called on every look at the auras: a food buff that is new, or whose time
+-- jumped up (eaten again), names the food that went down just before.
+function R.WatchFood()
+    if ns.AurasRestricted() then return end
+    local left
+    for _, id in ipairs(R.FOOD_BUFFS) do left = longer(left, auraLeft(R.SpellName(id))) end
+    local before = fedLeft
+    fedLeft = left
+    if not left or not droppedAt or GetTime() - droppedAt > FED_MATCH then return end
+    if before and (left == math.huge or before == math.huge or left <= before + 60) then return end
+    local pick
+    if #dropped == 1 then
+        pick = dropped[1]
+    else
+        for _, id in ipairs(dropped) do
+            if BUFF_FOOD[id] then pick = id; break end
+        end
+    end
+    wipe(dropped); droppedAt = nil
+    local c = _G.VuloForeverUICharDB
+    if pick and type(c) == "table" then c.reminderLastFood = pick end
+end
+
+-- The best known buff food in the bags this level may eat.
+local function bestBagFood(level)
+    local best, bestLevel
+    for id, need in pairs(BUFF_FOOD) do
+        if need <= level and (not bestLevel or need > bestLevel) and (C_Item.GetItemCount(id) or 0) > 0 then
+            best, bestLevel = id, need
+        end
+    end
+    return best
+end
+
+-- The best carried rank of the first food chain that fits the role.
+local function roleFood(ctx, role)
+    for _, c in ipairs(R.SUPPLIES) do
+        if c.cat == "food" and R.SupplyFits(c, role, ctx) then
+            for _, it in ipairs(c.items) do
+                if it[2] <= ctx.level and (C_Item.GetItemCount(it[1]) or 0) > 0 then return it[1] end
+            end
+            return nil
+        end
+    end
+end
+
+function R.FoodToEat(ctx, role)
+    return R.FoodChoice() or R.FoodLast() or roleFood(ctx, role) or bestBagFood(ctx.level)
+end
+
 -- all = the preview's question (every chain, due or not); aurasOk = the
 -- auras may be read right now.
 function R.ConsumableReminders(all, aurasOk, warn)
@@ -346,10 +432,10 @@ function R.ConsumableReminders(all, aurasOk, warn)
             for _, it in ipairs(c.items) do
                 if it[2] <= ctx.level and (C_Item.GetItemCount(it[1]) or 0) > 0 then pick = it[1]; break end
             end
-            -- the food the player named, while it is carried (one icon only)
+            -- choice, last eaten, role, any buff food (one icon only)
             if c.cat == "food" and not ownFood then
                 ownFood = true
-                pick = R.FoodChoice() or pick
+                pick = R.FoodToEat(ctx, role)
             end
             local left = aurasOk and chainLeft(c) or nil
             -- on you but none left in the bags: still shown (with a 0) to

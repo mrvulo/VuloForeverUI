@@ -260,7 +260,10 @@ end
 local function onBags()
     local now = countBags()
     for id, n in pairs(bagCounts) do
-        if (now[id] or 0) < n and canBeWeaponItem(id) then lastUsed, lastUsedAt = id, GetTime() end
+        if (now[id] or 0) < n then
+            if canBeWeaponItem(id) then lastUsed, lastUsedAt = id, GetTime() end
+            R.NoteFoodDrop(id)
+        end
     end
     spareCounts, bagCounts = bagCounts, now
     matchWeaponItem()
@@ -411,6 +414,7 @@ local function update()
     if R.RefreshPreview then R.RefreshPreview() end
     if not (R.IsBuilt() and mod.active) or InCombatLockdown() then return end
     watchEnchants()
+    R.WatchFood()
     R.Layout()
     R.Show(R.Collect())
 end

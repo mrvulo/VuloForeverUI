@@ -175,7 +175,7 @@ local function foodMenu()
     local saved = R.FoodSaved()
     local entries = {
         { text = L["Food"], title = true },
-        { text = L["Automatic: the best for your role"],
+        { text = L["Automatic: last eaten, else the best"],
           checked = function() return saved == nil end, func = function() R.SetFood(nil) end },
     }
     local foods = R.BagFood()

@@ -296,8 +296,9 @@ local function collect()
             if fed then
                 -- any food buff counts, not only the ones named Well Fed
                 local line, color = status(auraAny(R.FOOD_BUFFS))
+                -- a click eats what the reminder row would eat
                 list[1] = { icon = C_Spell.GetSpellTexture(WELL_FED), spell = WELL_FED,
-                    name = fed, line = line, color = color }
+                    name = fed, line = line, color = color, eat = R.FoodToEat(ctx, role) }
             end
         end
         for _, it in ipairs(byCat[g.cat] or {}) do list[#list + 1] = it end
@@ -323,6 +324,8 @@ local function showTip(f)
         GameTooltip:AddLine(L["Left click: main hand, right click: off hand"], 0.6, 1, 0.6)
     elseif it.use then
         GameTooltip:AddLine(L["Left click: use"], 0.6, 1, 0.6)
+    elseif it.eat then
+        GameTooltip:AddLine(L["Left click: eat %s"]:format(C_Item.GetItemNameByID(it.eat) or ""), 0.6, 1, 0.6)
     end
     GameTooltip:Show()
 end
@@ -364,7 +367,7 @@ end
 
 local function bindCatcher(row)
     local it = row.data
-    if InCombatLockdown() or not (it and (it.cast or it.use)) then return false end
+    if InCombatLockdown() or not (it and (it.cast or it.use or it.eat)) then return false end
     -- Only a row the scroll frame shows whole: the button is not clipped, and
     -- over a half-hidden row it would reach past the list onto the role box
     -- or beyond the window, where a click would still use the item.
@@ -395,6 +398,9 @@ local function bindCatcher(row)
         else
             c:SetAttribute("*macrotext1", use)
         end
+    elseif it.eat then
+        c:SetAttribute("*type1", "macro")
+        c:SetAttribute("*macrotext1", "/use item:" .. it.eat)
     else
         return false
     end

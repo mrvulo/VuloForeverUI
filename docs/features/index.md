@@ -91,6 +91,7 @@ jemand ohne den Code prüfen kann.
 | F-79 | Taschen: „Am Rucksack anzeigen“ aus dem Währungsfenster zeigt die Währung in der Taschen-Kopfzeile | Taschen | gebaut | – |
 | F-80 | Angeln: Mausrad (auch mit Shift/Strg/Alt) als Angeltaste | Komfort | gebaut | – |
 | F-81 | Würfelliste: Gruppenbeute-Würfe als eine kompakte, verschiebbare Liste statt der Spiel-Fenster | Komfort | gebaut | – |
+| F-82 | Erinnerungen: Klick auf die Essens-Erinnerung isst deine Wahl, sonst das zuletzt gegessene, sonst das beste Essen | Erinnerungen | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -384,6 +385,14 @@ jemand ohne den Code prüfen kann.
 - **Wenn** der Schwimmer anbeißt und du am Rad drehst, **dann** holst du ein wie mit einer Taste; Strg + Rad wirft bei draußener Leine sofort neu aus (wenn „Schnell neu auswerfen“ an ist).
 - Bekannte Grenze: Rund eine Sekunde nach dem Auswerfen holt das Rad noch nicht ein; vorher beißt ohnehin nichts.
 
+### F-82 Essens-Erinnerung: was ein Klick isst
+- **Angenommen** du hast per Rechtsklick ein Essen gewählt und trägst es, **wenn** du die Essens-Erinnerung links anklickst, **dann** isst du genau dieses.
+- **Angenommen** „Automatisch“ ist gewählt und du hast zuletzt ein Essen gegessen, das dich satt gemacht hat, **wenn** die Erinnerung wiederkommt, **dann** zeigt sie dieses Essen mit Anzahl, und ein Klick isst es wieder — auch wenn es nicht das Rollen-Essen ist.
+- **Angenommen** davon ist nichts mehr in den Taschen, **dann** zeigt sie das beste Essen deiner Rolle; fehlt auch das, das beste bekannte Buff-Essen, das deine Stufe essen darf.
+- **Wenn** du im Fenster „Mögliche Buffs“ auf die Zeile „Satt“ fährst, **dann** nennt der Tooltip „Linksklick: <Essen> essen“, und ein Klick isst nach derselben Reihenfolge.
+- **Wenn** du nur trinkst, **dann** merkt sich die Erinnerung das Getränk nicht; isst und trinkst du gleichzeitig, merkt sie sich nur ein bekanntes Buff-Essen.
+- Bekannte Grenze: „Zuletzt gegessen“ zählt erst, wenn binnen 60 Sekunden nach dem Essen ein bekannter Essens-Buff kommt, und nur bei eingeschalteten Erinnerungen. Gilt pro Charakter.
+
 ### F-81 Würfelliste
 - **Angenommen** „Würfelliste“ ist an (Standard: aus), **wenn** in der Gruppe ein Gegenstand ausgewürfelt wird, **dann** erscheinen nicht mehr die Würfelfenster des Spiels, sondern eine Zeile in unserer Liste: Symbol mit Anzahl, Name in Qualitätsfarbe, „BoE“ bei Gegenständen, die beim Anlegen binden, ein Zeitbalken in Qualitätsfarbe mit Restzeit, rechts Bedarf, Gier (bzw. Transmog), Entzaubern (nur wenn möglich) und Passen.
 - **Wenn** du auf einen der Knöpfe klickst, **dann** würfelst du genau so wie im Spiel-Fenster; ein Seelengebunden-Gegenstand fragt wie gewohnt nach. Ein Knopf, den du nicht nehmen darfst, ist grau, und sein Tooltip nennt den Grund.
@@ -551,10 +560,10 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - Bekannte Grenze: Die rechte Seite ist immer der letzte gespeicherte Scan dieses Charakters, kein frischer.
 
 ### F-64 Erinnerungen: eigenes Essen wählen
-- **Angenommen** die Essens-Erinnerung steht in der Leiste, **wenn** du sie rechts anklickst, **dann** öffnet sich ein Menü mit „Automatisch: das Beste für deine Rolle“ und allen Speisen und Getränken aus deinen Taschen, je mit Symbol und Anzahl; die aktuelle Wahl hat einen Haken.
+- **Angenommen** die Essens-Erinnerung steht in der Leiste, **wenn** du sie rechts anklickst, **dann** öffnet sich ein Menü mit „Automatisch: zuletzt gegessen, sonst das Beste“ und allen Speisen und Getränken aus deinen Taschen, je mit Symbol und Anzahl; die aktuelle Wahl hat einen Haken.
 - **Wenn** du ein Essen wählst, **dann** zeigt die Erinnerung sofort dessen Symbol und Anzahl, und ein Linksklick isst genau dieses.
 - **Angenommen** das gewählte Essen ist aufgebraucht, **dann** zeigt die Erinnerung wieder das Essen der Rolle; kaufst du nach, gilt deine Wahl wieder.
-- **Wenn** du „Automatisch“ wählst, **dann** gilt wieder die Empfehlung der Rolle. Die Wahl gilt pro Charakter.
+- **Wenn** du „Automatisch“ wählst, **dann** gilt wieder die Reihenfolge aus F-82. Die Wahl gilt pro Charakter.
 - **Dann** nennt der Tooltip der Essens-Erinnerung den Rechtsklick; ein Rechtsklick auf andere Erinnerungen tut nichts.
 - Bekannte Grenze: Das Spiel führt Speisen und Getränke in einer Gruppe, im Menü stehen deshalb auch Getränke. Als satt gilt weiterhin nur ein Essens-Buff, den die Erinnerung kennt (Satt und die vier benannten); nach anderem Essen bleibt das Symbol stehen.
 

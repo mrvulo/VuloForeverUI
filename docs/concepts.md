@@ -405,7 +405,7 @@ scaled together as one mover (`classes_priest`).
 - **Possible buffs** (`Catalog.lua`, button on the options page): a plain,
   non-secure list of everything the character could put on itself — known
   class buffs, weapon slots + weapon items, then consumables grouped by the
-  client's own subclass names. Display only, no clicks. An item counts as
+  client's own subclass names. An item counts as
   active when an aura of its use-spell's name is up; food shows "Well Fed".
   Unreadable auras (combat) say so, never "active".
 - **Clicks in the list:** the rows are never secure. One secure button
@@ -416,8 +416,13 @@ scaled together as one mover (`classes_priest`).
   only when a usable rank is in the bags and none is on you; food = Well Fed.
   A right click on the food icon names any food or drink from the bags
   instead (`reminderFood` in the char DB; the player's call, 2026-11-14):
-  while carried it is the icon and the click, out of stock the role's
-  chain is back.
+  while carried it is the icon and the click. Without one (or out of
+  stock) the click eats, in order: the food last eaten (`reminderLastFood`,
+  learned when a food/drink stack drops and a food buff comes up within
+  60 s; two stacks at once = only a known buff food), the role's chain, the
+  best known buff food of any chain the level allows (`R.FoodToEat`; the
+  player's call, 2026-11-27). The "Well Fed" row of Possible buffs eats the
+  same.
   Default: dungeons and raids only.
 - **Row states:** due = missing or below `warnMinutes` (consumables too,
   from the aura's expiration) -> coloured, pulsing, clickable. With
