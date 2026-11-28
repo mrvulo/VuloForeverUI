@@ -826,3 +826,8 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
   Relog weg (F-68). Ursache: ein gemeinsamer Verlauf für alle Reiter, nur in
   den ersten zurückgeschrieben. Umgebaut auf einen Verlauf je Reiter, im
   Spiel noch zu bestätigen.
+- 2026-11-28: Gruppenrahmen des Spiels werfen `outOfRange`-Fehler „execution
+  tainted by VuloForeverUI“ (CompactUnitFrame.lua:1065, bei UNIT_FLAGS, nach
+  dem Edit Mode des Spiels). Ursache offen; `Core/TaintTrace.lua` schreibt
+  beim ersten verunreinigten Feld Aufrufstapel und Feldliste in den
+  Rückkanal (`kind = "taint"`).
