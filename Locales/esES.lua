@@ -2576,6 +2576,9 @@ local T = {
     ["Loot window"] = "Ventana de botín",
     ["Frame like the other windows"] = "Marco como las demás ventanas",
     ["The game's window frame with a round portrait and a name plate behind every item, like the character window. Off: the game's flat list."] = "El marco de ventana del juego con retrato redondo y una placa de nombre detrás de cada objeto, como la ventana de personaje. Desactivado: la lista plana del juego.",
+    ["Favorites"] = "Favoritos",
+    ["... and %d more"] = "… y %d más",
+    ["No one is online."] = "No hay nadie conectado.",
 }
 
 ns:RegisterLocale("esES", T)

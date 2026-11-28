@@ -2576,4 +2576,7 @@ ns:RegisterLocale("frFR", {
     ["Loot window"] = "Fenêtre de butin",
     ["Frame like the other windows"] = "Cadre comme les autres fenêtres",
     ["The game's window frame with a round portrait and a name plate behind every item, like the character window. Off: the game's flat list."] = "Le cadre de fenêtre du jeu avec un portrait rond et une plaque de nom derrière chaque objet, comme la fenêtre du personnage. Désactivé : la liste plate du jeu.",
+    ["Favorites"] = "Favoris",
+    ["... and %d more"] = "… et %d de plus",
+    ["No one is online."] = "Personne n'est en ligne.",
 })

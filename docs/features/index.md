@@ -101,6 +101,7 @@ jemand ohne den Code prüfen kann.
 | F-89 | Cooldown Manager: Restzeit-Farbe unter der Schwelle auch im Kampf | Cooldown Manager | gebaut | – |
 | F-90 | Cooldown Manager: Gesundheitsstein und Seelenstein als eine Zeile, fehlende Gegenstände ausblenden | Cooldown Manager | gebaut | – |
 | F-91 | Beutefenster im Look der anderen Fenster: Rahmen mit rundem Porträt, Namensschilder | Komfort | gebaut | – |
+| F-92 | Chat-Seitenleiste: wer online ist (Favoriten, Gilde, Freunde) im Tooltip | Chat | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -424,6 +425,12 @@ jemand ohne den Code prüfen kann.
 - Angenommen „Rahmen wie die anderen Fenster“ ist an, **wenn** du eine Leiche plünderst, **dann** steht das Beutefenster im Metallrahmen des Spiels mit Steinhintergrund, Titel „Gegenstände“ und rundem Porträt oben links (das tote Ziel, beim Angeln das Angel-Symbol, sonst ein Beutel); jeder Gegenstand hat ein Namensschild hinter dem Namen in Qualitätsfarbe.
 - **Wenn** du mit der Maus über eine Zeile fährst, **dann** leuchtet ihr Schild auf und der Tooltip kommt; Klicken, Würfeln, Bestätigen und das Schließen-Kreuz oben rechts verhalten sich wie beim Spiel-Fenster.
 - **Wenn** du den Schalter ausmachst, **dann** ist sofort wieder die flache Liste des Spiels da, ohne /reload. Schnell plündern und die Position aus dem Bearbeitungsmodus bleiben in beiden Looks gleich.
+
+### F-92 Wer online ist, im Tooltip der Chat-Seitenleiste
+- **Wenn** du mit der Maus über den Freunde-Knopf neben dem Chat fährst, **dann** zeigt der Tooltip unter „Favoriten“, „Gilde“ und „Freunde“ jeden, der online ist, mit der Anzahl hinter der Überschrift: Name in Klassenfarbe, bei Battle.net-Freunden der Accountname in Klammern, dahinter die Stufe, rechts das Gebiet; sortiert nach Gebiet.
+- **Wenn** du über den Gilde-Knopf fährst, **dann** steht dort der Gildenname und nur die Gildenliste.
+- **Dann** ist ein Gebiet, in dem du selbst gerade bist, grün; ein Battle.net-Freund in einem anderen Spiel steht mit Accountname und dem, was er dort tut.
+- **Wenn** niemand online ist, **dann** steht „Niemand ist online.“; mehr als 40 in einer Liste enden mit „… und N weitere“.
 
 ### F-85 Flugzeit im Tooltip der Flugkarte
 - **Angenommen** du hast eine Route schon einmal ganz geflogen, **wenn** du beim Flugmeister mit der Maus auf dieses Ziel fährst, **dann** steht unter dem Preis „Flugzeit“ mit der gemessenen Zeit in Weiß, z. B. „2:31“ — dieselbe, mit der die Flugleiste dann herunterzählt.

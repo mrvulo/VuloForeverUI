@@ -103,6 +103,143 @@ local function friendsOnline()
     return n
 end
 
+-- ---------------------------------------------------------------- who is on --
+--
+-- Hovering the friends button lists everyone online: Battle.net favourites,
+-- the guild, then the other friends. The guild button lists the guild alone.
+-- One row per person, name in class colour with the level behind it, the zone
+-- on the right (green when it is the player's own zone), sorted by zone.
+--
+-- Every value is read through CanRead before it is joined into a row: a row
+-- this client keeps from us is left out, never half-built.
+
+local MAX_ROWS = 40
+
+local function str(v)
+    return type(v) == "string" and ns.CanRead(v) and v ~= "" and v or nil
+end
+
+local function num(v)
+    return type(v) == "number" and ns.CanRead(v) and v or nil
+end
+
+local function row(name, token, level, zone, account)
+    local left = "|c" .. ns.ClassHex(token) .. name .. "|r"
+    if account then left = left .. " |cff82c5ff(" .. account .. ")|r" end
+    if level and level > 0 then left = left .. " |cffd0d0d0" .. level .. "|r" end
+    return { left = left, zone = zone or "", sort = (zone or "~") .. "\1" .. name }
+end
+
+local function bySort(a, b) return a.sort < b.sort end
+
+local function guildRows()
+    local out = {}
+    if not (IsInGuild and IsInGuild()) then return out end
+    local ok, total = pcall(GetNumGuildMembers)
+    total = ok and num(total)
+    if not total then return out end
+    for i = 1, total do
+        local okI, name, _, _, level, _, zone, _, _, online, _, class, _, _, mobile =
+            pcall(GetGuildRosterInfo, i)
+        name = okI and str(name)
+        if name and online == true and mobile ~= true then
+            if Ambiguate then name = Ambiguate(name, "guild") end
+            out[#out + 1] = row(name, str(class), num(level), str(zone))
+        end
+    end
+    table.sort(out, bySort)
+    return out
+end
+
+-- Battle.net friends split by the favourite star, character friends added to
+-- the second list. A Battle.net friend in another game shows the account and
+-- what they are doing there.
+local function friendRows()
+    local fav, rest = {}, {}
+    local ok, count = pcall(BNGetNumFriends)
+    count = ok and num(count) or 0
+    local BN = C_BattleNet
+    for i = 1, (BN and BN.GetFriendAccountInfo) and count or 0 do
+        local okA, acc = pcall(BN.GetFriendAccountInfo, i)
+        local game = okA and type(acc) == "table" and acc.gameAccountInfo
+        if game and game.isOnline == true then
+            local account = str(_G.BNet_GetBNetAccountName and _G.BNet_GetBNetAccountName(acc))
+                or str(acc.accountName) or str(acc.battleTag)
+            local char = str(game.characterName)
+            local r
+            if char then
+                r = row(char, ns.ClassTokenFromName(game.className), num(game.characterLevel),
+                    str(game.areaName), account)
+            elseif account then
+                r = { left = "|cff82c5ff" .. account .. "|r", zone = str(game.richPresence) or "",
+                      sort = "~~\1" .. account }
+            end
+            if r then
+                local list = (acc.isFavorite == true) and fav or rest
+                list[#list + 1] = r
+            end
+        end
+    end
+    local FL = C_FriendList
+    local okN, n = false, nil
+    if FL and FL.GetNumFriends then okN, n = pcall(FL.GetNumFriends) end
+    for i = 1, (okN and num(n)) or 0 do
+        local okF, info = pcall(FL.GetFriendInfoByIndex, i)
+        local name = okF and type(info) == "table" and info.connected == true and str(info.name)
+        if name then
+            rest[#rest + 1] = row(name, ns.ClassTokenFromName(info.className), num(info.level),
+                str(info.area))
+        end
+    end
+    table.sort(fav, bySort)
+    table.sort(rest, bySort)
+    return fav, rest
+end
+
+local function section(tt, title, list, here)
+    if #list == 0 then return end
+    if tt:NumLines() > 1 then GameTooltip_AddBlankLineToTooltip(tt) end
+    local a = ns.COLORS.accent
+    tt:AddLine(("%s |cff%02x%02x%02x(%d)|r"):format(title, a.r * 255, a.g * 255, a.b * 255, #list),
+        1, 1, 1)
+    for i = 1, math.min(#list, MAX_ROWS) do
+        local r = list[i]
+        local g = (here and r.zone == here) and 1 or 0.82
+        local rb = (here and r.zone == here) and 0.3 or 0.82
+        tt:AddDoubleLine(r.left, r.zone, 1, 1, 1, rb, g, rb)
+    end
+    if #list > MAX_ROWS then
+        tt:AddLine(L["... and %d more"]:format(#list - MAX_ROWS), 0.6, 0.6, 0.6)
+    end
+end
+
+-- Fills the tooltip for the friends ("friends") or the guild ("guild") button.
+function Sidebar.FillSocial(tt, which)
+    local here = str(GetRealZoneText and GetRealZoneText())
+    local before = tt:NumLines()
+    if which == "friends" then
+        local fav, rest = friendRows()
+        section(tt, L["Favorites"], fav, here)
+        section(tt, L["Guild"], guildRows(), here)
+        section(tt, L["Friends"], rest, here)
+    else
+        local gname = IsInGuild and IsInGuild() and str((GetGuildInfo("player")))
+        if gname then tt:AddLine(gname, 0.25, 1, 0.25) end
+        section(tt, L["Guild"], guildRows(), here)
+    end
+    if tt:NumLines() == before then
+        tt:AddLine(L["No one is online."], 0.6, 0.6, 0.6)
+    end
+end
+
+-- The guild roster the client hands out is only as fresh as its last
+-- request. Hovering asks for a new one (the client throttles the request
+-- itself), and when it arrives an open list is drawn again.
+local function socialKind(key)
+    if key == "showFriends" then return "friends" end
+    if key == "showGuild" then return "guild" end
+end
+
 -- ---------------------------------------------------------------- buttons --
 
 local BUTTONS = {
@@ -168,6 +305,19 @@ local function savedPos(db, key)
     return p.x, p.y
 end
 
+function Sidebar.ShowTooltip(b)
+    GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
+    -- Through the client's own title helper, not SetText with a colour:
+    -- this client refused both the classic r, g, b form and a colour
+    -- object in SetText's second slot. The helper picks the white title
+    -- colour itself and is what the client's own tooltips use.
+    GameTooltip_SetTitle(GameTooltip, (b.def and tooltipFor(b.def.key)) or "", nil, true)
+    local kind = b.def and socialKind(b.def.key)
+    Sidebar.hovered = kind and b or nil
+    if kind then Sidebar.FillSocial(GameTooltip, kind) end
+    GameTooltip:Show()
+end
+
 local function makeButton(parent, def)
     local b = CreateFrame("Button", nil, parent)
     b.def = def
@@ -226,15 +376,13 @@ local function makeButton(parent, def)
         -- Asked at hover time, not when the button was made: these are pooled
         -- and outlive any number of settings changes.
         if Chat.db().hideTooltipOnHover then return end
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        -- Through the client's own title helper, not SetText with a colour:
-        -- this client refused both the classic r, g, b form and a colour
-        -- object in SetText's second slot. The helper picks the white title
-        -- colour itself and is what the client's own tooltips use.
-        GameTooltip_SetTitle(GameTooltip, (self.def and tooltipFor(self.def.key)) or "", nil, true)
-        GameTooltip:Show()
+        if self.def and socialKind(self.def.key) and IsInGuild and IsInGuild() and GuildRoster then
+            pcall(GuildRoster)
+        end
+        Sidebar.ShowTooltip(self)
     end)
     b:SetScript("OnLeave", function()
+        Sidebar.hovered = nil
         tex:SetDesaturated(true)
         GameTooltip:Hide()
         if Chat.Fade then Chat.Fade.SetMouseOver(false) end
@@ -418,11 +566,17 @@ for _, e in ipairs({ "BN_FRIEND_ACCOUNT_ONLINE", "BN_FRIEND_ACCOUNT_OFFLINE",
     countEvents:RegisterEvent(e)
 end
 countEvents:RegisterEvent("PLAYER_REGEN_ENABLED")
+countEvents:RegisterEvent("GUILD_ROSTER_UPDATE")
 countEvents:SetScript("OnEvent", function(_, event)
     -- The secure + button is only placed out of combat; the end of a fight is
     -- where it catches up, and where a release made in combat hides it.
     if event == "PLAYER_REGEN_ENABLED" then Sidebar.SyncNewWindow(); return end
-    if Chat.mod.active then Sidebar.UpdateCounts() end
+    if not Chat.mod.active then return end
+    if event ~= "GUILD_ROSTER_UPDATE" then Sidebar.UpdateCounts() end
+    -- An open list is drawn again with the fresh answer. Never asks for a
+    -- new roster from here: the answer to that request is this event.
+    local h = Sidebar.hovered
+    if h and h:IsShown() and GameTooltip:IsOwned(h) then Sidebar.ShowTooltip(h) end
 end)
 
 -- ---------------------------------------------------------------- new window --

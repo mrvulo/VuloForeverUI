@@ -2576,4 +2576,7 @@ ns:RegisterLocale("ruRU", {
     ["Loot window"] = "Окно добычи",
     ["Frame like the other windows"] = "Рамка как у других окон",
     ["The game's window frame with a round portrait and a name plate behind every item, like the character window. Off: the game's flat list."] = "Рамка окна игры с круглым портретом и табличкой с названием за каждым предметом, как у окна персонажа. Выкл.: плоский список игры.",
+    ["Favorites"] = "Избранные",
+    ["... and %d more"] = "… и ещё %d",
+    ["No one is online."] = "Никого нет в сети.",
 })

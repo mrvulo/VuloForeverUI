@@ -752,6 +752,14 @@ scaled together as one mover (`classes_priest`).
   `FindCharacterIndexAtCoordinate`, and only lines carrying the `vfui-old`
   mark (the message's extra data) are asked. Nothing is written into the
   client's chat frame, and other links in old lines stay text.
+- **Who is online** (F-92, the player's wish 2026-11-28): hovering the
+  friends button in the side column lists Battle.net favourites, the guild,
+  then the other friends; the guild button lists the guild alone. Name in
+  class colour, account in brackets, level, zone on the right, sorted by
+  zone, at most 40 rows a list. Every value passes CanRead before it is
+  joined; an unreadable person is left out. Hover asks the client for a new
+  guild roster; `GUILD_ROSTER_UPDATE` redraws an open list and never asks
+  again (that would loop).
 - **The input line** wears ONE plain font object of ours
   (`VuloForeverUIChatInputFont`), on the box and on the strings in front of
   the text (channel name, language tag, prompt), so both always have the same

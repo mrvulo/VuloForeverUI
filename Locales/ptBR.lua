@@ -2539,4 +2539,7 @@ ns:RegisterLocale("ptBR", {
     ["Loot window"] = "Janela de saque",
     ["Frame like the other windows"] = "Moldura como as outras janelas",
     ["The game's window frame with a round portrait and a name plate behind every item, like the character window. Off: the game's flat list."] = "A moldura de janela do jogo com retrato redondo e uma placa de nome atrás de cada item, como a janela do personagem. Desligado: a lista plana do jogo.",
+    ["Favorites"] = "Favoritos",
+    ["... and %d more"] = "… e mais %d",
+    ["No one is online."] = "Ninguém está online.",
 })

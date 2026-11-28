@@ -2576,4 +2576,7 @@ ns:RegisterLocale("deDE", {
     ["Loot window"] = "Beutefenster",
     ["Frame like the other windows"] = "Rahmen wie die anderen Fenster",
     ["The game's window frame with a round portrait and a name plate behind every item, like the character window. Off: the game's flat list."] = "Der Fensterrahmen des Spiels mit rundem Porträt und einem Namensschild hinter jedem Gegenstand, wie beim Charakterfenster. Aus: die flache Liste des Spiels.",
+    ["Favorites"] = "Favoriten",
+    ["... and %d more"] = "… und %d weitere",
+    ["No one is online."] = "Niemand ist online.",
 })
