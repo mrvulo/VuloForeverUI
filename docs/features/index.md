@@ -95,6 +95,11 @@ jemand ohne den Code prüfen kann.
 | F-83 | Cooldown Manager: Leuchten bei vollen Ladungen; Proc-Leuchten auch für per ID hinzugefügte Zauber und gleich nach dem Hinzufügen | Cooldown Manager | gebaut | – |
 | F-84 | Cooldown Manager: Symbol nur zeigen, solange der Zauber wirkbar ist | Cooldown Manager | gebaut | – |
 | F-85 | Flugkarte: Tooltip eines Ziels nennt die Flugzeit, nach einem Flug die echte | Komfort | gebaut | – |
+| F-86 | Cooldown Manager: Buff-Phase auch im Kampf | Cooldown Manager | gebaut | – |
+| F-87 | Cooldown Manager: rot außer Reichweite, blau ohne genug Kraft | Cooldown Manager | gebaut | – |
+| F-88 | Cooldown Manager: Tasten von Haltungs-, Gestalt- und Verstohlenheitsleisten | Cooldown Manager | gebaut | – |
+| F-89 | Cooldown Manager: Restzeit-Farbe unter der Schwelle auch im Kampf | Cooldown Manager | gebaut | – |
+| F-90 | Cooldown Manager: Gesundheitsstein und Seelenstein als eine Zeile, fehlende Gegenstände ausblenden | Cooldown Manager | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -390,6 +395,28 @@ jemand ohne den Code prüfen kann.
 - **Wenn** du mit der Angel in der Hand einmal am Rad drehst, **dann** wirfst du genau einmal aus — die restlichen Rasten desselben Drehs holen die Leine nicht gleich wieder ein und werfen nicht neu aus.
 - **Wenn** der Schwimmer anbeißt und du am Rad drehst, **dann** holst du ein wie mit einer Taste; Strg + Rad wirft bei draußener Leine sofort neu aus (wenn „Schnell neu auswerfen“ an ist).
 - Bekannte Grenze: Rund eine Sekunde nach dem Auswerfen holt das Rad noch nicht ein; vorher beißt ohnehin nichts.
+
+### F-86 Cooldown Manager: Buff-Phase im Kampf
+- **Angenommen** eine Leiste „Stärkungszauber“ (Buffs), **dann** ist dort „Aktivphase zeigen“ von Anfang an an, auch bei einer schon bestehenden Leiste; andere Leisten bleiben aus (Symbole → Reichweite und Kraft, oder pro Zauber).
+- **Wenn** du im Kampf einen Buff bekommst, den eine solche Zeile beobachtet (z. B. Schlachtruf, Todeswunsch, ein Proc), **dann** zeigt das Symbol sofort den Buff: sein Symbol, einen umgekehrten Wischer, die Restzeit in der Mitte, Stapel unten links und einen Rand in der Farbe der aktiven Phase.
+- **Wenn** der Buff abläuft, **dann** zeigt das Symbol wieder die Abklingzeit des Zaubers; die Taste oben rechts bleibt die ganze Zeit sichtbar.
+- **Wenn** du pro Zauber „Aktivphase zeigen“ auf „Nein“ stellst, **dann** zeigt diese Zeile nur noch die Abklingzeit, auch auf der Buffs-Leiste.
+
+### F-87 Cooldown Manager: Reichweite und Kraft
+- **Angenommen** ein feindliches Ziel außer Reichweite eines Zaubers auf der Leiste, **dann** ist dessen Symbol rot getönt, auch im Kampf; gehst du näher heran, verschwindet das Rot.
+- **Wenn** dir Mana, Wut oder Energie für einen Zauber fehlt, **dann** ist sein Symbol blau; mit genug Kraft wieder normal.
+- **Dann** lassen sich beide Farben unter Symbole → Reichweite und Kraft abschalten; ohne Ziel bleibt nichts rot.
+
+### F-88 Cooldown Manager: Tasten in Haltungen
+- **Angenommen** „Taste zeigen“ ist an und ein Krieger hat Abfangen nur auf der Leiste der Berserkerhaltung (Taste 3), **dann** steht auf dem Symbol „3“; ebenso bei Druiden-Gestalten und der Verstohlenheitsleiste des Schurken.
+- **Dann** gewinnt eine Taste der normalen Hauptleiste, wenn der Zauber auf beiden liegt.
+
+### F-89 Cooldown Manager: Restzeit-Farbe im Kampf
+- **Angenommen** pro Zauber ist eine Schwelle von 5 Sekunden eingestellt, **wenn** die Abklingzeit im Kampf unter 5 Sekunden fällt, **dann** wird die Zahl in der Schwellenfarbe gefärbt und darüber wieder in der normalen Farbe.
+
+### F-90 Cooldown Manager: Gesundheitsstein und Seelenstein
+- **Wenn** du über „Zauber hinzufügen“ → Tränke & Gesundheitsstein „Gesundheitsstein (bester in den Taschen)“ wählst, **dann** steht eine Zeile, die immer den besten Gesundheitsstein zeigt, den du dabeihast (auch verbesserte), mit seiner Abklingzeit; ebenso „Seelenstein (bester in den Taschen)“.
+- **Angenommen** Symbole → „Gegenstände ausblenden, die du nicht dabeihast“ ist an, **wenn** du den letzten Stein benutzt, **dann** verschwindet das Symbol und die Leiste schließt die Lücke (im Kampf erst nach dem Kampf, bis dahin zeigt es die Abklingzeit); mit einem neuen Stein kommt es zurück.
 
 ### F-85 Flugzeit im Tooltip der Flugkarte
 - **Angenommen** du hast eine Route schon einmal ganz geflogen, **wenn** du beim Flugmeister mit der Maus auf dieses Ziel fährst, **dann** steht unter dem Preis „Flugzeit“ mit der gemessenen Zeit in Weiß, z. B. „2:31“ — dieselbe, mit der die Flugleiste dann herunterzählt.

@@ -181,6 +181,12 @@ end
 
 local function entryName(entry)
     if type(entry) ~= "table" then return "?" end
+    if entry.kind == "preset" then
+        local p = CM.PRESETS[entry.id]
+        if p and p.key == "healthstone" then return L["Healthstone (best in your bags)"] end
+        if p and p.key == "soulstone" then return L["Soulstone (best in your bags)"] end
+        return "?"
+    end
     local name
     if entry.kind == "item" then
         name = C_Item.GetItemNameByID and C_Item.GetItemNameByID(entry.id)
@@ -471,15 +477,8 @@ local function spellPage()
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Active phase"] },
-        { type = "desc", text = L["|cffaaaaaaWhile the buff of this spell is on you, the icon shows the buff running out instead of the cooldown coming back. Auras are closed to addons in combat on this client, so in a fight the icon falls back to the cooldown.|r"] },
-        { type = "toggle", label = L["Show the active phase"],
-          get = function() local e = entry(); return e and e.activePhase end,
-          set = function(_, v)
-              local e = entry()
-              if not e then return end
-              e.activePhase = v or nil
-              eApply()
-          end },
+        { type = "desc", text = L["|cffaaaaaaWhile the buff of this spell is on you, the icon shows the buff: its icon, a reverse swipe, the time left and its stacks, in combat too. Then the cooldown again.|r"] },
+        eTri(L["Show the active phase"], "activePhase"),
         eColor(L["Active phase color"], "activeColor", { r = 0.2, g = 0.9, b = 0.4 }),
         { type = "toggle", label = L["Glow while it is active"],
           get = function() local e = entry(); return e and e.activeGlow end,
@@ -704,7 +703,7 @@ function CM.RowMenu(barKey, index)
             if menu then ns:ShowPopupMenu(menu, "cursor") end
         end },
         { text = L["Active phase"], submenu = {
-            menuToggle(e, L["Show the active phase"], "activePhase"),
+            menuTri(e, L["Show the active phase"], "activePhase"),
             menuToggle(e, L["Glow while it is active"], "activeGlow"),
             menuColor(e, L["Active phase color"], "activeColor", { r = 0.2, g = 0.9, b = 0.4 }),
         } },
@@ -814,6 +813,13 @@ local function iconsPage()
           get = function() return bar().desaturateOnCooldown end,
           set = function(_, v) bar().desaturateOnCooldown = v; apply() end },
         toggle("castableOnly", L["Only while castable"], L["Shows the icon only while the spell can be cast right now: usable, off cooldown and with enough power. Its place on the bar stays free. Spells only, also ones added by id."]),
+        toggle("hideMissing", L["Hide items you do not carry"], L["Item rows, the healthstone and the soulstone take no place on the bar while none is in your bags."]),
+
+        { type = "spacer", height = 6 },
+        { type = "header", text = L["Range and power"] },
+        toggle("rangeColor", L["Red when out of range"], L["The icon turns red while your target is out of this spell's range. The client answers, so it works in combat too."]),
+        toggle("powerColor", L["Blue without enough power"], L["The icon turns blue while you lack the mana, rage or energy for the spell."]),
+        toggle("activePhase", L["Show the active phase"], L["While the buff of a spell is on you, its icon shows the buff running out, in combat too. On by default for a Buffs bar."]),
 
         { type = "spacer", height = 6 },
         { type = "header", text = L["Text"] },

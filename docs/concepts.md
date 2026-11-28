@@ -262,6 +262,31 @@ These apply to every visible change, in every module.
   bar cannot close up on a secret. Preview fades instead of hiding.
   The row menu root is at the 18 rows a menu shows unscrolled: further
   yes/no settings go into flyouts as a title plus three radios (`triRows`).
+- **Buff phase in combat** (`BuffPhase.lua`, the player's call 2026-11-28):
+  a row whose active phase is on (bar setting, row override; on by default
+  for the Buffs kind) carries a client aura container on "player", filter
+  HELPFUL, candidates = the row's ids plus the cooldown viewer's
+  `linkedSpellIDs` for that spell name. Its one button covers the icon with
+  the buff's icon, reverse swipe, time and stacks; key and charges sit on a
+  layer above it (`icon.top`). Out of combat Bar.lua still reads the aura for
+  border and stack glow.
+- **Range and power** (`Range.lua`): red layer alpha folded from
+  `IsSpellInRange` (nil = nothing to warn), blue vertex colour folded from
+  `IsSpellUsable`'s "not enough power". Spells are registered with
+  `EnableSpellRangeCheck`; `SPELL_RANGE_CHECK_UPDATE` repaints all, its id is
+  never used (may be secret).
+- **Threshold colour** is a step colour curve the client evaluates
+  (`CM.StepColorCurve`): on the text binding via `SetTextColorCurve`, in the
+  ticker via `EvaluateRemainingDuration`. The old readable comparison only
+  stays for a client without curves.
+- **Keys**: the stance/form/stealth pages (slots 73-120) answer to
+  ACTIONBUTTON1-12 like the main bar.
+- **Presets** (`kind = "preset"`, id 1 healthstone, 2 soulstone): resolve to
+  the best stone carried, else the best of the family for its icon; ids from
+  Forever's data. `hideMissing` drops item/preset rows with none in the bags
+  (restyle on BAG_UPDATE_DELAYED; in combat only after it, so buff
+  containers never change rows mid-fight). A new rank (SPELLS_CHANGED)
+  restyles too, out of combat, for the containers' id sets.
 
 ## Unit Frames (`Modules/UnitFrames/`)
 

@@ -93,6 +93,12 @@ CM.BAR_DEFAULTS = {
     procGlow    = false,         -- the client says the spell lit up
     chargeGlow  = false,         -- every charge of the spell is there
     castableOnly = false,        -- icon shows only while the spell can be cast
+    -- While the watched buff is on you the icon shows the buff, in combat
+    -- too (BuffPhase.lua). On by default for a bar of the Buffs kind.
+    activePhase = false,
+    rangeColor  = true,          -- red while the target is out of range
+    powerColor  = true,          -- blue while the power for it is missing
+    hideMissing = false,         -- item rows you carry none of take no place
     stackGlow   = 0,             -- glow from this many stacks on; 0 is off
     -- Overflow. Everything past maxIcons is handed to another bar, which is
     -- how a long list stays one readable row instead of a wall.
@@ -314,6 +320,7 @@ function CM.EnsureBars()
     for _, s in ipairs(STARTERS) do
         local bar = copyDefaults()
         bar.name, bar.iconSize, bar.seed = s.name, s.iconSize, s.seed
+        if s.seed == "TrackedBuff" then bar.activePhase = true end
         db.bars[s.key] = bar
         db.barOrder[#db.barOrder + 1] = s.key
     end
@@ -326,12 +333,16 @@ end
 -- of this file is filled again: without that, a saved bar from before a new
 -- setting existed reaches the paint pass with the key missing, and the first
 -- thing that reads bar.countColor.r takes the whole bar down.
-CM.DEFAULTS_VERSION = 3
+CM.DEFAULTS_VERSION = 4
 
 function CM.Bar(key)
     local db = CM.db()
     local bar = db.bars and db.bars[key]
     if bar and bar._filled ~= CM.DEFAULTS_VERSION then
+        -- 4: a Buffs bar from before shows its buffs (the reason it exists)
+        if (tonumber(bar._filled) or 0) < 4 and bar.seed == "TrackedBuff" and bar.activePhase == nil then
+            bar.activePhase = true
+        end
         ns:ApplyDefaults(bar, CM.BAR_DEFAULTS)
         bar._filled = CM.DEFAULTS_VERSION
     end
@@ -351,6 +362,7 @@ function CM.AddBar(name, seed)
     local key = "bar" .. db.nextBarId
     local bar = copyDefaults()
     bar.seed = seed
+    if seed == "TrackedBuff" then bar.activePhase = true end
     bar.name = name or (L["Bar"] .. " " .. tostring(db.nextBarId))
     db.bars[key] = bar
     db.barOrder[#db.barOrder + 1] = key
@@ -582,9 +594,30 @@ end
 
 function CM.InvalidateRanks() topRank = nil end
 
+-- Item families on one row: the best one you carry, else the best of them
+-- (for its icon). Forever's own item ids (wago.tools, product wowf), best
+-- first; the second of each pair is the stone a talent improves.
+CM.PRESETS = {
+    [1] = { key = "healthstone", items = { 19013, 19012, 9421, 19011, 19010, 5510, 19009, 19008, 5509,
+                                           19007, 19006, 5511, 19005, 19004, 5512 } },
+    [2] = { key = "soulstone",   items = { 16896, 16895, 16893, 16892, 5232 } },
+}
+
+local function bestCarried(preset)
+    for _, id in ipairs(preset.items) do
+        local ok, n = pcall(C_Item.GetItemCount, id)
+        if ok and ns.CanRead(n) and type(n) == "number" and n > 0 then return id end
+    end
+    return preset.items[1]
+end
+
 function CM.Resolve(entry)
     if type(entry) ~= "table" then return nil, "spell" end
     if entry.kind == "spell" then return CM.CurrentRank(entry.id), "spell" end
+    if entry.kind == "preset" then
+        local preset = CM.PRESETS[entry.id]
+        return preset and bestCarried(preset) or nil, "item"
+    end
     if entry.kind ~= "slot" then return entry.id, entry.kind end
     local itemID = GetInventoryItemID("player", entry.id)
     if type(itemID) == "number" then return itemID, "item" end
@@ -704,8 +737,11 @@ function mod:OnEnable()
     -- should show; the icons are rebuilt from the saved list either way.
     self:RegisterEvent("SPELLS_CHANGED", function()
         CM.candidates = nil
+        CM.BuffPhase.Invalidate()
         CM.InvalidateRanks()
-        CM.RequestRefresh()
+        -- A new rank is a new buff id: the buff phase containers are made
+        -- with their ids, so only a restyle reaches them -- out of combat.
+        if ns:InCombat() then CM.restyleAfterCombat = true else CM.RestyleAll() end
     end)
     self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", function()
         -- A different spec means a different list and a different icon count.
@@ -730,6 +766,10 @@ function mod:OnEnable()
         -- fight the client's own overlay answer is the whole truth again
         wipe(CM.procs)
         CM.UpdateVisibilityAll()
+        if CM.restyleAfterCombat then
+            CM.restyleAfterCombat = nil
+            CM.RestyleAll()
+        end
         CM.RequestRefresh()
     end)
     -- The cooldown of a spell we show has started or ended. The duration
@@ -744,7 +784,23 @@ function mod:OnEnable()
     self:RegisterEvent("UNIT_AURA", function(_, unit)
         if unit == "player" then CM.RequestRefresh() end
     end)
-    self:RegisterEvent("BAG_UPDATE_DELAYED", function() CM.RequestRefresh() end)
+    -- A bar that hides what you do not carry changes its icon COUNT with the
+    -- bags, and only a restyle makes or drops icons.
+    -- In a fight the icons stay where they are (a stone used up keeps its
+    -- slot, on cooldown): moving them would hand every buff container behind
+    -- it another row. The bar closes up when the fight ends.
+    self:RegisterEvent("BAG_UPDATE_DELAYED", function()
+        for _, key in ipairs(CM.db().barOrder or {}) do
+            local bar = CM.Bar(key)
+            if bar and bar.hideMissing then
+                if ns:InCombat() then CM.restyleAfterCombat = true else CM.RestyleAll(); return end
+            end
+        end
+        CM.RequestRefresh()
+    end)
+    -- The client watches the range of every spell we asked about and says
+    -- when an answer changed; which one may be secret, so all are asked again.
+    self:RegisterEvent("SPELL_RANGE_CHECK_UPDATE", function() CM.Range.UpdateAll() end)
 
     -- The key an icon shows comes from the action bars, so it is rebuilt when
     -- a binding or a slot changes -- and once at login, when both are known.
@@ -783,6 +839,7 @@ function mod:OnEnable()
     -- attached bar hangs off -- a target frame only exists while you have one.
     local function reconsider()
         CM.UpdateVisibilityAll()
+        CM.Range.UpdateAll()
         for key in pairs(CM.frames or {}) do CM.ApplyAnchor(key) end
     end
     self:RegisterEvent("PLAYER_TARGET_CHANGED", reconsider)

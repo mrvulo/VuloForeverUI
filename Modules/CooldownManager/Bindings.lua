@@ -16,10 +16,17 @@ CM.Bindings = B
 
 -- Action slot ranges and the binding command each one answers to. The main
 -- bar is the only one with a plain name; every other bar is a MULTIACTIONBAR
--- with its own numbering, and slots that belong to no bar (the paged copies
--- of the main bar) are simply absent here -- they have no binding at all.
+-- with its own numbering.
+-- The four pages a stance, form or stealth swaps onto the main bar (slots
+-- 73-120, one page of 12 each) are pressed with the main bar's own keys: a
+-- warrior's Berserker Stance page answers to ACTIONBUTTON1-12. A spell that
+-- lives only there still gets its key (the player's call, 2026-11-28).
 local RANGES = {
     { first = 1,   last = 12,  command = "ACTIONBUTTON%d" },
+    { first = 73,  last = 84,  command = "ACTIONBUTTON%d" },
+    { first = 85,  last = 96,  command = "ACTIONBUTTON%d" },
+    { first = 97,  last = 108, command = "ACTIONBUTTON%d" },
+    { first = 109, last = 120, command = "ACTIONBUTTON%d" },
     { first = 61,  last = 72,  command = "MULTIACTIONBAR1BUTTON%d" },
     { first = 49,  last = 60,  command = "MULTIACTIONBAR2BUTTON%d" },
     { first = 25,  last = 36,  command = "MULTIACTIONBAR3BUTTON%d" },
@@ -94,8 +101,9 @@ end
 function B.For(entry)
     if type(entry) ~= "table" or type(entry.id) ~= "number" then return nil end
     if entry.kind == "item" then return items[entry.id] end
-    -- A slot row is whatever item is worn there now.
-    if entry.kind == "slot" then
+    -- A slot row is whatever item is worn there now; a healthstone row the
+    -- stone you carry.
+    if entry.kind == "slot" or entry.kind == "preset" then
         local rid = CM.Resolve(entry)
         return rid and items[rid] or nil
     end

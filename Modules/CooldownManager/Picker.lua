@@ -158,7 +158,17 @@ function Picker.Menu(barKey)
         { text = L["Racial ability"], submenu = function()
             return emptyNote(racialEntries(), L["Nothing to add"]) end },
         { text = L["Potions & healthstone"], submenu = function()
-            return emptyNote(potionEntries(), L["Nothing to add"]) end },
+            -- the two stones as one row each, whichever rank you carry
+            local list = {
+                { text = L["Healthstone (best in your bags)"], icon = C_Item.GetItemIconByID(CM.PRESETS[1].items[1]),
+                  func = function() addAndRedraw(1, "preset") end },
+                { text = L["Soulstone (best in your bags)"], icon = C_Item.GetItemIconByID(CM.PRESETS[2].items[1]),
+                  func = function() addAndRedraw(2, "preset") end },
+                { separator = true },
+            }
+            for _, e in ipairs(potionEntries()) do list[#list + 1] = e end
+            return list
+        end },
         { separator = true },
     }
 

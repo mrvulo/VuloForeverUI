@@ -49,6 +49,12 @@ local function tickTimed()
                 icon.countdown:SetText("")
                 timed[icon] = nil
                 timedCount = timedCount - 1
+            elseif icon.colorCurve then
+                -- the client evaluates the curve; nothing here compares
+                pcall(function()
+                    local c = dur:EvaluateRemainingDuration(icon.colorCurve)
+                    icon.countdown:SetTextColor(c:GetRGB())
+                end)
             end
         end
     end
@@ -112,6 +118,31 @@ local function belowThreshold(duration, seconds)
     if not ok then return nil end
     return res
 end
+
+-- The same question asked the other way round: a colour curve over the
+-- remaining seconds, which the CLIENT evaluates -- in combat too, since no
+-- comparison is ever made in Lua (the player's call, 2026-11-28). The low
+-- colour up to the threshold, the normal one above it. Cached per colours and
+-- seconds: one curve serves every icon that asks the same.
+local curves = {}
+
+function CM.StepColorCurve(seconds, low, normal)
+    if not (C_CurveUtil and C_CurveUtil.CreateColorCurve and CreateColor) then return nil end
+    local key = table.concat({ seconds, low.r, low.g, low.b, normal.r, normal.g, normal.b }, ":")
+    if curves[key] ~= nil then return curves[key] or nil end
+    local ok, curve = pcall(C_CurveUtil.CreateColorCurve)
+    if not ok or not curve then curves[key] = false; return nil end
+    local l = CreateColor(low.r, low.g, low.b, 1)
+    local n = CreateColor(normal.r, normal.g, normal.b, 1)
+    curve:AddPoint(0, l)
+    curve:AddPoint(seconds, l)
+    curve:AddPoint(seconds + 0.01, n)
+    curve:AddPoint(86400, n)
+    curves[key] = curve
+    return curve
+end
+
+local TEXT_PROP = Enum.DurationTextBindingProperty and Enum.DurationTextBindingProperty.RemainingDuration
 
 -- The file behind a sound name, from shared media. An unknown name plays
 -- nothing rather than the wrong thing.
@@ -185,13 +216,21 @@ local function makeIcon(parent, index)
     text:SetPoint("CENTER", b, "CENTER", 0, 0)
     icon.countdown = text
 
-    local charges = b:CreateFontString(nil, "OVERLAY")
+    -- The key and the charges ride on a layer above everything else on the
+    -- icon, the buff phase button included (BuffPhase.lua): a running buff
+    -- must not hide which key casts the spell.
+    local top = CreateFrame("Frame", nil, b)
+    top:SetAllPoints(b)
+    top:SetFrameLevel((cd:GetFrameLevel() or 1) + 6)
+    icon.top = top
+
+    local charges = top:CreateFontString(nil, "OVERLAY")
     charges:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -2, 2)
     icon.charges = charges
 
     -- Top left is the key that casts it, bottom left the number of them you
     -- carry or the stacks you have. Neither is ever about the fight.
-    local keybind = b:CreateFontString(nil, "OVERLAY")
+    local keybind = top:CreateFontString(nil, "OVERLAY")
     keybind:SetPoint("TOPRIGHT", b, "TOPRIGHT", -2, -2)
     icon.keybind = keybind
 
@@ -386,10 +425,25 @@ end
 
 -- The rows whose talent conditions the current build meets. A row that steps
 -- aside takes no slot: the bar closes up, and the cap counts what is shown.
+-- An item row (a healthstone too) you carry none of takes no place when the
+-- bar says so. Bag contents are our own data, never secret.
+local function carried(entry)
+    if entry.kind ~= "item" and entry.kind ~= "preset" then return true end
+    local rid = CM.Resolve(entry)
+    if type(rid) ~= "number" then return false end
+    local ok, n = pcall(C_Item.GetItemCount, rid)
+    return not (ok and ns.CanRead(n) and type(n) == "number" and n <= 0)
+end
+
 function CM.Shown(bar)
     local list = CM.Spells(bar)
-    local pass = CM.Talents and CM.Talents.Pass
-    if not pass then return list end
+    local talents = CM.Talents and CM.Talents.Pass
+    local hide = bar.hideMissing
+    if not talents and not hide then return list end
+    local function pass(e)
+        if talents and not talents(e) then return false end
+        return not hide or carried(e)
+    end
     local out
     for i = 1, #list do
         if not pass(list[i]) then
@@ -539,11 +593,13 @@ function CM.StyleFrame(frame, bar, list, owned)
         -- the countdown's place.
         local px = math.floor((icon.button:GetWidth() or size) + 0.5)
         CM.AntiClip.Style(icon, bar, entry, px > 0 and px or size)
+        CM.BuffPhase.Style(icon, bar, entry, px > 0 and px or size, shape)
     end
     for i = count + 1, #frame.icons do
         frame.icons[i].button:Hide()
         CM.Glow.Clear(frame.icons[i])
         CM.AntiClip.Release(frame.icons[i])
+        CM.BuffPhase.Release(frame.icons[i])
     end
 
     CM.PaintFrame(frame, bar, list, frame.ownedCount)
@@ -724,8 +780,9 @@ local function paintTexts(bar, icon, entry, aura)
     end
 
     if CM.Val(bar, entry, "showCount") ~= false then
-        if entry.kind == "item" then
-            local ok, n = pcall(C_Item.GetItemCount, entry.id)
+        local rid, rkind = CM.Resolve(entry)
+        if rkind == "item" and entry.kind ~= "slot" and type(rid) == "number" then
+            local ok, n = pcall(C_Item.GetItemCount, rid)
             local readable = ok and ns.CanRead(n) and type(n) == "number"
             icon.count:SetText((readable and n > 1) and tostring(n) or "")
         elseif type(aura) == "table" then
@@ -798,12 +855,18 @@ local function paintIcon(bar, icon, entry)
     -- the row is about while it lasts.
     local aura, auraDuration
     -- The buff on the player is the rank that was cast: the current one.
-    if entry.activePhase and rkind == "spell" then aura, auraDuration = activeAura(rid) end
+    if CM.Val(bar, entry, "activePhase") and rkind == "spell" then aura, auraDuration = activeAura(rid) end
     local active = type(auraDuration) ~= "nil"
 
     local duration, kept = auraDuration, false
     if not active then duration, kept = applyCooldown(icon, entry) end
     local isZero
+    do
+        local secs = entry.thresholdTime
+        icon.colorCurve = (type(secs) == "number" and secs > 0)
+            and CM.StepColorCurve(secs, entry.thresholdColor or { r = 1, g = 0.3, b = 0.3 }, bar.countdownColor)
+            or nil
+    end
 
     if type(duration) ~= "nil" and icon.cooldown.SetCooldownFromDurationObject then
         -- Protected function on this client. On our own frame it should be
@@ -814,6 +877,11 @@ local function paintIcon(bar, icon, entry)
         local binding = ensureBinding(icon)
         if binding then
             binding:SetDuration(duration)
+            if binding.SetTextColorCurve and icon.colorCurve and TEXT_PROP then
+                pcall(binding.SetTextColorCurve, binding, icon.colorCurve, TEXT_PROP)
+            elseif binding.ClearTextColorCurve then
+                pcall(binding.ClearTextColorCurve, binding)
+            end
         else
             driveText(icon, duration)
         end
@@ -838,7 +906,9 @@ local function paintIcon(bar, icon, entry)
     local cc = bar.countdownColor
     icon.countdown:SetTextColor(cc.r, cc.g, cc.b)
     local seconds = entry.thresholdTime
-    if type(seconds) == "number" and seconds > 0 and type(duration) ~= "nil" then
+    -- With a curve the client colours it from now on (ticker or binding);
+    -- the old question below is only for a client without curves.
+    if type(seconds) == "number" and seconds > 0 and type(duration) ~= "nil" and not icon.colorCurve then
         local low = belowThreshold(duration, seconds)
         if type(low) ~= "nil" then
             local tc = entry.thresholdColor or { r = 1, g = 0.3, b = 0.3 }
@@ -925,6 +995,7 @@ local function paintIcon(bar, icon, entry)
     end
 
     paintTexts(bar, icon, entry, aura)
+    CM.Range.Paint(bar, icon, entry, rid, rkind)
     icon.ready = isZero
     icon.usable = nil
     if rkind == "spell" and CM.Val(bar, entry, "castableOnly") then
