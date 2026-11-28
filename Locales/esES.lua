@@ -2573,6 +2573,9 @@ local T = {
     ["Roll ended"] = "Tirada terminada",
     ["Example item %d"] = "Objeto de ejemplo %d",
     ["The loot history does not know this roll."] = "El historial de botín no conoce esta tirada.",
+    ["Loot window"] = "Ventana de botín",
+    ["Frame like the other windows"] = "Marco como las demás ventanas",
+    ["The game's window frame with a round portrait and a name plate behind every item, like the character window. Off: the game's flat list."] = "El marco de ventana del juego con retrato redondo y una placa de nombre detrás de cada objeto, como la ventana de personaje. Desactivado: la lista plana del juego.",
 }
 
 ns:RegisterLocale("esES", T)

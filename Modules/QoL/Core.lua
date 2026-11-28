@@ -192,6 +192,8 @@ local mod = ns:RegisterModule("qol", {
         quickLootDelay = 0.05,
         autoOpen       = false,
         autoFillDelete = true,
+        -- the loot window in the look of the other windows (LootLook.lua)
+        lootClassic    = true,
 
         -- ---------------------------------------------------------- loot roll
         -- The group loot rolls as one list instead of the client's windows

@@ -2536,4 +2536,7 @@ ns:RegisterLocale("ptBR", {
     ["Roll ended"] = "Rolagem encerrada",
     ["Example item %d"] = "Item de exemplo %d",
     ["The loot history does not know this roll."] = "O histórico de saque não conhece esta rolagem.",
+    ["Loot window"] = "Janela de saque",
+    ["Frame like the other windows"] = "Moldura como as outras janelas",
+    ["The game's window frame with a round portrait and a name plate behind every item, like the character window. Off: the game's flat list."] = "A moldura de janela do jogo com retrato redondo e uma placa de nome atrás de cada item, como a janela do personagem. Desligado: a lista plana do jogo.",
 })

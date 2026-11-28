@@ -2573,4 +2573,7 @@ ns:RegisterLocale("frFR", {
     ["Roll ended"] = "Jet terminé",
     ["Example item %d"] = "Objet d'exemple %d",
     ["The loot history does not know this roll."] = "L'historique du butin ne connaît pas ce jet.",
+    ["Loot window"] = "Fenêtre de butin",
+    ["Frame like the other windows"] = "Cadre comme les autres fenêtres",
+    ["The game's window frame with a round portrait and a name plate behind every item, like the character window. Off: the game's flat list."] = "Le cadre de fenêtre du jeu avec un portrait rond et une plaque de nom derrière chaque objet, comme la fenêtre du personnage. Désactivé : la liste plate du jeu.",
 })

@@ -197,6 +197,28 @@ function ns.ClassColor(token)
     return rcc and rcc[token] or nil
 end
 
+-- Friends and guild lists hand over the class as its localised name, never as
+-- the token. Both genders map back, built once on first use (the tables only
+-- exist once the client's strings are loaded).
+local classByName
+function ns.ClassTokenFromName(name)
+    if type(name) ~= "string" or not ns.CanRead(name) then return nil end
+    if not classByName then
+        classByName = {}
+        for _, list in ipairs({ _G.LOCALIZED_CLASS_NAMES_MALE, _G.LOCALIZED_CLASS_NAMES_FEMALE }) do
+            for token, n in pairs(list or {}) do classByName[n] = token end
+        end
+    end
+    return classByName[name]
+end
+
+-- "ffrrggbb" of a class colour, for a |c wrap; light grey when unknown.
+function ns.ClassHex(token)
+    local c = token and ns.ClassColor(token)
+    if not (c and type(c.r) == "number") then return "ffd0d0d0" end
+    return ("ff%02x%02x%02x"):format(c.r * 255, c.g * 255, c.b * 255)
+end
+
 local function applyGlobalFont()
     local db = ns.db and ns.db.global and ns.db.global.fonts
     if not db then return end

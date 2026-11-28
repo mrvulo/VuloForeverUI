@@ -486,6 +486,14 @@ scaled together as one mover (`classes_priest`).
 
 - Quick loot hides the client loot window by **scale** during the run and
   restores it when something is left (full bags, roll, confirmation).
+- **Loot window look** (F-91, `LootLook.lua`, `lootClassic`, default on, the
+  player's call 2026-11-28: "like the other windows"): the client's loot
+  window is the flat retail list; we paint it like the client's other windows.
+  Our own frame from `PortraitFrameTemplateNoCloseButton` sits behind it and
+  reaches 38 px above it (portrait + title over nothing of the list); the
+  client's ground, border, title and row cards go to alpha 0; each row gets a
+  name plate (`UI-QuestItemNameFrame`) in a weak side table. The client keeps
+  place (Edit Mode), rows, clicks and fades; its close button only moves up.
 - **Stack split at a merchant** (`StackSplit.lua`, `stackSplit.merchantBuy`):
   the client's own split frame, opened by shift-click, gets its cap raised to
   what pays, what the merchant has and what fits (free slots + partial stacks

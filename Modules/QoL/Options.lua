@@ -235,6 +235,10 @@ local function lootPage()
         slider(nil, "quickLootDelay", L["Between two slots"], 0.02, 0.2, 0.01,
             L["The server answers each slot on its own; a burst past its limit loses the last ones."]),
 
+        { type = "header", text = L["Loot window"] },
+        toggle(nil, "lootClassic", L["Frame like the other windows"],
+            L["The game's window frame with a round portrait and a name plate behind every item, like the character window. Off: the game's flat list."]),
+
         { type = "header", text = L["Containers"] },
         toggle(nil, "autoOpen", L["Open what can be opened"],
             L["One container at a time, never while a merchant, the mail or the bank is open, and never while you are casting -- opening something cancels a cast without saying so."]),

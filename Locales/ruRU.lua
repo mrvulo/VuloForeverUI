@@ -2573,4 +2573,7 @@ ns:RegisterLocale("ruRU", {
     ["Roll ended"] = "Бросок завершён",
     ["Example item %d"] = "Пример предмета %d",
     ["The loot history does not know this roll."] = "Журнал добычи не знает этот бросок.",
+    ["Loot window"] = "Окно добычи",
+    ["Frame like the other windows"] = "Рамка как у других окон",
+    ["The game's window frame with a round portrait and a name plate behind every item, like the character window. Off: the game's flat list."] = "Рамка окна игры с круглым портретом и табличкой с названием за каждым предметом, как у окна персонажа. Выкл.: плоский список игры.",
 })

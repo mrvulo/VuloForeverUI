@@ -237,6 +237,7 @@ Modules\QoL\Mail.lua
 Modules\QoL\Vendor.lua
 Modules\QoL\Junk.lua
 Modules\QoL\Loot.lua
+Modules\QoL\LootLook.lua
 Modules\QoL\LootRoll.lua
 Modules\QoL\LootRollList.lua
 Modules\QoL\LootRollHistory.lua

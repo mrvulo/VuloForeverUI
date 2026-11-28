@@ -100,6 +100,7 @@ jemand ohne den Code prüfen kann.
 | F-88 | Cooldown Manager: Tasten von Haltungs-, Gestalt- und Verstohlenheitsleisten | Cooldown Manager | gebaut | – |
 | F-89 | Cooldown Manager: Restzeit-Farbe unter der Schwelle auch im Kampf | Cooldown Manager | gebaut | – |
 | F-90 | Cooldown Manager: Gesundheitsstein und Seelenstein als eine Zeile, fehlende Gegenstände ausblenden | Cooldown Manager | gebaut | – |
+| F-91 | Beutefenster im Look der anderen Fenster: Rahmen mit rundem Porträt, Namensschilder | Komfort | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -417,6 +418,12 @@ jemand ohne den Code prüfen kann.
 ### F-90 Cooldown Manager: Gesundheitsstein und Seelenstein
 - **Wenn** du über „Zauber hinzufügen“ → Tränke & Gesundheitsstein „Gesundheitsstein (bester in den Taschen)“ wählst, **dann** steht eine Zeile, die immer den besten Gesundheitsstein zeigt, den du dabeihast (auch verbesserte), mit seiner Abklingzeit; ebenso „Seelenstein (bester in den Taschen)“.
 - **Angenommen** Symbole → „Gegenstände ausblenden, die du nicht dabeihast“ ist an, **wenn** du den letzten Stein benutzt, **dann** verschwindet das Symbol und die Leiste schließt die Lücke (im Kampf erst nach dem Kampf, bis dahin zeigt es die Abklingzeit); mit einem neuen Stein kommt es zurück.
+
+### F-91 Beutefenster im Look der anderen Fenster
+
+- Angenommen „Rahmen wie die anderen Fenster“ ist an, **wenn** du eine Leiche plünderst, **dann** steht das Beutefenster im Metallrahmen des Spiels mit Steinhintergrund, Titel „Gegenstände“ und rundem Porträt oben links (das tote Ziel, beim Angeln das Angel-Symbol, sonst ein Beutel); jeder Gegenstand hat ein Namensschild hinter dem Namen in Qualitätsfarbe.
+- **Wenn** du mit der Maus über eine Zeile fährst, **dann** leuchtet ihr Schild auf und der Tooltip kommt; Klicken, Würfeln, Bestätigen und das Schließen-Kreuz oben rechts verhalten sich wie beim Spiel-Fenster.
+- **Wenn** du den Schalter ausmachst, **dann** ist sofort wieder die flache Liste des Spiels da, ohne /reload. Schnell plündern und die Position aus dem Bearbeitungsmodus bleiben in beiden Looks gleich.
 
 ### F-85 Flugzeit im Tooltip der Flugkarte
 - **Angenommen** du hast eine Route schon einmal ganz geflogen, **wenn** du beim Flugmeister mit der Maus auf dieses Ziel fährst, **dann** steht unter dem Preis „Flugzeit“ mit der gemessenen Zeit in Weiß, z. B. „2:31“ — dieselbe, mit der die Flugleiste dann herunterzählt.

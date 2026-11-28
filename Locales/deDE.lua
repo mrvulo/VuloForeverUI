@@ -2573,4 +2573,7 @@ ns:RegisterLocale("deDE", {
     ["Roll ended"] = "Wurf beendet",
     ["Example item %d"] = "Beispielgegenstand %d",
     ["The loot history does not know this roll."] = "Der Beuteverlauf kennt diesen Wurf nicht.",
+    ["Loot window"] = "Beutefenster",
+    ["Frame like the other windows"] = "Rahmen wie die anderen Fenster",
+    ["The game's window frame with a round portrait and a name plate behind every item, like the character window. Off: the game's flat list."] = "Der Fensterrahmen des Spiels mit rundem Porträt und einem Namensschild hinter jedem Gegenstand, wie beim Charakterfenster. Aus: die flache Liste des Spiels.",
 })
