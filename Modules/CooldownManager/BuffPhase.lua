@@ -86,6 +86,19 @@ local function idSet(entry, rid)
     return set
 end
 
+-- The ids a list of chosen buffs answers to, linked ones included (BuffGlow).
+function BuffPhase.IdsFor(ids)
+    local set = {}
+    if (not linked or stale) and not ns:InCombat() then buildLinked(); stale = nil end
+    for id in pairs(ids) do
+        addId(set, id)
+        local name = C_Spell.GetSpellName(id)
+        local more = linked and type(name) == "string" and linked[name]
+        if more then for other in pairs(more) do set[other] = true end end
+    end
+    return set
+end
+
 local function setKey(set)
     local ids = {}
     for id in pairs(set) do ids[#ids + 1] = id end
@@ -111,6 +124,7 @@ local function initializer(o)
             pcall(tex.AddMaskTexture, tex, m)
         end
         pcall(button.SetIcon, button, tex)
+        if o.textOnly then tex:SetAlpha(0) end
 
         local cd = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
         cd:SetAllPoints(button)
@@ -145,7 +159,9 @@ local function initializer(o)
 
         -- the border in the active colour: the phase reads at a glance
         local c = o.border
-        if o.shapedBorder then
+        if o.textOnly then
+            -- numbers only: no ring, no edges
+        elseif o.shapedBorder then
             local ring = top:CreateTexture(nil, "OVERLAY")
             ring:SetTexture(o.shapedBorder)
             ring:SetPoint("TOPLEFT", button, "TOPLEFT", -o.inset, o.inset)
@@ -191,7 +207,8 @@ function BuffPhase.Style(icon, bar, entry, size, shape)
         zoom = bar.iconZoom or 0,
         mask = shape and shape.mask or nil,
         shapedBorder = shape and shape.border or nil,
-        swipe = CM.Val(bar, entry, "showSwipe") ~= false,
+        swipe = CM.Val(bar, entry, "showSwipe") ~= false and not bar.textOnly,
+        textOnly = bar.textOnly and true or false,
         swipeAlpha = CM.Val(bar, entry, "swipeAlpha") or 0.7,
         countdown = CM.Val(bar, entry, "showCountdown") ~= false and not entry.antiClip,
         countdownSize = bar.countdownSize or 12,
@@ -210,7 +227,7 @@ function BuffPhase.Style(icon, bar, entry, size, shape)
         tostring(o.swipe), o.swipeAlpha, tostring(o.countdown), o.countdownSize,
         o.countdownColor.r, o.countdownColor.g, o.countdownColor.b, tostring(o.count), o.countSize,
         o.countColor.r, o.countColor.g, o.countColor.b, ac.r, ac.g, ac.b, o.borderSize, o.inset,
-        tostring(o.glow), o.glowType, setKey(set) }, ":")
+        tostring(o.glow), o.glowType, tostring(o.textOnly), setKey(set) }, ":")
     if icon.buffTimer then icon.buffTimer:Cancel(); icon.buffTimer = nil end
     if icon.buff and icon.buffKey == key then return end
     -- A container is a frame for good: dragging a slider would leave one per
@@ -248,3 +265,4 @@ build = function(icon, o, set, key)
 end
 
 function BuffPhase.Release(icon) release(icon) end
+BuffPhase.SetKey = function(set) return setKey(set) end

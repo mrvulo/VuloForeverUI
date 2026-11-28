@@ -288,6 +288,27 @@ These apply to every visible change, in every module.
   containers never change rows mid-fight). A new rank (SPELLS_CHANGED)
   restyles too, out of combat, for the containers' id sets.
 
+- **One page per bar** (the player's call, 2026-11-28): three tabs, "Leisten"
+  (id `spells`: every section of a bar on one grid page), "Pro Zauber" and
+  "Leistenleuchten". The live bar above every tab is the spell list: drag
+  orders, the plus adds, a click opens the row menu (on the glows tab: the
+  buff list). No separate order or add rows on the page.
+- **Row menu root stays at 18 rows**: swipe, its kind, GCD and the number
+  share one flyout; "without the buff" rides in the active phase flyout.
+- **Without the buff** (`inactive` = show | dim | hide): only for rows with
+  the active phase. The row's own art (texture, bg, border) and body
+  (cooldown, number, corner texts) take an alpha; the client's aura button of
+  BuffPhase covers the slot while the buff is up. The slot never closes up:
+  which buff is up is secret in a fight, so "keep buffs in place" is always on.
+- **Bar glows** (`BuffGlow.lua`): `entry.glowBuffs = { [spellID] = true }`,
+  matched by name. One aura container per glowing place whose only content
+  is the glow, so the client decides presence. Action buttons are found by
+  the spell name in `button.action`, out of combat (rebuilt on slot/page
+  events and after combat).
+- **Swipe kinds** (`swipeStyle`): dark sheet, light sheet, or only the edge
+  (`SetDrawEdge`). "Hide the global cooldown" = `GetSpellCooldownDuration(id,
+  true)`. "Charges at zero hidden" folds that same duration's `IsZero`.
+
 ## Unit Frames (`Modules/UnitFrames/`)
 
 - Dispellable buffs on the target (`DispelGlow.lua`): the player's call

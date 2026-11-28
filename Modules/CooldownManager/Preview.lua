@@ -193,7 +193,12 @@ local function wireDrag(index, icon)
             menu = CM.TalentMenu and CM.TalentMenu(key, self.vfIndex)
             owner = icon.texture
         elseif button == "LeftButton" then
-            menu = CM.RowMenu and CM.RowMenu(key, self.vfIndex)
+            -- On the bar glows tab a click picks the buffs that light it up.
+            if ns.UI.currentTab == "glows" then
+                menu = CM.GlowMenu and CM.GlowMenu(key, self.vfIndex)
+            else
+                menu = CM.RowMenu and CM.RowMenu(key, self.vfIndex)
+            end
             owner = self
         end
         if menu then ns:ShowPopupMenu(menu, self, owner, true) end
@@ -222,7 +227,9 @@ local function wireDrag(index, icon)
             -- What the mouse does here, under the spell's own tooltip.
             if (self.vfIndex or 0) <= (previewBar.ownedCount or 0) and GameTooltip:IsOwned(self) then
                 GameTooltip:AddLine(" ")
-                GameTooltip:AddLine(L["Left-click: settings. Right-click: talent conditions. Drag: move."],
+                GameTooltip:AddLine(ns.UI.currentTab == "glows"
+                    and L["Left-click: the buffs that make it glow. Drag: move."]
+                    or L["Left-click: settings. Right-click: talent conditions. Drag: move."],
                     0.6, 0.6, 0.6, true)
                 GameTooltip:Show()
             end

@@ -51,7 +51,9 @@ end
 function Range.Paint(bar, icon, entry, rid, rkind)
     local spell = rkind == "spell" and type(rid) == "number" and rid or nil
 
-    local wantRange = spell and CM.Val(bar, entry, "rangeColor") ~= false
+    -- No red over art that is hidden or faded (numbers only, a buff row
+    -- without its buff): the red square would be all that is left.
+    local wantRange = spell and (icon.artAlpha or 1) >= 1 and CM.Val(bar, entry, "rangeColor") ~= false
     if wantRange then
         local t = layer(icon)
         -- the layer follows the icon's shape, like the icon art does

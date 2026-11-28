@@ -109,9 +109,138 @@ local function buildProc(button)
     return f
 end
 
-local BUILD = { pixel = buildPixel, shine = buildShine, proc = buildProc }
+-- Four sparks that run round the edge, one from each corner, like the client's
+-- autocast marker. One animation group per spark; the legs are re-measured
+-- when the icon changes size, since a translation is in points.
+local SPARK = "Interface\\AddOns\\VuloForeverUI\\Media\\textures\\sparkle-dot"
+local CORNERS = { "TOPLEFT", "TOPRIGHT", "BOTTOMRIGHT", "BOTTOMLEFT" }
+local STEPS = { { 1, 0 }, { 0, -1 }, { -1, 0 }, { 0, 1 } }   -- clockwise, from each corner
 
-Glow.TYPES = { "none", "pixel", "shine", "proc" }
+-- Measured on the button's own size: a client aura button has a size from
+-- its initializer before it has a place, so the anchored frame may not.
+local function measureSparks(f)
+    local b = f:GetParent()
+    local w, h = b:GetWidth() or 0, b:GetHeight() or 0
+    if w <= 0 or (f.w == w and f.h == h) then return end
+    f.w, f.h = w, h
+    local size = math.max(6, math.floor(w * 0.3))
+    for i, legs in ipairs(f.legs) do
+        f.textures[i]:SetSize(size, size)
+        for j, a in ipairs(legs) do
+            local step = STEPS[((i + j - 2) % 4) + 1]
+            a:SetOffset(step[1] * w, step[2] * h)
+        end
+    end
+end
+
+local function playAll(self) for _, g in ipairs(self.list) do g:Play() end end
+local function stopAll(self) for _, g in ipairs(self.list) do g:Stop() end end
+local function anyPlaying(self) return self.list[1]:IsPlaying() end
+
+local function buildSparkle(button)
+    local f = CreateFrame("Frame", nil, button)
+    f:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
+    f:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 0)
+    f:SetFrameLevel((button:GetFrameLevel() or 1) + 4)
+    f.textures, f.legs = {}, {}
+    local groups = {}
+    for i, corner in ipairs(CORNERS) do
+        local t = f:CreateTexture(nil, "OVERLAY")
+        t:SetTexture(SPARK)
+        t:SetBlendMode("ADD")
+        t:SetPoint("CENTER", f, corner, 0, 0)
+        f.textures[i] = t
+        local ag = t:CreateAnimationGroup()
+        ag:SetLooping("REPEAT")
+        f.legs[i] = {}
+        for j = 1, 4 do
+            local a = ag:CreateAnimation("Translation")
+            a:SetOrder(j)
+            a:SetDuration(0.45)
+            f.legs[i][j] = a
+        end
+        groups[i] = ag
+    end
+    f.anim = { list = groups, Play = playAll, Stop = stopAll, IsPlaying = anyPlaying }
+    button:HookScript("OnSizeChanged", function() measureSparks(f) end)
+    measureSparks(f)
+    return f
+end
+
+-- A soft halo that breathes around the icon: soft-glow.tga cut into eight
+-- pieces (no centre, so the icon stays clean), half outside the edge.
+local SOFT = "Interface\\AddOns\\VuloForeverUI\\Media\\textures\\soft-glow"
+local SM1, SM2 = 0.48, 0.52
+local SOFT_PIECES = {
+    tl = { 0, SM1, 0, SM1 },  tr = { SM2, 1, 0, SM1 },
+    bl = { 0, SM1, SM2, 1 },  br = { SM2, 1, SM2, 1 },
+    top = { SM1, SM2, 0, SM1 }, bottom = { SM1, SM2, SM2, 1 },
+    left = { 0, SM1, SM1, SM2 }, right = { SM2, 1, SM1, SM2 },
+}
+
+local function measureSoft(f)
+    local w = f.button:GetWidth() or 0
+    if w <= 0 or f.w == w then return end
+    f.w = w
+    local e = math.max(3, math.floor(w * 0.18))
+    local c = e * 2
+    local p, b = f.textures, f.button
+    f:ClearAllPoints()
+    f:SetPoint("TOPLEFT", b, "TOPLEFT", -e, e)
+    f:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", e, -e)
+    for _, k in ipairs({ "tl", "tr", "bl", "br" }) do p[k]:SetSize(c, c); p[k]:ClearAllPoints() end
+    p.tl:SetPoint("TOPLEFT"); p.tr:SetPoint("TOPRIGHT"); p.bl:SetPoint("BOTTOMLEFT"); p.br:SetPoint("BOTTOMRIGHT")
+    p.top:ClearAllPoints(); p.top:SetPoint("TOPLEFT", p.tl, "TOPRIGHT"); p.top:SetPoint("BOTTOMRIGHT", p.tr, "BOTTOMLEFT")
+    p.bottom:ClearAllPoints(); p.bottom:SetPoint("TOPLEFT", p.bl, "TOPRIGHT"); p.bottom:SetPoint("BOTTOMRIGHT", p.br, "BOTTOMLEFT")
+    p.left:ClearAllPoints(); p.left:SetPoint("TOPLEFT", p.tl, "BOTTOMLEFT"); p.left:SetPoint("BOTTOMRIGHT", p.bl, "TOPRIGHT")
+    p.right:ClearAllPoints(); p.right:SetPoint("TOPLEFT", p.tr, "BOTTOMLEFT"); p.right:SetPoint("BOTTOMRIGHT", p.br, "TOPRIGHT")
+end
+
+local function buildSoft(button)
+    local f = CreateFrame("Frame", nil, button)
+    f.button = button
+    f:SetFrameLevel((button:GetFrameLevel() or 1) + 4)
+    f.textures = {}
+    for key, tc in pairs(SOFT_PIECES) do
+        local t = f:CreateTexture(nil, "OVERLAY")
+        t:SetTexture(SOFT)
+        t:SetTexCoord(tc[1], tc[2], tc[3], tc[4])
+        t:SetBlendMode("ADD")
+        f.textures[key] = t
+    end
+    local ag = f:CreateAnimationGroup()
+    ag:SetLooping("BOUNCE")
+    local a = ag:CreateAnimation("Alpha")
+    a:SetFromAlpha(1)
+    a:SetToAlpha(0.4)
+    a:SetDuration(0.7)
+    a:SetSmoothing("IN_OUT")
+    f.anim = ag
+    button:HookScript("OnSizeChanged", function() measureSoft(f) end)
+    measureSoft(f)
+    return f
+end
+
+local BUILD = { pixel = buildPixel, shine = buildShine, proc = buildProc,
+                sparkle = buildSparkle, soft = buildSoft }
+
+Glow.TYPES = { "none", "pixel", "shine", "proc", "sparkle", "soft" }
+
+-- The choices for a glow dropdown or menu, in the player's language. Built
+-- per call (the language is only known from ADDON_LOADED). `inherit` puts
+-- "from the bar" first, for a per-spell setting.
+function Glow.Values(inherit)
+    local L = ns.L
+    local out = {}
+    if inherit then out[#out + 1] = { value = "", text = L["From the bar"] } end
+    out[#out + 1] = { value = "none",    text = L["No glow"] }
+    out[#out + 1] = { value = "pixel",   text = L["A breathing border"] }
+    out[#out + 1] = { value = "shine",   text = L["A turning star"] }
+    out[#out + 1] = { value = "proc",    text = L["The client's proc ring"] }
+    out[#out + 1] = { value = "sparkle", text = L["Sparks running round"] }
+    out[#out + 1] = { value = "soft",    text = L["A soft halo"] }
+    return out
+end
 
 -- ---------------------------------------------------------------- use --
 

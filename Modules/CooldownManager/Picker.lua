@@ -144,8 +144,35 @@ end
 
 -- ---------------------------------------------------------------- menu --
 
+-- A Buffs bar: its own id, then the buffs the client's cooldown viewer
+-- follows, then the way to add the missing ones there.
+local function buffMenu()
+    local entries = {
+        { text = L["Custom spell id"], func = function() askForID("spell") end },
+        { separator = true },
+    }
+    local base = #entries
+    for _, b in ipairs(CM.TrackedBuffs()) do
+        local on = CM.SpellBarName(b.spellID)
+        entries[#entries + 1] = {
+            text = on and ("%s  |cff777777(%s)|r"):format(b.name, on) or b.name,
+            icon = b.icon,
+            func = function() addAndRedraw(b.spellID, "spell") end,
+        }
+    end
+    if #entries == base then
+        entries[#entries + 1] = { text = L["The client follows no buffs yet"], disabled = true }
+    end
+    entries[#entries + 1] = { separator = true }
+    entries[#entries + 1] = { text = L["Missing buffs? Add them in the game's cooldown manager"],
+        func = function() CM.OpenClientCooldownViewer() end }
+    return entries
+end
+
 function Picker.Menu(barKey)
     target = barKey
+    local bar = CM.Bar(barKey)
+    if bar and bar.seed == "TrackedBuff" then return buffMenu() end
 
     local entries = {
         { text = L["Custom spell id"], func = function() askForID("spell") end },

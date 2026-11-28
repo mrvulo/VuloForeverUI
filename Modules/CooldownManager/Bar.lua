@@ -518,6 +518,21 @@ function CM.StyleFrame(frame, bar, list, owned)
     local w, h = barSize(bar, count, size)
     frame:SetSize(math.max(w, size), math.max(h, size))
 
+    -- A plate behind the whole bar, under every icon (they sit on child
+    -- frames), reaching one gap past the outer icons.
+    if bar.barBg then
+        if not frame.plate then frame.plate = frame:CreateTexture(nil, "BACKGROUND", nil, -8) end
+        local pad = math.max(ns:Pixel(frame, 2), ns:PixelSnap(bar.spacing or 0, frame))
+        local c = bar.barBgColor or { r = 0, g = 0, b = 0, a = 0.5 }
+        frame.plate:ClearAllPoints()
+        frame.plate:SetPoint("TOPLEFT", frame, "TOPLEFT", -pad, pad)
+        frame.plate:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", pad, -pad)
+        frame.plate:SetColorTexture(c.r, c.g, c.b, c.a or 0.5)
+        frame.plate:Show()
+    elseif frame.plate then
+        frame.plate:Hide()
+    end
+
     local br, bg, bb = bar.borderColor.r, bar.borderColor.g, bar.borderColor.b
     if bar.borderClassColor then
         local _, class = UnitClass("player")
@@ -577,8 +592,18 @@ function CM.StyleFrame(frame, bar, list, owned)
             ns.LayoutEdges(icon.edges, icon.button, bar.borderSize or 0, br, bg, bb, ba, inset)
         end
 
-        icon.cooldown:SetDrawSwipe(CM.Val(bar, entry, "showSwipe") ~= false)
-        icon.cooldown:SetSwipeColor(0, 0, 0, CM.Val(bar, entry, "swipeAlpha") or 0.7)
+        -- The swipe: a dark or a light sheet, or only the turning edge.
+        -- Numbers only draws none of it.
+        local swipe = CM.Val(bar, entry, "showSwipe") ~= false and not bar.textOnly
+        local style = CM.Val(bar, entry, "swipeStyle") or "dark"
+        local sa = CM.Val(bar, entry, "swipeAlpha") or 0.7
+        icon.cooldown:SetDrawSwipe(swipe and style ~= "edge")
+        icon.cooldown:SetDrawEdge(swipe and style == "edge")
+        if style == "light" then
+            icon.cooldown:SetSwipeColor(1, 1, 1, sa * 0.5)
+        else
+            icon.cooldown:SetSwipeColor(0, 0, 0, sa)
+        end
 
         UI.FontFor("cooldownmanager", icon.countdown, bar.countdownSize or 12, "OUTLINE")
         icon.countdown:SetShown(CM.Val(bar, entry, "showCountdown") ~= false)
@@ -594,12 +619,14 @@ function CM.StyleFrame(frame, bar, list, owned)
         local px = math.floor((icon.button:GetWidth() or size) + 0.5)
         CM.AntiClip.Style(icon, bar, entry, px > 0 and px or size)
         CM.BuffPhase.Style(icon, bar, entry, px > 0 and px or size, shape)
+        CM.BuffGlow.Style(icon, bar, entry, px > 0 and px or size)
     end
     for i = count + 1, #frame.icons do
         frame.icons[i].button:Hide()
         CM.Glow.Clear(frame.icons[i])
         CM.AntiClip.Release(frame.icons[i])
         CM.BuffPhase.Release(frame.icons[i])
+        CM.BuffGlow.Release(frame.icons[i])
     end
 
     CM.PaintFrame(frame, bar, list, frame.ownedCount)
@@ -749,7 +776,7 @@ end
 -- a client without the duration object still has a start and a length, and a
 -- caller that cleared the widget after we set it would wipe the swipe we had
 -- just drawn.
-local function applyCooldown(icon, entry)
+local function applyCooldown(icon, entry, ignoreGCD)
     local cd = icon.cooldown
     -- A slot row answers with the item worn in it; from here on it IS an item.
     local rid, rkind = CM.Resolve(entry)
@@ -766,7 +793,7 @@ local function applyCooldown(icon, entry)
         end
         return nil, false
     end
-    return C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(entry.id), false
+    return C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(entry.id, ignoreGCD and true or false), false
 end
 
 -- The texts in the corners. All three are plain data about our own character
@@ -848,6 +875,8 @@ local function paintIcon(bar, icon, entry)
     elseif type(tex) ~= "nil" then
         icon.texture:SetTexture(tex)
     end
+    -- A picture of the player's own choosing (a file id or a path).
+    if entry.icon ~= nil and entry.icon ~= "" then icon.texture:SetTexture(entry.icon) end
 
     icon.readySound = CM.SoundPath(CM.Val(bar, entry, "readySound"))
 
@@ -859,7 +888,7 @@ local function paintIcon(bar, icon, entry)
     local active = type(auraDuration) ~= "nil"
 
     local duration, kept = auraDuration, false
-    if not active then duration, kept = applyCooldown(icon, entry) end
+    if not active then duration, kept = applyCooldown(icon, entry, CM.Val(bar, entry, "ignoreGCD")) end
     local isZero
     do
         local secs = entry.thresholdTime
@@ -894,7 +923,19 @@ local function paintIcon(bar, icon, entry)
     -- Dim while it runs. IsZero is a secret boolean; FoldValue picks a
     -- number from it without ever looking, and SetDesaturation takes the
     -- result. Ready is 0, running is 1.
-    if type(isZero) ~= "nil" and CM.Val(bar, entry, "desaturateOnCooldown") and not active then
+    -- A watched buff row without its buff: dim, hide or as it is. The
+    -- client's aura button covers the slot while the buff is up, in combat
+    -- too (BuffPhase.lua), so the row's own art is only ever the "without".
+    local phase = rkind == "spell" and CM.Val(bar, entry, "activePhase")
+    local inactive = phase and CM.Val(bar, entry, "inactive") or "show"
+    icon.artAlpha, icon.bodyAlpha = 1, 1
+    if inactive == "hide" then icon.artAlpha, icon.bodyAlpha = 0, 0
+    elseif inactive == "dim" then icon.artAlpha = 0.45 end
+    if bar.textOnly then icon.artAlpha = 0 end
+
+    if inactive == "dim" then
+        icon.texture:SetDesaturation(1)
+    elseif type(isZero) ~= "nil" and CM.Val(bar, entry, "desaturateOnCooldown") and not active then
         icon.texture:SetDesaturation(ns.FoldValue(isZero, 0, 1))
     else
         icon.texture:SetDesaturation(0)
@@ -990,6 +1031,18 @@ local function paintIcon(bar, icon, entry)
             icon.charges:SetFormattedText("%d", charges.currentCharges)
         end)
         if not ok then icon.charges:SetText("") end
+        -- No charge left is exactly when the spell's own cooldown (without
+        -- the global one) runs: with a charge in hand it answers zero.
+        local zeroGone
+        if CM.Val(bar, entry, "hideZeroCharges") then
+            local own = C_Spell.GetSpellCooldownDuration(rid, true)
+            if type(own) ~= "nil" and own.IsZero then zeroGone = own:IsZero() end
+        end
+        if type(zeroGone) ~= "nil" then
+            ns.AlphaFromBool(icon.charges, zeroGone, 1, 0)
+        else
+            icon.charges:SetAlpha(1)
+        end
     else
         icon.charges:SetText("")
     end
@@ -998,9 +1051,16 @@ local function paintIcon(bar, icon, entry)
     CM.Range.Paint(bar, icon, entry, rid, rkind)
     icon.ready = isZero
     icon.usable = nil
-    if rkind == "spell" and CM.Val(bar, entry, "castableOnly") then
-        icon.usable = C_Spell.IsSpellUsable(rid)
-        if type(icon.usable) == "nil" then icon.usable = false end
+    local castable = CM.Val(bar, entry, "castableOnly")
+    -- "Hidden while on cooldown" is the second half of "only while castable"
+    -- on its own: the gate folds the cooldown, the button stays as it is.
+    if rkind == "spell" and (castable or CM.Val(bar, entry, "cdHide")) then
+        if castable then
+            icon.usable = C_Spell.IsSpellUsable(rid)
+            if type(icon.usable) == "nil" then icon.usable = false end
+        else
+            icon.usable = true
+        end
         -- The spell's own cooldown without the global one (else every icon
         -- would blink out on each cast) and without the active phase.
         local own = C_Spell.GetSpellCooldownDuration(rid, true)
@@ -1040,6 +1100,23 @@ function CM.PaintFrame(frame, bar, list, owned)
                 icon.gate:SetAlpha(1)
             end
             icon.button:EnableMouse(not borrowed)
+            -- The row's own art and body (see paintIcon). The preview keeps a
+            -- hidden row findable at half strength.
+            local art, body = icon.artAlpha or 1, icon.bodyAlpha or 1
+            if frame.showAll and body == 0 then
+                body = 0.45
+                if not bar.textOnly then art = 0.45 end
+            end
+            icon.texture:SetAlpha(art)
+            icon.bg:SetAlpha(art)
+            icon.sheen:SetAlpha(art)
+            icon.shaped:SetAlpha(art)
+            icon.media:SetAlpha(art)
+            for _, t in pairs(icon.edges) do t:SetAlpha(art) end
+            icon.cooldown:SetAlpha(body)
+            icon.countdown:SetAlpha(body)
+            icon.count:SetAlpha(body)
+            icon.top:SetAlpha(body)
         end
     end
     for i = count + 1, #frame.icons do

@@ -102,6 +102,10 @@ jemand ohne den Code prüfen kann.
 | F-90 | Cooldown Manager: Gesundheitsstein und Seelenstein als eine Zeile, fehlende Gegenstände ausblenden | Cooldown Manager | gebaut | – |
 | F-91 | Beutefenster im Look der anderen Fenster: Rahmen mit rundem Porträt, Namensschilder | Komfort | gebaut | – |
 | F-92 | Chat-Seitenleiste: wer online ist (Favoriten, Gilde, Freunde) im Tooltip | Chat | gebaut | – |
+| F-93 | Cooldown Manager: eine Seite „Leisten“ statt sechs Reiter, Einstellungen in Abschnitten | Cooldown Manager | gebaut | – |
+| F-94 | Cooldown Manager: Rechtsklick-Menü mit Wischart, GCD ausblenden, eigenem Symbol, mehr Leuchtarten | Cooldown Manager | gebaut | – |
+| F-95 | Cooldown Manager: Buff-Leiste – Zustand ohne Buff, Buff-Liste des Clients im Plus-Menü, nur Zahlen, Leistenhintergrund | Cooldown Manager | gebaut | – |
+| F-96 | Cooldown Manager: Leistenleuchten – ein Buff lässt einen Zauber leuchten, auf der Leiste und am Aktionsknopf | Cooldown Manager | gebaut | – |
 | F-69 | Fenster des Spiels an der Titelleiste verschieben, Position bleibt gemerkt | Komfort | bestätigt | – |
 | F-68 | Chat-Verlauf je Reiter: Flüstern kommt nach dem Einloggen im eigenen Reiter zurück | Chat | gebaut | – |
 | F-67 | Handwerkstaschen als eigene, einklappbare Abschnitte im Taschenfenster | Taschen | gebaut | – |
@@ -689,6 +693,33 @@ Verworfen am 05.11.2026: das Schreiben ins Blizzard-Layout (`C_EditMode.SaveLayo
 - **Angenommen** die Weltkarte ist maximiert, **dann** bleibt sie unberührt; verkleinert steht sie an deinem Platz.
 - **Wenn** du „Fensterpositionen zurücksetzen“ drückst, **dann** steht im Chat die Bestätigung, und jedes Fenster ist beim nächsten Öffnen wieder an Blizzards Platz. Schaltest du die Einstellung aus, gilt dasselbe, die gemerkten Plätze bleiben aber gespeichert.
 - Bekannte Grenzen: nicht verschiebbar sind Beutefenster (Edit Mode), Spielmenü, Einstellungen, Vollbild-Szenen und das Lesefenster der Post (hängt am Postfenster). Welche Fenster im Kampf als geschützt gelten, entscheidet das Spiel.
+
+### F-93 Cooldown Manager: eine Seite
+- **Wenn** du /vfui → HUD → Cooldown Manager öffnest, **dann** gibt es drei Reiter: „Leisten“, „Pro Zauber“, „Leistenleuchten“. Oben stehen immer die Leistenauswahl und die Symbolleiste mit dem Plus.
+- **Dann** steht unter „Leisten“ alles einer Leiste auf einer Seite, im Zwei-Spalten-Raster, in Abschnitten: Leiste, Größe und Überlauf, Symbolanzeige, Rahmen, Text, Leuchten, Sichtbarkeit, Extras (Spezialisierung kopieren, Leiste entfernen).
+- **Dann** gibt es keine Liste „Reihenfolge“ und kein Feld „Zauber hinzufügen“ mehr: Ziehen in der Symbolleiste ordnet, das Plus fügt hinzu (auch eigene Zauber- und Gegenstands-IDs).
+
+### F-94 Cooldown Manager: Rechtsklick-Menü
+- **Wenn** du in der Symbolleiste auf ein Symbol klickst, **dann** hat das Menü 18 Zeilen, keines der Untermenüs muss scrollen; es zeigt u. a. „Wischer und GCD“, „Leuchten“, „Eigenes Symbol …“. „Restzeit zeigen“ steht unter „Schwelle in Sekunden“, „Aktivphase zeigen“ lässt sich im Untermenü „Aktivphase“ direkt umstellen.
+- **Wenn** du unter „Wischer und GCD“ die Wischart „Nur Kante“ wählst, **dann** dreht sich statt der dunklen Fläche nur eine helle Kante; „Hell“ zeigt eine helle Fläche.
+- **Wenn** „GCD ausblenden“ an ist (Leiste oder Zauber), **dann** zeigt das Symbol beim Wirken eines anderen Zaubers keinen kurzen Wischer mehr, nur die eigene Abklingzeit.
+- **Wenn** du „Eigenes Symbol…“ wählst und eine Symbol-ID (z. B. 136243) eingibst, **dann** zeigt die Zeile dieses Bild; leer lassen bringt das Zaubersymbol zurück.
+- **Dann** gibt es zwei weitere Leuchtarten: „Funkelnde Ecken“ (Funken laufen am Rand um) und „Weicher Schein“ (pulsierender Schein um das Symbol).
+- **Wenn** „Während der Abklingzeit ausblenden“ an ist, **dann** ist das Symbol weg, solange der Zauber abklingt (ohne GCD), der Platz bleibt frei.
+
+### F-95 Cooldown Manager: Buff-Leiste
+- **Wenn** du auf einer Buffs-Leiste das Plus klickst, **dann** stehen oben „Eigene Zauber-ID“, darunter die Buffs, die der Cooldown Manager des Spiels verfolgt (mit Symbol), und ganz unten „Fehlen Buffs? Im Cooldown Manager des Spiels hinzufügen“, das dessen Fenster öffnet.
+- **Wenn** du unter Leisten → Symbolanzeige „Ohne Buff“ auf „Ausblenden“ stellst, **dann** ist ein Buff-Symbol nur zu sehen, solange der Buff auf dir ist, auch im Kampf; „Grau“ zeigt es grau und blass. Der Platz bleibt immer an derselben Stelle.
+- **Wenn** „Nur Zahlen (kein Symbol)“ an ist, **dann** stehen nur Restzeit, Ladungen und Stapel da, ohne Bild, Rand und Wischer.
+- **Wenn** „Ladungen bei 0 ausblenden“ an ist, **dann** verschwindet die Ladungszahl, sobald keine Ladung mehr da ist.
+- **Wenn** „Leistenhintergrund“ an ist, **dann** liegt hinter der ganzen Leiste eine Fläche in der gewählten Farbe.
+
+### F-96 Cooldown Manager: Leistenleuchten
+- **Wenn** du im Reiter „Leistenleuchten“ auf ein Symbol klickst, **dann** kommt eine Liste mit „Leuchten, wenn bereit“ (Von der Leiste / Ja / Nein), den Buffs deiner Buffs-Leisten und des Spiel-Cooldown-Managers zum Abhaken und „Eigene Buff-ID…“.
+- **Angenommen** bei Schattenwort: Schmerz ist „Dunkles Opfer“ abgehakt, **wenn** Dunkles Opfer auf dir ist (auch im Kampf), **dann** leuchtet Schattenwort: Schmerz auf der Leiste und – mit „Auch am Aktionsknopf“ – auf jedem Aktionsknopf, auf dem der Zauber liegt; läuft der Buff aus, erlischt das Leuchten.
+- **Dann** listet die Seite jede Zuordnung „Zauber ← Buffs“ und lässt Leuchtart und Farbe dafür wählen.
+- **Wenn** du außerhalb des Kampfes die Haltung oder Gestalt wechselst, **dann** wandert das Knopf-Leuchten mit dem Zauber auf den neuen Knopf.
+- Bekannte Grenze: Wechselt im Kampf die Haltungs- oder Gestaltleiste, folgt das Knopf-Leuchten erst nach dem Kampf.
 
 ## Offen
 

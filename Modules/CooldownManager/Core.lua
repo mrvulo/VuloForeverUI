@@ -74,6 +74,22 @@ CM.BAR_DEFAULTS = {
     desaturateOnCooldown = true,
     showSwipe   = true,
     swipeAlpha  = 0.7,
+    swipeStyle  = "dark",        -- dark | light | edge (only the turning edge)
+    ignoreGCD   = false,         -- the swipe shows the spell's own cooldown only
+    cdHide      = false,         -- no icon while the spell's own cooldown runs
+    -- A watched buff row while the buff is NOT on you: show | dim | hide. The
+    -- slot stays either way; which buff is up is secret in a fight, so the
+    -- client's aura button is what appears over an empty slot (BuffPhase.lua).
+    inactive    = "show",
+    textOnly    = false,         -- numbers only: no art, no border, no swipe
+    hideZeroCharges = false,     -- the charge number goes while none is left
+    barBg       = false,         -- a plate behind the whole bar
+    barBgColor  = { r = 0, g = 0, b = 0, a = 0.5 },
+    -- Bar glows (BuffGlow.lua): a row lights up while one of its chosen buffs
+    -- is on you, here and on every action button holding the spell.
+    buffGlowType = "proc",
+    buffGlowColor = { r = 1, g = 0.86, b = 0.32 },
+    buffGlowButtons = true,
     showCountdown = true,
     countdownSize = 12,
     countdownColor = { r = 1, g = 1, b = 1 },
@@ -333,7 +349,7 @@ end
 -- of this file is filled again: without that, a saved bar from before a new
 -- setting existed reaches the paint pass with the key missing, and the first
 -- thing that reads bar.countColor.r takes the whole bar down.
-CM.DEFAULTS_VERSION = 4
+CM.DEFAULTS_VERSION = 5
 
 function CM.Bar(key)
     local db = CM.db()
@@ -466,6 +482,50 @@ end
 function CM.Candidates()
     if not CM.candidates then CM.candidates = CM.CollectCandidates() end
     return CM.candidates
+end
+
+-- The buffs the client's own cooldown viewer follows (its TrackedBuff and
+-- TrackedBar categories), with their artwork: what the plus menu of a Buffs
+-- bar and the bar glow list offer. Asked when a menu opens, never cached --
+-- a buff added in the client's window should be there on the next click.
+function CM.TrackedBuffs()
+    local out, seen = {}, {}
+    local CV = _G.C_CooldownViewer
+    local cats = Enum.CooldownViewerCategory
+    if not (CV and CV.GetCooldownViewerCategorySet and CV.GetCooldownViewerCooldownInfo and cats) then return out end
+    for _, cat in ipairs({ cats.TrackedBuff, cats.TrackedBar }) do
+        local ok, ids = pcall(CV.GetCooldownViewerCategorySet, cat, false)
+        if cat ~= nil and ok and type(ids) == "table" then
+            for _, cid in ipairs(ids) do
+                local okInfo, info = pcall(CV.GetCooldownViewerCooldownInfo, cid)
+                local sid = okInfo and type(info) == "table" and (info.overrideSpellID or info.spellID)
+                if type(sid) == "number" and ns.CanRead(sid) then
+                    local name = C_Spell.GetSpellName(sid)
+                    if type(name) == "string" and name ~= "" and not seen[name] then
+                        seen[name] = true
+                        out[#out + 1] = { spellID = sid, name = name, icon = C_Spell.GetSpellTexture(sid) }
+                    end
+                end
+            end
+        end
+    end
+    table.sort(out, function(a, b) return a.name < b.name end)
+    return out
+end
+
+-- The client's own cooldown manager window, where a buff it does not follow
+-- yet is added. Out of combat only: it is a UI panel.
+function CM.OpenClientCooldownViewer()
+    if ns:InCombat() then return end
+    if not _G.CooldownViewerSettings and C_AddOns and C_AddOns.LoadAddOn then
+        pcall(C_AddOns.LoadAddOn, "Blizzard_CooldownViewer")
+    end
+    local f = _G.CooldownViewerSettings
+    if f and f.ShowUIPanel then
+        f:ShowUIPanel()
+    elseif f and f.TogglePanel then
+        f:TogglePanel()
+    end
 end
 
 -- Filler for the settings preview. A bar someone is still styling is often
@@ -711,6 +771,7 @@ end
 function CM.RestyleAll()
     local db = CM.db()
     for _, key in ipairs(db.barOrder or {}) do CM.Restyle(key) end
+    CM.BuffGlow.RebuildButtons()
 end
 
 function CM.UpdateVisibilityAll()
@@ -770,6 +831,8 @@ function mod:OnEnable()
             CM.restyleAfterCombat = nil
             CM.RestyleAll()
         end
+        -- a stance or form page turned in the fight moved the spells
+        CM.BuffGlow.RebuildButtons()
         CM.RequestRefresh()
     end)
     -- The cooldown of a spell we show has started or ended. The duration
@@ -814,12 +877,19 @@ function mod:OnEnable()
             rebindQueued = false
             if not mod.active then return end
             CM.Bindings.Rebuild()
+            CM.BuffGlow.RebuildButtons()
             CM.RequestRefresh()
         end)
     end
     self:RegisterEvent("UPDATE_BINDINGS", rebind)
     self:RegisterEvent("ACTIONBAR_SLOT_CHANGED", rebind)
     self:RegisterEvent("ACTIONBAR_PAGE_CHANGED", rebind)
+    -- A stance, form or stealth swap turns the main bar's page without a
+    -- slot event; the bar glows sit on button objects and must follow.
+    self:RegisterEvent("UPDATE_BONUS_ACTIONBAR", rebind)
+    self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", rebind)
+    self:RegisterEvent("UPDATE_OVERRIDE_ACTIONBAR", rebind)
+    self:RegisterEvent("UPDATE_VEHICLE_ACTIONBAR", rebind)
 
     -- The client's own "this spell lit up" pair. The spell id may be secret in
     -- a fight; CM.SetProc drops the ones it may not place.
@@ -908,4 +978,5 @@ end
 
 function mod:OnDisable()
     for _, frame in pairs(CM.frames or {}) do frame:Hide() end
+    CM.BuffGlow.ReleaseButtons()
 end

@@ -176,6 +176,7 @@ Modules\CooldownManager\Bindings.lua
 Modules\CooldownManager\Glow.lua
 Modules\CooldownManager\AntiClip.lua
 Modules\CooldownManager\BuffPhase.lua
+Modules\CooldownManager\BuffGlow.lua
 Modules\CooldownManager\Range.lua
 Modules\CooldownManager\Talents.lua
 Modules\CooldownManager\Bar.lua
